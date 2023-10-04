@@ -54,9 +54,7 @@ class CoreUtil:
     @staticmethod
     def load_wordnet_antonyms_axes():
         return CoreUtil.load_axes_file(
-            pkg_resources.resource_filename(
-                "semaxis", "axes/{}".format("wordnet_antonyms.tsv")
-            )
+            pkg_resources.resource_filename("semaxis", "axes/{}".format("custom.tsv"))
         )
 
     @staticmethod
