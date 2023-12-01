@@ -2,7 +2,7 @@
 
 Playground and potential code for my master thesis.
 
-__Rough Idea__:
+**Rough Idea**:
 
 1. Take FrameAxis Bias and Intensity for each microframe (positive and negative pool of words) for each sentence
 2. Combine with FRISS output for each sentence
@@ -14,6 +14,7 @@ __Rough Idea__:
 ### The Media Frames Corpus
 
 Consist out of 14 frames:
+
 1. Economic
 2. Capacity and Resources
 3. Morality
@@ -34,6 +35,7 @@ Consist out of 14 frames:
 ### Dataset
 
 Use of SemEval-2023 Task 3 dataset. The dataset consists out of 3 subtasks:
+
 - Subtask 1: Classify news articles as opinion pieces, objective news reporting, or satire.
 - Subtask 2: Identify frames used in news articles.
 - Subtask 3: Identify persuasion techniques in each paragraph of news articles.
@@ -64,31 +66,7 @@ Example:
 
 ![Example](/assets/imgs/subtask3_example.png)
 
-
     [SemEval-2023 Task 3: Detecting the Category, the Framing, and the Persuasion Techniques in Online News in a Multi-lingual Setup](https://aclanthology.org/2023.semeval-1.317) (Piskorski et al., SemEval 2023)
-
-## TODO
-
-- [x] Use BERT for Sentence Embedding
-- [ ] Implement and Play with FrameAxis
-- [ ] Implement and Play with FRISS
-- [ ] Identify what types of microframes are used for FrameAxis
-    - As Card et al. (2015) only uses frames which are rather "neutral" and not consist out of positive/negative words. 
-    - Or try to split frame into sub group of positive/negative words
-- [ ] Use newly defined microframes for FrameAxis
-- [ ] Combine FrameAxis bias/intensity with FRISS output and sentence embedding
-- [ ] Train a classifier to predict the Document Frame
-
-
-__IMPORTANT QUESTION:__
-
-- Do I want to predict the Document Frame, Frame for each Sentence or also the Leaning of the frame. 
-
-    1. Document Frame: Predict the frame of the whole document
-    2. Frame for each Sentence: Predict the frame for each sentence
-    3. Leaning of the frame: Predict the leaning of the frame (e.g. positive/negative)
-        - E.g. is the reader of the article persuaded to a positive or negative view of the frame 
-
 
 ## Literature
 
