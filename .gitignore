@@ -1,6 +1,7 @@
 .vscode
 models
-data
+data/mfc
+data/semeval
 .ipynb_checkpoints
 .pyo
 .pyc

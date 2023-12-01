@@ -1,87 +1,53 @@
-# Master Thesis
+# Master Thesis on Advanced Frame Detection in Media Narratives
 
-Playground and potential code for my master thesis.
+Master thesis on advanced frame detection in media narratives, using a novel approach combining unsupervised and supervised learning.
 
-**Rough Idea**:
+## Motivation
 
-1. Take FrameAxis Bias and Intensity for each microframe (positive and negative pool of words) for each sentence
-2. Combine with FRISS output for each sentence
-3. Combine with Sentence Embedding
-4. Train a classifier to predict the Document Frame from The Media Frames Corpus (Card et al., 2015)
+The concept of framing, deeply entrenched in psychology and sociology, significantly influences public opinion and decision-making. Framing involves presenting information in a specific manner, often through the use of narratives, symbols, or stereotypes, to subtly guide perceptions. This method is particularly evident in media, where different outlets may portray the same issue in distinct ways, leading audiences to varying conclusions. The impact of framing on public discourse and international relations is notable in events like the differing narratives presented by President Biden and President Putin regarding the Russo-Ukrainian war. Understanding and quantifying the effects of framing is crucial for a more informed and critical public discourse.
 
-## Data
+## Data Utilized
 
-### The Media Frames Corpus
+This research leverages two key datasets:
 
-Consist out of 14 frames:
+### Media Frames Corpus (MFC)
 
-1. Economic
-2. Capacity and Resources
-3. Morality
-4. Fairness and Equality
-5. Legality, Constitutionality, Jurisdiction
-6. Policy Prescription and Evaluation
-7. Crime and Punishment
-8. Security and defense
-9. Health and Safety
-10. Quality of Life
-11. Cultural Identity
-12. Public opinion
-13. Political
-14. External Regulation and Reputation
+The MFC, a collection of news articles labeled with frame labels from "The Policy Frames Codebook," focuses on contentious policy issues like immigration, smoking, and gun control. This corpus includes both labeled and unlabeled articles from major U.S. newspapers spanning from 1980 to 2012, providing a rich source of data for frame analysis.
 
-    [The Media Frames Corpus: Annotations of Frames Across Issues](https://aclanthology.org/P15-2072) (Card et al., ACL-IJCNLP 2015)
+### SemEval-2023 Dataset
 
-### Dataset
+Comprising news articles in nine languages, the SemEval-2023 dataset covers international events from 2020 to mid-2022. It encompasses a wide range of topics, from the COVID-19 pandemic to the Russo-Ukrainian war. This dataset is annotated with frames from "The Policy Frames Codebook" and offers data in multiple languages, including English, French, German, and Russian.
 
-Use of SemEval-2023 Task 3 dataset. The dataset consists out of 3 subtasks:
+## Approach
 
-- Subtask 1: Classify news articles as opinion pieces, objective news reporting, or satire.
-- Subtask 2: Identify frames used in news articles.
-- Subtask 3: Identify persuasion techniques in each paragraph of news articles.
+![assets\imgs\model-architecture.png](assets\imgs\model-architecture.png)
 
-Available languages are English, Spanish, French, German, Greek, Italian, .. and Russian.
+> **Note:** The approach described is not yet implemented in the codebase as it is still in development.
 
-> Some more Infos about the dataset can be seen under [notebooks\data-visualization.ipynb](notebooks\data-visualization.ipynb).
+1. **Article Preprocessing**: Each article, composed of $N$ sentences, is divided into individual sentences to prepare for processing.
 
-#### Subtask 1:
+2. **Sentence Embedding**: The divided sentences are processed through a transformer-based model like Sentence-BERT (sBERT) to obtain sentence embeddings, capturing their contextual meaning.
 
-Classifies if a article is either an opinion piece, objective news reporting, or satire.
+3. **Word Embedding**: Each word in the sentences is processed through a transformer model like BERT to generate word embeddings, offering a detailed understanding of word usage.
 
-#### Subtask 2:
+4. **Unsupervised FRISS Module**: Operates on dictionary learning principles, deconstructing input data into a sparse representation. It identifies semantic role labels (SRLs) in sentences, extracting their embeddings. These embeddings are fed into an autoencoder, producing latent view-specific representations.
 
-Identifies frames used in news articles. The frames are based on the Media Frames Corpus (Card et al., 2015).
+5. **Unsupervised FrameAxis Module**: Assesses each word in the sentences against predefined microframes, calculating bias measurements for each sentence. This helps understand the textual bias along specific semantic axes.
 
-A article can have multiple frames. The frames are divided into 14 categories (see above).
+6. **Supervised Learning Module**: Combines latent SRL representations, sentence embeddings, and FrameAxis bias measurements. This module is optimized to minimize both the unsupervised loss (difference between input and reconstructed SRL embeddings) and the supervised loss (associated with predicting multiple frame labels).
 
-#### Subtask 3:
+7. **Frame Prediction**: The model ultimately produces predictions of the frames present in each article, resolving the multi-label problem of associating each article with multiple frames.
 
-Identifies persuasion techniques in each paragraph of news articles.
+## Next Steps
 
-E.g. `Loaded_Language, Conversation_Killer, ...`
+### Experiment 1: Media Frames Corpus (MFC) Application
 
-The Infos are available not only per sentence but also per span. So we know which persuasion technique is used in which span.
+- **Objective**: Test FRISS-FrameAxis model's capability in identifying and interpreting media frames on MFC.
+- **Methodology**: Train the integrated FRISS-FrameAxis model on MFC, focusing on frame detection efficiency.
+- **Evaluation Metrics**: Compare accuracy and macro-F1 score against the original FRISS model to gauge improvements.
 
-Example:
+### Experiment 2: SemEval 2023 Dataset Extension for Multi-label Prediction
 
-![Example](/assets/imgs/subtask3_example.png)
-
-    [SemEval-2023 Task 3: Detecting the Category, the Framing, and the Persuasion Techniques in Online News in a Multi-lingual Setup](https://aclanthology.org/2023.semeval-1.317) (Piskorski et al., SemEval 2023)
-
-## Literature
-
-Frames:
-
-    [The Media Frames Corpus: Annotations of Frames Across Issues](https://aclanthology.org/P15-2072) (Card et al., ACL-IJCNLP 2015)
-
-SemEval:
-
-    [SemEval-2023 Task 3: Detecting the Category, the Framing, and the Persuasion Techniques in Online News in a Multi-lingual Setup](https://aclanthology.org/2023.semeval-1.317) (Piskorski et al., SemEval 2023)
-
-FrameAxis:
-
-    [FrameAxis: Characterizing Microframe Bias and Intensity with Word Embedding](https://arxiv.org/abs/2002.08608) (Kwak et al. 2020)
-
-FRISS:
-
-    [Framing Unpacked: A Semi-Supervised Interpretable Multi-View Model of Media Frames](https://aclanthology.org/2021.naacl-main.174) (Khanehzar et al., NAACL 2021)
+- **Objective**: Evaluate model adaptability in multi-label frame prediction using the SemEval 2023 dataset.
+- **Methodology**: Retrain FRISS-FrameAxis model on SemEval 2023, adjusting for multiple frames in single texts.
+- **Evaluation Metrics**: Use multi-label classification metrics like F1-score; compare results with SemEval 2023 challenge benchmarks.
