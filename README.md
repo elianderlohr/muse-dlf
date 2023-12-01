@@ -20,7 +20,7 @@ Comprising news articles in nine languages, the SemEval-2023 dataset covers inte
 
 ## Approach
 
-![assets\imgs\model-architecture.png](assets\imgs\model-architecture.png)
+![Model](assets/imgs/model-architecture.png)
 
 > **Note:** The approach described is not yet implemented in the codebase as it is still in development.
 
