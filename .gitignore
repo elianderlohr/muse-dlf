@@ -2,6 +2,7 @@
 models
 data/mfc
 data/semeval
+data/glove
 .ipynb_checkpoints
 .pyo
 .pyc
