@@ -115,13 +115,11 @@ def test(model, test_loader, device):
     avg_test_loss = total_loss / len(test_loader)
     print(f"\nAverage test loss: {avg_test_loss:.3f}")
 
-def train_model(model, train_loader, test_loader, epochs=3):
+def train_model(model, train_loader, test_loader, epochs=3, dir_save_path="/models/finetuned-roberta/"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
-
-    dir_save_path = '/models/finetuned-roberta/'
-
+    
     # Create the output directory if it doesn't exist
     Path(dir_save_path).mkdir(parents=True, exist_ok=True)
 
@@ -143,6 +141,9 @@ def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Fine-tune a model on a text dataset.")
     parser.add_argument("--batch_size", type=int, default=32, help="Input batch size for training (default: 32)")
+    parser.add_argument("--epochs", type=int, default=3, help="Number of epochs to train (default: 3)")
+    # save_path = os.path.join(os.getcwd(), "models/finetuned-roberta/")
+    parser.add_argument("--save_path", type=str, default="/models/finetuned-roberta/", help="Path to save the finetuned model (default: models/finetuned-roberta/)")
     args = parser.parse_args()
 
     print("Loading data...")
@@ -154,6 +155,8 @@ def main():
     df = pd.concat([df_labeled, df_unlabeled])
     
     print("Data loaded successfully.")
+
+    print("Preprocessing data...")
     
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
     train_df, test_df = train_test_split(df["text"].tolist(), test_size=0.2, random_state=42)
@@ -167,7 +170,7 @@ def main():
     print("Data preprocessed successfully.")
 
     model = RobertaForMaskedLM.from_pretrained('roberta-base')
-    train_model(model, train_loader, test_loader, batch_size=args.batch_size)
+    train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path)
 
 if __name__ == "__main__":
     main()
