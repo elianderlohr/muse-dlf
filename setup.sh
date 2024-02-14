@@ -1,0 +1,1 @@
+python -m pip install nltk pycuda allennlp allennlp-models
