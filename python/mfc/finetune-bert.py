@@ -118,13 +118,13 @@ def test(model, test_loader, device):
     avg_test_loss = total_loss / len(test_loader)
     print(f"\nAverage test loss: {avg_test_loss:.3f}")
 
-def train_model(model, train_loader, test_loader, epochs=3, dir_save_path="/models/finetuned-roberta/"):
+def train_model(model, train_loader, test_loader, epochs=3, save_path="/models/finetuned-roberta/"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
 
     # Create the output directory if it doesn't exist
-    Path(dir_save_path).mkdir(parents=True, exist_ok=True)
+    Path(save_path).mkdir(parents=True, exist_ok=True)
 
     # add tqdm progress bar
     progress_bar_epoch = tqdm(range(epochs), desc="Epochs")
@@ -134,7 +134,7 @@ def train_model(model, train_loader, test_loader, epochs=3, dir_save_path="/mode
         test(model, test_loader, device)
 
         # Save the model after each epoch, overwriting the previous model
-        model_save_path = os.path.join(dir_save_path, f"roberta_finetuned_epoch_{epoch+1}.pt")
+        model_save_path = os.path.join(save_path, f"roberta_finetuned_epoch_{epoch+1}.pt")
         torch.save(model.state_dict(), model_save_path)
         print(f"Model saved to {model_save_path}")
         progress_bar_epoch.set_postfix({'Epoch': epoch+1})
@@ -179,15 +179,15 @@ if __name__ == "__main__":
     welcome_message = """
     ############################################################################################################
     #                                                                                                          #
-    #  Welcome to the fine-tuning script for RoBERTa!                                                           #
+    #  Welcome to the fine-tuning script for RoBERTa!                                                          #
     #                                                                                                          #
-    #  This script fine-tunes a RoBERTa model on a text dataset.                                                #
+    #  This script fine-tunes a RoBERTa model on a text dataset.                                               #
     #                                                                                                          #
-    #  The script takes the following command-line arguments:                                                   #
+    #  The script takes the following command-line arguments:                                                  #
     #                                                                                                          #
-    #  --batch_size: Input batch size for training (default: 32)                                                #
-    #  --epochs: Number of epochs to train (default: 3)                                                         #
-    #  --save_path: Path to save the finetuned model (default: models/finetuned-roberta/)                       #
+    #  --batch_size: Input batch size for training (default: 32)                                               #
+    #  --epochs: Number of epochs to train (default: 3)                                                        #
+    #  --save_path: Path to save the finetuned model (default: models/finetuned-roberta/)                      #
     #                                                                                                          #
     ############################################################################################################
     """
@@ -199,5 +199,5 @@ if __name__ == "__main__":
     download_nltk_resources()
 
     print("NLTK resources downloaded successfully.")
-    
+
     main()
