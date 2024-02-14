@@ -17,7 +17,6 @@ from contextlib import redirect_stdout
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
 # Define paths to data
 labeled_path = "data/mfc/immigration_labeled.json"
 unlabeld_path = "data/mfc/immigration_unlabeled.json"
@@ -26,7 +25,7 @@ codes_path = "data/mfc/codes.json"
 def download_nltk_resources():
     with open(os.devnull, 'w') as f:
         with redirect_stdout(f):
-            nltk.download("all")
+            nltk.download("punkt")
 
 # Load data from path
 def load_data():
