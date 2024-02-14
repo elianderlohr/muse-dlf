@@ -12,17 +12,21 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import logging
 from pathlib import Path
+from contextlib import redirect_stdout
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Downloading NLTK resources
-nltk.download("all")
 
 # Define paths to data
 labeled_path = "data/mfc/immigration_labeled.json"
 unlabeld_path = "data/mfc/immigration_unlabeled.json"
 codes_path = "data/mfc/codes.json"
+
+def download_nltk_resources():
+    with open(os.devnull, 'w') as f:
+        with redirect_stdout(f):
+            nltk.download("all")
 
 # Load data from path
 def load_data():
@@ -119,7 +123,7 @@ def train_model(model, train_loader, test_loader, epochs=3, dir_save_path="/mode
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
-    
+
     # Create the output directory if it doesn't exist
     Path(dir_save_path).mkdir(parents=True, exist_ok=True)
 
@@ -173,4 +177,5 @@ def main():
     train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path)
 
 if __name__ == "__main__":
+    download_nltk_resources()
     main()
