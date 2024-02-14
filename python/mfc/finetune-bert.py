@@ -120,15 +120,24 @@ def train_model(model, train_loader, test_loader, epochs=3):
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
 
-    for epoch in range(1, epochs + 1):
-        print(f"\nEpoch {epoch}/{epochs}")
-        train(epoch, model, train_loader, optimizer, device)
+    dir_save_path = '/models/finetuned-roberta/'
+
+    # Create the output directory if it doesn't exist
+    Path(dir_save_path).mkdir(parents=True, exist_ok=True)
+
+    # add tqdm progress bar
+    progress_bar_epoch = tqdm(range(epochs), desc="Epochs")
+    for epoch in progress_bar_epoch:
+        print(f"\nEpoch {epoch+1}/{epochs}")
+        train(epoch+1, model, train_loader, optimizer, device)
         test(model, test_loader, device)
 
         # Save the model after each epoch, overwriting the previous model
-        model_save_path = './model_save/finetuned_model.pt'
+        model_save_path = os.path.join(dir_save_path, f"roberta_finetuned_epoch_{epoch+1}.pt")
         torch.save(model.state_dict(), model_save_path)
         print(f"Model saved to {model_save_path}")
+        progress_bar_epoch.set_postfix({'Epoch': epoch+1})
+
 
 def main():
     # Parse command-line arguments
@@ -136,20 +145,26 @@ def main():
     parser.add_argument("--batch_size", type=int, default=32, help="Input batch size for training (default: 32)")
     args = parser.parse_args()
 
+    print("Loading data...")
+
     labeled, unlabeld, codes = load_data()
     df_labeled = get_labeled_data(labeled, codes)
     df_unlabeled = get_unlabeled_data(unlabeld)
     df_labeled = preprocess_labeled_df(df_labeled)
     df = pd.concat([df_labeled, df_unlabeled])
-
+    
+    print("Data loaded successfully.")
+    
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
     train_df, test_df = train_test_split(df["text"].tolist(), test_size=0.2, random_state=42)
     train_dataset = ArticlesDataset(train_df, tokenizer)
     test_dataset = ArticlesDataset(test_df, tokenizer)
-
+    
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=data_collator)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=data_collator)
+
+    print("Data preprocessed successfully.")
 
     model = RobertaForMaskedLM.from_pretrained('roberta-base')
     train_model(model, train_loader, test_loader, batch_size=args.batch_size)
