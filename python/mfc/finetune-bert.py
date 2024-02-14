@@ -176,5 +176,28 @@ def main():
     train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path)
 
 if __name__ == "__main__":
+    welcome_message = """
+    ############################################################################################################
+    #                                                                                                          #
+    #  Welcome to the fine-tuning script for RoBERTa!                                                           #
+    #                                                                                                          #
+    #  This script fine-tunes a RoBERTa model on a text dataset.                                                #
+    #                                                                                                          #
+    #  The script takes the following command-line arguments:                                                   #
+    #                                                                                                          #
+    #  --batch_size: Input batch size for training (default: 32)                                                #
+    #  --epochs: Number of epochs to train (default: 3)                                                         #
+    #  --save_path: Path to save the finetuned model (default: models/finetuned-roberta/)                       #
+    #                                                                                                          #
+    ############################################################################################################
+    """
+
+    print(welcome_message)
+
+    print("Downloading NLTK resources...")
+
     download_nltk_resources()
+
+    print("NLTK resources downloaded successfully.")
+    
     main()
