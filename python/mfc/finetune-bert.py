@@ -183,6 +183,17 @@ def main():
     
     logger.info("Data loaded successfully.")
 
+    logger.info("Loading model...")
+
+    model = RobertaForMaskedLM.from_pretrained('roberta-base')
+
+    if args.load_model_path:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.load_state_dict(torch.load(args.load_model_path, map_location=device))
+        logger.info(f"Loaded model from {args.load_model_path}")
+    
+    logger.info("Model loaded successfully.")
+
     logger.info("Preprocessing data...")
     
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
@@ -195,14 +206,6 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=data_collator)
 
     logger.info("Data preprocessed successfully.")
-
-    model = RobertaForMaskedLM.from_pretrained('roberta-base')
-
-    if args.load_model_path:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.load_state_dict(torch.load(args.load_model_path, map_location=device))
-        logger.info(f"Loaded model from {args.load_model_path}")
-    
 
     train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path, logger=logger)
 
