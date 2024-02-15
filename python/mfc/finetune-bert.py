@@ -13,6 +13,7 @@ from tqdm import tqdm
 import logging
 from pathlib import Path
 from contextlib import redirect_stdout
+import datetime
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -81,11 +82,15 @@ class ArticlesDataset(Dataset):
         return len(self.encodings.input_ids)
 
 # Train function
-def train(epoch, model, train_loader, optimizer, device):
+def train(epoch, model, train_loader, optimizer, device, logger):
     model.train()
     total_loss = 0
+    progress_interval = len(train_loader) // 20  # For logging at every 5%
     progress_bar = tqdm(train_loader, desc=f"Epoch {epoch} - Training")
-    for batch in progress_bar:
+    for i, batch in enumerate(progress_bar):
+        if i % progress_interval == 0:
+            logger.info(f"Epoch {epoch} - Training Progress: {i/len(train_loader)*100:.2f}%")
+
         batch = {k: v.to(device) for k, v in batch.items()}
         optimizer.zero_grad()
         outputs = model(**batch)
@@ -101,11 +106,15 @@ def train(epoch, model, train_loader, optimizer, device):
     print(f"\nEpoch {epoch} - Average training loss: {avg_train_loss:.3f}")
 
 # Test function
-def test(model, test_loader, device):
+def test(model, test_loader, device, logger):
     model.eval()
     total_loss = 0
+    progress_interval = len(test_loader) // 20  # For logging at every 5%
     progress_bar = tqdm(test_loader, desc="Evaluating")
-    for batch in progress_bar:
+    for i, batch in enumerate(progress_bar):
+        if i % progress_interval == 0:
+            logger.info(f"Evaluating Progress: {i/len(test_loader)*100:.2f}%")
+
         batch = {k: v.to(device) for k, v in batch.items()}
         with torch.no_grad():
             outputs = model(**batch)
@@ -119,6 +128,9 @@ def test(model, test_loader, device):
     print(f"\nAverage test loss: {avg_test_loss:.3f}")
 
 def train_model(model, train_loader, test_loader, epochs=3, save_path="/models/finetuned-roberta/"):
+    logger, log_filepath = setup_logger(save_path)
+    logger.info(f"Training started. Logging to {log_filepath}")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
@@ -130,8 +142,8 @@ def train_model(model, train_loader, test_loader, epochs=3, save_path="/models/f
     progress_bar_epoch = tqdm(range(epochs), desc="Epochs")
     for epoch in progress_bar_epoch:
         print(f"\nEpoch {epoch+1}/{epochs}")
-        train(epoch+1, model, train_loader, optimizer, device)
-        test(model, test_loader, device)
+        train(epoch+1, model, train_loader, optimizer, device, logger)
+        test(model, test_loader, device, logger)
 
         # Save the model after each epoch, overwriting the previous model
         model_save_path = os.path.join(save_path, f"roberta_finetuned_epoch_{epoch+1}.pt")
@@ -139,6 +151,16 @@ def train_model(model, train_loader, test_loader, epochs=3, save_path="/models/f
         print(f"Model saved to {model_save_path}")
         progress_bar_epoch.set_postfix({'Epoch': epoch+1})
 
+def setup_logger(save_path):
+    log_filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_training.log"
+    log_filepath = os.path.join(save_path, log_filename)
+    file_handler = logging.FileHandler(log_filepath, mode='w')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger = logging.getLogger()
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
+    return logger, log_filepath
 
 def main():
     # Parse command-line arguments
