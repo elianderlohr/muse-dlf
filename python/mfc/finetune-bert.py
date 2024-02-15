@@ -127,16 +127,14 @@ def test(model, test_loader, device, logger):
     avg_test_loss = total_loss / len(test_loader)
     print(f"\nAverage test loss: {avg_test_loss:.3f}")
 
-def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/"):
+def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/"):    
     logger, log_filepath = setup_logger(save_path)
     logger.info(f"Training started. Logging to {log_filepath}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
-
-    # Create the output directory if it doesn't exist
-    Path(save_path).mkdir(parents=True, exist_ok=True)
+   
 
     # add tqdm progress bar
     progress_bar_epoch = tqdm(range(epochs), desc="Epochs")
@@ -170,6 +168,9 @@ def main():
     # save_path = os.path.join(os.getcwd(), "models/finetuned-roberta/")
     parser.add_argument("--save_path", type=str, default="models/finetuned-roberta/", help="Path to save the finetuned model (default: models/finetuned-roberta/)")
     args = parser.parse_args()
+
+    # Create the output directory if it doesn't exist
+    Path(args.save_path).mkdir(parents=True, exist_ok=True)
 
     print("Loading data...")
 
