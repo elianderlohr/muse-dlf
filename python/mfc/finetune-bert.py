@@ -127,7 +127,7 @@ def test(model, test_loader, device, logger):
     avg_test_loss = total_loss / len(test_loader)
     print(f"\nAverage test loss: {avg_test_loss:.3f}")
 
-def train_model(model, train_loader, test_loader, epochs=3, save_path="/models/finetuned-roberta/"):
+def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/"):
     logger, log_filepath = setup_logger(save_path)
     logger.info(f"Training started. Logging to {log_filepath}")
 
@@ -168,7 +168,7 @@ def main():
     parser.add_argument("--batch_size", type=int, default=32, help="Input batch size for training (default: 32)")
     parser.add_argument("--epochs", type=int, default=3, help="Number of epochs to train (default: 3)")
     # save_path = os.path.join(os.getcwd(), "models/finetuned-roberta/")
-    parser.add_argument("--save_path", type=str, default="/models/finetuned-roberta/", help="Path to save the finetuned model (default: models/finetuned-roberta/)")
+    parser.add_argument("--save_path", type=str, default="models/finetuned-roberta/", help="Path to save the finetuned model (default: models/finetuned-roberta/)")
     args = parser.parse_args()
 
     print("Loading data...")
