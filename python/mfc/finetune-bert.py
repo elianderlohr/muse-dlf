@@ -196,12 +196,13 @@ def main():
 
     logger.info("Data preprocessed successfully.")
 
+    model = RobertaForMaskedLM.from_pretrained('roberta-base')
+
     if args.load_model_path:
-        model = RobertaForMaskedLM.from_pretrained(args.load_model_path)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.load_state_dict(torch.load(args.load_model_path, map_location=device))
         logger.info(f"Loaded model from {args.load_model_path}")
-    else:
-        model = RobertaForMaskedLM.from_pretrained('roberta-base')
-        logger.info("Loaded pre-trained model")
+    
 
     train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path, logger=logger)
 
