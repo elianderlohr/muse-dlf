@@ -23,6 +23,17 @@ labeled_path = "data/mfc/immigration_labeled.json"
 unlabeld_path = "data/mfc/immigration_unlabeled.json"
 codes_path = "data/mfc/codes.json"
 
+def setup_logger(save_path):
+    log_filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_training.log"
+    log_filepath = os.path.join(save_path, log_filename)
+    file_handler = logging.FileHandler(log_filepath, mode='w')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger = logging.getLogger()
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
+    return logger, log_filepath
+
 def download_nltk_resources():
     with open(os.devnull, 'w') as f:
         with redirect_stdout(f):
@@ -103,29 +114,8 @@ def train(epoch, model, train_loader, optimizer, device, logger):
 
     # Calculate the average loss over all batches.
     avg_train_loss = total_loss / len(train_loader)
-    print(f"\nEpoch {epoch} - Average training loss: {avg_train_loss:.3f}")
+    logger.info(f"\nEpoch {epoch} - Average training loss: {avg_train_loss:.3f}")
 
-# Test function
-def test(model, test_loader, device, logger):
-    model.eval()
-    total_loss = 0
-    progress_interval = len(test_loader) // 20  # For logging at every 5%
-    progress_bar = tqdm(test_loader, desc="Evaluating")
-    for i, batch in enumerate(progress_bar):
-        if i % progress_interval == 0:
-            logger.info(f"Evaluating Progress: {i/len(test_loader)*100:.2f}%")
-
-        batch = {k: v.to(device) for k, v in batch.items()}
-        with torch.no_grad():
-            outputs = model(**batch)
-            loss = outputs.loss
-
-            total_loss += loss.item()
-            progress_bar.set_postfix({'evaluation_loss': f'{loss.item()/len(batch):.3f}'})
-
-    # Calculate the average loss over all the batches.
-    avg_test_loss = total_loss / len(test_loader)
-    print(f"\nAverage test loss: {avg_test_loss:.3f}")
 
 def evaluate_model(model, test_loader, device):
     model.eval()
@@ -152,7 +142,7 @@ def train_model(model, train_loader, test_loader, epochs=3, save_path="models/fi
 
     # Modified train loop with evaluation and logging
     for epoch in range(epochs):
-        print(f"\nEpoch {epoch+1}/{epochs}")
+        logger.info(f"\nEpoch {epoch+1}/{epochs}")
         train(epoch+1, model, train_loader, optimizer, device, logger)
 
         avg_test_loss, avg_test_accuracy = evaluate_model(model, test_loader, device)
@@ -164,17 +154,6 @@ def train_model(model, train_loader, test_loader, epochs=3, save_path="models/fi
         torch.save(model.state_dict(), model_save_path)
         logger.info(f"Model saved to {model_save_path}")
 
-def setup_logger(save_path):
-    log_filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_training.log"
-    log_filepath = os.path.join(save_path, log_filename)
-    file_handler = logging.FileHandler(log_filepath, mode='w')
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    logger = logging.getLogger()
-    logger.addHandler(file_handler)
-    logger.setLevel(logging.INFO)
-    return logger, log_filepath
-
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Fine-tune a model on a text dataset.")
@@ -185,10 +164,16 @@ def main():
     parser.add_argument("--load_model_path", type=str, default="", help="Path to load a pre-trained model (default: '')")
     args = parser.parse_args()
 
+    logger, log_filepath = setup_logger(args.save_path)
+
+    logger.info("Command-line arguments: " + str(args))
+
+    logger.info(f"Training started. Logging to {log_filepath}")
+
     # Create the output directory if it doesn't exist
     Path(args.save_path).mkdir(parents=True, exist_ok=True)
 
-    print("Loading data...")
+    logger.info("Loading data...")
 
     labeled, unlabeld, codes = load_data()
     df_labeled = get_labeled_data(labeled, codes)
@@ -196,9 +181,9 @@ def main():
     df_labeled = preprocess_labeled_df(df_labeled)
     df = pd.concat([df_labeled, df_unlabeled])
     
-    print("Data loaded successfully.")
+    logger.info("Data loaded successfully.")
 
-    print("Preprocessing data...")
+    logger.info("Preprocessing data...")
     
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
     train_df, test_df = train_test_split(df["text"].tolist(), test_size=0.2, random_state=42)
@@ -209,16 +194,16 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=data_collator)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=data_collator)
 
-    print("Data preprocessed successfully.")
+    logger.info("Data preprocessed successfully.")
 
     if args.load_model_path:
         model = RobertaForMaskedLM.from_pretrained(args.load_model_path)
-        print(f"Loaded model from {args.load_model_path}")
+        logger.info(f"Loaded model from {args.load_model_path}")
     else:
         model = RobertaForMaskedLM.from_pretrained('roberta-base')
-        print("Loaded pre-trained model")
+        logger.info("Loaded pre-trained model")
 
-    train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path)
+    train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path, logger=logger)
 
 if __name__ == "__main__":
     welcome_message = """
