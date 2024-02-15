@@ -127,27 +127,42 @@ def test(model, test_loader, device, logger):
     avg_test_loss = total_loss / len(test_loader)
     print(f"\nAverage test loss: {avg_test_loss:.3f}")
 
-def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/"):    
-    logger, log_filepath = setup_logger(save_path)
-    logger.info(f"Training started. Logging to {log_filepath}")
+def evaluate_model(model, test_loader, device):
+    model.eval()
+    total_loss, total_accuracy = 0, 0
+    for batch in test_loader:
+        batch = {k: v.to(device) for k, v in batch.items()}
+        with torch.no_grad():
+            outputs = model(**batch)
+            logits = outputs.logits
+            loss = outputs.loss
+            predictions = torch.argmax(logits, dim=-1)
+            labels = batch['labels']
+            total_accuracy += (predictions == labels).float().mean()
+            total_loss += loss.item()
 
+    avg_loss = total_loss / len(test_loader)
+    avg_accuracy = total_accuracy / len(test_loader)
+    return avg_loss, avg_accuracy
+
+def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/", logger=None):    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
-   
 
-    # add tqdm progress bar
-    progress_bar_epoch = tqdm(range(epochs), desc="Epochs")
-    for epoch in progress_bar_epoch:
+    # Modified train loop with evaluation and logging
+    for epoch in range(epochs):
         print(f"\nEpoch {epoch+1}/{epochs}")
         train(epoch+1, model, train_loader, optimizer, device, logger)
-        test(model, test_loader, device, logger)
 
-        # Save the model after each epoch, overwriting the previous model
-        model_save_path = os.path.join(save_path, f"roberta_finetuned_epoch_{epoch+1}.pt")
+        avg_test_loss, avg_test_accuracy = evaluate_model(model, test_loader, device)
+        logger.info(f"Epoch {epoch+1} - Test Loss: {avg_test_loss}, Test Accuracy: {avg_test_accuracy}")
+
+        # Save the model after each epoch
+        model_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_roberta_finetuned_epoch_" + str(epoch+1) + ".pt"
+        model_save_path = os.path.join(save_path, model_name)
         torch.save(model.state_dict(), model_save_path)
-        print(f"Model saved to {model_save_path}")
-        progress_bar_epoch.set_postfix({'Epoch': epoch+1})
+        logger.info(f"Model saved to {model_save_path}")
 
 def setup_logger(save_path):
     log_filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_training.log"
@@ -167,6 +182,7 @@ def main():
     parser.add_argument("--epochs", type=int, default=3, help="Number of epochs to train (default: 3)")
     # save_path = os.path.join(os.getcwd(), "models/finetuned-roberta/")
     parser.add_argument("--save_path", type=str, default="models/finetuned-roberta/", help="Path to save the finetuned model (default: models/finetuned-roberta/)")
+    parser.add_argument("--load_model_path", type=str, default="", help="Path to load a pre-trained model (default: '')")
     args = parser.parse_args()
 
     # Create the output directory if it doesn't exist
@@ -195,7 +211,13 @@ def main():
 
     print("Data preprocessed successfully.")
 
-    model = RobertaForMaskedLM.from_pretrained('roberta-base')
+    if args.load_model_path:
+        model = RobertaForMaskedLM.from_pretrained(args.load_model_path)
+        print(f"Loaded model from {args.load_model_path}")
+    else:
+        model = RobertaForMaskedLM.from_pretrained('roberta-base')
+        print("Loaded pre-trained model")
+
     train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path)
 
 if __name__ == "__main__":
