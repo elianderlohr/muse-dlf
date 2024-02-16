@@ -149,7 +149,7 @@ def train_model(model, train_loader, test_loader, epochs=3, save_path="models/fi
         logger.info(f"Epoch {epoch+1} - Test Loss: {avg_test_loss}, Test Accuracy: {avg_test_accuracy}")
 
         # Save the model after each epoch
-        model_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_roberta_finetuned_epoch_" + str(epoch+1) + ".pt"
+        model_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_roberta_finetuned_epoch_" + str(epoch+1) + ".pth"
         model_save_path = os.path.join(save_path, model_name)
         torch.save(model.state_dict(), model_save_path)
         logger.info(f"Model saved to {model_save_path}")
