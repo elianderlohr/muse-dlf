@@ -98,6 +98,8 @@ def train(epoch, model, train_loader, optimizer, device, scheduler, logger, grad
     total_loss = 0.0
     model.zero_grad()
 
+    logger.info(f"Gradient accumulation steps: {gradient_accumulation_steps}")
+
     progress_interval = len(train_loader) // 20
 
     for step, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch} - Training")):
@@ -138,7 +140,7 @@ def evaluate_model(model, test_loader, device):
     return avg_loss, perplexity.item()
 
 
-def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/", logger=None, gradient_accumulation_steps=1):    
+def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/", logger=None, gradient_accumulation_steps=4):    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
