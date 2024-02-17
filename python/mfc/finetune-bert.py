@@ -98,6 +98,8 @@ def train(epoch, model, train_loader, optimizer, device, scheduler, logger, grad
     total_loss = 0.0
     model.zero_grad()
 
+    progress_interval = len(train_loader) // 20
+
     for step, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch} - Training")):
         batch = {k: v.to(device) for k, v in batch.items()}
         outputs = model(**batch)
@@ -108,6 +110,9 @@ def train(epoch, model, train_loader, optimizer, device, scheduler, logger, grad
             optimizer.step()
             scheduler.step()  # Update the learning rate.
             model.zero_grad()
+
+        if step % progress_interval == 0:
+            logger.info(f"Epoch {epoch} - Step {step+1}/{len(train_loader)} - Loss: {loss.item()}")
 
         total_loss += loss.item()
 
