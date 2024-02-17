@@ -5,7 +5,7 @@ import json
 import pandas as pd
 from nltk.tokenize import sent_tokenize
 import nltk
-from transformers import RobertaTokenizer, RobertaForMaskedLM, AdamW, Trainer, TrainingArguments, DataCollatorForLanguageModeling
+from transformers import RobertaTokenizer, RobertaForMaskedLM, AdamW, Trainer, TrainingArguments, DataCollatorForLanguageModeling, get_linear_schedule_with_warmup
 import torch
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
@@ -93,60 +93,65 @@ class ArticlesDataset(Dataset):
         return len(self.encodings.input_ids)
 
 # Train function
-def train(epoch, model, train_loader, optimizer, device, logger):
+def train(epoch, model, train_loader, optimizer, device, scheduler, logger, gradient_accumulation_steps=1):
     model.train()
-    total_loss = 0
-    progress_interval = len(train_loader) // 20  # For logging at every 5%
-    progress_bar = tqdm(train_loader, desc=f"Epoch {epoch} - Training")
-    for i, batch in enumerate(progress_bar):
-        if i % progress_interval == 0:
-            logger.info(f"Epoch {epoch} - Training Progress: {i/len(train_loader)*100:.2f}%")
+    total_loss = 0.0
+    model.zero_grad()
 
+    for step, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch} - Training")):
         batch = {k: v.to(device) for k, v in batch.items()}
-        optimizer.zero_grad()
         outputs = model(**batch)
-        loss = outputs.loss
+        loss = outputs.loss / gradient_accumulation_steps
         loss.backward()
-        optimizer.step()
+
+        if (step + 1) % gradient_accumulation_steps == 0 or step == len(train_loader) - 1:
+            optimizer.step()
+            scheduler.step()  # Update the learning rate.
+            model.zero_grad()
 
         total_loss += loss.item()
-        progress_bar.set_postfix({'training_loss': f'{loss.item()/len(batch):.3f}'})
 
-    # Calculate the average loss over all batches.
-    avg_train_loss = total_loss / len(train_loader)
-    logger.info(f"\nEpoch {epoch} - Average training loss: {avg_train_loss:.3f}")
+    # Logging
+    avg_loss = total_loss / len(train_loader)
+    logger.info(f"Epoch {epoch} - Average training loss: {avg_loss:.4f}")
 
 
 def evaluate_model(model, test_loader, device):
     model.eval()
-    total_loss, total_accuracy = 0, 0
+    total_loss = 0
+
     for batch in test_loader:
         batch = {k: v.to(device) for k, v in batch.items()}
         with torch.no_grad():
             outputs = model(**batch)
-            logits = outputs.logits
             loss = outputs.loss
-            predictions = torch.argmax(logits, dim=-1)
-            labels = batch['labels']
-            total_accuracy += (predictions == labels).float().mean()
             total_loss += loss.item()
 
     avg_loss = total_loss / len(test_loader)
-    avg_accuracy = total_accuracy / len(test_loader)
-    return avg_loss, avg_accuracy
+    perplexity = torch.exp(torch.tensor(avg_loss))
 
-def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/", logger=None):    
+    return avg_loss, perplexity.item()
+
+
+def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/", logger=None, gradient_accumulation_steps=1):    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+
+    # Assuming 'train_dataset' is your dataset for training
+    total_steps = len(train_loader) // gradient_accumulation_steps * epochs
+
     optimizer = AdamW(model.parameters(), lr=5e-5)
+    scheduler = get_linear_schedule_with_warmup(optimizer, 
+                                                num_warmup_steps=0, 
+                                                num_training_steps=total_steps)
 
     # Modified train loop with evaluation and logging
     for epoch in range(epochs):
         logger.info(f"\nEpoch {epoch+1}/{epochs}")
-        train(epoch+1, model, train_loader, optimizer, device, logger)
+        train(epoch+1, model, train_loader, optimizer, device, logger, scheduler, gradient_accumulation_steps=gradient_accumulation_steps)
 
-        avg_test_loss, avg_test_accuracy = evaluate_model(model, test_loader, device)
-        logger.info(f"Epoch {epoch+1} - Test Loss: {avg_test_loss}, Test Accuracy: {avg_test_accuracy}")
+        avg_test_loss, test_perplexity = evaluate_model(model, test_loader, device)
+        logger.info(f"Epoch {epoch+1} - Validation Loss: {avg_test_loss}, Perplexity: {test_perplexity}")
 
         # Save the model after each epoch
         model_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_roberta_finetuned_epoch_" + str(epoch+1) + ".pth"
