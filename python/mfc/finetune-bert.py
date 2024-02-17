@@ -148,7 +148,7 @@ def train_model(model, train_loader, test_loader, epochs=3, save_path="models/fi
     # Modified train loop with evaluation and logging
     for epoch in range(epochs):
         logger.info(f"\nEpoch {epoch+1}/{epochs}")
-        train(epoch+1, model, train_loader, optimizer, device, logger, scheduler, gradient_accumulation_steps=gradient_accumulation_steps)
+        train(epoch+1, model, train_loader, optimizer, device, scheduler, logger, gradient_accumulation_steps=gradient_accumulation_steps)
 
         avg_test_loss, test_perplexity = evaluate_model(model, test_loader, device)
         logger.info(f"Epoch {epoch+1} - Validation Loss: {avg_test_loss}, Perplexity: {test_perplexity}")
