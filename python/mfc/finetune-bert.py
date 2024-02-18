@@ -93,7 +93,7 @@ class ArticlesDataset(Dataset):
         return len(self.encodings.input_ids)
 
 # Train function
-def train(epoch, model, train_loader, optimizer, device, scheduler, logger, gradient_accumulation_steps=1):
+def train(epoch, model, train_loader, optimizer, device, logger, gradient_accumulation_steps=1):
     model.train()
     total_loss = 0.0
     model.zero_grad()
@@ -110,12 +110,7 @@ def train(epoch, model, train_loader, optimizer, device, scheduler, logger, grad
 
         if (step + 1) % gradient_accumulation_steps == 0 or step == len(train_loader) - 1:
             optimizer.step()
-            scheduler.step()  # Update the learning rate.
             model.zero_grad()
-
-            # Log the current learning rate
-            current_lr = scheduler.get_last_lr()[0]  # Assuming one group for simplicity
-            logger.info(f"Step {step+1}: Learning rate = {current_lr}")
 
         if step % progress_interval == 0:
             logger.info(f"Epoch {epoch} - Step {step+1}/{len(train_loader)} - Loss: {loss.item()}")
@@ -144,22 +139,16 @@ def evaluate_model(model, test_loader, device):
     return avg_loss, perplexity.item()
 
 
-def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/", logger=None, gradient_accumulation_steps=4):    
+def train_model(model, train_loader, test_loader, epochs=3, save_path="models/finetuned-roberta/", logger=None, lr=5e-5, gradient_accumulation_steps=1):    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Assuming 'train_dataset' is your dataset for training
-    total_steps = len(train_loader) // gradient_accumulation_steps * epochs
+    optimizer = AdamW(model.parameters(), lr=lr)
 
-    optimizer = AdamW(model.parameters(), lr=5e-5)
-    scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps=0, 
-                                                num_training_steps=total_steps)
-
-    # Modified train loop with evaluation and logging
+    # The training loop remains mostly the same
     for epoch in range(epochs):
         logger.info(f"\nEpoch {epoch+1}/{epochs}")
-        train(epoch+1, model, train_loader, optimizer, device, scheduler, logger, gradient_accumulation_steps=gradient_accumulation_steps)
+        train(epoch+1, model, train_loader, optimizer, device, logger, gradient_accumulation_steps=gradient_accumulation_steps)
 
         avg_test_loss, test_perplexity = evaluate_model(model, test_loader, device)
         logger.info(f"Epoch {epoch+1} - Validation Loss: {avg_test_loss}, Perplexity: {test_perplexity}")
@@ -175,9 +164,11 @@ def main():
     parser = argparse.ArgumentParser(description="Fine-tune a model on a text dataset.")
     parser.add_argument("--batch_size", type=int, default=32, help="Input batch size for training (default: 32)")
     parser.add_argument("--epochs", type=int, default=3, help="Number of epochs to train (default: 3)")
-    # save_path = os.path.join(os.getcwd(), "models/finetuned-roberta/")
     parser.add_argument("--save_path", type=str, default="models/finetuned-roberta/", help="Path to save the finetuned model (default: models/finetuned-roberta/)")
-    parser.add_argument("--load_model_path", type=str, default="", help="Path to load a pre-trained model (default: '')")
+    parser.add_argument("--load_model_path", type=str, default="", help="Path to load a pre-trained model (default: '')")    
+    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate (default: 5e-5)")
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=1, help="Number of gradient accumulation steps (default: 1)")
+
     args = parser.parse_args()
 
     logger, log_filepath = setup_logger(args.save_path)
@@ -223,7 +214,7 @@ def main():
 
     logger.info("Data preprocessed successfully.")
 
-    train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path, logger=logger)
+    train_model(model, train_loader, test_loader, epochs=args.epochs, save_path=args.save_path, logger=logger, lr=args.lr, gradient_accumulation_steps=args.gradient_accumulation_steps)
 
 if __name__ == "__main__":
     welcome_message = """
