@@ -113,6 +113,10 @@ def train(epoch, model, train_loader, optimizer, device, scheduler, logger, grad
             scheduler.step()  # Update the learning rate.
             model.zero_grad()
 
+            # Log the current learning rate
+            current_lr = scheduler.get_last_lr()[0]  # Assuming one group for simplicity
+            logger.info(f"Step {step+1}: Learning rate = {current_lr}")
+
         if step % progress_interval == 0:
             logger.info(f"Epoch {epoch} - Step {step+1}/{len(train_loader)} - Loss: {loss.item()}")
 
