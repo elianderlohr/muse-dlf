@@ -302,8 +302,8 @@ def main():
     )
 
     # print shape of the train and test dataloader
-    print("Train dataloader shape:", train_dataloader.dataset.shape)
-    print("Test dataloader shape:", test_dataloader.dataset.shape)
+    print("Train dataloader shape:", train_dataloader.dataset[0].shape)
+    print("Test dataloader shape:", test_dataloader.dataset[0].shape)
 
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
