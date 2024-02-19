@@ -57,6 +57,15 @@ def load_model(
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Train MUSE model")
+    # data path
+    parser.add_argument(
+        "--data_path",
+        type=str,
+        default="",
+        help="Path to the data file",
+        required=True,
+    )
+
     parser.add_argument(
         "--embedding_dim",
         type=int,
@@ -213,7 +222,18 @@ def main():
     )
 
     # Load the data
-    _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader()
+    _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
+        args.data_path,
+        "json",
+        dataframe_path={
+            "srl": "data/srls/mfc/srls.pkl",
+            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+        },
+        force_recalculate={
+            "srl": False,
+            "frameaxis": False,
+        },
+    )
 
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=5e-4)

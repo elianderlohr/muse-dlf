@@ -24,21 +24,21 @@ class PreProcessor:
         max_arg_length=16,
         test_size=0.1,
         frameaxis_dim=20,
-        data_format="pickle",
+        model_name="bert-base-uncased",
     ):
         """
         Initializes the PreProcessor.
 
         Args:
-            tokenizer: Tokenizer instance from transformers library.
-            data_source (str): Path to the data file or directory containing JSON files.
-            tokenizer: Tokenizer instance from transformers library.
-            data_format (str): Format of the data source ('json', 'csv', 'pickle').
-            force_recalculate (bool): Whether to force recalculation of SRL and FrameAxis.
-            srl_model_path (str): Path or URL to the SRL model.
-            batch_size, max_sentences_per_article, max_sentence_length,
-            max_args_per_sentence, max_arg_length, test_size, frameaxis_dim: Parameters for dataset and dataloader preparation.
-            data_format: Format of the data source ('json', 'csv', 'pickle').
+            tokenizer: The tokenizer to be used for tokenizing the input.
+            batch_size: The batch size for the DataLoader.
+            max_sentences_per_article: The maximum number of sentences in the input.
+            max_sentence_length: The maximum length of a sentence.
+            max_args_per_sentence: The maximum number of arguments per sentence.
+            max_arg_length: The maximum length of an argument.
+            test_size: The size of the test set.
+            frameaxis_dim: The dimension of the FrameAxis embeddings.
+            model_name: The name of the BERT model to be used.
         """
         self.tokenizer = tokenizer
         self.batch_size = batch_size
@@ -48,21 +48,20 @@ class PreProcessor:
         self.max_arg_length = max_arg_length
         self.test_size = test_size
         self.frameaxis_dim = frameaxis_dim
+        self.model_name = model_name
 
-        self.data_format = data_format
-
-    def _load_data(self):
+    def _load_data(self, path, format):
         """
         Loads data from the specified source and format.
         """
-        if self.data_format == "json":
-            with open(self.data_source) as f:
+        if format == "json":
+            with open(path) as f:
                 data = json.load(f)
             df = pd.DataFrame(data)
-        elif self.data_format == "csv":
-            df = pd.read_csv(self.data_source)
-        elif self.data_format == "pickle":
-            with open(self.data_source, "rb") as f:
+        elif format == "csv":
+            df = pd.read_csv(path)
+        elif format == "pickle":
+            with open(path, "rb") as f:
                 df = pickle.load(f)
         else:
             raise ValueError("Unsupported data format specified.")
@@ -71,12 +70,14 @@ class PreProcessor:
     def _preprocess(
         self,
         df,
-        model_name="bert-base-uncased",
         dataframe_path={
-            "srl": "../notebooks/classifier/X_srl_filtered.pkl",
-            "frameaxis": "../notebooks/classifier/X_frameaxis_filtered.pkl",
+            "srl": "data/srls/mfc/srls.pkl",
+            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
         },
-        force_recalculate={"srl": False, "frameaxis": False},
+        force_recalculate={
+            "srl": False,
+            "frameaxis": False,
+        },
     ):
         """
         Processes the data by preparing the SRL and FrameAxis components.
@@ -96,7 +97,7 @@ class PreProcessor:
             df,
             dataframe_path=dataframe_path.get("frameaxis", None),
             force_recalculate=force_recalculate.get("frameaxis", False),
-            model_name=model_name,
+            model_name=self.model_name,
         )
         frameaxis_df = frameaxis_processor.get_frameaxis_data()
 
@@ -159,14 +160,28 @@ class PreProcessor:
 
         return X_subset, X_srl_subset, frameaxis_df_subset, y_subset
 
-    def get_dataloader(self):
+    def get_dataloader(
+        self,
+        path,
+        format,
+        dataframe_path={
+            "srl": "data/srls/mfc/srls.pkl",
+            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+        },
+        force_recalculate={
+            "srl": False,
+            "frameaxis": False,
+        },
+    ):
         """
         Returns the train and test datasets.
         """
 
-        df = self._load_data()
+        df = self._load_data(path=path, format=format)
 
-        X, X_srl, X_frameaxis, y = self._preprocess(df)
+        X, X_srl, X_frameaxis, y = self._preprocess(
+            df, dataframe_path, force_recalculate
+        )
 
         # Splitting the data into train and test sets
         X_train, X_test, y_train, y_test = train_test_split(
