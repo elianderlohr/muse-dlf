@@ -220,6 +220,14 @@ def main():
         help="Force recalculate FrameAxis",
     )
 
+    # path_antonym_pairs
+    parser.add_argument(
+        "--path_antonym_pairs",
+        type=str,
+        default="",
+        help="Path to the antonym pairs file",
+    )
+
     args = parser.parse_args()
 
     model = load_model(
@@ -250,6 +258,8 @@ def main():
         max_arg_length=args.max_arg_length,
         test_size=args.test_size,
         frameaxis_dim=args.frameaxis_dim,
+        model_name=args.bert_model_name,
+        path_antonym_pairs=args.path_antonym_pairs,
     )
 
     # Load the data

@@ -14,7 +14,7 @@ class FrameAxisProcessor:
     def __init__(
         self,
         df,
-        antonym_pairs_path="frameaxis/axes/custom.tsv",
+        path_antonym_pairs="frameaxis/axes/custom.tsv",
         dataframe_path=None,
         model_name="bert-base-uncased",
         force_recalculate=False,
@@ -25,7 +25,7 @@ class FrameAxisProcessor:
 
         Args:
         df (pd.DataFrame): DataFrame with text data
-        antonym_pairs_path (str): Path to the antonym pairs file
+        path_antonym_pairs (str): Path to the antonym pairs file
         dataframe_path (str): Path to save the FrameAxis Embeddings DataFrame for saving and loading
         model_name (str): Name or path of the model
         force_recalculate (bool): If True, recalculate the FrameAxis Embeddings
@@ -42,7 +42,7 @@ class FrameAxisProcessor:
             self.model.cuda()
 
         antonym_pairs = {}
-        with open(antonym_pairs_path) as f:
+        with open(path_antonym_pairs) as f:
             antonym_pairs = json.load(f)
 
         self.antonym_pairs_embeddings = self.precompute_antonym_embeddings(
