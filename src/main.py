@@ -188,6 +188,37 @@ def main():
         default=5e-4,
         help="Decay parameter for the temperature",
     )
+    # path_srls
+    parser.add_argument(
+        "--path_srls",
+        type=str,
+        default="",
+        help="Path to the SRLs file",
+    )
+
+    # force recalculate srls
+    parser.add_argument(
+        "--force_recalculate_srls",
+        type=bool,
+        default=False,
+        help="Force recalculate SRLs",
+    )
+
+    # path_frameaxis
+    parser.add_argument(
+        "--path_frameaxis",
+        type=str,
+        default="",
+        help="Path to the FrameAxis file",
+    )
+
+    # force recalculate frameaxis
+    parser.add_argument(
+        "--force_recalculate_frameaxis",
+        type=bool,
+        default=False,
+        help="Force recalculate FrameAxis",
+    )
 
     args = parser.parse_args()
 
@@ -226,8 +257,8 @@ def main():
         args.data_path,
         "json",
         dataframe_path={
-            "srl": "data/srls/mfc/srls.pkl",
-            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+            "srl": args.path_srls,
+            "frameaxis": args.path_frameaxis,
         },
         force_recalculate={
             "srl": False,
