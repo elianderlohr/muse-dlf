@@ -13,13 +13,13 @@ from transformers import BertTokenizer
 def welcome_message():
     print(
         """#####################################################
-             #                                                   #
-             #              Welcome to MUSE!                     #
-             #                                                   #
-             # MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
-             #          Learning for Frame Classification        #
-             #                                                   #
-             #####################################################"""
+#                                                   #
+#              Welcome to MUSE!                     #
+#                                                   #
+# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
+#          Learning for Frame Classification        #
+#                                                   #
+#####################################################"""
     )
 
 
