@@ -9,6 +9,20 @@ from training.trainer import Trainer
 from transformers import BertTokenizer
 
 
+# welcome console message
+def welcome_message():
+    print(
+        """#####################################################
+             #                                                   #
+             #              Welcome to MUSE!                     #
+             #                                                   #
+             # MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
+             #          Learning for Frame Classification        #
+             #                                                   #
+             #####################################################"""
+    )
+
+
 def load_model(
     embedding_dim,
     D_h,
@@ -24,11 +38,6 @@ def load_model(
     path="",
     device="cuda",
 ):
-    # print all input parameters
-    print("Parameters:")
-    for key, value in locals().items():
-        print(f"{key}: {value}")
-
     # Model instantiation
     model = MUSE(
         embedding_dim,
@@ -55,6 +64,9 @@ def load_model(
 
 
 def main():
+
+    welcome_message()
+
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Train MUSE model")
     # data path
@@ -229,6 +241,10 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # running the model with the given arguments
+    print("Running the model with the following arguments:")
+    print(args)
 
     model = load_model(
         embedding_dim=args.embedding_dim,
