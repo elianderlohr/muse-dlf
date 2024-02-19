@@ -166,12 +166,6 @@ def main():
         help="Size of the test set",
     )
     parser.add_argument(
-        "--frameaxis_dim",
-        type=int,
-        default=20,
-        help="Dimension of the FrameAxis",
-    )
-    parser.add_argument(
         "--epochs",
         type=int,
         default=3,
