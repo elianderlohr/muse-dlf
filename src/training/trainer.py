@@ -8,9 +8,6 @@ from tqdm import tqdm
 import datetime
 import math
 import wandb
-import dotenv
-
-dotenv.load_dotenv()
 
 
 class Trainer:
@@ -24,6 +21,7 @@ class Trainer:
         device="cuda",
         save_path="../notebooks/",
         wandb_project_name="your_project_name",
+        wandb_api_key="your_api_key",
         tau_min=1,
         tau_decay=0.95,
     ):
@@ -36,7 +34,7 @@ class Trainer:
         self.save_path = save_path
 
         # Initialize Weights & Biases
-        wandb.login(key=os.getenv("WANDB_API_KEY"))
+        wandb.login(key=wandb_api_key)
 
         self.run = wandb.init(
             project=wandb_project_name,

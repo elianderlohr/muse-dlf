@@ -78,6 +78,15 @@ def main():
         required=True,
     )
 
+    # wandb_api_key
+    parser.add_argument(
+        "--wandb_api_key",
+        type=str,
+        default="",
+        help="Wandb API key",
+        required=True,
+    )
+
     parser.add_argument(
         "--embedding_dim",
         type=int,
@@ -303,6 +312,7 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         wandb_project_name="muse",
+        wandb_api_key=args.wandb_api_key,
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
     )
