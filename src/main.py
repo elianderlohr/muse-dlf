@@ -20,7 +20,6 @@ def load_model(
     frameaxis_dim,
     dropout_prob,
     bert_model_name="bert-base-uncased",
-    load=True,
     path="",
     device="cuda",
 ):
@@ -46,7 +45,7 @@ def load_model(
 
     model = model.to(device)
 
-    if load:
+    if path:
         print("Loading model from path:", path)
         assert path != ""
         model.load_state_dict(torch.load(path, map_location=device))
@@ -124,12 +123,6 @@ def main():
         help="Name of the BERT model",
     )
     parser.add_argument(
-        "--load",
-        type=bool,
-        default=True,
-        help="Whether to load the model from a file",
-    )
-    parser.add_argument(
         "--path",
         type=str,
         default="",
@@ -200,7 +193,6 @@ def main():
         frameaxis_dim=args.frameaxis_dim,
         dropout_prob=args.dropout_prob,
         bert_model_name=args.bert_model_name,
-        load=args.load,
         path=args.path,
         device="cuda",
     )
