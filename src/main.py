@@ -301,6 +301,10 @@ def main():
         },
     )
 
+    # loop over elements of train_dataloader.dataset[0]
+    for i in train_dataloader.dataset[0]:
+        print(i.shape)
+
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=5e-4)
