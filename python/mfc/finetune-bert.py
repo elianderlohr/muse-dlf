@@ -5,7 +5,7 @@ import json
 import pandas as pd
 from nltk.tokenize import sent_tokenize
 import nltk
-from transformers import RobertaTokenizer, RobertaForMaskedLM, AdamW, Trainer, TrainingArguments, DataCollatorForLanguageModeling, get_linear_schedule_with_warmup
+from transformers import RobertaTokenizer, RobertaForMaskedLM, AdamW, Trainer, TrainingArguments, DataCollatorForLanguageModeling, get_scheduler
 import torch
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
@@ -99,7 +99,7 @@ def train(epoch, model, train_loader, optimizer, device, logger, gradient_accumu
     model.zero_grad()
 
     logger.info(f"Gradient accumulation steps: {gradient_accumulation_steps}")
-
+    
     progress_interval = len(train_loader) // 20
 
     for step, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch} - Training")):

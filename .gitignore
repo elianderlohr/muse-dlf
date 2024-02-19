@@ -6,3 +6,4 @@ data/glove
 .ipynb_checkpoints
 .pyo
 .pyc
+.env
