@@ -55,7 +55,7 @@ class Trainer:
 
         local_steps = 0
         for batch_idx, batch in enumerate(
-            tqdm(train_dataloader, desc=f"Epoch {epoch}")
+            tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
         ):
             global_steps += 1
             if global_steps % 50 == 0:
@@ -168,7 +168,7 @@ class Trainer:
 
         with torch.no_grad():
             for batch_idx, batch in enumerate(
-                tqdm(test_dataloader, desc=f"Epoch {epoch}")
+                tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
             ):
                 sentence_ids = batch["sentence_ids"].to(device)
                 sentence_attention_masks = batch["sentence_attention_masks"].to(device)
@@ -299,7 +299,7 @@ class Trainer:
 
         for epoch in range(epochs):
             self._train(
-                epoch,
+                epoch + 1,
                 self.model,
                 self.train_dataloader,
                 tau,
