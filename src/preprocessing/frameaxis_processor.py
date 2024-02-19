@@ -186,5 +186,7 @@ class FrameAxisProcessor:
 
             return frameaxis_df
         else:
-            print("Loading FrameAxis Embeddings from CSV")
-            return pd.read_csv(self.dataframe_path)
+            # load from pickle
+            print("Loading FrameAxis Embeddings")
+            with open(self.dataframe_path, "rb") as f:
+                frameaxis_df = pickle.load(f)
