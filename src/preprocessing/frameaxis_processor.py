@@ -190,3 +190,5 @@ class FrameAxisProcessor:
             print("Loading FrameAxis Embeddings")
             with open(self.dataframe_path, "rb") as f:
                 frameaxis_df = pickle.load(f)
+
+            return frameaxis_df

@@ -102,6 +102,7 @@ class PreProcessor:
             force_recalculate=force_recalculate.get("frameaxis", False),
             model_name=self.model_name,
             path_antonym_pairs=self.path_antonym_pairs,
+            save_type="pickle",
         )
         frameaxis_df = frameaxis_processor.get_frameaxis_data()
 
