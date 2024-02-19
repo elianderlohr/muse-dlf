@@ -167,7 +167,9 @@ class Trainer:
         all_labels = []
 
         with torch.no_grad():
-            for batch in test_dataloader:
+            for batch_idx, batch in enumerate(
+                tqdm(test_dataloader, desc=f"Epoch {epoch}")
+            ):
                 sentence_ids = batch["sentence_ids"].to(device)
                 sentence_attention_masks = batch["sentence_attention_masks"].to(device)
 
