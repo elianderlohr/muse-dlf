@@ -48,7 +48,7 @@ class Trainer:
         self.tau_min = tau_min
         self.tau_decay = tau_decay
 
-    def _train(self, epoch, model, train_dataloader, device, tau, alpha):
+    def _train(self, epoch, model, train_dataloader, tau, alpha, device):
         model.train()
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
         global global_steps
@@ -296,10 +296,9 @@ class Trainer:
                 epoch,
                 self.model,
                 self.train_dataloader,
-                self.optimizer,
-                self.device,
                 tau,
                 alpha,
+                self.device,
             )
             metrics = self._evaluate(
                 epoch, self.model, self.test_dataloader, self.device, tau
