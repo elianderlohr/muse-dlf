@@ -291,6 +291,9 @@ class Trainer:
         tau = 1
         scheduler = StepLR(self.optimizer, step_size=2, gamma=0.1)
 
+        global global_steps
+        global_steps = 0
+
         for epoch in range(epochs):
             self._train(
                 epoch,
