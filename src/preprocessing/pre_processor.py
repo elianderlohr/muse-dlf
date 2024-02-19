@@ -24,6 +24,7 @@ class PreProcessor:
         max_arg_length=16,
         test_size=0.1,
         frameaxis_dim=20,
+        data_format="pickle",
     ):
         """
         Initializes the PreProcessor.
@@ -37,6 +38,7 @@ class PreProcessor:
             srl_model_path (str): Path or URL to the SRL model.
             batch_size, max_sentences_per_article, max_sentence_length,
             max_args_per_sentence, max_arg_length, test_size, frameaxis_dim: Parameters for dataset and dataloader preparation.
+            data_format: Format of the data source ('json', 'csv', 'pickle').
         """
         self.tokenizer = tokenizer
         self.batch_size = batch_size
@@ -46,6 +48,8 @@ class PreProcessor:
         self.max_arg_length = max_arg_length
         self.test_size = test_size
         self.frameaxis_dim = frameaxis_dim
+
+        self.data_format = data_format
 
     def _load_data(self):
         """
