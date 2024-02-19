@@ -249,6 +249,14 @@ def main():
         help="Path to the antonym pairs file",
     )
 
+    # save_path
+    parser.add_argument(
+        "--save_path",
+        type=str,
+        default="",
+        help="Path to save the model",
+    )
+
     args = parser.parse_args()
 
     # running the model with the given arguments
@@ -316,6 +324,7 @@ def main():
         wandb_api_key=args.wandb_api_key,
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
+        save_path=args.save_path,
     )
 
     trainer.run_training(epochs=args.epochs, alpha=0.5)
