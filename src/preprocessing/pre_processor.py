@@ -2,8 +2,8 @@ import json
 import os
 import pandas as pd
 from preprocessing.datasets.article_dataset import ArticleDataset, custom_collate_fn
-from src.preprocessing.frameaxis_processor import FrameAxisProcessor
-from src.preprocessing.srl_processor import SRLProcessor
+from preprocessing.frameaxis_processor import FrameAxisProcessor
+from preprocessing.srl_processor import SRLProcessor
 import torch
 from torch.utils.data import DataLoader
 from allennlp.predictors.predictor import Predictor

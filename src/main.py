@@ -1,6 +1,6 @@
 import argparse
 from model.muse.muse import MUSE
-from src.preprocessing.pre_processor import PreProcessor
+from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
 import torch.optim as optim
