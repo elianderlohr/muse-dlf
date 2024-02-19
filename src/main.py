@@ -120,25 +120,25 @@ def main():
     parser.add_argument(
         "--num_sentences",
         type=int,
-        default=5,
+        default=24,
         help="Number of sentences in the input",
     )
     parser.add_argument(
         "--K",
         type=int,
-        default=5,
+        default=15,
         help="Number of sentences in the input",
     )
     parser.add_argument(
         "--num_frames",
         type=int,
-        default=5,
+        default=15,
         help="Number of sentences in the input",
     )
     parser.add_argument(
         "--frameaxis_dim",
         type=int,
-        default=5,
+        default=15,
         help="Number of sentences in the input",
     )
     parser.add_argument(
@@ -301,6 +301,11 @@ def main():
         },
     )
 
+    # print shape of the train and test dataloader
+    print("Train dataloader shape:", train_dataloader.dataset.shape)
+    print("Test dataloader shape:", test_dataloader.dataset.shape)
+
+    # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
