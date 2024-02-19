@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from training.trainer import Trainer
+from transformers import BertTokenizer
 
 
 def load_model(
@@ -197,7 +198,7 @@ def main():
         device="cuda",
     )
 
-    tokenizer = model.tokenizer
+    tokenizer = BertTokenizer.from_pretrained(args.bert_model_name)
 
     # Preprocess the input
     preprocessor = PreProcessor(
