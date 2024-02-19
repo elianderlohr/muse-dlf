@@ -53,6 +53,7 @@ class Trainer:
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
         global global_steps
 
+        local_steps = 0
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Epoch {epoch}")
         ):
