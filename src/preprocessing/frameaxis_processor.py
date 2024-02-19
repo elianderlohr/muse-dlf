@@ -1,0 +1,190 @@
+import numpy as np
+import pandas as pd
+from tqdm.notebook import tqdm
+import torch
+from transformers import BertTokenizer, BertModel
+from nltk.corpus import stopwords
+import pickle
+from sklearn.metrics.pairwise import cosine_similarity
+import string
+import json
+
+
+class FrameAxisProcessor:
+    def __init__(
+        self,
+        df,
+        antonym_pairs_path="frameaxis/axes/custom.tsv",
+        dataframe_path=None,
+        model_name="bert-base-uncased",
+        force_recalculate=False,
+        save_type="pickle",
+    ):
+        """
+        FrameAxisProcessor constructor
+
+        Args:
+        df (pd.DataFrame): DataFrame with text data
+        antonym_pairs_path (str): Path to the antonym pairs file
+        dataframe_path (str): Path to save the FrameAxis Embeddings DataFrame for saving and loading
+        model_name (str): Name or path of the model
+        force_recalculate (bool): If True, recalculate the FrameAxis Embeddings
+        """
+        self.df = df
+        self.model_name = model_name
+        self.force_recalculate = force_recalculate
+        self.dataframe_path = dataframe_path
+        self.tokenizer = BertTokenizer.from_pretrained(model_name)
+        self.model = BertModel.from_pretrained(model_name)
+
+        if torch.cuda.is_available():
+            print("Using CUDA")
+            self.model.cuda()
+
+        antonym_pairs = {}
+        with open(antonym_pairs_path) as f:
+            antonym_pairs = json.load(f)
+
+        self.antonym_pairs_embeddings = self.precompute_antonym_embeddings(
+            antonym_pairs
+        )
+
+        self.save_type = save_type
+
+        # allowed save types
+        if save_type not in ["csv", "pickle", "json"]:
+            raise ValueError(
+                "Invalid save_type. Must be one of 'csv', 'pickle', or 'json'."
+            )
+
+    def _load_antonym_pairs(self, axis_path):
+        axes_df = pd.read_csv(axis_path, sep="\t", header=None)
+        return [tuple(x) for x in axes_df.values]
+
+    def precompute_antonym_embeddings(self, antonym_pairs):
+        embeddings = {}
+        for dimension, pairs in antonym_pairs.items():
+            pos_words = pairs["positive"]
+            neg_words = pairs["negative"]
+
+            pos_embeddings = [self._get_embedding(word) for word in pos_words]
+            neg_embeddings = [self._get_embedding(word) for word in neg_words]
+
+            pos_embedding_avg = torch.mean(torch.stack(pos_embeddings), dim=0)
+            neg_embedding_avg = torch.mean(torch.stack(neg_embeddings), dim=0)
+
+            embeddings[dimension] = {
+                "positive": pos_embedding_avg,
+                "negative": neg_embedding_avg,
+            }
+        return embeddings
+
+    def _calculate_cosine_similarities(self, df):
+        def process_row(row):
+            sentence_embeddings, words = self._get_embeddings(row["text"])
+            cos_sims = {}
+
+            for dimension, embeddings in self.antonym_pairs_embeddings.items():
+                pos_embedding = embeddings["positive"].to(self.model.device)
+                neg_embedding = embeddings["negative"].to(self.model.device)
+                diff_vector = neg_embedding - pos_embedding
+
+                sims = []
+                for word_embedding in sentence_embeddings:
+                    cos_sim = (
+                        1
+                        - cosine_similarity(
+                            diff_vector.cpu().numpy().reshape(1, -1),
+                            word_embedding.cpu().numpy().reshape(1, -1),
+                        )[0][0]
+                    )
+                    sims.append(cos_sim)
+
+                # Ensure dimension names are unique by appending a suffix if needed and replace spaces with underscores
+                dimension_name = (
+                    dimension.replace(" ", "_").replace("-", "_").replace(",", "")
+                )
+
+                # to lower case
+                dimension_name = dimension_name.lower()
+
+                cos_sims[dimension_name] = np.mean(sims)
+
+            return pd.Series(cos_sims)
+
+        tqdm.pandas(desc="Calculating Cosine Similarities")
+        cos_sim_columns = df.progress_apply(process_row, axis=1)
+
+        # Before joining, check if any column names would overlap and adjust if necessary
+        overlapping_columns = df.columns.intersection(cos_sim_columns.columns)
+        if not overlapping_columns.empty:
+            cos_sim_columns = cos_sim_columns.rename(
+                columns={col: col + "_cos_sim" for col in overlapping_columns}
+            )
+
+        return df[["article_id"]].join(cos_sim_columns)
+
+    def _get_embeddings(self, text):
+        inputs = self.tokenizer(
+            text, return_tensors="pt", padding=True, truncation=True
+        )
+        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+
+        embeddings = outputs.last_hidden_state.squeeze(0)
+        stop_words = set(stopwords.words("english"))
+        token_ids = inputs["input_ids"].squeeze(0)
+        words = [
+            self.tokenizer.decode([token_id]).strip(string.punctuation)
+            for token_id in token_ids
+        ]
+
+        filtered_embeddings = []
+        filtered_words = []
+        for word, embedding, token_id in zip(words, embeddings, token_ids):
+            if (
+                token_id not in self.tokenizer.all_special_ids
+                and word.lower() not in stop_words
+                and word.isalpha()
+            ):
+                filtered_embeddings.append(embedding)
+                filtered_words.append(word)
+
+        return filtered_embeddings, filtered_words
+
+    def _get_embedding(self, word):
+        inputs = self.tokenizer(word, return_tensors="pt")
+        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+
+        return outputs.last_hidden_state.squeeze(0).mean(dim=0)
+
+    def get_frameaxis_data(self):
+        """
+        Calculate the FrameAxis Values for the DataFrame
+
+        Returns:
+        pd.DataFrame: DataFrame with FrameAxis Embeddings
+        """
+        if self.force_recalculate or self.dataframe_path is None:
+            print("Calculating FrameAxis Embeddings")
+            tqdm.pandas(desc="Calculating Cosine Similarities")
+            frameaxis_df = self._calculate_cosine_similarities(self.df)
+
+            if self.dataframe_path:
+                if self.save_type == "csv":
+                    frameaxis_df.to_csv(self.dataframe_path, index=False)
+                if self.save_type == "json":
+                    frameaxis_df.to_json(self.dataframe_path)
+                elif self.save_type == "pickle":
+                    with open(self.dataframe_path, "wb") as f:
+                        pickle.dump(frameaxis_df, f)
+
+            return frameaxis_df
+        else:
+            print("Loading FrameAxis Embeddings from CSV")
+            return pd.read_csv(self.dataframe_path)
