@@ -301,9 +301,6 @@ def main():
         },
     )
 
-    # print shape of the train and test dataloader
-    print("Train dataloader shape:", train_dataloader.dataset[0])
-
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=5e-4)

@@ -10,6 +10,8 @@ class FrameAxisAutoencoder(nn.Module):
 
         self.K = K
 
+        print("FrameAxisAutoencoder: ", D_w, D_h, frameaxis_dim, K)
+
         # Shared feed-forward layer for all views
         self.feed_forward_1 = nn.Linear(D_w + frameaxis_dim, D_h)
 
