@@ -59,7 +59,7 @@ def main():
     parser = argparse.ArgumentParser(description="Train MUSE model")
     # data path
     parser.add_argument(
-        "--data_path",
+        "--path_data",
         type=str,
         default="",
         help="Path to the data file",
@@ -254,7 +254,7 @@ def main():
 
     # Load the data
     _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
-        args.data_path,
+        args.path_data,
         "json",
         dataframe_path={
             "srl": args.path_srls,
