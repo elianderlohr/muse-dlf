@@ -307,7 +307,7 @@ class Trainer:
         with open(metrics_save_path, "w") as f:
             json.dump(metrics, f)
 
-    def run_training(self, epochs, save_name, alpha=0.5):
+    def run_training(self, epochs, alpha=0.5):
         tau = 1
         scheduler = StepLR(self.optimizer, step_size=2, gamma=0.1)
 
