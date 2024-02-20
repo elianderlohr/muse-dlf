@@ -180,6 +180,9 @@ class FrameAxisProcessor:
         if self.force_recalculate or self.dataframe_path is None:
             print("Calculating FrameAxis Embeddings")
             tqdm.pandas(desc="Calculating Cosine Similarities")
+
+            nltk.download("stopwords")
+
             frameaxis_df = self._calculate_cosine_similarities(self.df)
 
             if self.dataframe_path:
