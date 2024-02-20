@@ -4,6 +4,7 @@ from tqdm.notebook import tqdm
 import torch
 from transformers import BertTokenizer, BertModel, RobertaTokenizerFast
 from nltk.corpus import stopwords
+import nltk
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import string
