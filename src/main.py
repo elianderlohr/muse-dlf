@@ -258,7 +258,7 @@ def main():
         frameaxis_dim=args.frameaxis_dim,
         dropout_prob=args.dropout_prob,
         path_name_bert_model=args.path_name_bert_model,
-        path_pretrained_model=args.path_pretrained_model,
+        path_pretrained_model=args.path_name_pretrained_muse_model,
         device="cuda",
     )
 
