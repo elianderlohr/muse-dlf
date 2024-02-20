@@ -293,11 +293,11 @@ class Trainer:
         return metrics
 
     def _save_model(self, epoch, model, metrics):
-        save_dir = os.path.join(self.save_path, "saved_models")
+        save_dir = os.path.join(self.save_path)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        model_save_path = os.path.join(save_dir, f"model_epoch_{epoch}.pt")
+        model_save_path = os.path.join(save_dir, f"model_epoch_{epoch}.pth")
         torch.save(
             model.state_dict(),
             model_save_path,
@@ -307,7 +307,7 @@ class Trainer:
         with open(metrics_save_path, "w") as f:
             json.dump(metrics, f)
 
-    def run_training(self, epochs, alpha=0.5):
+    def run_training(self, epochs, save_name, alpha=0.5):
         tau = 1
         scheduler = StepLR(self.optimizer, step_size=2, gamma=0.1)
 
