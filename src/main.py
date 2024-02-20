@@ -291,8 +291,8 @@ def main():
             "frameaxis": args.path_frameaxis,
         },
         force_recalculate={
-            "srl": False,
-            "frameaxis": False,
+            "srl": args.force_recalculate_srls,
+            "frameaxis": args.force_recalculate_frameaxis,
         },
     )
 
