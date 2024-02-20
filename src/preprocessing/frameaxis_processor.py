@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import torch
 from transformers import BertTokenizer, BertModel, RobertaTokenizerFast, RobertaModel
 from nltk.corpus import stopwords
