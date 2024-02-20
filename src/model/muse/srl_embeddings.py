@@ -1,12 +1,17 @@
-from transformers import BertModel
+from transformers import BertModel, RobertaModel
 import torch.nn as nn
 import torch
 
 
 class SRLEmbeddings(nn.Module):
-    def __init__(self, bert_model_name="bert-base-uncased"):
+    def __init__(self, bert_model_name="bert-base-uncased", bert_model_name_or_path=""):
         super(SRLEmbeddings, self).__init__()
-        self.bert_model = BertModel.from_pretrained(bert_model_name)
+
+        if bert_model_name == "bert-base-uncased":
+            self.bert_model = BertModel.from_pretrained(bert_model_name_or_path)
+        elif bert_model_name == "roberta-base":
+            self.bert_model = RobertaModel.from_pretrained(bert_model_name_or_path)
+
         self.embedding_dim = 768  # for bert-base-uncased
 
     def forward(

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from tqdm.notebook import tqdm
 import torch
-from transformers import BertTokenizer, BertModel, RobertaTokenizerFast
+from transformers import BertTokenizer, BertModel, RobertaTokenizerFast, RobertaModel
 from nltk.corpus import stopwords
 import nltk
 import pickle
@@ -17,6 +17,7 @@ class FrameAxisProcessor:
         df,
         path_antonym_pairs="frameaxis/axes/custom.tsv",
         dataframe_path=None,
+        bert_model_name="bert-base-uncased",
         name_tokenizer="bert-base-uncased",
         path_name_bert_model="bert-base-uncased",
         force_recalculate=False,
@@ -38,12 +39,12 @@ class FrameAxisProcessor:
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
 
-        if name_tokenizer == "bert-base-uncased":
+        if bert_model_name == "bert-base-uncased":
             self.tokenizer = BertTokenizer.from_pretrained(name_tokenizer)
-        elif name_tokenizer == "roberta-base":
+            self.model = BertModel.from_pretrained(path_name_bert_model)
+        elif bert_model_name == "roberta-base":
             self.tokenizer = RobertaTokenizerFast.from_pretrained(name_tokenizer)
-
-        self.model = BertModel.from_pretrained(path_name_bert_model)
+            self.model = RobertaModel.from_pretrained(path_name_bert_model)
 
         if torch.cuda.is_available():
             print("Using CUDA")

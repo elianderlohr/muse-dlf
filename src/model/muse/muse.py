@@ -20,11 +20,12 @@ class MUSE(nn.Module):
         frameaxis_dim,
         dropout_prob=0.3,
         bert_model_name="bert-base-uncased",
+        bert_model_name_or_path="",
     ):
         super(MUSE, self).__init__()
 
         # Aggregation layer replaced with SRL_Embeddings
-        self.aggregation = SRLEmbeddings(bert_model_name)
+        self.aggregation = SRLEmbeddings(bert_model_name, bert_model_name_or_path)
 
         # Unsupervised training module
         self.unsupervised = MUSEUnsupervised(

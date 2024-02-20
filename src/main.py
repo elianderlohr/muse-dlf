@@ -34,6 +34,7 @@ def load_model(
     num_frames,
     frameaxis_dim,
     dropout_prob,
+    bert_model_name="bert-base-uncased",
     path_name_bert_model="bert-base-uncased",
     path_pretrained_model="",
     device="cuda",
@@ -50,7 +51,8 @@ def load_model(
         num_frames,
         frameaxis_dim=frameaxis_dim,
         dropout_prob=dropout_prob,
-        bert_model_name=path_name_bert_model,
+        bert_model_name=bert_model_name,
+        bert_model_name_or_path=path_name_bert_model,
     )
 
     model = model.to(device)
@@ -257,6 +259,7 @@ def main():
         num_frames=args.num_frames,
         frameaxis_dim=args.frameaxis_dim,
         dropout_prob=args.dropout_prob,
+        bert_model_name=args.name_tokenizer,
         path_name_bert_model=args.path_name_bert_model,
         path_pretrained_model=args.path_name_pretrained_muse_model,
         device="cuda",
@@ -277,6 +280,7 @@ def main():
         max_arg_length=args.max_arg_length,
         test_size=args.test_size,
         frameaxis_dim=args.frameaxis_dim,
+        bert_model_name=args.name_tokenizer,
         name_tokenizer=args.name_tokenizer,
         path_name_bert_model=args.path_name_bert_model,
         path_antonym_pairs=args.path_antonym_pairs,
