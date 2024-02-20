@@ -14,6 +14,7 @@ import warnings
 warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
 )
+warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
 
 
 # welcome console message
