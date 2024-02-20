@@ -8,6 +8,13 @@ import torch.optim as optim
 from training.trainer import Trainer
 from transformers import BertTokenizer, RobertaTokenizerFast
 
+import warnings
+
+# Suppress specific warnings from numpy
+warnings.filterwarnings(
+    "ignore", message="Mean of empty slice.", category=RuntimeWarning
+)
+
 
 # welcome console message
 def welcome_message():
