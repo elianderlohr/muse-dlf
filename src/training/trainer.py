@@ -24,7 +24,28 @@ class Trainer:
         wandb_api_key="your_api_key",
         tau_min=1,
         tau_decay=0.95,
+        config={},
     ):
+        """
+        Initializes the Trainer.
+
+        Args:
+            model: The model to be trained.
+            train_dataloader: The DataLoader for the training data.
+            test_dataloader: The DataLoader for the testing data.
+            optimizer: The optimizer to be used for training.
+            loss_function: The loss function to be used for training.
+            device: The device to be used for training.
+            save_path: The path to save the model and metrics.
+            wandb_project_name: The name of the W&B project.
+            wandb_api_key: The W&B API key.
+            tau_min: The minimum value of tau.
+            tau_decay: The decay factor for tau.
+            config: The configuration for W&B.
+
+        Returns:
+            None
+        """
         self.model = model.to(device)
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
@@ -38,11 +59,7 @@ class Trainer:
 
         self.run = wandb.init(
             project=wandb_project_name,
-            config={
-                "learning_rate": optimizer.param_groups[0]["lr"],
-                "tau_min": tau_min,
-                "tau_decay": tau_decay,
-            },
+            config=config,
         )
 
         self.tau_min = tau_min

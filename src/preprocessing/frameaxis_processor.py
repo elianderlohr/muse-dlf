@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from tqdm.notebook import tqdm
 import torch
-from transformers import BertTokenizer, BertModel
+from transformers import BertTokenizer, BertModel, RobertaTokenizerFast
 from nltk.corpus import stopwords
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
@@ -16,7 +16,8 @@ class FrameAxisProcessor:
         df,
         path_antonym_pairs="frameaxis/axes/custom.tsv",
         dataframe_path=None,
-        model_name="bert-base-uncased",
+        name_tokenizer="bert-base-uncased",
+        path_name_bert_model="bert-base-uncased",
         force_recalculate=False,
         save_type="pickle",
     ):
@@ -27,15 +28,21 @@ class FrameAxisProcessor:
         df (pd.DataFrame): DataFrame with text data
         path_antonym_pairs (str): Path to the antonym pairs file
         dataframe_path (str): Path to save the FrameAxis Embeddings DataFrame for saving and loading
-        model_name (str): Name or path of the model
+        name_tokenizer (str): Name or path of the model
+        path_name_bert_model (str): Name or path of the model
         force_recalculate (bool): If True, recalculate the FrameAxis Embeddings
+        save_type (str): Type of file to save the FrameAxis Embeddings DataFrame
         """
         self.df = df
-        self.model_name = model_name
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
-        self.tokenizer = BertTokenizer.from_pretrained(model_name)
-        self.model = BertModel.from_pretrained(model_name)
+
+        if name_tokenizer == "bert-base-uncased":
+            self.tokenizer = BertTokenizer.from_pretrained(name_tokenizer)
+        elif self.name_tokenizer == "roberta-base":
+            self.tokenizer = RobertaTokenizerFast.from_pretrained(name_tokenizer)
+
+        self.model = BertModel.from_pretrained(path_name_bert_model)
 
         if torch.cuda.is_available():
             print("Using CUDA")

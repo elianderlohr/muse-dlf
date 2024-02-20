@@ -24,7 +24,8 @@ class PreProcessor:
         max_arg_length=16,
         test_size=0.1,
         frameaxis_dim=20,
-        model_name="bert-base-uncased",
+        name_tokenizer="bert-base-uncased",
+        path_name_bert_model="bert-base-uncased",
         path_antonym_pairs="frameaxis/axes/custom.tsv",
     ):
         """
@@ -39,7 +40,8 @@ class PreProcessor:
             max_arg_length: The maximum length of an argument.
             test_size: The size of the test set.
             frameaxis_dim: The dimension of the FrameAxis embeddings.
-            model_name: The name of the BERT model to be used.
+            name_tokenizer: The name of the tokenizer.
+            path_name_bert_model: The path to the BERT model.
             path_antonym_pairs: The path to the antonym pairs file.
         """
         self.tokenizer = tokenizer
@@ -50,7 +52,8 @@ class PreProcessor:
         self.max_arg_length = max_arg_length
         self.test_size = test_size
         self.frameaxis_dim = frameaxis_dim
-        self.model_name = model_name
+        self.name_tokenizer = name_tokenizer
+        self.path_name_bert_model = path_name_bert_model
         self.path_antonym_pairs = path_antonym_pairs
 
     def _load_data(self, path, format):
@@ -100,7 +103,8 @@ class PreProcessor:
             df,
             dataframe_path=dataframe_path.get("frameaxis", None),
             force_recalculate=force_recalculate.get("frameaxis", False),
-            model_name=self.model_name,
+            name_tokenizer=self.name_tokenizer,
+            path_name_bert_model=self.path_name_bert_model,
             path_antonym_pairs=self.path_antonym_pairs,
             save_type="pickle",
         )
