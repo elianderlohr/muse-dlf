@@ -39,7 +39,7 @@ class FrameAxisProcessor:
 
         if name_tokenizer == "bert-base-uncased":
             self.tokenizer = BertTokenizer.from_pretrained(name_tokenizer)
-        elif self.name_tokenizer == "roberta-base":
+        elif name_tokenizer == "roberta-base":
             self.tokenizer = RobertaTokenizerFast.from_pretrained(name_tokenizer)
 
         self.model = BertModel.from_pretrained(path_name_bert_model)
