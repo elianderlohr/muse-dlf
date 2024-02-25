@@ -17,7 +17,7 @@ else
 fi
 
 # Install necessary packages
-pip install datasets wandb transformers accelerate
+python -m pip install datasets wandb transformers accelerate
 
 DATA_PATH="data/mfc/"
 OUTPUT_PATH="models/roberta-base-finetune/"
