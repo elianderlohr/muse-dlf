@@ -2,6 +2,8 @@
 #SBATCH --ntasks=1
 #SBATCH --time=10
 #SBATCH --mem=128000
+#SBATCH --mem-per-gpu=94000mb
+#SBATCH --cpus-per-gpu=10
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elias.anderlohr@gmail.com
