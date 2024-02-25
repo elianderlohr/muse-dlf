@@ -1,4 +1,5 @@
 import argparse
+import logging
 from transformers import (
     RobertaForMaskedLM,
     RobertaTokenizer,
@@ -20,7 +21,7 @@ class LogPerplexityCallback(TrainerCallback):
         eval_loss = kwargs.get("metrics", {}).get("eval_loss")
         if eval_loss is not None:
             perplexity = math.exp(eval_loss)
-            print(f"Perplexity: {perplexity}")
+            logging.info(f"Perplexity: {perplexity}")
             # If using W&B, you can log perplexity directly to it
             kwargs["model"].log({"perplexity": perplexity})
 
@@ -46,6 +47,10 @@ def load_data(data_path, tokenizer):
 
 
 def main():
+
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
     parser = argparse.ArgumentParser(description="Train MUSE model")
 
@@ -90,7 +95,11 @@ def main():
     tokenizer = RobertaTokenizer.from_pretrained(model_name)
     model = RobertaForMaskedLM.from_pretrained(model_name)
 
+    logging.info("Model and tokenizer loaded")
+
     train_dataset, eval_dataset = load_data(args.data_path, tokenizer)
+
+    logging.info("Data loaded")
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True)
 
@@ -104,6 +113,8 @@ def main():
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
 
+    logging.info("Setting up Trainer")
+
     training_args = TrainingArguments(
         output_dir=args.output_path,
         overwrite_output_dir=True,
@@ -116,6 +127,8 @@ def main():
         report_to="wandb",
         run_name=args.project_name,
     )
+
+    logging.info("Start training...")
 
     trainer = Trainer(
         model=model,
