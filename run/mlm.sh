@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --ntasks=1
-#SBATCH --time=10
-#SBATCH --mem-per-gpu=94000mb
+#SBATCH --time=2:00:00
+#SBATCH --mem-per-gpu=256gb
 #SBATCH --cpus-per-gpu=10
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
