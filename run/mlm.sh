@@ -16,4 +16,4 @@ OUTPUT_PATH="../models/roberta-base-finetune/"
 WANDB_API_KEY="XXXX"
 
 # Run the Python script with the W&B API key
-python train_model.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH
+python ../src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH
