@@ -32,7 +32,7 @@ source venv/bin/activate
 # Upgrade pip and Install necessary packages within the virtual environment
 echo "Installing necessary packages..."
 pip install --upgrade pip
-pip install datasets wandb==0.16.3 transformers accelerate
+pip install datasets wandb==0.15.11 transformers accelerate
 
 DATA_PATH="data/mfc/"
 OUTPUT_PATH="models/roberta-base-finetune/"
