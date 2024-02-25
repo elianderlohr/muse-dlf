@@ -105,6 +105,7 @@ def main():
 
     # wandb login
     if args.wb_api_key:
+        logging.info("Logging into wandb")
         wandb.login(key=args.wb_api_key)
     else:
         raise ValueError("Wandb api key not provided")
