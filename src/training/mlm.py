@@ -7,14 +7,12 @@ from transformers import (
     TrainingArguments,
     Trainer,
     TrainerCallback,
-    Accelerator,
 )
 from datasets import load_dataset
 import wandb
 import torch
-
+from accelerate import Accelerator
 import math
-
 import os
 
 
