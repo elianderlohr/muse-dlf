@@ -10,6 +10,7 @@ from transformers import (
 )
 from datasets import load_dataset
 import wandb
+import torch
 
 import math
 
@@ -86,6 +87,20 @@ def main():
     parser.add_argument("--wb_api_key", type=str, default=None, help="Wandb api key")
 
     args = parser.parse_args()
+
+    # welcome
+    logging.info(
+        """############################################
+#                                          #
+#         Welcome to MUSE training         #
+#                                          #
+############################################"""
+    )
+
+    # gpu check
+    logging.info("Checking for GPU")
+    if not torch.cuda.is_available():
+        raise ValueError("GPU not available")
 
     model_name = args.model_name
 

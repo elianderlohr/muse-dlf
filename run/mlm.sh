@@ -39,6 +39,10 @@ DATA_PATH="data/mfc/"
 # create output path with timestamp subdir
 OUTPUT_PATH="models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/"
 
+# Log nvidia-smi output
+echo "Logging GPU status..."
+nvidia-smi > $OUTPUT_PATH/nvidia_smi_log.txt
+
 # Run the Python script with the W&B API key
 echo "Starting training script..."
 python src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH
