@@ -135,6 +135,14 @@ def main():
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
 
+    logging.info("Set up accelerator")
+
+    accelerator = Accelerator()
+
+    model, data_collator, train_dataset, eval_dataset = accelerator.prepare(
+        model, data_collator, train_dataset, eval_dataset
+    )
+
     logging.info("Setting up Trainer")
 
     training_args = TrainingArguments(
@@ -148,14 +156,7 @@ def main():
         save_total_limit=2,
         report_to="wandb",
         run_name=args.project_name,
-    )
-
-    logging.info("Set up accelerator")
-
-    accelerator = Accelerator()
-
-    model, data_collator, train_dataset, eval_dataset = accelerator.prepare(
-        model, data_collator, train_dataset, eval_dataset
+        dataloader_num_workers=accelerator.num_processes,
     )
 
     logging.info("Start training...")
