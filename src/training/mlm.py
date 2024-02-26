@@ -120,7 +120,7 @@ def main():
         output_dir=args.output_path,
         overwrite_output_dir=True,
         num_train_epochs=args.epochs,
-        per_device_train_batch_size=24,
+        per_device_train_batch_size=64,
         save_steps=5_000,
         eval_steps=2_000,
         logging_steps=100,

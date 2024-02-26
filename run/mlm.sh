@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --time=2:00:00
-#SBATCH --mem-per-gpu=256gb
+#SBATCH --mem-per-gpu=128gb
 #SBATCH --cpus-per-gpu=10
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elias.anderlohr@gmail.com
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:2
 
 # Load the environment variables from the .env file
 if [ -f .env ]; then
