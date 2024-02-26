@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --ntasks=1
-#SBATCH --time=2:00:00
-#SBATCH --mem-per-gpu=128gb
+#SBATCH --time=00:10:00
+#SBATCH --mem=64gb
 #SBATCH --cpus-per-gpu=10
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
@@ -35,7 +35,9 @@ pip install --upgrade pip
 pip install datasets wandb==0.15.11 transformers accelerate
 
 DATA_PATH="data/mfc/"
-OUTPUT_PATH="models/roberta-base-finetune/"
+
+# create output path with timestamp subdir
+OUTPUT_PATH="models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/"
 
 # Run the Python script with the W&B API key
 echo "Starting training script..."
