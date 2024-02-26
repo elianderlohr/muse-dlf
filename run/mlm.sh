@@ -6,7 +6,7 @@
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elias.anderlohr@gmail.com
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:4
 
 # Load the environment variables from the .env file
 if [ -f .env ]; then
