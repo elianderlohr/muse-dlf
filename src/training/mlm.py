@@ -7,6 +7,7 @@ from transformers import (
     TrainingArguments,
     Trainer,
     TrainerCallback,
+    Accelerator,
 )
 from datasets import load_dataset
 import wandb
@@ -80,6 +81,13 @@ def main():
         help="Wandb project name",
     )
 
+    # training param
+
+    # batch size
+    parser.add_argument(
+        "--batch_size", type=int, default=64, help="Batch size for training"
+    )
+
     # epochs
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
 
@@ -135,13 +143,21 @@ def main():
         output_dir=args.output_path,
         overwrite_output_dir=True,
         num_train_epochs=args.epochs,
-        per_device_train_batch_size=64,
+        per_device_train_batch_size=args.batch_size,
         save_steps=5_000,
         eval_steps=2_000,
         logging_steps=100,
         save_total_limit=2,
         report_to="wandb",
         run_name=args.project_name,
+    )
+
+    logging.info("Set up accelerator")
+
+    accelerator = Accelerator()
+
+    model, data_collator, train_dataset, eval_dataset = accelerator.prepare(
+        model, data_collator, train_dataset, eval_dataset
     )
 
     logging.info("Start training...")
