@@ -16,6 +16,8 @@ source venv/bin/activate
 
 # Verify Python version
 python --version
+which python
+type python
 
 # Upgrade pip and install necessary packages within the virtual environment
 echo "Installing necessary packages..."
