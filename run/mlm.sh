@@ -33,6 +33,10 @@ echo "Installing necessary packages..."
 pip install --upgrade pip
 pip install datasets wandb==0.15.11 transformers accelerate
 
+# echo versions of installed packages
+echo "Installed packages:"
+pip list
+
 DATA_PATH="data/mfc/"
 
 # create output path with timestamp subdir
@@ -50,8 +54,7 @@ echo "Starting training script..."
 echo "Set up accelerate config using default"
 
 # accelerate config
-# accelerate config default
-accelerate-config default
+accelerate config default --mixed_precision fp16
 
 echo "Start training script with accelerate launch"
 
