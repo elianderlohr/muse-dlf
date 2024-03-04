@@ -14,6 +14,13 @@ source py39venv/bin/activate
 echo "Verifying Python version..."
 python --version
 
+echo "Verifying pip version..."
+pip --version
+
+# print package versions
+echo "Verifying package versions..."
+pip list
+
 DATA_PATH="data/mfc/"
 
 # Create output path with timestamp subdir
