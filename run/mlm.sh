@@ -21,12 +21,12 @@ type python
 
 # Upgrade pip and install necessary packages within the virtual environment
 echo "Installing necessary packages..."
-./venv/bin/python -m install --upgrade pip
-./venv/bin/python -m install -r run/requirements.txt
+./venv/bin/python -m pip install --upgrade pip
+./venv/bin/python -m pip install -r run/requirements.txt
 
 # List installed packages for verification
 echo "Installed packages:"
-./venv/bin/python list
+./venv/bin/python -m pip list
 
 DATA_PATH="data/mfc/"
 
