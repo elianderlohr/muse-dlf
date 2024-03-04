@@ -48,10 +48,10 @@ export CUDA_VISIBLE_DEVICES=0,1
 echo "Starting training script..."
 
 # accelerate config
-accelerate config default --mixed_precision fp16
+accelerate config default
 
 # launch accelerates training script with multi_gpu and num_processes
-accelerate launch --multi_gpu --num_processes 2 --num_machines 2 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
+accelerate launch --multi_gpu --num_processes 2 --num_machines 2 --mixed_precision fp16 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
 
 # Deactivate the virtual environment
 deactivate
