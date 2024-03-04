@@ -25,6 +25,9 @@ if [ -z "${WANDB_API_KEY}" ]; then
     exit 1
 fi
 
+# list all available python versions
+ls -ls /usr/bin/python*
+
 # Create a virtual environment specifically with Python 3.9
 echo "Creating virtual environment with Python 3.9..."
 python3.9 -m venv venv
@@ -33,16 +36,16 @@ python3.9 -m venv venv
 source venv/bin/activate
 
 # print available python version
-python --version
+python3.9 --version
 
 # Upgrade pip and Install necessary packages within the virtual environment
 echo "Installing necessary packages..."
-pip install --upgrade pip
-pip install -r run/requirements.txt
+python3.9 -m pip install --upgrade pip
+python3.9 -m pip install -r run/requirements.txt
 
 # echo versions of installed packages
 echo "Installed packages:"
-pip list
+python3.9 -m pip list
 
 DATA_PATH="data/mfc/"
 
@@ -61,12 +64,12 @@ echo "Starting training script..."
 echo "Set up accelerate config using default"
 
 # accelerate config
-accelerate config default --mixed_precision fp16
+python3.9 -m accelerate config default --mixed_precision fp16
 
 echo "Start training script with accelerate launch"
 
 # launch accelerates training script with multi_gpu and num_processes
-accelerate launch --multi_gpu --num_processes 2 --num_machines 2 --mixed_precision fp16 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
+python3.9 -m accelerate launch --multi_gpu --num_processes 2 --num_machines 2 --mixed_precision fp16 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
 
 # Deactivate the virtual environment
 deactivate
