@@ -7,6 +7,10 @@
 #SBATCH --mail-user=elias.anderlohr@gmail.com
 #SBATCH --gres=gpu:2
 
+# Load Python 3.9 module if necessary
+# Uncomment the next line if you're on a cluster that uses modules to manage software
+# module load python/3.9
+
 # Load the environment variables from the .env file
 if [ -f .env ]; then
     export $(cat .env | xargs)
@@ -21,12 +25,15 @@ if [ -z "${WANDB_API_KEY}" ]; then
     exit 1
 fi
 
-# Create a virtual environment
-echo "Creating virtual environment..."
-python -m venv venv
+# Create a virtual environment specifically with Python 3.9
+echo "Creating virtual environment with Python 3.9..."
+python3.9 -m venv venv
 
 # Activate the virtual environment
 source venv/bin/activate
+
+# print available python version
+python --version
 
 # Upgrade pip and Install necessary packages within the virtual environment
 echo "Installing necessary packages..."
