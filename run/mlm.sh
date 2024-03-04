@@ -15,18 +15,18 @@ python3.9 -m venv venv
 source venv/bin/activate
 
 # Verify Python version
-python --version
+./venv/bin/python --version
 which python
 type python
 
 # Upgrade pip and install necessary packages within the virtual environment
 echo "Installing necessary packages..."
-pip install --upgrade pip
-pip install -r run/requirements.txt
+./venv/bin/python -m install --upgrade pip
+./venv/bin/python -m install -r run/requirements.txt
 
 # List installed packages for verification
 echo "Installed packages:"
-pip list
+./venv/bin/python list
 
 DATA_PATH="data/mfc/"
 
