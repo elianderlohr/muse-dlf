@@ -15,11 +15,11 @@ echo "Verifying Python version..."
 python --version
 
 echo "Verifying pip version..."
-pip --version
+python -m pip --version
 
 # print package versions
 echo "Verifying package versions..."
-pip list
+python -m pip list
 
 DATA_PATH="data/mfc/"
 
