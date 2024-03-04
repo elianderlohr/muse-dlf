@@ -31,7 +31,7 @@ source venv/bin/activate
 # Upgrade pip and Install necessary packages within the virtual environment
 echo "Installing necessary packages..."
 pip install --upgrade pip
-pip install datasets wandb==0.15.11 transformers accelerate
+pip install -r requirements.txt
 
 # echo versions of installed packages
 echo "Installed packages:"
