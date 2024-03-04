@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --ntasks=2
-#SBATCH --nodes=2
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
 #SBATCH --time=00:10:00
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
