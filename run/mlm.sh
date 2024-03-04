@@ -7,32 +7,8 @@
 #SBATCH --mail-user=elias.anderlohr@gmail.com
 #SBATCH --gres=gpu:2
 
-# Reset hash to ensure the latest versions of executables are used
-hash -r
-
-# Define the desired Python version
-DESIRED_PYTHON_VERSION="3.9"
-
-# Check if Python 3.9 is installed and accessible
-if ! command -v python$DESIRED_PYTHON_VERSION &> /dev/null; then
-    echo "Python $DESIRED_PYTHON_VERSION is not installed. Exiting."
-    exit 1
-fi
-
-echo "Python $DESIRED_PYTHON_VERSION is installed. Proceeding with virtual environment creation."
-
-# Create a virtual environment with Python 3.9
-echo "Creating virtual environment with Python 3.9..."
-python3.9 -m venv venv
-
-# Reset hash to ensure the latest versions of executables are used
-hash -r
-
 # Activate the virtual environment
-source venv/bin/activate
-
-# Reset hash to ensure the latest versions of executables are used
-hash -r
+source py39venv/bin/activate
 
 # Verify Python version directly using the virtual environment's Python executable
 echo "Verifying Python version..."
