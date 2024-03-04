@@ -46,7 +46,7 @@ export CUDA_VISIBLE_DEVICES=0,1
 
 # Run the Python script with the W&B API key
 echo "Starting training script..."
-accelerate launch --multi_gpu --num_processes  2 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
+accelerate launch --multi_gpu --num_processes 2 --num_machines 2 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
 
 # Deactivate the virtual environment
 deactivate
