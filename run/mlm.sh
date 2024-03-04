@@ -1,8 +1,7 @@
 #!/bin/bash
 #SBATCH --ntasks=1
+#SBATCH --nodes=5
 #SBATCH --time=00:10:00
-#SBATCH --mem=64gb
-#SBATCH --cpus-per-gpu=10
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elias.anderlohr@gmail.com
