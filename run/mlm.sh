@@ -47,10 +47,11 @@ export CUDA_VISIBLE_DEVICES=0,1
 # Run the Python script with the W&B API key
 echo "Starting training script..."
 
-echo "Set up accelerates config"
+echo "Set up accelerate config using default"
 
 # accelerate config
-accelerate config default
+# accelerate config default
+accelerate-config default
 
 echo "Start training script with accelerate launch"
 
