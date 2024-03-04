@@ -50,7 +50,7 @@ echo "Starting training script..."
 echo "Set up accelerates config"
 
 # accelerate config
-accelerate config
+accelerate config default
 
 echo "Start training script with accelerate launch"
 
