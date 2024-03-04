@@ -12,7 +12,7 @@ source py39venv/bin/activate
 
 # Verify Python version directly using the virtual environment's Python executable
 echo "Verifying Python version..."
-./venv/bin/python --version
+python --version
 
 DATA_PATH="data/mfc/"
 
