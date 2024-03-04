@@ -7,12 +7,18 @@
 #SBATCH --mail-user=elias.anderlohr@gmail.com
 #SBATCH --gres=gpu:2
 
+hash -r
+
 # Create a virtual environment with Python 3.9
 echo "Creating virtual environment with Python 3.9..."
 python3.9 -m venv venv
 
+hash -r
+
 # Activate the virtual environment
 source venv/bin/activate
+
+hash -r
 
 # Verify Python version
 ./venv/bin/python --version
