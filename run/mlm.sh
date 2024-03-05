@@ -14,6 +14,11 @@ source py39venv/bin/activate
 echo "Verifying Python version..."
 python --version
 
+# install pip if not installed
+echo "Verifying pip installation..."
+python -m ensurepip --default-pip
+python -m ensurepip --upgrade
+
 echo "Verifying pip version..."
 python -m pip --version
 
