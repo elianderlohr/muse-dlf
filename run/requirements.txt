@@ -4,6 +4,5 @@ transformers==4.34.0
 datasets
 torch
 logging  
-math 
 argparse  
 numpy
