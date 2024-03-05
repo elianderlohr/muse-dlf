@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # SLURM Directives
-#SBATCH --ntasks=1
-#SBATCH --nodes=1
+#SBATCH --ntasks=2
+#SBATCH --nodes=2
 #SBATCH --time=00:10:00
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=your_email@example.com
+#SBATCH --mail-user=elias.anderlohr@gmail.com
 #SBATCH --gres=gpu:2
 
 echo "===================== Job Details ====================="
