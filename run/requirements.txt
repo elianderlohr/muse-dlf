@@ -2,3 +2,8 @@ accelerate==0.27.2
 wandb==0.15.11
 transformers==4.34.0
 datasets
+torch
+logging  
+math 
+argparse  
+numpy

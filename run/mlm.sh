@@ -22,6 +22,10 @@ python -m ensurepip --upgrade
 echo "Verifying pip version..."
 python -m pip --version
 
+# update pip
+echo "Updating pip..."
+python -m pip install --upgrade pip
+
 # print package versions
 echo "Verifying package versions..."
 python -m pip list
