@@ -48,7 +48,7 @@ export CUDA_VISIBLE_DEVICES=0,1
 # Training Script Execution
 echo "=================== Training Start ==================="
 echo "Setting up Accelerate configuration..."
-accelerate config
+accelerate config default
 
 echo "Launching training script with Accelerate..."
 accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
