@@ -1,56 +1,59 @@
 #!/bin/bash
+
+# SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --time=00:10:00
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=elias.anderlohr@gmail.com
+#SBATCH --mail-user=your_email@example.com
 #SBATCH --gres=gpu:2
 
+echo "===================== Job Details ====================="
 # Activate the virtual environment
+echo "Activating virtual environment..."
 source py39venv/bin/activate
 
-# Verify Python version directly using the virtual environment's Python executable
-echo "Verifying Python version..."
+# Environment Setup
+echo "Setting up environment..."
+# Verify Python version
+echo "Python version:"
 python --version
 
-# install pip if not installed
-echo "Verifying pip installation..."
+# Verify and upgrade pip
+echo "Ensuring pip is installed and updated..."
 python -m ensurepip --default-pip
-python -m ensurepip --upgrade
-
-echo "Verifying pip version..."
+python -m pip install --upgrade pip
+echo "pip version:"
 python -m pip --version
 
-# update pip
-echo "Updating pip..."
-python -m pip install --upgrade pip
-
-# print package versions
-echo "Verifying package versions..."
+# Display installed package versions for verification
+echo "Installed package versions:"
 python -m pip list
 
+# Data and Output Configuration
+echo "Configuring paths..."
 DATA_PATH="data/mfc/"
-
-# Create output path with timestamp subdir
 OUTPUT_PATH="models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/"
+echo "Data path: $DATA_PATH"
+echo "Output path: $OUTPUT_PATH"
 
-# Print GPU status
+# GPU Setup and Verification
 echo "GPU status:"
 nvidia-smi
 
+# CUDA configuration
 export CUDA_VISIBLE_DEVICES=0,1
 
-# Run the Python script with the W&B API key
-echo "Starting training script..."
-
-echo "Set up accelerate config using default"
-# Use accelerate config with Python 3.9
+# Training Script Execution
+echo "=================== Training Start ==================="
+echo "Setting up Accelerate configuration..."
 accelerate config
 
-echo "Start training script with accelerate launch"
-# Ensure accelerate uses Python 3.9
+echo "Launching training script with Accelerate..."
 accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 10
 
-# Deactivate the virtual environment
+# Cleanup and Closeout
+echo "Deactivating virtual environment..."
 deactivate
+echo "==================== Job Complete ===================="
