@@ -19,17 +19,30 @@ echo "Setting up environment..."
 # Verify Python version
 echo "Python version:"
 python --version
-
-# Verify and upgrade pip
-echo "Ensuring pip is installed and updated..."
-python -m ensurepip --default-pip
-python -m pip install --upgrade pip
 echo "pip version:"
 python -m pip --version
 
 # Display installed package versions for verification
 echo "Installed package versions:"
 python -m pip list
+
+
+# Load WANDB_API_KEY from .env file
+echo "Loading WANDB_API_KEY from .env file..."
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+else
+    echo "Error: .env file not found!"
+    exit 1
+fi
+
+# Check if WANDB_API_KEY is loaded
+if [ -z "$WANDB_API_KEY" ]; then
+    echo "Error: WANDB_API_KEY is not set!"
+    exit 1
+else
+    echo "WANDB_API_KEY successfully loaded."
+fi
 
 # Data and Output Configuration
 echo "Configuring paths..."
