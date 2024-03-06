@@ -139,18 +139,6 @@ def main():
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
 
-    logging.info("Set up accelerator")
-
-    accelerator = Accelerator()
-
-    model, data_collator, train_dataset, eval_dataset = accelerator.prepare(
-        model, data_collator, train_dataset, eval_dataset
-    )
-
-    # log length of train and eval dataset after accelerator
-    logging.info(f"Train dataset length after: {len(train_dataset)}")
-    logging.info(f"Eval dataset length after: {len(eval_dataset)}")
-
     logging.info("Setting up Trainer")
 
     training_args = TrainingArguments(
@@ -176,6 +164,14 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         callbacks=[LogPerplexityCallback()],
+    )
+
+    logging.info("Set up accelerator")
+
+    accelerator = Accelerator()
+
+    model, data_collator, train_dataset, eval_dataset, trainer = accelerator.prepare(
+        model, data_collator, train_dataset, eval_dataset, trainer
     )
 
     trainer.train()
