@@ -23,6 +23,9 @@ class LogPerplexityCallback(WandbCallback):
     Logs the perplexity metric at the end of an evaluation phase.
     """
 
+    def __init__(self):
+        super().__init__()
+
     def on_evaluate(self, args, state, control, **kwargs):
         metrics = kwargs.get("metrics", {})
         eval_loss = metrics.get("eval_loss")
@@ -199,6 +202,7 @@ def main():
         run_name=args.project_name,
         dataloader_num_workers=accelerator.num_processes,
         evaluation_strategy="epoch",
+        logging_strategy="epoch",
     )
 
     logging.info("Start training...")
