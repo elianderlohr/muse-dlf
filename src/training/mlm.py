@@ -17,13 +17,22 @@ import os
 
 
 class LogPerplexityCallback(TrainerCallback):
+    """
+    Logs the perplexity metric at the end of an evaluation phase.
+    """
+
     def on_evaluate(self, args, state, control, **kwargs):
-        eval_loss = kwargs.get("metrics", {}).get("eval_loss")
+        metrics = kwargs.get("metrics", {})
+        eval_loss = metrics.get("eval_loss")
+
         if eval_loss is not None:
             perplexity = math.exp(eval_loss)
             logging.info(f"Perplexity: {perplexity}")
-            # If using W&B, you can log perplexity directly to it
-            kwargs["model"].log({"perplexity": perplexity})
+
+            if "wandb" in args.report_to:
+                import wandb
+
+                wandb.log({"perplexity": perplexity})
 
 
 def load_data(data_path, tokenizer):
@@ -175,6 +184,10 @@ def main():
     )
 
     trainer.train()
+
+    logging.info("Training complete")
+
+    wandb.finish()
 
 
 if __name__ == "__main__":
