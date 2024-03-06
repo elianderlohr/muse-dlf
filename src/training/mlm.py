@@ -201,8 +201,8 @@ def main():
         report_to="wandb",
         run_name=args.project_name,
         dataloader_num_workers=accelerator.num_processes,
-        evaluation_strategy="epoch",
-        logging_strategy="epoch",
+        evaluation_strategy="steps",
+        logging_strategy="steps",
     )
 
     logging.info("Start training...")
