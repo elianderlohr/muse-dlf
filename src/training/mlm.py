@@ -147,6 +147,10 @@ def main():
         model, data_collator, train_dataset, eval_dataset
     )
 
+    # log length of train and eval dataset after accelerator
+    logging.info(f"Train dataset length: {len(train_dataset)}")
+    logging.info(f"Eval dataset length: {len(eval_dataset)}")
+
     logging.info("Setting up Trainer")
 
     training_args = TrainingArguments(
