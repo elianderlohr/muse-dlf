@@ -120,6 +120,10 @@ def main():
 
     train_dataset, eval_dataset = load_data(args.data_path, tokenizer)
 
+    # log length of train and eval dataset
+    logging.info(f"Train dataset length: {len(train_dataset)}")
+    logging.info(f"Eval dataset length: {len(eval_dataset)}")
+
     logging.info("Data loaded")
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True)
