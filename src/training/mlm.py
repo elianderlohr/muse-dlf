@@ -148,8 +148,8 @@ def main():
     )
 
     # log length of train and eval dataset after accelerator
-    logging.info(f"Train dataset length: {len(train_dataset)}")
-    logging.info(f"Eval dataset length: {len(eval_dataset)}")
+    logging.info(f"Train dataset length after: {len(train_dataset)}")
+    logging.info(f"Eval dataset length after: {len(eval_dataset)}")
 
     logging.info("Setting up Trainer")
 
@@ -164,7 +164,7 @@ def main():
         save_total_limit=2,
         report_to="wandb",
         run_name=args.project_name,
-        dataloader_num_workers=accelerator.num_processes,
+        # dataloader_num_workers=accelerator.num_processes,
     )
 
     logging.info("Start training...")
