@@ -150,6 +150,8 @@ def main():
 
     logging.info("Setting up Trainer")
 
+    accelerator = Accelerator()
+
     training_args = TrainingArguments(
         output_dir=args.output_path,
         overwrite_output_dir=True,
@@ -176,8 +178,6 @@ def main():
     )
 
     logging.info("Set up accelerator")
-
-    accelerator = Accelerator()
 
     model, data_collator, train_dataset, eval_dataset, trainer = accelerator.prepare(
         model, data_collator, train_dataset, eval_dataset, trainer
