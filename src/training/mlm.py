@@ -152,7 +152,7 @@ def main():
         save_total_limit=2,
         report_to="wandb",
         run_name=args.project_name,
-        # dataloader_num_workers=accelerator.num_processes,
+        dataloader_num_workers=accelerator.num_processes,
     )
 
     logging.info("Start training...")

@@ -2,7 +2,7 @@
 
 # SLURM Directives
 #SBATCH --ntasks=1
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --time=00:15:00
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
