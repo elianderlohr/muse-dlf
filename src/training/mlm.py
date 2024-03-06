@@ -8,6 +8,8 @@ from transformers import (
     Trainer,
     TrainerCallback,
 )
+
+from transformers.integrations import WandbCallback
 from datasets import load_dataset
 import wandb
 import torch
@@ -16,7 +18,7 @@ import math
 import os
 
 
-class LogPerplexityCallback(TrainerCallback):
+class LogPerplexityCallback(WandbCallback):
     """
     Logs the perplexity metric at the end of an evaluation phase.
     """
@@ -30,9 +32,41 @@ class LogPerplexityCallback(TrainerCallback):
             logging.info(f"Perplexity: {perplexity}")
 
             if "wandb" in args.report_to:
-                import wandb
 
-                wandb.log({"perplexity": perplexity})
+                self._wandb.log({"perplexity": perplexity})
+
+
+class EarlyStoppingCallback(TrainerCallback):
+    """
+    A custom callback for early stopping based on perplexity.
+    """
+
+    def __init__(self, patience=3):
+        """
+        Args:
+            patience (int): Number of evaluations to wait for perplexity to improve before stopping the training.
+        """
+        self.patience = patience
+        self.best_perplexity = float("inf")
+        self.wait = 0
+        self.stopped_epoch = 0
+
+    def on_evaluate(self, args, state, control, **kwargs):
+        metrics = kwargs.get("metrics", {})
+        eval_loss = metrics.get("eval_loss", None)
+        if eval_loss is not None:
+            perplexity = math.exp(eval_loss)
+            if perplexity < self.best_perplexity:
+                self.best_perplexity = perplexity
+                self.wait = 0
+            else:
+                self.wait += 1
+                if self.wait >= self.patience:
+                    print(
+                        f"No improvement in perplexity for {self.patience} evaluations. Stopping training."
+                    )
+                    control.should_training_stop = True
+                    self.stopped_epoch = state.epoch
 
 
 def load_data(data_path, tokenizer):
@@ -96,7 +130,7 @@ def main():
     )
 
     # epochs
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
+    parser.add_argument("--epochs", type=int, default=1000, help="Number of epochs")
 
     # wandb api key
     parser.add_argument("--wb_api_key", type=str, default=None, help="Wandb api key")
@@ -158,13 +192,13 @@ def main():
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         save_steps=5_000,
-        eval_steps=2_000,
+        eval_steps=100,
         logging_steps=100,
         save_total_limit=2,
         report_to="wandb",
         run_name=args.project_name,
         dataloader_num_workers=accelerator.num_processes,
-        evaluation_strategy="steps",
+        evaluation_strategy="epoch",
     )
 
     logging.info("Start training...")
@@ -175,7 +209,7 @@ def main():
         data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        callbacks=[LogPerplexityCallback()],
+        callbacks=[LogPerplexityCallback(), EarlyStoppingCallback(patience=5)],
     )
 
     logging.info("Set up accelerator")
