@@ -35,7 +35,6 @@ class LogPerplexityCallback(WandbCallback):
             logging.info(f"Perplexity: {perplexity}")
 
             if "wandb" in args.report_to:
-
                 self._wandb.log({"perplexity": perplexity})
 
 
@@ -198,8 +197,8 @@ def main():
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         save_steps=5_000,
-        eval_steps=100,
-        logging_steps=100,
+        eval_steps=250,
+        logging_steps=250,
         save_total_limit=2,
         report_to="wandb",
         run_name=args.project_name,
