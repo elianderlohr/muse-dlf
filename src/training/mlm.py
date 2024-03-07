@@ -16,6 +16,7 @@ import torch
 from accelerate import Accelerator
 import math
 import os
+from datetime import datetime
 
 
 class LogPerplexityCallback(WandbCallback):
@@ -93,7 +94,6 @@ def load_data(data_path, tokenizer):
 
 
 def main():
-
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
@@ -177,7 +177,10 @@ def main():
     accelerator = Accelerator()
 
     # generate wandb run name use current date and time
-    custom_run_name = f"{args.project_name}-{accelerator.local_process_index}-{accelerator.local_process_index}"
+    current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    custom_run_name = (
+        f"{args.project_name}-{accelerator.local_process_index}-{current_time}"
+    )
 
     if accelerator.is_main_process:
         if args.wb_api_key:
