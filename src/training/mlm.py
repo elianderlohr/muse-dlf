@@ -176,6 +176,9 @@ def main():
 
     accelerator = Accelerator()
 
+    # generate wandb run name use current date and time
+    custom_run_name = f"{args.project_name}-{accelerator.local_process_index}-{accelerator.local_process_index}"
+
     if accelerator.is_main_process:
         if args.wb_api_key:
             logging.info("Logging into wandb")
@@ -183,7 +186,7 @@ def main():
         else:
             raise ValueError("Wandb API key not provided")
         # Initialize wandb run here if you need to pass specific configuration
-        wandb.init(project=args.project_name, config=args)
+        wandb.init(project=args.project_name, name=custom_run_name, config=args)
     # Ensure wandb is silent on processes that are not the main process
     else:
         wandb.init(mode="disabled")
