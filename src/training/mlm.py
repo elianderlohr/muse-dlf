@@ -49,6 +49,7 @@ class EarlyStoppingCallback(TrainerCallback):
         Args:
             patience (int): Number of evaluations to wait for perplexity to improve before stopping the training.
         """
+        super().__init__()
         self.patience = patience
         self.best_perplexity = float("inf")
         self.wait = 0
