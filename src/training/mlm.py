@@ -181,6 +181,8 @@ def main():
     else:
         raise ValueError("Wandb api key not provided")
 
+    wandb.init(project=args.project_name)
+
     # create the args.output_path if it does not exist
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
