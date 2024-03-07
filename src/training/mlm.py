@@ -196,7 +196,6 @@ def main():
         overwrite_output_dir=True,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
-        save_steps=5_000,
         eval_steps=250,
         logging_steps=250,
         save_total_limit=2,
@@ -205,6 +204,7 @@ def main():
         dataloader_num_workers=accelerator.num_processes,
         evaluation_strategy="steps",
         logging_strategy="steps",
+        save_strategy="epoch",
     )
 
     logging.info("Start training...")
