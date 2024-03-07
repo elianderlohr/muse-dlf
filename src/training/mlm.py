@@ -181,8 +181,6 @@ def main():
     else:
         raise ValueError("Wandb api key not provided")
 
-    wandb.init(project=args.project_name)
-
     # create the args.output_path if it does not exist
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
@@ -190,6 +188,11 @@ def main():
     logging.info("Setting up Trainer")
 
     accelerator = Accelerator()
+
+    if accelerator.is_main_process:
+        wandb.init(project=args.project_name)
+
+    accelerator.wait_for_everyone()
 
     training_args = TrainingArguments(
         output_dir=args.output_path,
@@ -228,7 +231,8 @@ def main():
 
     logging.info("Training complete")
 
-    wandb.finish()
+    if accelerator.is_main_process:
+        wandb.finish()
 
 
 if __name__ == "__main__":
