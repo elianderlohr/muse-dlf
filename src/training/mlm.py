@@ -174,20 +174,25 @@ def main():
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True)
 
-    # wandb login
-    if args.wb_api_key:
-        logging.info("Logging into wandb")
-        wandb.login(key=args.wb_api_key)
+    accelerator = Accelerator()
+
+    if accelerator.is_main_process:
+        if args.wb_api_key:
+            logging.info("Logging into wandb")
+            wandb.login(key=args.wb_api_key)
+        else:
+            raise ValueError("Wandb API key not provided")
+        # Initialize wandb run here if you need to pass specific configuration
+        wandb.init(project=args.project_name, config=args)
+    # Ensure wandb is silent on processes that are not the main process
     else:
-        raise ValueError("Wandb api key not provided")
+        wandb.init(mode="disabled")
 
     # create the args.output_path if it does not exist
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
 
     logging.info("Setting up Trainer")
-
-    accelerator = Accelerator()
 
     training_args = TrainingArguments(
         output_dir=args.output_path,
@@ -224,7 +229,8 @@ def main():
 
     logging.info("Training complete")
 
-    wandb.finish()
+    if accelerator.is_main_process:
+        wandb.finish()
 
 
 if __name__ == "__main__":
