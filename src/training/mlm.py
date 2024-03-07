@@ -189,24 +189,17 @@ def main():
 
     accelerator = Accelerator()
 
-    if accelerator.is_main_process:
-        wandb.init(project=args.project_name)
-
-    accelerator.wait_for_everyone()
-
     training_args = TrainingArguments(
         output_dir=args.output_path,
         overwrite_output_dir=True,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
-        eval_steps=250,
-        logging_steps=250,
         save_total_limit=2,
         report_to="wandb",
         run_name=args.project_name,
         dataloader_num_workers=accelerator.num_processes,
-        evaluation_strategy="steps",
-        logging_strategy="steps",
+        evaluation_strategy="epoch",
+        logging_strategy="epoch",
         save_strategy="epoch",
     )
 
@@ -231,8 +224,7 @@ def main():
 
     logging.info("Training complete")
 
-    if accelerator.is_main_process:
-        wandb.finish()
+    wandb.finish()
 
 
 if __name__ == "__main__":
