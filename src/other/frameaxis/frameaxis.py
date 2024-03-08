@@ -88,8 +88,18 @@ def main():
         os.makedirs(args.output_path)
 
     # Save the embeddings dictionary to a JSON file
-    with open(args.output_path, "w") as outfile:
-        json.dump(embeddings_dict, outfile, ensure_ascii=False, indent=4)
+    if os.path.isdir(args.output_path):
+        logging.error(
+            f"The specified output path '{args.output_path}' is a directory. Please specify a path ending with a filename."
+        )
+    else:
+        # Save the embeddings dictionary to a JSON file
+        try:
+            with open(args.output_path, "w") as outfile:
+                json.dump(embeddings_dict, outfile, ensure_ascii=False, indent=4)
+            logging.info(f"Embeddings saved to {args.output_path}")
+        except Exception as e:
+            logging.error(f"Failed to save embeddings: {e}")
 
     logging.info(f"Embeddings saved to {args.output_path}")
 
