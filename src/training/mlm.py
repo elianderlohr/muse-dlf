@@ -132,6 +132,11 @@ def main():
         "--batch_size", type=int, default=64, help="Batch size for training"
     )
 
+    # patience
+    parser.add_argument(
+        "--patience", type=int, default=10, help="Patience for early stopping"
+    )
+
     # epochs
     parser.add_argument("--epochs", type=int, default=1000, help="Number of epochs")
 
@@ -222,7 +227,10 @@ def main():
         data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        callbacks=[LogPerplexityCallback(), EarlyStoppingCallback(patience=5)],
+        callbacks=[
+            LogPerplexityCallback(),
+            EarlyStoppingCallback(patience=args.patience),
+        ],
     )
 
     logging.info("Set up accelerator")
