@@ -3,6 +3,7 @@ models
 data/mfc
 data/semeval
 data/glove
+data/frameaxis/mfc/prepare
 .ipynb_checkpoints
 .pyo
 .pyc
