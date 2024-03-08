@@ -47,7 +47,7 @@ echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
 
 echo "Running frameaxis.py..."
-python run/frameaxis/frameaxis.py \
+python src/other/frameaxis/frameaxis.py \
     --tfidf_path $TFIDF_PATH \
     --model_path $MODEL_PATH \
     --output_path $OUTPUT_PATH
