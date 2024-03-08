@@ -29,7 +29,7 @@ python -m pip list
 echo "Configuring paths..."
 TFIDF_PATH="data/frameaxis/mfc/prepare/tf_idf_extended.json"
 MODEL_PATH="roberta-base"
-OUTPUT_PATH="data/frameaxis/prepare/embeddings.json"
+OUTPUT_PATH="data/frameaxis/mfc/prepare/embeddings.json"
 
 echo "TFIDF path: $TFIDF_PATH"
 echo "Model path: $MODEL_PATH"
