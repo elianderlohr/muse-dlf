@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+import wandb
 from training.trainer import Trainer
 from transformers import BertTokenizer, RobertaTokenizerFast
 from accelerate import Accelerator
@@ -333,13 +334,22 @@ def main():
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-    accelerator = Accelerator()
+    # login to wandb
+    wandb.login(key=args.wandb_api_key)
+
+    # initialize accelerator
+    accelerator = Accelerator(log_with="wandb")
 
     # prepare components for accelerate
     model, optimizer, train_dataloader, test_dataloader, loss_function = (
         accelerator.prepare(
             model, optimizer, train_dataloader, test_dataloader, loss_function
         )
+    )
+
+    accelerator.init_trackers(
+        "muse",
+        config,
     )
 
     # Train the model
@@ -350,8 +360,6 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         accelerator=accelerator,
-        wandb_project_name="muse",
-        wandb_api_key=args.wandb_api_key,
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
         save_path=args.save_path,
@@ -361,6 +369,8 @@ def main():
     trainer = accelerator.prepare(trainer)
 
     trainer.run_training(epochs=args.epochs, alpha=args.alpha)
+
+    accelerator.end_training()
 
 
 if __name__ == "__main__":

@@ -7,7 +7,6 @@ import json
 from tqdm import tqdm
 from datetime import datetime
 import math
-import wandb
 from accelerate import Accelerator
 
 
@@ -22,11 +21,8 @@ class Trainer:
         device="cuda",
         save_path="../notebooks/",
         accelerator=None,
-        wandb_project_name="your_project_name",
-        wandb_api_key="your_api_key",
         tau_min=1,
         tau_decay=0.95,
-        config={},
     ):
         """
         Initializes the Trainer.
@@ -39,11 +35,8 @@ class Trainer:
             loss_function: The loss function to be used for training.
             device: The device to be used for training.
             save_path: The path to save the model and metrics.
-            wandb_project_name: The name of the W&B project.
-            wandb_api_key: The W&B API key.
             tau_min: The minimum value of tau.
             tau_decay: The decay factor for tau.
-            config: The configuration for W&B.
 
         Returns:
             None
@@ -62,24 +55,6 @@ class Trainer:
             self.device = accelerator.device
         else:
             self.device = device
-
-        # Initialize Weights & Biases
-        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        custom_run_name = (
-            f"{wandb_project_name}-{accelerator.local_process_index}-{current_time}"
-        )
-
-        if accelerator.is_main_process:
-            if wandb_api_key:
-                print("Logging into wandb")
-                wandb.login(key=wandb_api_key)
-            else:
-                raise ValueError("Wandb API key not provided")
-            # Initialize wandb run here if you need to pass specific configuration
-            wandb.init(project=wandb_project_name, name=custom_run_name, config=config)
-        # Ensure wandb is silent on processes that are not the main process
-        else:
-            wandb.init(mode="disabled")
 
         self.tau_min = tau_min
         self.tau_decay = tau_decay
@@ -167,7 +142,7 @@ class Trainer:
             supervised_total_loss += supervised_loss.item()
             unsupervised_total_loss += unsupervised_loss.item()
             # Log batch loss to wandb
-            wandb.log({"batch_loss": combined_loss.item(), "epoch": epoch})
+            self.accelerator.log({"batch_loss": combined_loss.item(), "epoch": epoch})
 
             del (
                 sentence_ids,
@@ -186,7 +161,7 @@ class Trainer:
         print(
             f"Epoch {epoch}, Avg Total Loss: {avg_total_loss}, Avg Supervised Loss: {avg_supervised_loss}, Avg Unsupervised Loss: {avg_unsupervised_loss}"
         )
-        wandb.log(
+        self.accelerator.log(
             {
                 "epoch_avg_total_loss": avg_total_loss,
                 "epoch_avg_supervised_loss": avg_supervised_loss,
@@ -203,28 +178,26 @@ class Trainer:
         combined_preds = []
         all_labels = []
 
-        with torch.no_grad():
-            for batch_idx, batch in enumerate(
-                tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
-            ):
-                sentence_ids = batch["sentence_ids"]
-                sentence_attention_masks = batch["sentence_attention_masks"]
+        for batch_idx, batch in enumerate(
+            tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
+        ):
+            sentence_ids = batch["sentence_ids"]
+            sentence_attention_masks = batch["sentence_attention_masks"]
 
-                predicate_ids = batch["predicate_ids"]
-                predicate_attention_masks = batch["predicate_attention_masks"].to(
-                    device
-                )
+            predicate_ids = batch["predicate_ids"]
+            predicate_attention_masks = batch["predicate_attention_masks"].to(device)
 
-                arg0_ids = batch["arg0_ids"]
-                arg0_attention_masks = batch["arg0_attention_masks"]
+            arg0_ids = batch["arg0_ids"]
+            arg0_attention_masks = batch["arg0_attention_masks"]
 
-                arg1_ids = batch["arg1_ids"]
-                arg1_attention_masks = batch["arg1_attention_masks"]
+            arg1_ids = batch["arg1_ids"]
+            arg1_attention_masks = batch["arg1_attention_masks"]
 
-                frameaxis_data = batch["frameaxis"]
+            frameaxis_data = batch["frameaxis"]
 
-                labels = batch["labels"]
+            labels = batch["labels"]
 
+            with torch.no_grad():
                 _, span_logits, sentence_logits, combined_logits = model(
                     sentence_ids,
                     sentence_attention_masks,
@@ -238,28 +211,34 @@ class Trainer:
                     tau,
                 )
 
-                span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
-                sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
-                combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
-
-                span_preds.append(span_pred.cpu().numpy())
-                sentence_preds.append(sentence_pred.cpu().numpy())
-                combined_preds.append(combined_pred.cpu().numpy())
-
-                all_labels.append(labels.cpu().numpy())
-
-                # Explicitly delete tensors to free up memory
-                del (
-                    sentence_ids,
-                    predicate_ids,
-                    arg0_ids,
-                    arg1_ids,
-                    labels,
-                    span_logits,
-                    sentence_logits,
-                    sentence_pred,
+            span_logits, sentence_logits, combined_logits = (
+                self.accelerator.gather_for_metrics(
+                    span_logits, sentence_logits, combined_logits
                 )
-                torch.cuda.empty_cache()
+            )
+
+            span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
+            sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
+            combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
+
+            span_preds.append(span_pred.cpu().numpy())
+            sentence_preds.append(sentence_pred.cpu().numpy())
+            combined_preds.append(combined_pred.cpu().numpy())
+
+            all_labels.append(labels.cpu().numpy())
+
+            # Explicitly delete tensors to free up memory
+            del (
+                sentence_ids,
+                predicate_ids,
+                arg0_ids,
+                arg1_ids,
+                labels,
+                span_logits,
+                sentence_logits,
+                sentence_pred,
+            )
+            torch.cuda.empty_cache()
 
         all_span_preds = np.vstack(span_preds)
         all_sentence_preds = np.vstack(sentence_preds)
@@ -308,7 +287,7 @@ class Trainer:
             "f1_combined_macro": f1_combined_macro,
         }
 
-        wandb.log(metrics)
+        self.accelerator.log(metrics)
 
         return metrics
 
