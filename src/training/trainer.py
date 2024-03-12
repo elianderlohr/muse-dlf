@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import StepLR
 from sklearn.metrics import f1_score, accuracy_score
 import json
 from tqdm import tqdm
-import datetime
+from datetime import datetime
 import math
 import wandb
 from accelerate import Accelerator
