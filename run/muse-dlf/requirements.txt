@@ -8,3 +8,7 @@ logging
 argparse  
 numpy
 nltk
+sklearn
+pandas
+tqdm
+allennlp
