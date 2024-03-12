@@ -116,28 +116,18 @@ class Trainer:
 
             supervised_loss = span_loss + sentence_loss
 
-            combined_loss = alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+            sum_of_parameters = sum(p.sum() for p in model.parameters())
 
-            if torch.isnan(combined_loss):
-                print(
-                    f"NaN loss detected at epoch {epoch+1}, batch {batch_idx+1}. Stopping..."
-                )
-                return
+            zero_sum = sum_of_parameters * 0.0
+
+            combined_loss = (
+                alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+            ) + zero_sum
 
             self.accelerator.backward(combined_loss)
 
             if self.accelerator.sync_gradients:
                 self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
-
-            # After the backward pass
-            if any(
-                p.grad is not None and torch.isnan(p.grad).any()
-                for p in model.parameters()
-            ):
-                print(
-                    f"NaN gradients detected at epoch {epoch+1}, batch {batch_idx+1}. Stopping..."
-                )
-                return
 
             self.optimizer.step()
 
@@ -161,7 +151,7 @@ class Trainer:
         avg_supervised_loss = supervised_total_loss / len(train_dataloader)
         avg_unsupervised_loss = unsupervised_total_loss / len(train_dataloader)
 
-        print(
+        self.accelerator.print(
             f"Epoch {epoch}, Avg Total Loss: {avg_total_loss}, Avg Supervised Loss: {avg_supervised_loss}, Avg Unsupervised Loss: {avg_unsupervised_loss}"
         )
         self.accelerator.log(

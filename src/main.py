@@ -342,7 +342,6 @@ def main():
     # initialize accelerator
     accelerator = Accelerator(
         log_with="wandb",
-        kwargs_handlers=DistributedDataParallelKwargs(find_unused_parameters=True),
     )
 
     # prepare components for accelerate
