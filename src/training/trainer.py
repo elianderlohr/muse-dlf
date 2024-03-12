@@ -148,7 +148,8 @@ class Trainer:
 
             self.accelerator.backward(combined_loss)
 
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            if self.accelerator.sync_gradients:
+                self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
 
             # After the backward pass
             if any(
