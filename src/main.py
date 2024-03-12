@@ -105,11 +105,11 @@ def main():
     model_config.add_argument(
         "--lambda_orthogonality",
         type=float,
-        default=0.1,
+        default=1e-3,  # 10−3
         help="Orthogonality regularization parameter",
     )
     model_config.add_argument(
-        "--dropout_prob", type=float, default=0.1, help="Dropout probability"
+        "--dropout_prob", type=float, default=0.3, help="Dropout probability"
     )
     model_config.add_argument(
         "--M", type=int, default=8, help="Large M used in loss function"
@@ -125,6 +125,16 @@ def main():
         type=int,
         default=15,
         help="Number of latent classes used in the auto encoder",
+    )
+
+    # Training Parameters
+    training_params = parser.add_argument_group("Training Parameters")
+    training_params.add_argument(
+        "--alpha", type=float, default=0.5, help="Alpha parameter for the loss function"
+    )
+    # learning rate
+    training_params.add_argument(
+        "--lr", type=float, default=5e-4, help="Learning rate for the optimizer"
     )
 
     # Data Processing
@@ -163,33 +173,45 @@ def main():
         type=str,
         default="bert-base-uncased",
         help="Name or path of the tokenizer model",
+        required=True,
     )
     io_paths.add_argument(
         "--path_name_pretrained_muse_model",
         type=str,
         default="",
         help="Path or name of the pretrained muse model",
+        required=True,
     )
     io_paths.add_argument(
         "--path_name_bert_model",
         type=str,
         default="bert-base-uncased",
         help="Name or path of the bert model",
+        required=True,
     )
     io_paths.add_argument(
-        "--path_srls", type=str, default="", help="Path to the SRLs file"
+        "--path_srls", type=str, default="", help="Path to the SRLs file", required=True
     )
     io_paths.add_argument(
-        "--path_frameaxis", type=str, default="", help="Path to the FrameAxis file"
+        "--path_frameaxis",
+        type=str,
+        default="",
+        help="Path to the FrameAxis file",
+        required=True,
     )
     io_paths.add_argument(
         "--path_antonym_pairs",
         type=str,
         default="",
         help="Path to the antonym pairs file",
+        required=True,
     )
     io_paths.add_argument(
-        "--save_path", type=str, default="", help="Path to save the model"
+        "--save_path",
+        type=str,
+        default="",
+        help="Path to save the model",
+        required=True,
     )
 
     # Training Parameters
@@ -198,7 +220,7 @@ def main():
         "--batch_size", type=int, default=24, help="Batch size"
     )
     training_params.add_argument(
-        "--epochs", type=int, default=3, help="Number of epochs"
+        "--epochs", type=int, default=10, help="Number of epochs"
     )
     training_params.add_argument(
         "--test_size", type=float, default=0.1, help="Size of the test set"
@@ -310,7 +332,7 @@ def main():
 
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=5e-4)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     # Train the model
     trainer = Trainer(
@@ -327,7 +349,7 @@ def main():
         config=config,
     )
 
-    trainer.run_training(epochs=args.epochs, alpha=0.5)
+    trainer.run_training(epochs=args.epochs, alpha=args.alpha)
 
 
 if __name__ == "__main__":

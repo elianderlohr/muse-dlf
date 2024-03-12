@@ -40,7 +40,7 @@ echo "GPU status:"
 nvidia-smi
 
 # CUDA configuration
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,1
 
 # Training Script Execution
 echo "=================== Training Start ==================="

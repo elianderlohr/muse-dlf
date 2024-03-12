@@ -8,6 +8,7 @@ from tqdm import tqdm
 import datetime
 import math
 import wandb
+from accelerate import Accelerator
 
 
 class Trainer:
@@ -46,21 +47,36 @@ class Trainer:
         Returns:
             None
         """
-        self.model = model.to(device)
+        self.model = model
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
         self.optimizer = optimizer
         self.loss_function = loss_function
-        self.device = device
+
         self.save_path = save_path
 
-        # Initialize Weights & Biases
-        wandb.login(key=wandb_api_key)
+        self.accelerator = Accelerator()
 
-        self.run = wandb.init(
-            project=wandb_project_name,
-            config=config,
-        )
+        if device == "cuda":
+            self.device = self.accelerator.device
+        else:
+            self.device = device
+
+        # Initialize Weights & Biases
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        custom_run_name = f"{wandb_project_name}-{self.accelerator.local_process_index}-{current_time}"
+
+        if self.accelerator.is_main_process:
+            if wandb_api_key:
+                print("Logging into wandb")
+                wandb.login(key=wandb_api_key)
+            else:
+                raise ValueError("Wandb API key not provided")
+            # Initialize wandb run here if you need to pass specific configuration
+            wandb.init(project=wandb_project_name, name=custom_run_name, config=config)
+        # Ensure wandb is silent on processes that are not the main process
+        else:
+            wandb.init(mode="disabled")
 
         self.tau_min = tau_min
         self.tau_decay = tau_decay
@@ -82,21 +98,21 @@ class Trainer:
 
             self.optimizer.zero_grad()
 
-            sentence_ids = batch["sentence_ids"].to(device)
-            sentence_attention_masks = batch["sentence_attention_masks"].to(device)
+            sentence_ids = batch["sentence_ids"]
+            sentence_attention_masks = batch["sentence_attention_masks"]
 
-            predicate_ids = batch["predicate_ids"].to(device)
-            predicate_attention_masks = batch["predicate_attention_masks"].to(device)
+            predicate_ids = batch["predicate_ids"]
+            predicate_attention_masks = batch["predicate_attention_masks"]
 
-            arg0_ids = batch["arg0_ids"].to(device)
-            arg0_attention_masks = batch["arg0_attention_masks"].to(device)
+            arg0_ids = batch["arg0_ids"]
+            arg0_attention_masks = batch["arg0_attention_masks"]
 
-            arg1_ids = batch["arg1_ids"].to(device)
-            arg1_attention_masks = batch["arg1_attention_masks"].to(device)
+            arg1_ids = batch["arg1_ids"]
+            arg1_attention_masks = batch["arg1_attention_masks"]
 
-            frameaxis_data = batch["frameaxis"].to(device)
+            frameaxis_data = batch["frameaxis"]
 
-            labels = batch["labels"].to(device)
+            labels = batch["labels"]
 
             unsupervised_loss, span_logits, sentence_logits, _ = model(
                 sentence_ids,
@@ -127,7 +143,7 @@ class Trainer:
                 )
                 return
 
-            combined_loss.backward()
+            self.accelerator.backward(combined_loss)
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
@@ -187,23 +203,23 @@ class Trainer:
             for batch_idx, batch in enumerate(
                 tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
             ):
-                sentence_ids = batch["sentence_ids"].to(device)
-                sentence_attention_masks = batch["sentence_attention_masks"].to(device)
+                sentence_ids = batch["sentence_ids"]
+                sentence_attention_masks = batch["sentence_attention_masks"]
 
-                predicate_ids = batch["predicate_ids"].to(device)
+                predicate_ids = batch["predicate_ids"]
                 predicate_attention_masks = batch["predicate_attention_masks"].to(
                     device
                 )
 
-                arg0_ids = batch["arg0_ids"].to(device)
-                arg0_attention_masks = batch["arg0_attention_masks"].to(device)
+                arg0_ids = batch["arg0_ids"]
+                arg0_attention_masks = batch["arg0_attention_masks"]
 
-                arg1_ids = batch["arg1_ids"].to(device)
-                arg1_attention_masks = batch["arg1_attention_masks"].to(device)
+                arg1_ids = batch["arg1_ids"]
+                arg1_attention_masks = batch["arg1_attention_masks"]
 
-                frameaxis_data = batch["frameaxis"].to(device)
+                frameaxis_data = batch["frameaxis"]
 
-                labels = batch["labels"].to(device)
+                labels = batch["labels"]
 
                 _, span_logits, sentence_logits, combined_logits = model(
                     sentence_ids,
@@ -313,6 +329,20 @@ class Trainer:
 
         global global_steps
         global_steps = 0
+
+        (
+            self.model,
+            self.scheduler,
+            self.optimizer,
+            self.train_dataloader,
+            self.test_dataloader,
+        ) = self.accelerator.prepare(
+            self.model,
+            scheduler,
+            self.optimizer,
+            self.train_dataloader,
+            self.test_dataloader,
+        )
 
         for epoch in range(epochs):
             self._train(
