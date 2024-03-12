@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-from torch.optim.lr_scheduler import StepLR
+
 from sklearn.metrics import f1_score, accuracy_score
 import json
 from tqdm import tqdm
@@ -18,6 +18,7 @@ class Trainer:
         test_dataloader,
         optimizer,
         loss_function,
+        scheduler,
         device="cuda",
         save_path="../notebooks/",
         accelerator=None,
@@ -33,6 +34,7 @@ class Trainer:
             test_dataloader: The DataLoader for the testing data.
             optimizer: The optimizer to be used for training.
             loss_function: The loss function to be used for training.
+            scheduler: The learning rate scheduler to be used for training.
             device: The device to be used for training.
             save_path: The path to save the model and metrics.
             tau_min: The minimum value of tau.
@@ -46,6 +48,7 @@ class Trainer:
         self.test_dataloader = test_dataloader
         self.optimizer = optimizer
         self.loss_function = loss_function
+        self.scheduler = scheduler
 
         self.save_path = save_path
 
@@ -308,7 +311,6 @@ class Trainer:
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
-        scheduler = StepLR(self.optimizer, step_size=2, gamma=0.1)
 
         global global_steps
         global_steps = 0
@@ -326,6 +328,6 @@ class Trainer:
                 epoch, self.model, self.test_dataloader, self.device, tau
             )
 
-            scheduler.step()
+            self.scheduler.step()
 
             self._save_model(epoch, self.model, metrics)

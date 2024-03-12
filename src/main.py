@@ -4,6 +4,7 @@ from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
 
 import wandb
 from training.trainer import Trainer
@@ -333,6 +334,7 @@ def main():
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = StepLR(optimizer, step_size=2, gamma=0.1)
 
     # login to wandb
     wandb.login(key=args.wandb_api_key)
@@ -341,9 +343,9 @@ def main():
     accelerator = Accelerator(log_with="wandb")
 
     # prepare components for accelerate
-    model, optimizer, train_dataloader, test_dataloader, loss_function = (
+    model, optimizer, train_dataloader, test_dataloader, scheduler = (
         accelerator.prepare(
-            model, optimizer, train_dataloader, test_dataloader, loss_function
+            model, optimizer, train_dataloader, test_dataloader, scheduler
         )
     )
 
@@ -359,6 +361,7 @@ def main():
         test_dataloader=test_dataloader,
         optimizer=optimizer,
         loss_function=loss_function,
+        scheduler=scheduler,
         accelerator=accelerator,
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
