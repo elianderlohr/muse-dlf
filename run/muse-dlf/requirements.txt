@@ -8,7 +8,7 @@ logging
 argparse  
 numpy
 nltk
-sklearn
+scikit-learn
 pandas
 tqdm
 allennlp
