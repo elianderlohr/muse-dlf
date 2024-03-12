@@ -335,10 +335,6 @@ def main():
 
     accelerator = Accelerator()
 
-    model = torch.nn.parallel.DistributedDataParallel(
-        model, find_unused_parameters=True
-    )
-
     # prepare components for accelerate
     model, optimizer, train_dataloader, test_dataloader, loss_function = (
         accelerator.prepare(
