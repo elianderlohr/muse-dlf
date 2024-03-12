@@ -180,7 +180,6 @@ def main():
         type=str,
         default="",
         help="Path or name of the pretrained muse model",
-        required=True,
     )
     io_paths.add_argument(
         "--path_name_bert_model",
