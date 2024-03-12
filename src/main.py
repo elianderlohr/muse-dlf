@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import StepLR
 import wandb
 from training.trainer import Trainer
 from transformers import BertTokenizer, RobertaTokenizerFast
-from accelerate import Accelerator
+from accelerate import Accelerator, DistributedDataParallelKwargs
 import warnings
 
 # Suppress specific warnings from numpy
@@ -340,7 +340,10 @@ def main():
     wandb.login(key=args.wandb_api_key)
 
     # initialize accelerator
-    accelerator = Accelerator(log_with="wandb")
+    accelerator = Accelerator(
+        log_with="wandb",
+        kwargs_handlers=DistributedDataParallelKwargs(find_unused_parameters=True),
+    )
 
     # prepare components for accelerate
     model, optimizer, train_dataloader, test_dataloader, scheduler = (
