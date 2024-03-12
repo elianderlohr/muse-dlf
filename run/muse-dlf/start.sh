@@ -55,6 +55,8 @@ nvidia-smi
 
 # CUDA configuration
 export CUDA_VISIBLE_DEVICES=0,1
+export TORCH_DISTRIBUTED_DEBUG=DETAIL
+
 
 # Training Script Execution
 echo "=================== Training Start ==================="
