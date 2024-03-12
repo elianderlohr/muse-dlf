@@ -21,6 +21,7 @@ class Trainer:
         loss_function,
         device="cuda",
         save_path="../notebooks/",
+        accelerator=None,
         wandb_project_name="your_project_name",
         wandb_api_key="your_api_key",
         tau_min=1,
@@ -55,18 +56,20 @@ class Trainer:
 
         self.save_path = save_path
 
-        self.accelerator = Accelerator()
+        self.accelerator = accelerator
 
         if device == "cuda":
-            self.device = self.accelerator.device
+            self.device = accelerator.device
         else:
             self.device = device
 
         # Initialize Weights & Biases
         current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        custom_run_name = f"{wandb_project_name}-{self.accelerator.local_process_index}-{current_time}"
+        custom_run_name = (
+            f"{wandb_project_name}-{accelerator.local_process_index}-{current_time}"
+        )
 
-        if self.accelerator.is_main_process:
+        if accelerator.is_main_process:
             if wandb_api_key:
                 print("Logging into wandb")
                 wandb.login(key=wandb_api_key)
@@ -329,20 +332,6 @@ class Trainer:
 
         global global_steps
         global_steps = 0
-
-        (
-            self.model,
-            self.scheduler,
-            self.optimizer,
-            self.train_dataloader,
-            self.test_dataloader,
-        ) = self.accelerator.prepare(
-            self.model,
-            scheduler,
-            self.optimizer,
-            self.train_dataloader,
-            self.test_dataloader,
-        )
 
         for epoch in range(epochs):
             self._train(

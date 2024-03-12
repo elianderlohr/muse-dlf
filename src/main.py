@@ -7,7 +7,7 @@ import torch.optim as optim
 
 from training.trainer import Trainer
 from transformers import BertTokenizer, RobertaTokenizerFast
-
+from accelerate import Accelerator
 import warnings
 
 # Suppress specific warnings from numpy
@@ -333,6 +333,15 @@ def main():
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
+    accelerator = Accelerator()
+
+    # prepare components for accelerate
+    model, optimizer, train_dataloader, test_dataloader, loss_function = (
+        accelerator.prepare(
+            model, optimizer, train_dataloader, test_dataloader, loss_function
+        )
+    )
+
     # Train the model
     trainer = Trainer(
         model=model,
@@ -340,6 +349,7 @@ def main():
         test_dataloader=test_dataloader,
         optimizer=optimizer,
         loss_function=loss_function,
+        accelerator=accelerator,
         wandb_project_name="muse",
         wandb_api_key=args.wandb_api_key,
         tau_min=args.tau_min,
@@ -347,6 +357,8 @@ def main():
         save_path=args.save_path,
         config=config,
     )
+
+    trainer = accelerator.prepare(trainer)
 
     trainer.run_training(epochs=args.epochs, alpha=args.alpha)
 
