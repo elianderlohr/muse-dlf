@@ -61,12 +61,13 @@ echo "=================== Training Start ==================="
 
 echo "Launching training script with Accelerate..."
 accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 --config_file run/muse-dlf/accelerate_config.yaml src/main.py \
-    --wb_api_key $WANDB_API_KEY \
+    --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
     --batch_size 32 \
     --epochs 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454 \
+    --path_name_pretrained_muse_model \
     --path_srls data/srls/mfc/FRISS_srl.pkl \
     --path_frameaxis data/frameaxis/mfc/frameaxis_frames.csv \
     --path_antonym_pairs data/axis/frames.json \
