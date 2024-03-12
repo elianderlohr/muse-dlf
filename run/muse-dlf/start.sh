@@ -60,7 +60,7 @@ export CUDA_VISIBLE_DEVICES=0,1
 echo "=================== Training Start ==================="
 
 echo "Launching training script with Accelerate..."
-accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 --config_file run/accelerate_config.yaml src/main.py \
+accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 --config_file run/muse-dlf/accelerate_config.yaml src/main.py \
     --wb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
     --batch_size 32 \
