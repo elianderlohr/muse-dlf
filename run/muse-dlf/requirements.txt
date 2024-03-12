@@ -7,3 +7,4 @@ torch
 logging  
 argparse  
 numpy
+nltk
