@@ -11,7 +11,7 @@
 echo "===================== Job Details ====================="
 # Activate the virtual environment
 echo "Activating virtual environment..."
-source py39venv/bin/activate
+source run/muse-dlf/muse-dlf/bin/activate
 
 # Environment Setup
 echo "Setting up environment..."
