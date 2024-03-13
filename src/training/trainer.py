@@ -204,10 +204,12 @@ class Trainer:
                     tau,
                 )
 
-            span_logits, sentence_logits, combined_logits = (
-                self.accelerator.gather_for_metrics(
-                    span_logits, sentence_logits, combined_logits
-                )
+            span_logits = self.accelerator.gather_for_metrics((span_logits, labels))
+            sentence_logits = self.accelerator.gather_for_metrics(
+                (sentence_logits, labels)
+            )
+            combined_logits = self.accelerator.gather_for_metrics(
+                (combined_logits, labels)
             )
 
             span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
