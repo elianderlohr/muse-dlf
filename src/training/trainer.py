@@ -139,8 +139,8 @@ class Trainer:
             self.accelerator.log(
                 {
                     "combined_loss": combined_loss.item(),
-                    "supervised_loss": supervised_total_loss.item(),
-                    "unsupervised_loss": unsupervised_total_loss.item(),
+                    "supervised_loss": supervised_loss.item(),
+                    "unsupervised_loss": unsupervised_loss.item(),
                     "epoch": epoch,
                 },
                 step=global_steps,
@@ -153,6 +153,8 @@ class Trainer:
                 arg1_ids,
                 labels,
                 unsupervised_loss,
+                supervised_loss,
+                combined_loss,
             )
             torch.cuda.empty_cache()
 
