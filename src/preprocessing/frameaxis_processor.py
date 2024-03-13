@@ -55,13 +55,13 @@ class FrameAxisProcessor:
         with open(path_antonym_pairs) as f:
             antonym_pairs = json.load(f)
 
+        self.dim_names = dim_names
+
         self.antonym_pairs_embeddings = self.precompute_antonym_embeddings(
             antonym_pairs
         )
 
         self.save_type = save_type
-
-        self.dim_names = dim_names
 
         # allowed save types
         if save_type not in ["csv", "pickle", "json"]:
