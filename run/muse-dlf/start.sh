@@ -67,6 +67,7 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --path_data $DATA_PATH \
     --batch_size 32 \
     --epochs 25 \
+    --frameaxis_dim 5 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454 \
     --path_srls data/srls/mfc/FRISS_srl.pkl \
