@@ -220,11 +220,9 @@ class Trainer:
                 (combined_pred, labels)
             )
 
-            # flatten
-            combined_pred = combined_pred.reshape(-1)
-            labels = labels.reshape(-1)
-
-            print(combined_pred.shape, labels.shape)
+            # transform from one-hot to class index
+            combined_pred = combined_pred.argmax(dim=1)
+            labels = labels.argmax(dim=1)
 
             f1_metric_macro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
@@ -251,8 +249,8 @@ class Trainer:
             )
             torch.cuda.empty_cache()
 
-        eval_results_micro = f1_metric_micro.compute()
-        eval_results_macro = f1_metric_macro.compute()
+        eval_results_micro = f1_metric_micro.compute(average="micro")
+        eval_results_macro = f1_metric_macro.compute(average="macro")
         eval_accuracy = accuracy_metric.compute()
 
         self.accelerator.print(
