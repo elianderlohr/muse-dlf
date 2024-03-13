@@ -241,42 +241,37 @@ class Trainer:
             )
             torch.cuda.empty_cache()
 
-        all_span_preds = np.vstack(span_preds)
-        all_sentence_preds = np.vstack(sentence_preds)
-        all_combined_preds = np.vstack(combined_preds)
-        all_labels = np.vstack(all_labels)
-
         # Calculate metrics for span predictions
         span_results_micro = f1_metric_micro.compute(
-            predictions=all_span_preds.tolist(), references=all_labels.tolist()
+            predictions=span_preds.tolist(), references=all_labels.tolist()
         )
         span_results_macro = f1_metric_macro.compute(
-            predictions=all_span_preds.tolist(), references=all_labels.tolist()
+            predictions=span_preds.tolist(), references=all_labels.tolist()
         )
         span_accuracy = accuracy_metric.compute(
-            predictions=all_span_preds.tolist(), references=all_labels.tolist()
+            predictions=span_preds.tolist(), references=all_labels.tolist()
         )
 
         # Calculate metrics for sentence predictions
         sentence_results_micro = f1_metric_micro.compute(
-            predictions=all_sentence_preds.tolist(), references=all_labels.tolist()
+            predictions=sentence_preds.tolist(), references=all_labels.tolist()
         )
         sentence_results_macro = f1_metric_macro.compute(
-            predictions=all_sentence_preds.tolist(), references=all_labels.tolist()
+            predictions=sentence_preds.tolist(), references=all_labels.tolist()
         )
         sentence_accuracy = accuracy_metric.compute(
-            predictions=all_sentence_preds.tolist(), references=all_labels.tolist()
+            predictions=sentence_preds.tolist(), references=all_labels.tolist()
         )
 
         # Calculate metrics for combined predictions
         combined_results_micro = f1_metric_micro.compute(
-            predictions=all_combined_preds.tolist(), references=all_labels.tolist()
+            predictions=combined_preds.tolist(), references=all_labels.tolist()
         )
         combined_results_macro = f1_metric_macro.compute(
-            predictions=all_combined_preds.tolist(), references=all_labels.tolist()
+            predictions=combined_preds.tolist(), references=all_labels.tolist()
         )
         combined_accuracy = accuracy_metric.compute(
-            predictions=all_combined_preds.tolist(), references=all_labels.tolist()
+            predictions=combined_preds.tolist(), references=all_labels.tolist()
         )
 
         self.accelerator.print("Span Metrics:")
