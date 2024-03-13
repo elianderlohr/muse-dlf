@@ -197,7 +197,7 @@ class Trainer:
             labels = batch["labels"]
 
             with torch.no_grad():
-                _, span_logits, sentence_logits, combined_logits = model(
+                _, _, _, combined_logits = model(
                     sentence_ids,
                     sentence_attention_masks,
                     predicate_ids,
@@ -210,23 +210,26 @@ class Trainer:
                     tau,
                 )
 
-            span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
-            sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
             combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
 
-            span_logits = self.accelerator.gather_for_metrics((span_logits, labels))
-            sentence_logits = self.accelerator.gather_for_metrics(
-                (sentence_logits, labels)
-            )
             combined_logits = self.accelerator.gather_for_metrics(
                 (combined_logits, labels)
             )
 
-            span_preds.append(span_pred.cpu().numpy())
-            sentence_preds.append(sentence_pred.cpu().numpy())
-            combined_preds.append(combined_pred.cpu().numpy())
+            f1_metric_macro.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
 
-            all_labels.append(labels.cpu().numpy())
+            f1_metric_micro.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
+
+            accuracy_metric.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
 
             # Explicitly delete tensors to free up memory
             del (
@@ -235,70 +238,21 @@ class Trainer:
                 arg0_ids,
                 arg1_ids,
                 labels,
-                span_logits,
-                sentence_logits,
-                sentence_pred,
             )
             torch.cuda.empty_cache()
 
-        # Calculate metrics for span predictions
-        span_results_micro = f1_metric_micro.compute(
-            predictions=span_preds, references=all_labels
-        )
-        span_results_macro = f1_metric_macro.compute(
-            predictions=span_preds, references=all_labels
-        )
-        span_accuracy = accuracy_metric.compute(
-            predictions=span_preds, references=all_labels
-        )
+        eval_results_micro = f1_metric_micro.compute()
+        eval_results_macro = f1_metric_macro.compute()
+        eval_accuracy = accuracy_metric.compute()
 
-        # Calculate metrics for sentence predictions
-        sentence_results_micro = f1_metric_micro.compute(
-            predictions=sentence_preds, references=all_labels
-        )
-        sentence_results_macro = f1_metric_macro.compute(
-            predictions=sentence_preds, references=all_labels
-        )
-        sentence_accuracy = accuracy_metric.compute(
-            predictions=sentence_preds, references=all_labels
-        )
-
-        # Calculate metrics for combined predictions
-        combined_results_micro = f1_metric_micro.compute(
-            predictions=combined_preds, references=all_labels
-        )
-        combined_results_macro = f1_metric_macro.compute(
-            predictions=combined_preds, references=all_labels
-        )
-        combined_accuracy = accuracy_metric.compute(
-            predictions=combined_preds, references=all_labels
-        )
-
-        self.accelerator.print("Span Metrics:")
         self.accelerator.print(
-            f"F1 Micro: {span_results_micro['f1']:.4f}, F1 Macro: {span_results_macro['f1']:.4f}, Accuracy: {span_accuracy['accuracy']:.4f}"
-        )
-
-        self.accelerator.print("Sentence Metrics:")
-        self.accelerator.print(
-            f"F1 Micro: {sentence_results_micro['f1']:.4f}, F1 Macro: {sentence_results_macro['f1']:.4f}, Accuracy: {sentence_accuracy['accuracy']:.4f}"
-        )
-
-        self.accelerator.print("Combined Metrics:")
-        self.accelerator.print(
-            f"F1 Micro: {combined_results_micro['f1']:.4f}, F1 Macro: {combined_results_macro['f1']:.4f}, Accuracy: {combined_accuracy['accuracy']:.4f}"
+            f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
         )
 
         metrics = {
-            "span_results_micro": span_results_micro,
-            "span_results_macro": span_results_macro,
-            "span_accuracy": span_accuracy,
-            "sentence_results_micro": sentence_results_micro,
-            "sentence_results_macro": sentence_results_macro,
-            "sentence_accuracy": sentence_accuracy,
-            "combined_results_micro": combined_results_micro,
-            "combined_results_macro": combined_results_macro,
-            "combined_accuracy": combined_accuracy,
+            "micro_f1": eval_results_micro,
+            "macro_f1": eval_results_macro,
+            "accuracy": eval_accuracy,
             "epoch": epoch,
         }
 
