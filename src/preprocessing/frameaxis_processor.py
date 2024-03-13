@@ -22,6 +22,7 @@ class FrameAxisProcessor:
         path_name_bert_model="bert-base-uncased",
         force_recalculate=False,
         save_type="pickle",
+        dim_names=["positive", "negative"],
     ):
         """
         FrameAxisProcessor constructor
@@ -60,6 +61,8 @@ class FrameAxisProcessor:
 
         self.save_type = save_type
 
+        self.dim_names = dim_names
+
         # allowed save types
         if save_type not in ["csv", "pickle", "json"]:
             raise ValueError(
@@ -73,8 +76,8 @@ class FrameAxisProcessor:
     def precompute_antonym_embeddings(self, antonym_pairs):
         embeddings = {}
         for dimension, pairs in antonym_pairs.items():
-            pos_words = pairs["positive"]
-            neg_words = pairs["negative"]
+            pos_words = pairs[self.dim_names[0]]
+            neg_words = pairs[self.dim_names[1]]
 
             pos_embeddings = [self._get_embedding(word) for word in pos_words]
             neg_embeddings = [self._get_embedding(word) for word in neg_words]
@@ -83,8 +86,8 @@ class FrameAxisProcessor:
             neg_embedding_avg = torch.mean(torch.stack(neg_embeddings), dim=0)
 
             embeddings[dimension] = {
-                "positive": pos_embedding_avg,
-                "negative": neg_embedding_avg,
+                self.dim_names[0]: pos_embedding_avg,
+                self.dim_names[1]: neg_embedding_avg,
             }
         return embeddings
 
@@ -94,8 +97,8 @@ class FrameAxisProcessor:
             cos_sims = {}
 
             for dimension, embeddings in self.antonym_pairs_embeddings.items():
-                pos_embedding = embeddings["positive"].to(self.model.device)
-                neg_embedding = embeddings["negative"].to(self.model.device)
+                pos_embedding = embeddings[self.dim_names[0]].to(self.model.device)
+                neg_embedding = embeddings[self.dim_names[1]].to(self.model.device)
                 diff_vector = neg_embedding - pos_embedding
 
                 sims = []

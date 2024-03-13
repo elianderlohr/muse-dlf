@@ -71,6 +71,8 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --path_name_bert_model models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454 \
     --path_srls data/srls/mfc/FRISS_srl.pkl \
     --path_frameaxis data/frameaxis/mfc/frameaxis_frames_roberta.pkl \
+    --dim_names virtue,vice \
+    --force_recalculate_frameaxis true \
     --path_antonym_pairs data/axis/frames.json \
     --save_path $SAVE_PATH
 

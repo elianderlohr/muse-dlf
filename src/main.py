@@ -208,6 +208,12 @@ def main():
         required=True,
     )
     io_paths.add_argument(
+        "--dim_names",
+        type=str,
+        default="positive,negative",
+        help="Dimension names for the FrameAxis",
+    )
+    io_paths.add_argument(
         "--save_path",
         type=str,
         default="",
@@ -306,6 +312,9 @@ def main():
     elif args.name_tokenizer == "bert-base-uncased":
         tokenizer = BertTokenizer.from_pretrained(args.name_tokenizer)
 
+    # Preprocess the dim_names
+    dim_names = args.dim_names.split(",")
+
     # Preprocess the input
     preprocessor = PreProcessor(
         tokenizer,
@@ -320,6 +329,7 @@ def main():
         name_tokenizer=args.name_tokenizer,
         path_name_bert_model=args.path_name_bert_model,
         path_antonym_pairs=args.path_antonym_pairs,
+        dim_names=dim_names,
     )
 
     # Load the data

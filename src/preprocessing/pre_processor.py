@@ -27,6 +27,7 @@ class PreProcessor:
         name_tokenizer="bert-base-uncased",
         path_name_bert_model="bert-base-uncased",
         path_antonym_pairs="frameaxis/axes/custom.tsv",
+        dim_names=["positive", "negative"],
     ):
         """
         Initializes the PreProcessor.
@@ -57,6 +58,7 @@ class PreProcessor:
         self.name_tokenizer = name_tokenizer
         self.path_name_bert_model = path_name_bert_model
         self.path_antonym_pairs = path_antonym_pairs
+        self.dim_names = dim_names
 
     def _load_data(self, path, format):
         """
@@ -110,6 +112,7 @@ class PreProcessor:
             path_name_bert_model=self.path_name_bert_model,
             path_antonym_pairs=self.path_antonym_pairs,
             save_type="pickle",
+            dim_names=self.dim_names,
         )
         frameaxis_df = frameaxis_processor.get_frameaxis_data()
 
