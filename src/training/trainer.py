@@ -243,35 +243,35 @@ class Trainer:
 
         # Calculate metrics for span predictions
         span_results_micro = f1_metric_micro.compute(
-            predictions=span_preds.tolist(), references=all_labels.tolist()
+            predictions=span_preds, references=all_labels
         )
         span_results_macro = f1_metric_macro.compute(
-            predictions=span_preds.tolist(), references=all_labels.tolist()
+            predictions=span_preds, references=all_labels
         )
         span_accuracy = accuracy_metric.compute(
-            predictions=span_preds.tolist(), references=all_labels.tolist()
+            predictions=span_preds, references=all_labels
         )
 
         # Calculate metrics for sentence predictions
         sentence_results_micro = f1_metric_micro.compute(
-            predictions=sentence_preds.tolist(), references=all_labels.tolist()
+            predictions=sentence_preds, references=all_labels
         )
         sentence_results_macro = f1_metric_macro.compute(
-            predictions=sentence_preds.tolist(), references=all_labels.tolist()
+            predictions=sentence_preds, references=all_labels
         )
         sentence_accuracy = accuracy_metric.compute(
-            predictions=sentence_preds.tolist(), references=all_labels.tolist()
+            predictions=sentence_preds, references=all_labels
         )
 
         # Calculate metrics for combined predictions
         combined_results_micro = f1_metric_micro.compute(
-            predictions=combined_preds.tolist(), references=all_labels.tolist()
+            predictions=combined_preds, references=all_labels
         )
         combined_results_macro = f1_metric_macro.compute(
-            predictions=combined_preds.tolist(), references=all_labels.tolist()
+            predictions=combined_preds, references=all_labels
         )
         combined_accuracy = accuracy_metric.compute(
-            predictions=combined_preds.tolist(), references=all_labels.tolist()
+            predictions=combined_preds, references=all_labels
         )
 
         self.accelerator.print("Span Metrics:")
