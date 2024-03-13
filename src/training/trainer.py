@@ -136,7 +136,15 @@ class Trainer:
             supervised_total_loss += supervised_loss.item()
             unsupervised_total_loss += unsupervised_loss.item()
             # Log batch loss to wandb
-            self.accelerator.log({"batch_loss": combined_loss.item(), "epoch": epoch})
+            self.accelerator.log(
+                {
+                    "combined_loss": combined_loss.item(),
+                    "supervised_loss": supervised_total_loss.item(),
+                    "unsupervised_loss": unsupervised_total_loss.item(),
+                    "epoch": epoch,
+                },
+                step=global_steps,
+            )
 
             del (
                 sentence_ids,
@@ -157,20 +165,16 @@ class Trainer:
         )
         self.accelerator.log(
             {
-                "epoch_avg_total_loss": avg_total_loss,
-                "epoch_avg_supervised_loss": avg_supervised_loss,
-                "epoch_avg_unsupervised_loss": avg_unsupervised_loss,
+                "total_loss": avg_total_loss,
+                "supervised_loss": avg_supervised_loss,
+                "unsupervised_loss": avg_unsupervised_loss,
                 "epoch": epoch,
-            }
+            },
+            step=epoch,
         )
 
     def _evaluate(self, epoch, model, test_dataloader, device, tau):
         model.eval()
-
-        span_preds = []
-        sentence_preds = []
-        combined_preds = []
-        all_labels = []
 
         # Load the evaluate metrics
         f1_metric_micro = evaluate.load("f1", config_name="micro")
@@ -260,11 +264,14 @@ class Trainer:
             "epoch": epoch,
         }
 
-        self.accelerator.log(metrics)
+        self.accelerator.log(
+            metrics,
+            step=epoch,
+        )
 
         return metrics
 
-    def _save_model(self, epoch, model, metrics):
+    def _save_model(self, epoch, model, metrics, keep_last_n=3):
         save_dir = os.path.join(self.save_path)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -279,15 +286,41 @@ class Trainer:
         with open(metrics_save_path, "w") as f:
             json.dump(metrics, f)
 
+        # List all model files and sort them by epoch number
+        model_files = [
+            file
+            for file in os.listdir(save_dir)
+            if file.startswith("model_epoch_") and file.endswith(".pth")
+        ]
+        model_files.sort(
+            key=lambda x: int(x.split("_")[2].split(".")[0])
+        )  # Sorting by epoch number
+
+        # If more models than we want to keep, delete the oldest
+        if len(model_files) > keep_last_n:
+            for file_to_delete in model_files[:-keep_last_n]:
+                os.remove(os.path.join(save_dir, file_to_delete))
+
+        # Similarly, manage metric files if needed
+        metric_files = [
+            file
+            for file in os.listdir(save_dir)
+            if file.startswith("metrics_epoch_") and file.endswith(".json")
+        ]
+        metric_files.sort(key=lambda x: int(x.split("_")[2].split(".")[0]))
+        if len(metric_files) > keep_last_n:
+            for file_to_delete in metric_files[:-keep_last_n]:
+                os.remove(os.path.join(save_dir, file_to_delete))
+
     def run_training(self, epochs, alpha=0.5):
         tau = 1
 
         global global_steps
         global_steps = 0
 
-        for epoch in range(epochs):
+        for epoch in range(1, epochs + 1):
             self._train(
-                epoch + 1,
+                epoch,
                 self.model,
                 self.train_dataloader,
                 tau,
