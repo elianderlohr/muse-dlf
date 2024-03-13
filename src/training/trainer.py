@@ -216,6 +216,10 @@ class Trainer:
                 (combined_pred, labels)
             )
 
+            # flatten
+            combined_pred = combined_pred.reshape(-1)
+            labels = labels.reshape(-1)
+
             f1_metric_macro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
