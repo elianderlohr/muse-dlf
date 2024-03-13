@@ -235,7 +235,7 @@ class PreProcessor:
             frameaxis_dim=self.frameaxis_dim,
         )
 
-        if sample_size:
+        if sample_size > 0:
             print(f"Sampling {sample_size} examples from the dataset.")
             train_dataset = torch.utils.data.Subset(train_dataset, range(sample_size))
             test_dataset = torch.utils.data.Subset(test_dataset, range(sample_size))

@@ -73,7 +73,7 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --path_frameaxis data/frameaxis/mfc/frameaxis_frames_roberta.pkl \
     --path_antonym_pairs data/axis/frames.json \
     --save_path $SAVE_PATH \
-    --sample_size 1000
+    --sample_size 100
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."

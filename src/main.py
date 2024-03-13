@@ -253,7 +253,7 @@ def main():
 
     # sample size
     advanced_settings.add_argument(
-        "--sample_size", type=int, default=None, help="Sample size"
+        "--sample_size", type=int, default=-1, help="Sample size"
     )
 
     args = parser.parse_args()
