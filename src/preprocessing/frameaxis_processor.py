@@ -76,6 +76,15 @@ class FrameAxisProcessor:
     def precompute_antonym_embeddings(self, antonym_pairs):
         embeddings = {}
         for dimension, pairs in antonym_pairs.items():
+            pos_name = self.dim_names[0]
+            neg_name = self.dim_names[1]
+
+            # check if the dimension has the required keys
+            if pos_name not in pairs or neg_name not in pairs:
+                raise ValueError(
+                    f"Dimension {dimension} does not have the required keys: {pos_name} and {neg_name} found {list(pairs.keys())}"
+                )
+
             pos_words = pairs[self.dim_names[0]]
             neg_words = pairs[self.dim_names[1]]
 
