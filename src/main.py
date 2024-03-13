@@ -251,6 +251,11 @@ def main():
         help="Force recalculate FrameAxis",
     )
 
+    # sample size
+    advanced_settings.add_argument(
+        "--sample_size", type=int, default=None, help="Sample size"
+    )
+
     args = parser.parse_args()
 
     # running the model with the given arguments
@@ -329,6 +334,7 @@ def main():
             "srl": args.force_recalculate_srls,
             "frameaxis": args.force_recalculate_frameaxis,
         },
+        sample_size=args.sample_size,
     )
 
     # Loss function and optimizer

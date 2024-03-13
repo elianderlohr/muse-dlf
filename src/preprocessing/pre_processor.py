@@ -184,6 +184,7 @@ class PreProcessor:
             "srl": False,
             "frameaxis": False,
         },
+        sample_size=None,
     ):
         """
         Returns the train and test datasets.
@@ -233,6 +234,11 @@ class PreProcessor:
             max_arg_length=self.max_arg_length,
             frameaxis_dim=self.frameaxis_dim,
         )
+
+        if sample_size:
+            print(f"Sampling {sample_size} examples from the dataset.")
+            train_dataset = torch.utils.data.Subset(train_dataset, range(sample_size))
+            test_dataset = torch.utils.data.Subset(test_dataset, range(sample_size))
 
         # create dataloaders
         train_dataloader = DataLoader(
