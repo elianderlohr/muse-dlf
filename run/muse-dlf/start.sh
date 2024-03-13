@@ -74,7 +74,6 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --path_antonym_pairs data/axis/mft.json \
     --dim_names virtue,vice \
     --force_recalculate_frameaxis true \
-    --path_antonym_pairs data/axis/frames.json \
     --save_path $SAVE_PATH
 
 # Cleanup and Closeout
