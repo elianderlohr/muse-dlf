@@ -73,8 +73,7 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --path_frameaxis data/frameaxis/mfc/frameaxis_mft.pkl \
     --path_antonym_pairs data/axis/mft.json \
     --dim_names virtue,vice \
-    --save_path $SAVE_PATH \
-    --sample_size 100 \
+    --save_path $SAVE_PATH
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
