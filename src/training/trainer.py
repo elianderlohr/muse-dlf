@@ -212,9 +212,11 @@ class Trainer:
 
             combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
 
-            combined_logits = self.accelerator.gather_for_metrics(
-                (combined_logits, labels)
-            )
+            combined_pred = self.accelerator.gather_for_metrics((combined_pred, labels))
+
+            # flatten the tensor
+            combined_pred = combined_pred.view(-1)
+            labels = labels.view(-1)
 
             f1_metric_macro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
