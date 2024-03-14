@@ -143,7 +143,6 @@ class Trainer:
                     "unsupervised_loss": unsupervised_loss.item(),
                     "epoch": epoch,
                 },
-                step=global_steps,
             )
 
             del (
@@ -172,7 +171,6 @@ class Trainer:
                 "unsupervised_loss": avg_unsupervised_loss,
                 "epoch": epoch,
             },
-            step=epoch,
         )
 
     def _evaluate(self, epoch, model, test_dataloader, device, tau):
@@ -268,7 +266,6 @@ class Trainer:
 
         self.accelerator.log(
             metrics,
-            step=epoch,
         )
 
         return metrics
