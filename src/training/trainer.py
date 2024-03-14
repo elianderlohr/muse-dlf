@@ -2,10 +2,8 @@ import os
 import numpy as np
 import torch
 
-from sklearn.metrics import f1_score, accuracy_score
 import json
 from tqdm import tqdm
-from datetime import datetime
 import math
 import evaluate
 
@@ -21,7 +19,7 @@ class Trainer:
         scheduler,
         device="cuda",
         save_path="../notebooks/",
-        accelerator=None,
+        training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
     ):
@@ -37,31 +35,54 @@ class Trainer:
             scheduler: The learning rate scheduler to be used for training.
             device: The device to be used for training.
             save_path: The path to save the model and metrics.
-            accelerator: The accelerator to be used for training.
+            training_management: The training management tool to be used. Options are 'accelerate', 'wandb', or None.
             tau_min: The minimum value of tau.
             tau_decay: The decay factor for tau.
 
         Returns:
             None
         """
-        self.model = model
+        self.model = model.to(device)
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
         self.optimizer = optimizer
         self.loss_function = loss_function
         self.scheduler = scheduler
-
+        self.device = device
         self.save_path = save_path
-
-        self.accelerator = accelerator
-
-        if device == "cuda":
-            self.device = accelerator.device
-        else:
-            self.device = device
-
         self.tau_min = tau_min
         self.tau_decay = tau_decay
+
+        self.training_management = training_management
+        if self.training_management == "accelerate":
+            print("Using Accelerate for training.")
+            from accelerate import Accelerator
+
+            self.accelerator = Accelerator()
+            self.model, self.optimizer, self.train_dataloader, self.test_dataloader = (
+                self.accelerator.prepare(
+                    self.model,
+                    self.optimizer,
+                    self.train_dataloader,
+                    self.test_dataloader,
+                )
+            )
+        elif self.training_management == "wandb":
+            print("Using Weights and Biases for training.")
+            import wandb
+
+            self.wandb = wandb.init(project="your_project_name")
+        else:
+            print("Using standard PyTorch for training.")
+            self.accelerator = None
+
+    def _log_metrics(self, metrics):
+        if self.training_management == "wandb":
+            self.wandb.log(metrics)
+        elif self.training_management == "accelerate":
+            self.accelerator.log(metrics)
+        else:
+            print(metrics)
 
     def _train(self, epoch, model, train_dataloader, tau, alpha, device):
         model.train()
@@ -80,21 +101,61 @@ class Trainer:
 
             self.optimizer.zero_grad()
 
-            sentence_ids = batch["sentence_ids"]
-            sentence_attention_masks = batch["sentence_attention_masks"]
+            sentence_ids = (
+                batch["sentence_ids"]
+                if self.training_management == "accelerate"
+                else batch["sentence_ids"].to(device)
+            )
+            sentence_attention_masks = (
+                batch["sentence_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["sentence_attention_masks"].to(device)
+            )
 
-            predicate_ids = batch["predicate_ids"]
-            predicate_attention_masks = batch["predicate_attention_masks"]
+            predicate_ids = (
+                batch["predicate_ids"]
+                if self.training_management == "accelerate"
+                else batch["predicate_ids"].to(device)
+            )
+            predicate_attention_masks = (
+                batch["predicate_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["predicate_attention_masks"].to(device)
+            )
 
-            arg0_ids = batch["arg0_ids"]
-            arg0_attention_masks = batch["arg0_attention_masks"]
+            arg0_ids = (
+                batch["arg0_ids"]
+                if self.training_management == "accelerate"
+                else batch["arg0_ids"].to(device)
+            )
+            arg0_attention_masks = (
+                batch["arg0_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["arg0_attention_masks"].to(device)
+            )
 
-            arg1_ids = batch["arg1_ids"]
-            arg1_attention_masks = batch["arg1_attention_masks"]
+            arg1_ids = (
+                batch["arg1_ids"]
+                if self.training_management == "accelerate"
+                else batch["arg1_ids"].to(device)
+            )
+            arg1_attention_masks = (
+                batch["arg1_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["arg1_attention_masks"].to(device)
+            )
 
-            frameaxis_data = batch["frameaxis"]
+            frameaxis_data = (
+                batch["frameaxis"]
+                if self.training_management == "accelerate"
+                else batch["frameaxis"].to(device)
+            )
 
-            labels = batch["labels"]
+            labels = (
+                batch["labels"]
+                if self.training_management == "accelerate"
+                else batch["labels"].to(device)
+            )
 
             unsupervised_loss, span_logits, sentence_logits, _ = model(
                 sentence_ids,
@@ -125,24 +186,26 @@ class Trainer:
                 alpha * supervised_loss + (1 - alpha) * unsupervised_loss
             ) + zero_sum
 
-            self.accelerator.backward(combined_loss)
-
-            if self.accelerator.sync_gradients:
+            if self.training_management == "accelerate":
+                self.accelerator.backward(combined_loss)
                 self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
+            else:
+                combined_loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
             self.optimizer.step()
 
             total_loss += combined_loss.item()
             supervised_total_loss += supervised_loss.item()
             unsupervised_total_loss += unsupervised_loss.item()
-            # Log batch loss to wandb
-            self.accelerator.log(
+
+            self._log_metrics(
                 {
                     "combined_loss": combined_loss.item(),
                     "supervised_loss": supervised_loss.item(),
                     "unsupervised_loss": unsupervised_loss.item(),
                     "epoch": epoch,
-                },
+                }
             )
 
             del (
@@ -161,10 +224,11 @@ class Trainer:
         avg_supervised_loss = supervised_total_loss / len(train_dataloader)
         avg_unsupervised_loss = unsupervised_total_loss / len(train_dataloader)
 
-        self.accelerator.print(
+        print(
             f"Epoch {epoch}, Avg Total Loss: {avg_total_loss}, Avg Supervised Loss: {avg_supervised_loss}, Avg Unsupervised Loss: {avg_unsupervised_loss}"
         )
-        self.accelerator.log(
+
+        self._log_metrics(
             {
                 "total_loss": avg_total_loss,
                 "supervised_loss": avg_supervised_loss,
@@ -216,9 +280,10 @@ class Trainer:
 
             combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
 
-            combined_pred, labels = self.accelerator.gather_for_metrics(
-                (combined_pred, labels)
-            )
+            if self.training_management == "accelerate":
+                combined_pred, labels = self.accelerator.gather_for_metrics(
+                    (combined_pred, labels)
+                )
 
             # transform from one-hot to class index
             combined_pred = combined_pred.argmax(dim=1)
@@ -253,7 +318,7 @@ class Trainer:
         eval_results_macro = f1_metric_macro.compute(average="macro")
         eval_accuracy = accuracy_metric.compute()
 
-        self.accelerator.print(
+        print(
             f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
         )
 
@@ -264,9 +329,7 @@ class Trainer:
             "epoch": epoch,
         }
 
-        self.accelerator.log(
-            metrics,
-        )
+        self._log_metrics(metrics)
 
         return metrics
 
@@ -313,6 +376,9 @@ class Trainer:
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
+
+        if self.training_management != "accelerate":
+            self.model = self.model.to(self.device)
 
         global global_steps
         global_steps = 0

@@ -380,7 +380,7 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         scheduler=scheduler,
-        accelerator=accelerator,
+        training_management=accelerator,
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
         save_path=args.save_path,
