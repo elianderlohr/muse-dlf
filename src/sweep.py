@@ -95,7 +95,7 @@ def load_model(
 
 def main():
 
-    wandb.init(project="muse-dlf")
+    run = wandb.init(project="muse-dlf")
 
     path_data = os.getenv("PATH_DATA")
 
@@ -210,10 +210,11 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         scheduler=scheduler,
-        training_management=wandb,
+        training_management="wandb",
         tau_min=tau_min,
         tau_decay=tau_decay,
         save_path=save_path,
+        wandb_instance=run,
     )
 
     trainer.run_training(epochs=epochs, alpha=alpha)

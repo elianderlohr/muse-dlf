@@ -77,6 +77,8 @@ def load_model(
 
 def main():
 
+    project_name = "muse-dlf"
+
     welcome_message()
 
     parser = argparse.ArgumentParser(description="Train MUSE model")
@@ -368,7 +370,7 @@ def main():
     )
 
     accelerator.init_trackers(
-        "muse",
+        project_name,
         config,
     )
 
@@ -380,10 +382,11 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         scheduler=scheduler,
-        training_management=accelerator,
+        training_management="accelerate",
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
         save_path=args.save_path,
+        accelerator_instance=accelerator,
     )
 
     trainer = accelerator.prepare(trainer)
