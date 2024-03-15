@@ -77,7 +77,7 @@ def load_model(
     return model
 
 
-def main(accelerator: Accelerator):
+def main():
 
     if accelerator.is_main_process:
         accelerator.init_trackers(
