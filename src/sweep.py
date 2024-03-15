@@ -1,5 +1,6 @@
 import argparse
 from datetime import datetime
+import json
 from model.muse.muse import MUSE
 from preprocessing.pre_processor import PreProcessor
 import torch
@@ -79,30 +80,46 @@ def load_model(
 
 def main():
 
+    # generate tmp file name based on datetime and "muse-dlf"
+    tmp_file_name = f"tmp/muse-dlf-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
+
     if accelerator.is_main_process:
         accelerator.init_trackers(
             "muse-dlf",
         )
 
-    accelerator.wait_for_everyone()
+        # create dict
+        config = {
+            "D_h": wandb.config.D_h,
+            "lambda_orthogonality": wandb.config.lambda_orthogonality,
+            "dropout_prob": wandb.config.dropout_prob,
+            "M_t": wandb.config.M_t,
+            "alpha": wandb.config.alpha,
+            "lr": wandb.config.lr,
+            "batch_size": wandb.config.batch_size,
+        }
 
-    wandb_tracker = accelerator.get_tracker("wandb", True)
+        # write to json file
+        with open(tmp_file_name, "w") as f:
+            json.dump(config, f)
+
+    accelerator.wait_for_everyone()
 
     path_data = os.getenv("PATH_DATA")
 
-    # model config
-    embedding_dim = 768
-    D_h = wandb.config.D_h
-    lambda_orthogonality = wandb_tracker.config.lambda_orthogonality
-    dropout_prob = wandb_tracker.config.dropout_prob
-    M = wandb_tracker.config.M_t
-    t = wandb_tracker.config.M_t
+    # Model Hyperparameters
+    shared_config = json.load(open(tmp_file_name))
+    D_h = shared_config["D_h"]
+    lambda_orthogonality = shared_config["lambda_orthogonality"]
+    dropout_prob = shared_config["dropout_prob"]
+    M = shared_config["M_t"]
+    t = shared_config["M_t"]
+    alpha = shared_config["alpha"]
+    lr = shared_config["lr"]
     K = 15
+    embedding_dim = 768
 
-    # training params
-    alpha = wandb_tracker.config.alpha
-    lr = wandb_tracker.config.lr
-    batch_size = wandb_tracker.config.batch_size
+    batch_size = shared_config["batch_size"]
     epochs = 3
     test_size = 0.1
     tau_min = 0.5
