@@ -80,50 +80,23 @@ def load_model(
 
 def main():
 
-    # generate tmp file name based on datetime and "muse-dlf"
-    tmp_file_name = f"tmp/muse-dlf-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
+    wandb.login()
 
-    # create tmp path if not exists
-    if not os.path.exists("tmp"):
-        os.makedirs("tmp")
-
-    if accelerator.is_main_process:
-        accelerator.init_trackers(
-            "muse-dlf",
-        )
-
-        # create dict
-        config = {
-            "D_h": wandb.config.D_h,
-            "lambda_orthogonality": wandb.config.lambda_orthogonality,
-            "dropout_prob": wandb.config.dropout_prob,
-            "M_t": wandb.config.M_t,
-            "alpha": wandb.config.alpha,
-            "lr": wandb.config.lr,
-            "batch_size": wandb.config.batch_size,
-        }
-
-        # write to json file
-        with open(tmp_file_name, "w") as f:
-            json.dump(config, f)
-
-    accelerator.wait_for_everyone()
+    wandb_instance = wandb.init(project="muse-dlf")
 
     path_data = os.getenv("PATH_DATA")
 
-    # Model Hyperparameters
-    shared_config = json.load(open(tmp_file_name))
-    D_h = shared_config["D_h"]
-    lambda_orthogonality = shared_config["lambda_orthogonality"]
-    dropout_prob = shared_config["dropout_prob"]
-    M = shared_config["M_t"]
-    t = shared_config["M_t"]
-    alpha = shared_config["alpha"]
-    lr = shared_config["lr"]
+    D_h = wandb.config.D_h
+    lambda_orthogonality = wandb.config.lambda_orthogonality
+    dropout_prob = wandb.config.dropout_prob
+    M = wandb.config.M_t
+    t = wandb.config.t_t
+    alpha = wandb.config.alpha
+    lr = wandb.config.lr
     K = 15
     embedding_dim = 768
 
-    batch_size = shared_config["batch_size"]
+    batch_size = wandb.config.batch_size
     epochs = 3
     test_size = 0.1
     tau_min = 0.5
@@ -222,48 +195,16 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         scheduler=scheduler,
-        training_management="accelerate",
+        training_management="wandb",
         tau_min=tau_min,
         tau_decay=tau_decay,
         save_path=save_path,
-        accelerator_instance=accelerator,
+        wandb_instance=wandb_instance,
     )
 
-    trainer = accelerator.prepare(trainer)
-
     trainer.run_training(epochs=epochs, alpha=alpha)
-
-    accelerator.end_training()
-
-
-# initialize accelerator
-accelerator = Accelerator(
-    log_with="wandb",
-)
-
-# get current date and time for sweep name
-current_date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-sweep_name = f"muse-dlf-sweep-{current_date_time}"
-
-sweep_config = {
-    "method": "bayes",  # or 'grid', 'random'
-    "name": sweep_name,
-    "metric": {"name": "accuracy", "goal": "maximize"},
-    "parameters": {
-        "lr": {"min": 1e-5, "max": 1e-3},
-        "batch_size": {"values": [16, 32, 64]},
-        "dropout_prob": {"min": 0.1, "max": 0.5},
-        "D_h": {"values": [256, 512, 768]},
-        "lambda_orthogonality": {"min": 1e-5, "max": 1e-3},
-        "M_t": {"values": [8, 16, 32]},
-        "alpha": {"min": 0.1, "max": 0.9},
-    },
-}
-
-sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
 
 
 if __name__ == "__main__":
 
-    wandb.agent(sweep_id, function=main, count=3)
+    main()

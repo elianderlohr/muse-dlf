@@ -48,8 +48,6 @@ echo "GPU status:"
 nvidia-smi
 
 # CUDA configuration
-export CUDA_VISIBLE_DEVICES=0,1
-export TORCH_DISTRIBUTED_DEBUG=DETAIL
 
 export PATH_DATA="data/mfc/data_prepared.json"
 export SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
@@ -63,7 +61,7 @@ export DIM_NAMES="virtue,vice"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 --config_file run/muse-dlf/accelerate_config.yaml src/sweep.py
+python -m wandb agent elianderlohr/muse-dlf/7xm7qdia
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
