@@ -216,11 +216,11 @@ def main():
         save_path=save_path,
     )
 
-    wandb.agent(
-        sweep_id, function=trainer.run_training(epochs=epochs, alpha=alpha), count=3
-    )
+    trainer.run_training(epochs=epochs, alpha=alpha)
 
 
 if __name__ == "__main__":
     # execute only if run as a script
     main()
+
+    wandb.agent(sweep_id, function=main, count=3)
