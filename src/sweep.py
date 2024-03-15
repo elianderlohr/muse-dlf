@@ -34,6 +34,8 @@ sweep_config = {
     },
 }
 
+sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
+
 
 # welcome console message
 def welcome_message():
@@ -214,7 +216,9 @@ def main():
         save_path=save_path,
     )
 
-    trainer.run_training(epochs=epochs, alpha=alpha)
+    wandb.agent(
+        sweep_id, function=trainer.run_training(epochs=epochs, alpha=alpha), count=3
+    )
 
 
 if __name__ == "__main__":

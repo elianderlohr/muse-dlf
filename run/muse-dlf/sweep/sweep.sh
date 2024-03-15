@@ -63,25 +63,7 @@ export DIM_NAMES="virtue,vice"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-# login
-python -m wandb login $WANDB_API_KEY
-
-# Capture the entire output of the wandb sweep command
-OUTPUT=$(wandb sweep --project muse-dlf run/muse-dlf/sweep/config.yaml 2>&1)
-
-# Echo the output to ensure it's what you expect
-echo "$OUTPUT"
-
-# Extract the sweep ID from the captured output
-SWEEP_ID=$(echo "$OUTPUT" | grep "Creating sweep with ID:" | awk '{print $NF}')
-
-# Echo the sweep ID to verify it's correctly extracted
-echo $SWEEP_ID
-
-echo "Launching wandb agent with sweep ID elianderlohr/muse-dlf/$SWEEP_ID..."
-
-# Run sweep
-python -m wandb agent elianderlohr/muse-dlf/$SWEEP_ID
+python src/sweep.py
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
