@@ -5,8 +5,8 @@ metric:
   goal: "maximize"
 parameters:
   lr:
-    min: 1e-5
-    max: 1e-3
+    min: 0.00005
+    max: 0.01
   batch_size:
     values: [16, 32, 64]
   dropout_prob:
@@ -15,8 +15,8 @@ parameters:
   D_h:
     values: [256, 512, 768]
   lambda_orthogonality:
-    min: 1e-5
-    max: 1e-3
+    min: 0.00005
+    max: 0.003
   M_t:
     values: [8, 16, 32]
   alpha:
