@@ -88,11 +88,11 @@ def main():
 
     wandb_tracker = accelerator.get_tracker("wandb", True)
 
-    print("################################")
-    print("wandb_tracker:", wandb_tracker)
+    accelerator.print("################################")
+    accelerator.print("wandb_tracker:", wandb_tracker)
     # get type wandb_tracker
-    print(type(wandb_tracker))
-    print("################################")
+    accelerator.print(type(wandb_tracker))
+    accelerator.print("################################")
 
     path_data = os.getenv("PATH_DATA")
 
