@@ -51,6 +51,14 @@ nvidia-smi
 export CUDA_VISIBLE_DEVICES=0,1
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
 
+export PATH_DATA="data/mfc/data_prepared.json"
+export SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
+export NAME_TOKENIZER="roberta-base"
+export PATH_NAME_BERT_MODEL="models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454"
+export PATH_SRLS="data/srls/mfc/FRISS_srl.pkl"
+export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
+export PATH_ANTONYM_PAIRS="data/axis/mft.json"
+export DIM_NAMES="virtue,vice"
 
 # Training Script Execution
 echo "=================== Training Start ==================="
@@ -58,8 +66,11 @@ echo "=================== Training Start ==================="
 # login
 python -m wandb login $WANDB_API_KEY
 
+SWEEP_ID=$(wandb sweep --project muse-dlf run/muse-dlf/sweep/config.yaml)
+echo $SWEEP_ID
+
 # Run sweep
-python -m wandb agent elianderlohr/muse/rmk3e96e
+python -m wandb agent elianderlohr/muse-dlf/$SWEEP_ID
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
