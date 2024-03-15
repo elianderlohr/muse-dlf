@@ -77,13 +77,7 @@ def load_model(
     return model
 
 
-def main():
-
-    # initialize accelerator
-    accelerator = Accelerator(
-        log_with="wandb",
-    )
-
+def main(accelerator):
     accelerator.init_trackers(
         "muse-dlf",
     )
@@ -221,6 +215,11 @@ def main():
 
 if __name__ == "__main__":
 
+    # initialize accelerator
+    accelerator = Accelerator(
+        log_with="wandb",
+    )
+
     # get current date and time for sweep name
     current_date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -243,4 +242,4 @@ if __name__ == "__main__":
 
     sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
 
-    wandb.agent(sweep_id, function=main, count=3)
+    wandb.agent(sweep_id, function=main(accelerator), count=3)
