@@ -77,10 +77,12 @@ def load_model(
     return model
 
 
-def main(accelerator):
-    accelerator.init_trackers(
-        "muse-dlf",
-    )
+def main(accelerator: Accelerator):
+
+    if accelerator.is_main_process:
+        accelerator.init_trackers(
+            "muse-dlf",
+        )
 
     accelerator.wait_for_everyone()
 
