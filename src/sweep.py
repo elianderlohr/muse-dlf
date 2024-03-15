@@ -88,17 +88,11 @@ def main():
 
     wandb_tracker = accelerator.get_tracker("wandb", True)
 
-    accelerator.print("################################")
-    accelerator.print("wandb_tracker:", wandb_tracker)
-    # get type wandb_tracker
-    accelerator.print(type(wandb_tracker))
-    accelerator.print("################################")
-
     path_data = os.getenv("PATH_DATA")
 
     # model config
     embedding_dim = 768
-    D_h = wandb_tracker.config.D_h
+    D_h = wandb.config.D_h
     lambda_orthogonality = wandb_tracker.config.lambda_orthogonality
     dropout_prob = wandb_tracker.config.dropout_prob
     M = wandb_tracker.config.M_t
