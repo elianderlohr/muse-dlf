@@ -19,23 +19,6 @@ warnings.filterwarnings(
 )
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
 
-sweep_config = {
-    "method": "bayes",  # or 'grid', 'random'
-    "name": "muse-dlf-sweep",
-    "metric": {"name": "accuracy", "goal": "maximize"},
-    "parameters": {
-        "lr": {"min": 1e-5, "max": 1e-3},
-        "batch_size": {"values": [16, 32, 64]},
-        "dropout_prob": {"min": 0.1, "max": 0.5},
-        "D_h": {"values": [256, 512, 768]},
-        "lambda_orthogonality": {"min": 1e-5, "max": 1e-3},
-        "M_t": {"values": [8, 16, 32]},
-        "alpha": {"min": 0.1, "max": 0.9},
-    },
-}
-
-sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
-
 
 # welcome console message
 def welcome_message():
@@ -221,6 +204,24 @@ def main():
 
 
 if __name__ == "__main__":
+
+    sweep_config = {
+        "method": "bayes",  # or 'grid', 'random'
+        "name": "muse-dlf",
+        "metric": {"name": "accuracy", "goal": "maximize"},
+        "parameters": {
+            "lr": {"min": 1e-5, "max": 1e-3},
+            "batch_size": {"values": [16, 32, 64]},
+            "dropout_prob": {"min": 0.1, "max": 0.5},
+            "D_h": {"values": [256, 512, 768]},
+            "lambda_orthogonality": {"min": 1e-5, "max": 1e-3},
+            "M_t": {"values": [8, 16, 32]},
+            "alpha": {"min": 0.1, "max": 0.9},
+        },
+    }
+
+    sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
+
     # execute only if run as a script
     main()
 
