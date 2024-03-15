@@ -88,21 +88,25 @@ def main():
         "muse-dlf",
     )
 
+    accelerator.wait_for_everyone()
+
+    wandb_tracker = accelerator.get_tracker("wandb")
+
     path_data = os.getenv("PATH_DATA")
 
     # model config
     embedding_dim = 768
-    D_h = wandb.config.D_h
-    lambda_orthogonality = wandb.config.lambda_orthogonality
-    dropout_prob = wandb.config.dropout_prob
-    M = wandb.config.M_t
-    t = wandb.config.M_t
+    D_h = wandb_tracker.config.D_h
+    lambda_orthogonality = wandb_tracker.config.lambda_orthogonality
+    dropout_prob = wandb_tracker.config.dropout_prob
+    M = wandb_tracker.config.M_t
+    t = wandb_tracker.config.M_t
     K = 15
 
     # training params
-    alpha = wandb.config.alpha
-    lr = wandb.config.lr
-    batch_size = wandb.config.batch_size
+    alpha = wandb_tracker.config.alpha
+    lr = wandb_tracker.config.lr
+    batch_size = wandb_tracker.config.batch_size
     epochs = 3
     test_size = 0.1
     tau_min = 0.5
