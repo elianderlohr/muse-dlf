@@ -83,6 +83,10 @@ def main():
     # generate tmp file name based on datetime and "muse-dlf"
     tmp_file_name = f"tmp/muse-dlf-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
 
+    # create tmp path if not exists
+    if not os.path.exists("tmp"):
+        os.makedirs("tmp")
+
     if accelerator.is_main_process:
         accelerator.init_trackers(
             "muse-dlf",
