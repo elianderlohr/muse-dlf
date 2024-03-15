@@ -90,7 +90,7 @@ def main():
     lambda_orthogonality = wandb.config.lambda_orthogonality
     dropout_prob = wandb.config.dropout_prob
     M = wandb.config.M_t
-    t = wandb.config.t_t
+    t = wandb.config.M_t
     alpha = wandb.config.alpha
     lr = wandb.config.lr
     K = 15
