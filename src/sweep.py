@@ -86,7 +86,7 @@ def main():
 
     accelerator.wait_for_everyone()
 
-    wandb_tracker = accelerator.get_tracker("wandb").tracker
+    wandb_tracker = accelerator.get_tracker("wandb", True).tracker
 
     path_data = os.getenv("PATH_DATA")
 
