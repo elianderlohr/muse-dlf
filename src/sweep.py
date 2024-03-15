@@ -86,7 +86,7 @@ def main():
 
     accelerator.wait_for_everyone()
 
-    wandb_tracker = accelerator.get_tracker("wandb", True)
+    wandb_tracker = accelerator.get_tracker("wandb").tracker
 
     path_data = os.getenv("PATH_DATA")
 
@@ -220,29 +220,29 @@ accelerator = Accelerator(
     log_with="wandb",
 )
 
+# get current date and time for sweep name
+current_date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+sweep_name = f"muse-dlf-sweep-{current_date_time}"
+
+sweep_config = {
+    "method": "bayes",  # or 'grid', 'random'
+    "name": sweep_name,
+    "metric": {"name": "accuracy", "goal": "maximize"},
+    "parameters": {
+        "lr": {"min": 1e-5, "max": 1e-3},
+        "batch_size": {"values": [16, 32, 64]},
+        "dropout_prob": {"min": 0.1, "max": 0.5},
+        "D_h": {"values": [256, 512, 768]},
+        "lambda_orthogonality": {"min": 1e-5, "max": 1e-3},
+        "M_t": {"values": [8, 16, 32]},
+        "alpha": {"min": 0.1, "max": 0.9},
+    },
+}
+
+sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
+
 
 if __name__ == "__main__":
-
-    # get current date and time for sweep name
-    current_date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    sweep_name = f"muse-dlf-sweep-{current_date_time}"
-
-    sweep_config = {
-        "method": "bayes",  # or 'grid', 'random'
-        "name": sweep_name,
-        "metric": {"name": "accuracy", "goal": "maximize"},
-        "parameters": {
-            "lr": {"min": 1e-5, "max": 1e-3},
-            "batch_size": {"values": [16, 32, 64]},
-            "dropout_prob": {"min": 0.1, "max": 0.5},
-            "D_h": {"values": [256, 512, 768]},
-            "lambda_orthogonality": {"min": 1e-5, "max": 1e-3},
-            "M_t": {"values": [8, 16, 32]},
-            "alpha": {"min": 0.1, "max": 0.9},
-        },
-    }
-
-    sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
 
     wandb.agent(sweep_id, function=main, count=3)
