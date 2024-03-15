@@ -61,26 +61,31 @@ class Trainer:
             from accelerate import Accelerator
 
             if "accelerator_instance" in kwargs:
-                self.accelerator = kwargs["accelerator_instance"]
+                self.accelerator: Accelerator = kwargs["accelerator_instance"]
             else:
                 raise ValueError(
                     "You must provide an accelerator instance if you want to use Accelerate for training."
                 )
 
-            self.model, self.optimizer, self.train_dataloader, self.test_dataloader = (
-                self.accelerator.prepare(
-                    self.model,
-                    self.optimizer,
-                    self.train_dataloader,
-                    self.test_dataloader,
-                )
+            (
+                self.model,
+                self.optimizer,
+                self.train_dataloader,
+                self.test_dataloader,
+                self.scheduler,
+            ) = self.accelerator.prepare(
+                self.model,
+                self.optimizer,
+                self.train_dataloader,
+                self.test_dataloader,
+                self.scheduler,
             )
         elif self.training_management == "wandb":
             print("Using Weights and Biases for training.")
             import wandb
 
             if "wandb_instance" in kwargs:
-                self.wandb = kwargs["wandb_instance"]
+                self.wandb: wandb = kwargs["wandb_instance"]
             else:
                 # raise error
                 raise ValueError(

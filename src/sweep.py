@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 from model.muse.muse import MUSE
 from preprocessing.pre_processor import PreProcessor
 import torch
@@ -78,7 +79,14 @@ def load_model(
 
 def main():
 
-    run = wandb.init(project="muse-dlf")
+    # initialize accelerator
+    accelerator = Accelerator(
+        log_with="wandb",
+    )
+
+    accelerator.init_trackers(
+        "muse-dlf",
+    )
 
     path_data = os.getenv("PATH_DATA")
 
@@ -95,7 +103,7 @@ def main():
     alpha = wandb.config.alpha
     lr = wandb.config.lr
     batch_size = wandb.config.batch_size
-    epochs = 5
+    epochs = 3
     test_size = 0.1
     tau_min = 0.5
     tau_decay = 5e-4
@@ -193,21 +201,30 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         scheduler=scheduler,
-        training_management="wandb",
+        training_management="accelerate",
         tau_min=tau_min,
         tau_decay=tau_decay,
         save_path=save_path,
-        wandb_instance=run,
+        accelerator_instance=accelerator,
     )
 
+    trainer = accelerator.prepare(trainer)
+
     trainer.run_training(epochs=epochs, alpha=alpha)
+
+    accelerator.end_training()
 
 
 if __name__ == "__main__":
 
+    # get current date and time for sweep name
+    current_date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    sweep_name = f"muse-dlf-sweep-{current_date_time}"
+
     sweep_config = {
         "method": "bayes",  # or 'grid', 'random'
-        "name": "muse-dlf",
+        "name": sweep_name,
         "metric": {"name": "accuracy", "goal": "maximize"},
         "parameters": {
             "lr": {"min": 1e-5, "max": 1e-3},
