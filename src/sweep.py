@@ -222,7 +222,4 @@ if __name__ == "__main__":
 
     sweep_id = wandb.sweep(sweep=sweep_config, project="muse-dlf")
 
-    # execute only if run as a script
-    main()
-
     wandb.agent(sweep_id, function=main, count=3)
