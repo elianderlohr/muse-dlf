@@ -21,8 +21,8 @@ warnings.filterwarnings("ignore", message="invalid value encountered in double_s
 
 sweep_config = {
     "method": "bayes",  # or 'grid', 'random'
-    "name": "MUSE-SWEEP",
-    "metric": {"name": "loss", "goal": "minimize"},
+    "name": "muse-dlf-sweep",
+    "metric": {"name": "accuracy", "goal": "maximize"},
     "parameters": {
         "lr": {"min": 1e-5, "max": 1e-3},
         "batch_size": {"values": [16, 32, 64]},
@@ -95,7 +95,7 @@ def load_model(
 
 def main():
 
-    run = wandb.init(project="muse-dlf")
+    wandb.init(project="muse-dlf")
 
     path_data = os.getenv("PATH_DATA")
 
