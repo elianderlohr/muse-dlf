@@ -61,7 +61,7 @@ export DIM_NAMES="virtue,vice"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-python -m wandb agent elianderlohr/muse-dlf/l3ghseyp
+python -m wandb agent --count 10 elianderlohr/muse-dlf/qit3gf88
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."

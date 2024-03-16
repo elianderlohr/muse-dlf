@@ -96,7 +96,7 @@ def main():
     K = 15
     embedding_dim = 768
 
-    batch_size = wandb.config.batch_size
+    batch_size = 32
     epochs = 3
     test_size = 0.1
     tau_min = 0.5
