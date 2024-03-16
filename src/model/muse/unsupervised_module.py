@@ -50,10 +50,6 @@ class MUSEUnsupervised(nn.Module):
     ):
         outputs = self.combined_autoencoder(v_p, v_a0, v_a1, v_sentence, tau)
 
-        # print size of all output tensors
-        for key, value in outputs.items():
-            print(key, value.size())
-
         outputs_fx = self.frameaxis_autoencoder(v_fx, v_sentence, tau)
 
         outputs_p = outputs["p"]
