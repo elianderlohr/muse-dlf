@@ -101,6 +101,10 @@ class CombinedAutoencoder(nn.Module):
         g_a0 = self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=False)
         g_a1 = self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=False)
 
+        # size in
+        print("in d_p.size():", d_p.size())
+        print("out g_p.size():", g_p.size())
+
         # g_p = self.custom_gumbel_softmax(logits_p, tau=tau, hard=False, log=False)
         # g_a0 = self.custom_gumbel_softmax(logits_a0, tau=tau, hard=False, log=False)
         # g_a1 = self.custom_gumbel_softmax(logits_a1, tau=tau, hard=False, log=False)

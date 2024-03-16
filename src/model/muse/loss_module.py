@@ -49,6 +49,10 @@ class LossModule(nn.Module):
         return loss
 
     def focal_triplet_loss(self, v, vhat_z, g, F):
+        # print size of g and t
+        print("g.size(0):", g.size(0))
+        print("self.t:", self.t)
+
         _, indices = torch.topk(g, self.t, largest=False, dim=1)
 
         F_t = torch.stack([F[indices[i]] for i in range(g.size(0))])
