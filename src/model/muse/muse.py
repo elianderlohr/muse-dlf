@@ -50,7 +50,10 @@ class MUSE(nn.Module):
             dropout_prob=dropout_prob,
         )
 
-    def negative_sampling(self, embeddings, num_negatives=8):
+    def negative_sampling(self, embeddings, num_negatives=-1):
+        if num_negatives == -1:
+            num_negatives = embeddings.size(0)
+
         batch_size, num_sentences, num_args, embedding_dim = embeddings.size()
         all_negatives = []
 
