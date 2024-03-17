@@ -267,21 +267,61 @@ class Trainer:
         for batch_idx, batch in enumerate(
             tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
         ):
-            sentence_ids = batch["sentence_ids"]
-            sentence_attention_masks = batch["sentence_attention_masks"]
+            sentence_ids = (
+                batch["sentence_ids"]
+                if self.training_management == "accelerate"
+                else batch["sentence_ids"].to(device)
+            )
+            sentence_attention_masks = (
+                batch["sentence_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["sentence_attention_masks"].to(device)
+            )
 
-            predicate_ids = batch["predicate_ids"]
-            predicate_attention_masks = batch["predicate_attention_masks"].to(device)
+            predicate_ids = (
+                batch["predicate_ids"]
+                if self.training_management == "accelerate"
+                else batch["predicate_ids"].to(device)
+            )
+            predicate_attention_masks = (
+                batch["predicate_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["predicate_attention_masks"].to(device)
+            )
 
-            arg0_ids = batch["arg0_ids"]
-            arg0_attention_masks = batch["arg0_attention_masks"]
+            arg0_ids = (
+                batch["arg0_ids"]
+                if self.training_management == "accelerate"
+                else batch["arg0_ids"].to(device)
+            )
+            arg0_attention_masks = (
+                batch["arg0_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["arg0_attention_masks"].to(device)
+            )
 
-            arg1_ids = batch["arg1_ids"]
-            arg1_attention_masks = batch["arg1_attention_masks"]
+            arg1_ids = (
+                batch["arg1_ids"]
+                if self.training_management == "accelerate"
+                else batch["arg1_ids"].to(device)
+            )
+            arg1_attention_masks = (
+                batch["arg1_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["arg1_attention_masks"].to(device)
+            )
 
-            frameaxis_data = batch["frameaxis"]
+            frameaxis_data = (
+                batch["frameaxis"]
+                if self.training_management == "accelerate"
+                else batch["frameaxis"].to(device)
+            )
 
-            labels = batch["labels"]
+            labels = (
+                batch["labels"]
+                if self.training_management == "accelerate"
+                else batch["labels"].to(device)
+            )
 
             with torch.no_grad():
                 _, _, _, combined_logits = model(
