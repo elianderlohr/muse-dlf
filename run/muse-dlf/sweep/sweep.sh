@@ -6,7 +6,7 @@
 #SBATCH --job-name=roberta-base-finetune
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elias.anderlohr@gmail.com
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:4
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
