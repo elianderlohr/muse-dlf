@@ -382,9 +382,9 @@ class Trainer:
         )
 
         metrics = {
-            "micro_f1": eval_results_micro,
-            "macro_f1": eval_results_macro,
-            "accuracy": eval_accuracy,
+            "micro_f1": eval_results_micro["f1"],
+            "macro_f1": eval_results_macro["f1"],
+            "accuracy": eval_accuracy["accuracy"],
             "epoch": epoch,
         }
 
