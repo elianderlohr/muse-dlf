@@ -61,10 +61,10 @@ export DIM_NAMES="virtue,vice"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 10 elianderlohr/muse-dlf/tpjhgt93 &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 10 elianderlohr/muse-dlf/tpjhgt93 &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 10 elianderlohr/muse-dlf/tpjhgt93 &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 10 elianderlohr/muse-dlf/tpjhgt93 &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
 
 # Wait for all background jobs to finish
 wait
