@@ -61,10 +61,13 @@ export DIM_NAMES="virtue,vice"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 10 elianderlohr/muse-dlf/9ot0x30r
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 10 elianderlohr/muse-dlf/9ot0x30r
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 10 elianderlohr/muse-dlf/9ot0x30r
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 10 elianderlohr/muse-dlf/9ot0x30r
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 10 elianderlohr/muse-dlf/z3wkebxh &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 10 elianderlohr/muse-dlf/z3wkebxh &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 10 elianderlohr/muse-dlf/z3wkebxh &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 10 elianderlohr/muse-dlf/z3wkebxh &
+
+# Wait for all background jobs to finish
+wait
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."

@@ -12,7 +12,7 @@ parameters:
       - 1280
       - 1536
   M_t:
-    distributon: int_uniform
+    distribution: int_uniform
     min: 4
     max: 14
   alpha:
