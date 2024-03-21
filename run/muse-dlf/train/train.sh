@@ -3,7 +3,7 @@
 # SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --job-name=roberta-base-finetune
+#SBATCH --job-name=muse-dlf-train
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=elias.anderlohr@gmail.com
 #SBATCH --gres=gpu:2
