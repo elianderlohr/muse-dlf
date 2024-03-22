@@ -99,7 +99,8 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --lambda_orthogonality 0.00016402662815016467 \
     --lr 0.0018359455575357815 \
     --M 13 \
-    --t 13 
+    --t 13 \
+    --force_recalculate_frameaxis True
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
