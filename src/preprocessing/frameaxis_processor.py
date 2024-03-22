@@ -37,6 +37,8 @@ class FrameAxisProcessor:
         save_type (str): Type of file to save the FrameAxis Embeddings DataFrame
         """
         self.df = df
+        # dirty sample to 500
+        self.df = self.df.sample(500)  # todo: remove this line
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
 
@@ -51,15 +53,11 @@ class FrameAxisProcessor:
             print("Using CUDA")
             self.model.cuda()
 
-        antonym_pairs = {}
+        self.antonym_pairs = {}
         with open(path_antonym_pairs) as f:
-            antonym_pairs = json.load(f)
+            self.antonym_pairs = json.load(f)
 
         self.dim_names = dim_names
-
-        self.antonym_pairs_embeddings = self.precompute_antonym_embeddings(
-            antonym_pairs
-        )
 
         self.save_type = save_type
 
@@ -73,9 +71,9 @@ class FrameAxisProcessor:
         axes_df = pd.read_csv(axis_path, sep="\t", header=None)
         return [tuple(x) for x in axes_df.values]
 
-    def precompute_antonym_embeddings(self, antonym_pairs):
+    def precompute_antonym_embeddings(self):
         frame_axis_words = []
-        for dimension, pairs in antonym_pairs.items():
+        for dimension, pairs in self.antonym_pairs.items():
             for dim, words in pairs.items():
                 frame_axis_words.extend(words)
 
@@ -99,7 +97,7 @@ class FrameAxisProcessor:
         antonym_avg_embeddings = {}
 
         for key, value in tqdm(
-            antonym_pairs.items(), desc="Generating average embeddings"
+            self.antonym_pairs.items(), desc="Generating average embeddings"
         ):
             antonym_avg_embeddings[key] = {}
             for dim, words in tqdm(value.items(), desc="Processing dimension"):
@@ -135,12 +133,12 @@ class FrameAxisProcessor:
 
         return microframes
 
-    def _calculate_cosine_similarities(self, df):
+    def _calculate_cosine_similarities(self, df, antonym_pairs_embeddings):
         def process_row(row):
             sentence_embeddings, words = self._get_embeddings(row["text"])
             cos_sims = {}
 
-            for dimension, embeddings in self.antonym_pairs_embeddings.items():
+            for dimension, embeddings in antonym_pairs_embeddings.items():
                 pos_embedding = embeddings[self.dim_names[0]].to(self.model.device)
                 neg_embedding = embeddings[self.dim_names[1]].to(self.model.device)
                 diff_vector = neg_embedding - pos_embedding
@@ -255,7 +253,11 @@ class FrameAxisProcessor:
 
             nltk.download("stopwords")
 
-            frameaxis_df = self._calculate_cosine_similarities(self.df)
+            antonym_pairs_embeddings = self.precompute_antonym_embeddings()
+
+            frameaxis_df = self._calculate_cosine_similarities(
+                self.df, antonym_pairs_embeddings
+            )
 
             if self.dataframe_path:
                 if self.save_type == "csv":
