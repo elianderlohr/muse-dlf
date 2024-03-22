@@ -50,7 +50,7 @@ echo "=================== Training Start ==================="
 echo "Running frameaxis.py..."
 python src/other/frameaxis/frameaxis.py \
     --data_path $DATA_PATH \
-    --antonym_pairs_path $PATH_ANTONYM_PAIRS \
+    --path_antonym_pairs $PATH_ANTONYM_PAIRS \
     --model_path $MODEL_PATH \
     --output_path $OUTPUT_PATH \
     --dim_names $DIM_NAMES
