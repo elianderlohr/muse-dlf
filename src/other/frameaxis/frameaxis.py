@@ -182,17 +182,12 @@ def main():
     ):
         microframes[key] = {}
         for dim, words in tqdm(value.items(), desc="Processing dimension"):
+            microframes[key][dim] = {}
+
             # get the average of the word embeddings for the dimension
-            all_embeddings = np.array([embed for embed in words.values()])
+            dim_embed = np.mean([embed for embed in words.values()], axis=0)
 
-            # Flatten the array to ensure we compute the mean across all values, resulting in a single float
-            flattened_embeddings = all_embeddings.flatten()
-
-            # Compute the mean of the flattened array
-            single_float_mean = np.mean(flattened_embeddings)
-
-            # Assign the single float value as the dimension value
-            microframes[key][dim] = single_float_mean
+            microframes[key][dim] = dim_embed
 
     print("Microframe generated successfully!")
 
