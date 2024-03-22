@@ -11,7 +11,7 @@
 echo "===================== Job Details ====================="
 # Activate the virtual environment
 echo "Activating virtual environment..."
-source py39venv/bin/activate
+source run/muse-dlf/muse-dlf/bin/activate
 
 # Environment Setup
 echo "Setting up environment..."
@@ -27,20 +27,21 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-TFIDF_PATH="data/frameaxis/mfc/prepare/tf_idf_extended.json"
-MODEL_PATH="roberta-base"
-OUTPUT_PATH="data/frameaxis/mfc/prepare/embeddings.json"
+DATA_PATH="data/mfc/articles.json"
+PATH_ANTONYM_PAIRS="data/axis/mft.json"
+DIM_NAMES="virtue,vice"
+MODEL_PATH="models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454"
+OUTPUT_PATH="data/frameaxis/mfc/"
 
-echo "TFIDF path: $TFIDF_PATH"
+echo "Data path: $DATA_PATH"
+echo "Antonym pairs path: $PATH_ANTONYM_PAIRS"
 echo "Model path: $MODEL_PATH"
 echo "Output path: $OUTPUT_PATH"
+echo "Dimensions: $DIM_NAMES"
 
 # GPU Setup and Verification
 echo "GPU status:"
 nvidia-smi
-
-# CUDA configuration
-export CUDA_VISIBLE_DEVICES=0,1
 
 # Training Script Execution
 echo "=================== Training Start ==================="
@@ -48,9 +49,11 @@ echo "=================== Training Start ==================="
 
 echo "Running frameaxis.py..."
 python src/other/frameaxis/frameaxis.py \
-    --tfidf_path $TFIDF_PATH \
+    --data_path $DATA_PATH \
+    --antonym_pairs_path $PATH_ANTONYM_PAIRS \
     --model_path $MODEL_PATH \
-    --output_path $OUTPUT_PATH
+    --output_path $OUTPUT_PATH \
+    --dim_names $DIM_NAMES
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
