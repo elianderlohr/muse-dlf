@@ -37,8 +37,6 @@ class FrameAxisProcessor:
         save_type (str): Type of file to save the FrameAxis Embeddings DataFrame
         """
         self.df = df
-        # dirty sample to 500
-        self.df = self.df.sample(500)  # todo: remove this line
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
 
