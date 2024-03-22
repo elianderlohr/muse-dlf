@@ -216,7 +216,7 @@ class FrameAxisProcessor:
         """
         embeddings = {}
 
-        inputs = self.tokenizer(sentence, return_tensors="pt")
+        inputs = self.tokenizer(sentence, return_tensors="pt").to(self.model.device)
         with torch.no_grad():
             outputs = self.model(**inputs)
         last_hidden_states = outputs.last_hidden_state
