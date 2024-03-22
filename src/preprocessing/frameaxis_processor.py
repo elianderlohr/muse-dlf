@@ -74,31 +74,66 @@ class FrameAxisProcessor:
         return [tuple(x) for x in axes_df.values]
 
     def precompute_antonym_embeddings(self, antonym_pairs):
-        embeddings = {}
+        frame_axis_words = []
         for dimension, pairs in antonym_pairs.items():
-            pos_name = self.dim_names[0]
-            neg_name = self.dim_names[1]
+            for dim, words in pairs.items():
+                frame_axis_words.extend(words)
 
-            # check if the dimension has the required keys
-            if pos_name not in pairs or neg_name not in pairs:
-                raise ValueError(
-                    f"Dimension {dimension} does not have the required keys: {pos_name} and {neg_name} found {list(pairs.keys())}"
-                )
+        antonym_embeddings = {}
 
-            pos_words = pairs[self.dim_names[0]]
-            neg_words = pairs[self.dim_names[1]]
+        for index, row in tqdm(
+            self.df.iterrows(),
+            desc="Generating antonym embeddings",
+            total=self.df.shape[0],
+        ):
+            # Access the article text from the 'text' column
+            article_text = row["text"]
+            embeddings = self._get_contextualized_embedding(
+                article_text, frame_axis_words
+            )
 
-            pos_embeddings = [self._get_embedding(word) for word in pos_words]
-            neg_embeddings = [self._get_embedding(word) for word in neg_words]
+            # Add the embeddings to the microframes based on the word
+            for word, embedding in embeddings.items():
+                antonym_embeddings.setdefault(word, []).append(embedding)
+
+        antonym_avg_embeddings = {}
+
+        for key, value in tqdm(
+            antonym_pairs.items(), desc="Generating average embeddings"
+        ):
+            antonym_avg_embeddings[key] = {}
+            for dim, words in tqdm(value.items(), desc="Processing dimension"):
+                antonym_avg_embeddings[key][dim] = {}
+
+                for word in tqdm(words, desc="Processing word"):
+                    # Ensure the word is in antonym_embeddings to handle cases where it might not be found
+                    if word in antonym_embeddings:
+                        word_embed = antonym_embeddings[word]
+
+                        # Get the average of the word embeddings
+                        avg_word_embed = np.mean(word_embed, axis=0)
+
+                        antonym_avg_embeddings[key][dim][word] = avg_word_embed
+
+        microframes = {}
+
+        for key, value in tqdm(
+            antonym_avg_embeddings.items(), desc="Generating microframes"
+        ):
+            microframes[key] = {}
+
+            pos_embeddings = antonym_avg_embeddings[key][self.dim_names[0]]
+            neg_embeddings = antonym_avg_embeddings[key][self.dim_names[1]]
 
             pos_embedding_avg = torch.mean(torch.stack(pos_embeddings), dim=0)
             neg_embedding_avg = torch.mean(torch.stack(neg_embeddings), dim=0)
 
-            embeddings[dimension] = {
+            microframes[key] = {
                 self.dim_names[0]: pos_embedding_avg,
                 self.dim_names[1]: neg_embedding_avg,
             }
-        return embeddings
+
+        return microframes
 
     def _calculate_cosine_similarities(self, df):
         def process_row(row):
@@ -175,14 +210,38 @@ class FrameAxisProcessor:
 
         return filtered_embeddings, filtered_words
 
-    def _get_embedding(self, word):
-        inputs = self.tokenizer(word, return_tensors="pt")
-        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+    def _get_contextualized_embedding(self, sentence, words):
+        """
+        Get the contextualized embedding of a word by extracting it from text with its surrounding context
+        """
+        embeddings = {}
 
+        inputs = self.tokenizer(sentence, return_tensors="pt")
         with torch.no_grad():
             outputs = self.model(**inputs)
+        last_hidden_states = outputs.last_hidden_state
 
-        return outputs.last_hidden_state.squeeze(0).mean(dim=0)
+        for word in words:
+            word_tokens = self.tokenizer.tokenize(word)
+            word_ids = self.tokenizer.convert_tokens_to_ids(word_tokens)
+            word_embeddings = []
+            for word_id in word_ids:
+                try:
+                    word_index = (
+                        inputs["input_ids"][0].tolist().index(word_id)
+                    )  # Assumes the word occurs once
+                    word_embedding = last_hidden_states[0, word_index, :].detach()
+                    word_embeddings.append(word_embedding)
+                except ValueError:
+                    pass
+
+            embeddings[word] = (
+                torch.mean(torch.stack(word_embeddings), dim=0)
+                if word_embeddings
+                else torch.zeros(self.model.config.hidden_size)
+            )
+
+        return embeddings
 
     def get_frameaxis_data(self):
         """
@@ -193,7 +252,6 @@ class FrameAxisProcessor:
         """
         if self.force_recalculate or self.dataframe_path is None:
             print("Calculating FrameAxis Embeddings")
-            tqdm.pandas(desc="Calculating Cosine Similarities")
 
             nltk.download("stopwords")
 

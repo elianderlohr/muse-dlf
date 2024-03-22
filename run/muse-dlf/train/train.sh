@@ -71,7 +71,7 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454 \
     --path_srls data/srls/mfc/FRISS_srl.pkl \
-    --path_frameaxis data/frameaxis/mfc/frameaxis_mft.pkl \
+    --path_frameaxis data/frameaxis/mfc/frameaxis_contextualized_mft.pkl \
     --path_antonym_pairs data/axis/mft.json \
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
@@ -81,7 +81,7 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --lambda_orthogonality 0.00016402662815016467 \
     --lr 0.0018359455575357815 \
     --M 13 \
-    --t 13
+    --t 13 
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
