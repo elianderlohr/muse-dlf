@@ -27,7 +27,7 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/articles.json"
+DATA_PATH="data/mfc/immigration_articles.json"
 PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
 MODEL_PATH="models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454"

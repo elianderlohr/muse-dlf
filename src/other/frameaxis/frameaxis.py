@@ -31,7 +31,7 @@ def main():
         help="Path to the JSON file containing the antonym pairs of shape { 'key': { 'dim1': ['pro_word'], 'dim2': ['anti_word'] } }",
     )
     parser.add_argument(
-        "dim_names",
+        "--dim_names",
         type=str,
         required=True,
         help="Name of the dimensions to be used for the frame axis in the format: 'dim1,dim2'",
