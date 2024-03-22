@@ -75,7 +75,7 @@ def main():
                     )
                     word_embeddings.append(word_embedding)
                 except ValueError:
-                    logging.warning(f"Word '{word}' not found in the sentence.")
+                    pass
 
             embeddings[word] = (
                 np.mean(word_embeddings, axis=0)
