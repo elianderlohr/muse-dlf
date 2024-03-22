@@ -48,6 +48,13 @@ def main():
         required=True,
         help="Path where the embeddings JSON file will be saved",
     )
+    # sample test
+    parser.add_argument(
+        "--sample_size",
+        type=int,
+        default=None,
+        help="Number of articles to use for testing",
+    )
     args = parser.parse_args()
 
     # Load RoBERTa model and tokenizer
@@ -103,7 +110,12 @@ def main():
         data = json.load(f)
 
     print("Data loaded successfully!")
-    print("Found {} articles".format(len(data["articles"])))
+
+    if args.sample_size > 0:
+        print("Sampling {} articles".format(args.sample_size))
+        data["articles"] = data["articles"][: args.sample_size]
+    else:
+        print("Found {} articles".format(len(data["articles"])))
 
     print("##################################################")
 

@@ -53,7 +53,8 @@ python src/other/frameaxis/frameaxis.py \
     --path_antonym_pairs $PATH_ANTONYM_PAIRS \
     --model_path $MODEL_PATH \
     --output_path $OUTPUT_PATH \
-    --dim_names $DIM_NAMES
+    --dim_names $DIM_NAMES \
+    --sample_size 100
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
