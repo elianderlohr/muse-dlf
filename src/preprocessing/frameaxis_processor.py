@@ -111,7 +111,7 @@ class FrameAxisProcessor:
                         word_embed = antonym_embeddings[word]
 
                         # Get the average of the word embeddings
-                        avg_word_embed = np.mean(word_embed, axis=0)
+                        avg_word_embed = np.mean(word_embed.cpu().numpy(), axis=0)
 
                         antonym_avg_embeddings[key][dim][word] = avg_word_embed
 
