@@ -129,7 +129,7 @@ def main():
     # loop over all articles and extract the word embeddings of the antonym pairs
     antonym_embeddings = {}
 
-    for article in data["articles"]:
+    for article in tqdm(data["articles"], desc="Generating antonym embeddings"):
         embeddings = get_antonym_embedding(article, frame_axis_words)
 
         # add the embeddings to the microframes based on the word
@@ -144,12 +144,12 @@ def main():
 
     antonym_avg_embeddings = {}
 
-    for key, value in antonym_pairs.items():
+    for key, value in tqdm(antonym_pairs.items(), desc="Generating average embeddings"):
         antonym_avg_embeddings[key] = {}
-        for dim, words in value.items():
+        for dim, words in tqdm(value.items(), desc="Processing dimension"):
             antonym_avg_embeddings[key][dim] = {}
 
-            for word in words:
+            for word in tqdm(words, desc="Processing word"):
                 word_embed = antonym_embeddings[word]
 
                 # get the average of the word embeddings
@@ -165,9 +165,11 @@ def main():
 
     microframes = {}
 
-    for key, value in antonym_avg_embeddings.items():
+    for key, value in tqdm(
+        antonym_avg_embeddings.items(), desc="Generating microframes"
+    ):
         microframes[key] = {}
-        for dim, words in value.items():
+        for dim, words in tqdm(value.items(), desc="Processing dimension"):
             microframes[key][dim] = {}
 
             # get the average of the word embeddings for the dimension
