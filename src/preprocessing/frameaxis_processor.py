@@ -197,7 +197,7 @@ class FrameAxisProcessor:
         tqdm.pandas(desc="Calculating Cosine Similarities")
         cos_sim_columns = df.progress_apply(process_row, axis=1)
 
-        # Before joining, check if any column names would overlap and adjust if necessary
+        # Before joining, check if any column names would overlap
         overlapping_columns = df.columns.intersection(cos_sim_columns.columns)
         if not overlapping_columns.empty:
             cos_sim_columns = cos_sim_columns.rename(
@@ -288,6 +288,10 @@ class FrameAxisProcessor:
             nltk.download("stopwords")
 
             antonym_pairs_embeddings = self.precompute_antonym_embeddings()
+
+            # save to pickle under /tmp
+            with open("/tmp/antonym_pairs_embeddings.pkl", "wb") as f:
+                pickle.dump(antonym_pairs_embeddings, f)
 
             frameaxis_df = self._calculate_cosine_similarities(
                 self.df, antonym_pairs_embeddings
