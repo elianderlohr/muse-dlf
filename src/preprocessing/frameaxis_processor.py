@@ -106,8 +106,8 @@ class FrameAxisProcessor:
                     if word in antonym_embeddings:
                         word_embed = antonym_embeddings[word]
 
-                        # Get the average of the word embeddings
-                        avg_word_embed = np.mean(word_embed.cpu().numpy(), axis=0)
+                        # Get the average of the torch word embeddings
+                        avg_word_embed = torch.mean(torch.stack(word_embed), dim=0)
 
                         antonym_avg_embeddings[key][dim][word] = avg_word_embed
 
