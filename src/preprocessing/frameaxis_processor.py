@@ -36,7 +36,7 @@ class FrameAxisProcessor:
         force_recalculate (bool): If True, recalculate the FrameAxis Embeddings
         save_type (str): Type of file to save the FrameAxis Embeddings DataFrame
         """
-        self.df = df.sample(500)
+        self.df = df
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
 
@@ -160,7 +160,8 @@ class FrameAxisProcessor:
                             word_embedding.cpu().numpy().reshape(1, -1),
                         )[0][0]
                     )
-                    sims.append(cos_sim)
+                    if not np.isnan(cos_sim):
+                        sims.append(cos_sim)
 
                 # Ensure dimension names are unique by appending a suffix if needed and replace spaces with underscores
                 dimension_name = (
