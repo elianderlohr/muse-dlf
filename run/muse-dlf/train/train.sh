@@ -47,13 +47,9 @@ fi
 for arg in "$@"
 do
     case $arg in
-        desc=*)
-        DESC="${arg#*=}"
-        shift # Remove from processing
-        ;;
-        kw=*)
-        KW="${arg#*=}"
-        shift # Remove from processing
+        tags=*)
+        TAGS="${arg#*=}"
+        shift
         ;;
     esac
 done
@@ -79,8 +75,7 @@ echo "=================== Training Start ==================="
 
 echo "Launching training script with Accelerate..."
 accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 --config_file run/muse-dlf/train/accelerate_config.yaml src/train.py \
-    --description $DESC \
-    --keywords $KW \
+    --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
     --batch_size 32 \

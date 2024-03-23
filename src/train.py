@@ -93,10 +93,10 @@ def main():
     )
 
     parser.add_argument(
-        "--keywords",
+        "--tags",
         type=str,
         default="MUSE, Frame Classification, FrameAxis",
-        help="Keywords to describe the model",
+        help="Tags to describe the model",
     )
 
     # Model Configuration
@@ -379,13 +379,12 @@ def main():
     accelerator.init_trackers(
         project_name,
         config,
-        init_kwargs={"wandb": {"tags": args.keywords.split(",")}},
+        init_kwargs={"wandb": {"tags": args.tags.split(",")}},
     )
 
     print("Log model using WANDB")
     print("WANDB project name:", project_name)
-    print("WANDB description:", args.description)
-    print("WANDB keywords:", args.keywords)
+    print("WANDB tags:", args.tags)
 
     # Train the model
     trainer = Trainer(
