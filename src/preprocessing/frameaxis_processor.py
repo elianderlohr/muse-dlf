@@ -134,8 +134,13 @@ class FrameAxisProcessor:
             pos_embeddings = antonym_avg_embeddings[key][self.dim_names[0]]
             neg_embeddings = antonym_avg_embeddings[key][self.dim_names[1]]
 
-            pos_embedding_avg = torch.mean(torch.stack(pos_embeddings), dim=0)
-            neg_embedding_avg = torch.mean(torch.stack(neg_embeddings), dim=0)
+            # Extract tensors from the dictionaries and convert them to a list
+            pos_embeddings_list = [embed for embed in pos_embeddings.values()]
+            neg_embeddings_list = [embed for embed in neg_embeddings.values()]
+
+            # Now you can safely use torch.stack on the list of tensors
+            pos_embedding_avg = torch.mean(torch.stack(pos_embeddings_list), dim=0)
+            neg_embedding_avg = torch.mean(torch.stack(neg_embeddings_list), dim=0)
 
             microframes[key] = {
                 self.dim_names[0]: pos_embedding_avg,
