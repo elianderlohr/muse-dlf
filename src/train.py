@@ -92,14 +92,6 @@ def main():
         "--wandb_api_key", type=str, required=True, help="Wandb API key"
     )
 
-    # keywords / description
-    parser.add_argument(
-        "--description",
-        type=str,
-        default="MUSE-DLF: Multi-View-Semantic Enhanced Dictionary Learning for Frame Classification",
-        help="Description of the model",
-    )
-
     parser.add_argument(
         "--keywords",
         type=str,
@@ -387,9 +379,7 @@ def main():
     accelerator.init_trackers(
         project_name,
         config,
-        init_kwargs={
-            "wandb": {"description": args.description, "tags": args.keywords.split(",")}
-        },
+        init_kwargs={"wandb": {"tags": args.keywords.split(",")}},
     )
 
     print("Log model using WANDB")
