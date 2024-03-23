@@ -114,7 +114,12 @@ class FrameAxisProcessor:
                     if word in antonym_embeddings:
                         word_embed = antonym_embeddings[word]
 
-                        # Get the average of the torch word embeddings
+                        # Convert each tensor in word_embed to the appropriate device (GPU if available)
+                        word_embed = [
+                            embed.to(self.model.device) for embed in word_embed
+                        ]
+
+                        # Get the average of the torch word embeddings, ensuring computation happens on the same device
                         avg_word_embed = torch.mean(torch.stack(word_embed), dim=0)
 
                         antonym_avg_embeddings[key][dim][word] = avg_word_embed
