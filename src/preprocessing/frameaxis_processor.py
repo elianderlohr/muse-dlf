@@ -166,7 +166,7 @@ class FrameAxisProcessor:
                     else:
                         # print info message wich helps to debug why nan is returned
                         print(
-                            f"cosine_similarity returned nan for {row['article_id']} and {dimension}"
+                            f"cosine_similarity returned nan for {row['article_id']} and {dimension} and word {word_embedding}. Got the following words: {words}"
                         )
                         print(f"diff_vector: {diff_vector}")
                         print(f"word_embedding: {word_embedding}")
@@ -182,6 +182,12 @@ class FrameAxisProcessor:
                 if len(sims) == 0:
                     print(
                         f"No cosine similarities found for {row['article_id']} and {dimension}. Got the following words: {words}"
+                    )
+
+                # check for nan values
+                if np.isnan(sims).any():
+                    print(
+                        f"cosine_similarity returned nan for {row['article_id']} and {dimension} for some words. Got the following words: {words}"
                     )
 
                 cos_sims[dimension_name] = np.mean(sims)
