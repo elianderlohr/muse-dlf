@@ -162,6 +162,13 @@ class FrameAxisProcessor:
                     )
                     if not np.isnan(cos_sim):
                         sims.append(cos_sim)
+                    else:
+                        # print info message wich helps to debug why nan is returned
+                        print(
+                            f"cosine_similarity returned nan for {row['article_id']} and {dimension}"
+                        )
+                        print(f"diff_vector: {diff_vector}")
+                        print(f"word_embedding: {word_embedding}")
 
                 # Ensure dimension names are unique by appending a suffix if needed and replace spaces with underscores
                 dimension_name = (
@@ -170,6 +177,11 @@ class FrameAxisProcessor:
 
                 # to lower case
                 dimension_name = dimension_name.lower()
+
+                if len(sims) == 0:
+                    print(
+                        f"No cosine similarities found for {row['article_id']} and {dimension}. Got the following words: {words}"
+                    )
 
                 cos_sims[dimension_name] = np.mean(sims)
 
