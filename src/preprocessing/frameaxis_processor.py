@@ -92,14 +92,6 @@ class FrameAxisProcessor:
             for word, embedding in embeddings.items():
                 antonym_embeddings.setdefault(word, []).append(embedding)
 
-        # print debug info about the embeddings
-        print("Embeddings for the first word in the antonym pairs:")
-        print(antonym_embeddings[frame_axis_words[0]])
-        # type
-        print(type(antonym_embeddings[frame_axis_words[0]]))
-        # length
-        print(len(antonym_embeddings[frame_axis_words[0]]))
-
         antonym_avg_embeddings = {}
 
         for key, value in tqdm(
@@ -224,7 +216,7 @@ class FrameAxisProcessor:
 
         return filtered_embeddings, filtered_words
 
-    def _get_contextualized_embedding(self, sentence, words):
+    def _get_contextualized_embedding(self, sentence, words) -> list[torch.Tensor]:
         """
         Get the contextualized embedding of a word by extracting it from text with its surrounding context
         """
