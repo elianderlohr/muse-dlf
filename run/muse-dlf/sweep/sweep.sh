@@ -54,17 +54,17 @@ export SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 export NAME_TOKENIZER="roberta-base"
 export PATH_NAME_BERT_MODEL="models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454"
 export PATH_SRLS="data/srls/mfc/FRISS_srl.pkl"
-export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
+export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_contextualized_mft.pkl"
 export PATH_ANTONYM_PAIRS="data/axis/mft.json"
 export DIM_NAMES="virtue,vice"
 
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 3 elianderlohr/muse-dlf/tpjhgt93 &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 3 elianderlohr/muse-dlf/zejggik8 &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 3 elianderlohr/muse-dlf/zejggik8 &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 3 elianderlohr/muse-dlf/zejggik8 &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 3 elianderlohr/muse-dlf/zejggik8 &
 
 # Wait for all background jobs to finish
 wait
