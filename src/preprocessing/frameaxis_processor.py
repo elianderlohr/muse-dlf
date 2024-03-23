@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -269,7 +270,13 @@ class FrameAxisProcessor:
         Returns:
         pd.DataFrame: DataFrame with FrameAxis Embeddings
         """
-        if self.force_recalculate or self.dataframe_path is None:
+        # check if self.dataframe_path is None
+        if not self.force_recalculate and (
+            not self.dataframe_path or not os.path.exists(self.dataframe_path)
+        ):
+            self.force_recalculate = True
+
+        if self.force_recalculate:
             print("Calculating FrameAxis Embeddings")
 
             nltk.download("stopwords")
