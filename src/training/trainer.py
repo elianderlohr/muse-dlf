@@ -394,7 +394,10 @@ class Trainer:
 
     def _save_model(self, epoch, model, metrics, keep_last_n=3):
         save_dir = os.path.join(self.save_path)
-        os.makedirs(save_dir, exist_ok=True)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+        except:
+            pass
 
         model_save_path = os.path.join(save_dir, f"model_epoch_{epoch}.pth")
         torch.save(
