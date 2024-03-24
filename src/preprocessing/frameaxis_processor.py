@@ -99,10 +99,12 @@ class FrameAxisProcessor:
             self.antonym_pairs.items(), desc="Generating average embeddings"
         ):
             antonym_avg_embeddings[key] = {}
-            for dim, words in tqdm(value.items(), desc="Processing dimension"):
+            for dim, words in tqdm(
+                value.items(), desc="Processing dimension", leave=False
+            ):
                 antonym_avg_embeddings[key][dim] = {}
 
-                for word in tqdm(words, desc="Processing word"):
+                for word in tqdm(words, desc="Processing word", leave=False):
                     # Ensure the word is in antonym_embeddings to handle cases where it might not be found
                     if word in antonym_embeddings:
                         word_embed = antonym_embeddings[word]
@@ -208,33 +210,27 @@ class FrameAxisProcessor:
 
     def _get_embeddings(self, text):
         inputs = self.tokenizer(
-            text, return_tensors="pt", padding=True, truncation=True
-        )
-        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+            text,
+            return_tensors="pt",
+        ).to(self.model.device)
+
+        non_stopword_indices = [
+            i
+            for i, token in enumerate(inputs.tokens())
+            if token.lower() not in stopwords.words("english")
+        ]
 
         with torch.no_grad():
             outputs = self.model(**inputs)
 
         embeddings = outputs.last_hidden_state.squeeze(0)
-        stop_words = set(stopwords.words("english"))
-        token_ids = inputs["input_ids"].squeeze(0)
-        words = [
-            self.tokenizer.decode([token_id]).strip(string.punctuation)
-            for token_id in token_ids
-        ]
 
-        filtered_embeddings = []
-        filtered_words = []
-        for word, embedding, token_id in zip(words, embeddings, token_ids):
-            if (
-                token_id not in self.tokenizer.all_special_ids
-                and word.lower() not in stop_words
-                and word.isalpha()
-            ):
-                filtered_embeddings.append(embedding)
-                filtered_words.append(word)
+        embeddings = outputs.last_hidden_state
 
-        return filtered_embeddings, filtered_words
+        non_stopword_embeddings = embeddings[:, non_stopword_indices, :]
+        sentence_embedding = torch.mean(non_stopword_embeddings, dim=1)
+
+        return sentence_embedding
 
     def _get_contextualized_embedding(self, sentence, words) -> list[torch.Tensor]:
         """
