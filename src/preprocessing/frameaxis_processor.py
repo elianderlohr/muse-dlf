@@ -146,7 +146,7 @@ class FrameAxisProcessor:
 
     def _calculate_cosine_similarities(self, df, antonym_pairs_embeddings):
         def process_row(row):
-            sentence_embeddings, words = self._get_embeddings(row["text"])
+            sentence_embeddings = self._get_embeddings(row["text"])
             cos_sims = {}
 
             for dimension, embeddings in antonym_pairs_embeddings.items():
@@ -168,7 +168,10 @@ class FrameAxisProcessor:
                     else:
                         # print info message wich helps to debug why nan is returned
                         print(
-                            f"cosine_similarity returned nan for {row['article_id']} and {dimension} and word {word_embedding}. Got the following words: {words}"
+                            f"cosine_similarity returned nan for {row['article_id']} and {dimension} and word {word_embedding}"
+                        )
+                        print(
+                            f"sentence_embeddings size: {len(sentence_embeddings)}, word_embedding size: {len(word_embedding)}"
                         )
                         print(f"diff_vector: {diff_vector}")
                         print(f"word_embedding: {word_embedding}")
@@ -183,13 +186,19 @@ class FrameAxisProcessor:
 
                 if len(sims) == 0:
                     print(
-                        f"No cosine similarities found for {row['article_id']} and {dimension}. Got the following words: {words}"
+                        f"No cosine similarities found for {row['article_id']} and {dimension}"
+                    )
+                    print(
+                        f"sentence_embeddings size: {len(sentence_embeddings)}, word_embedding size: {len(word_embedding)}"
                     )
 
                 # check for nan values
                 if np.isnan(sims).any():
                     print(
-                        f"cosine_similarity returned nan for {row['article_id']} and {dimension} for some words. Got the following words: {words}"
+                        f"cosine_similarity returned nan for {row['article_id']} and {dimension} for some words"
+                    )
+                    print(
+                        f"sentence_embeddings size: {len(sentence_embeddings)}, word_embedding size: {len(word_embedding)}"
                     )
 
                 cos_sims[dimension_name] = np.mean(sims)
@@ -222,8 +231,6 @@ class FrameAxisProcessor:
 
         with torch.no_grad():
             outputs = self.model(**inputs)
-
-        embeddings = outputs.last_hidden_state.squeeze(0)
 
         embeddings = outputs.last_hidden_state
 
