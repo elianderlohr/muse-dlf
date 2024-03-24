@@ -396,44 +396,71 @@ class Trainer:
         save_dir = os.path.join(self.save_path)
         try:
             os.makedirs(save_dir, exist_ok=True)
-        except:
-            pass
+        except Exception as e:
+            print(f"Warning: Could not create directory {save_dir}. Exception: {e}")
 
         model_save_path = os.path.join(save_dir, f"model_epoch_{epoch}.pth")
-        torch.save(
-            model.state_dict(),
-            model_save_path,
-        )
+        try:
+            torch.save(model.state_dict(), model_save_path)
+        except Exception as e:
+            print(f"Warning: Failed to save model at {model_save_path}. Exception: {e}")
 
         metrics_save_path = os.path.join(save_dir, f"metrics_epoch_{epoch}.json")
-        with open(metrics_save_path, "w") as f:
-            json.dump(metrics, f)
+        try:
+            with open(metrics_save_path, "w") as f:
+                json.dump(metrics, f)
+        except Exception as e:
+            print(
+                f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
+            )
 
-        # List all model files and sort them by epoch number
-        model_files = [
-            file
-            for file in os.listdir(save_dir)
-            if file.startswith("model_epoch_") and file.endswith(".pth")
-        ]
-        model_files.sort(
-            key=lambda x: int(x.split("_")[2].split(".")[0])
-        )  # Sorting by epoch number
+        # Handling model files
+        try:
+            model_files = [
+                file
+                for file in os.listdir(save_dir)
+                if file.startswith("model_epoch_") and file.endswith(".pth")
+            ]
+            model_files.sort(key=lambda x: int(x.split("_")[2].split(".")[0]))
 
-        # If more models than we want to keep, delete the oldest
-        if len(model_files) > keep_last_n:
-            for file_to_delete in model_files[:-keep_last_n]:
-                os.remove(os.path.join(save_dir, file_to_delete))
+            if len(model_files) > keep_last_n:
+                for file_to_delete in model_files[:-keep_last_n]:
+                    file_path = os.path.join(save_dir, file_to_delete)
+                    if os.path.exists(file_path):
+                        try:
+                            os.remove(file_path)
+                        except Exception as e:
+                            print(
+                                f"Warning: Failed to delete file {file_path}. Exception: {e}"
+                            )
+        except Exception as e:
+            print(
+                f"Warning: An error occurred while managing model files. Exception: {e}"
+            )
 
-        # Similarly, manage metric files if needed
-        metric_files = [
-            file
-            for file in os.listdir(save_dir)
-            if file.startswith("metrics_epoch_") and file.endswith(".json")
-        ]
-        metric_files.sort(key=lambda x: int(x.split("_")[2].split(".")[0]))
-        if len(metric_files) > keep_last_n:
-            for file_to_delete in metric_files[:-keep_last_n]:
-                os.remove(os.path.join(save_dir, file_to_delete))
+        # Handling metric files
+        try:
+            metric_files = [
+                file
+                for file in os.listdir(save_dir)
+                if file.startswith("metrics_epoch_") and file.endswith(".json")
+            ]
+            metric_files.sort(key=lambda x: int(x.split("_")[2].split(".")[0]))
+
+            if len(metric_files) > keep_last_n:
+                for file_to_delete in metric_files[:-keep_last_n]:
+                    file_path = os.path.join(save_dir, file_to_delete)
+                    if os.path.exists(file_path):
+                        try:
+                            os.remove(file_path)
+                        except Exception as e:
+                            print(
+                                f"Warning: Failed to delete file {file_path}. Exception: {e}"
+                            )
+        except Exception as e:
+            print(
+                f"Warning: An error occurred while managing metric files. Exception: {e}"
+            )
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
