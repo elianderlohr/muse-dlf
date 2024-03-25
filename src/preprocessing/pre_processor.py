@@ -116,11 +116,7 @@ class PreProcessor:
         )
         frameaxis_df = frameaxis_processor.get_frameaxis_data()
 
-        print(f"FrameAxis data shape - 1: {frameaxis_df.shape}")
-
         frameaxis_df = frameaxis_df.reset_index(drop=True)
-
-        print(f"FrameAxis data shape - 2: {frameaxis_df.shape}")
 
         y_cols = [
             "Capacity and Resources",
@@ -167,12 +163,7 @@ class PreProcessor:
             list, axis=1
         )
 
-        print(f"FrameAxis data shape - 3: {frameaxis_df.shape}")
-
         frameaxis_df = frameaxis_df[["article_id", "frameaxis_values"]]
-
-        print(f"FrameAxis data shape - 4: {frameaxis_df.shape}")
-
         # Assuming frameaxis_df follows the same index order as df
         frameaxis_df_subset = (
             frameaxis_df.groupby(frameaxis_df["article_id"])["frameaxis_values"]
@@ -180,11 +171,7 @@ class PreProcessor:
             .reset_index(name="frameaxis_values")
         )
 
-        print(f"FrameAxis data shape - 5: {frameaxis_df_subset.shape}")
-
         frameaxis_df_subset = frameaxis_df_subset["frameaxis_values"]
-
-        print(f"FrameAxis data shape - 6: {frameaxis_df_subset.shape}")
 
         return X_subset, X_srl_subset, frameaxis_df_subset, y_subset
 
@@ -210,12 +197,6 @@ class PreProcessor:
         X, X_srl, X_frameaxis, y = self._preprocess(
             df, dataframe_path, force_recalculate
         )
-
-        # print shape of the data
-        print(f"X shape: {len(X)}")
-        print(f"X_srl shape: {len(X_srl)}")
-        print(f"X_frameaxis shape: {len(X_frameaxis)}")
-        print(f"y shape: {len(y)}")
 
         # Splitting the data into train and test sets
         X_train, X_test, y_train, y_test = train_test_split(
