@@ -58,9 +58,13 @@ class FrameAxisProcessor:
 
         self.dim_names = dim_names
 
-        self.save_type = save_type
+        # Load the stopwords and non-word characters
+        nltk.download("stopwords")
+        self.stopwords = set(stopwords.words("english"))
+        self.non_word_characters = set(string.punctuation)
 
         # allowed save types
+        self.save_type = save_type
         if save_type not in ["csv", "pickle", "json"]:
             raise ValueError(
                 "Invalid save_type. Must be one of 'csv', 'pickle', or 'json'."
@@ -72,22 +76,20 @@ class FrameAxisProcessor:
 
     def precompute_antonym_embeddings(self):
         frame_axis_words = []
-        for dimension, pairs in self.antonym_pairs.items():
+        for _, pairs in self.antonym_pairs.items():
             for dim, words in pairs.items():
                 frame_axis_words.extend(words)
 
         antonym_embeddings = {}
 
-        for index, row in tqdm(
+        for _, row in tqdm(
             self.df.iterrows(),
             desc="Generating antonym embeddings",
             total=self.df.shape[0],
         ):
             # Access the article text from the 'text' column
             article_text = row["text"]
-            embeddings = self._get_contextualized_embedding(
-                article_text, frame_axis_words
-            )
+            embeddings = self.get_embeddings_for_words(article_text, frame_axis_words)
 
             # Add the embeddings to the microframes based on the word
             for word, embedding in embeddings.items():
@@ -144,131 +146,312 @@ class FrameAxisProcessor:
 
         return microframes
 
-    def _calculate_cosine_similarities(self, df, antonym_pairs_embeddings):
-        def process_row(row):
-            sentence_embeddings = self._get_embeddings(row["text"])
-            cos_sims = {}
+    def calculate_word_contributions(self, df, antonym_pairs_embeddings):
+        """
+        Calculates the bias scores for each dimension for all rows (documents) in the DataFrame.
 
-            for dimension, embeddings in antonym_pairs_embeddings.items():
-                pos_embedding = embeddings[self.dim_names[0]].to(self.model.device)
-                neg_embedding = embeddings[self.dim_names[1]].to(self.model.device)
+        :param df: A DataFrame containing the articles to calculate word contributions for.
+        :param antonym_pairs_embeddings: A dictionary containing the embeddings for antonym pairs for each dimension.
+        :return: A DataFrame containing the bias scores for each dimension, indexed by article ID and word.
+        """
+
+        def calculate_word_contribution(article_id, text):
+            """
+            Computes the bias scores for each dimension for a single row (document) in the DataFrame.
+
+            :param row: A Series object representing a row from the DataFrame.
+            :return: A Series containing bias scores for each dimension, indexed by dimension name.
+            """
+            words, embeddings = self.get_embeddings_for_text(text)
+
+            # Initialize a DataFrame to collect results
+            results_df = pd.DataFrame(words, columns=["word"])
+            results_df["article_id"] = article_id
+
+            # Calculate cosine similarities for each dimension and add as a new column
+            for dimension in antonym_pairs_embeddings:
+                pos_embedding = antonym_pairs_embeddings[dimension][
+                    self.dim_names[0]
+                ].reshape(1, -1)
+                neg_embedding = antonym_pairs_embeddings[dimension][
+                    self.dim_names[1]
+                ].reshape(1, -1)
                 diff_vector = neg_embedding - pos_embedding
 
-                sims = []
-                for word_embedding in sentence_embeddings:
-                    cos_sim = (
-                        1
-                        - cosine_similarity(
-                            diff_vector.cpu().numpy().reshape(1, -1),
-                            word_embedding.cpu().numpy().reshape(1, -1),
-                        )[0][0]
-                    )
-                    if not np.isnan(cos_sim):
-                        sims.append(cos_sim)
-                    else:
-                        # print info message wich helps to debug why nan is returned
-                        print(
-                            f"cosine_similarity returned nan for {row['article_id']} and {dimension} and word {word_embedding}"
-                        )
-                        print(
-                            f"sentence_embeddings size: {len(sentence_embeddings)}, word_embedding size: {len(word_embedding)}"
-                        )
-                        print(f"diff_vector: {diff_vector}")
-                        print(f"word_embedding: {word_embedding}")
-
-                # Ensure dimension names are unique by appending a suffix if needed and replace spaces with underscores
-                dimension_name = (
-                    dimension.replace(" ", "_").replace("-", "_").replace(",", "")
+                # Normalize for cosine similarity calculation
+                diff_norm = diff_vector / np.linalg.norm(
+                    diff_vector, axis=1, keepdims=True
+                )
+                embeddings_norm = embeddings / np.linalg.norm(
+                    embeddings, axis=1, keepdims=True
                 )
 
-                # to lower case
-                dimension_name = dimension_name.lower()
+                # Compute cosine similarities
+                cos_sims = np.dot(embeddings_norm, diff_norm.T).flatten()
 
-                if len(sims) == 0:
-                    print(
-                        f"No cosine similarities found for {row['article_id']} and {dimension}"
-                    )
-                    print(
-                        f"sentence_embeddings size: {len(sentence_embeddings)}, word_embedding size: {len(word_embedding)}"
-                    )
+                # Add the cosine similarities as a new column for the current dimension
+                results_df[f"{dimension}"] = cos_sims
 
-                # check for nan values
-                if np.isnan(sims).any():
-                    print(
-                        f"cosine_similarity returned nan for {row['article_id']} and {dimension} for some words"
-                    )
-                    print(
-                        f"sentence_embeddings size: {len(sentence_embeddings)}, word_embedding size: {len(word_embedding)}"
-                    )
+            return results_df
 
-                cos_sims[dimension_name] = np.mean(sims)
+        tqdm.pandas(desc="Calculating Word Contributions")
+        result_dfs = df.progress_apply(
+            lambda row: calculate_word_contribution(row["article_id"], row["text"]),
+            axis=1,
+        )
 
-            return pd.Series(cos_sims)
+        final_df = pd.concat(result_dfs.tolist(), ignore_index=True)
 
-        tqdm.pandas(desc="Calculating Cosine Similarities")
-        cos_sim_columns = df.progress_apply(process_row, axis=1)
+        return final_df
 
-        # Before joining, check if any column names would overlap
-        overlapping_columns = df.columns.intersection(cos_sim_columns.columns)
-        if not overlapping_columns.empty:
-            cos_sim_columns = cos_sim_columns.rename(
-                columns={col: col + "_cos_sim" for col in overlapping_columns}
+    def calculate_microframe_bias(self, df):
+        # Calculate word frequency within each article
+        word_freq = (
+            df.groupby(["article_id", "word"]).size().reset_index(name="frequency")
+        )
+
+        # Merge word frequency back into the main DataFrame
+        df = df.merge(word_freq, on=["article_id", "word"])
+
+        # Initialize a DataFrame to collect microframe bias results
+        bias_df = pd.DataFrame()
+
+        # Process each article
+        for article_id in df["article_id"].unique():
+            # Make a copy of the slice to avoid SettingWithCopyWarning
+            article_df = df[df["article_id"] == article_id].copy()
+            bias_dict = {"article_id": article_id}
+            total_frequency = article_df["frequency"].sum()
+
+            for dimension in [
+                col
+                for col in df.columns
+                if col not in ["article_id", "word", "text", "frequency"]
+            ]:
+                # Calculate weighted word contributions for the dimension
+                # Use .loc to ensure that we are working with a copy and not a view
+                weighted_contributions = article_df[dimension] * article_df["frequency"]
+                article_df.loc[:, dimension + "_weighted"] = weighted_contributions
+
+                # Calculate the sum of weighted contributions
+                weighted_sum = weighted_contributions.sum()
+
+                # Calculate the microframe bias for the dimension
+                microframe_bias = (
+                    weighted_sum / total_frequency if total_frequency else 0
+                )
+
+                # Store results in a dictionary
+                bias_dict[dimension + "_bias"] = microframe_bias
+
+            # Append the dictionary to bias_df using pd.concat
+            bias_df = pd.concat([bias_df, pd.DataFrame([bias_dict])], ignore_index=True)
+
+        # Reshape bias_df for better readability
+        bias_df = bias_df.set_index("article_id")
+
+        return bias_df
+
+    def calculate_baseline_bias(self, df):
+        """
+        Calculate the baseline microframe bias for the entire corpus.
+
+        :param df: A DataFrame with columns for article_id, word, and microframe cosine similarities.
+        :return: A dictionary of baseline biases for each microframe dimension.
+        """
+        baseline_bias = {}
+        for dimension in [
+            col
+            for col in df.columns
+            if col not in ["article_id", "word", "text", "frequency"]
+        ]:
+            # Average of the dimension's cosine similarity across all documents
+            baseline_bias[dimension] = df[dimension].mean()
+        return baseline_bias
+
+    def calculate_microframe_intensity(self, df):
+        """
+        Calculate the microframe intensity for each document in the DataFrame.
+
+        :param df: A DataFrame containing the word contributions and article IDs.
+        :return: A DataFrame with the microframe intensity for each article and dimension.
+        """
+        # First, calculate the baseline bias for the corpus
+        baseline_bias = self.calculate_baseline_bias(df)
+
+        # Initialize DataFrame to store intensity results
+        intensity_df = pd.DataFrame()
+
+        # Calculate word frequency within each article
+        word_freq = (
+            df.groupby(["article_id", "word"]).size().reset_index(name="frequency")
+        )
+
+        # Merge word frequency back into the main DataFrame
+        df = df.merge(word_freq, on=["article_id", "word"])
+
+        # Process each article
+        for article_id in df["article_id"].unique():
+            article_df = df[df["article_id"] == article_id]
+            intensity_dict = {"article_id": article_id}
+            total_frequency = article_df["frequency"].sum()
+
+            for dimension in [
+                col
+                for col in df.columns
+                if col not in ["article_id", "word", "frequency"]
+            ]:
+                # Compute the second moment for the dimension
+                deviations_squared = (
+                    (article_df[dimension] - baseline_bias[dimension]) ** 2
+                    * article_df["frequency"]
+                ).sum()
+                microframe_intensity = (
+                    deviations_squared / total_frequency if total_frequency else 0
+                )
+
+                # Store the results
+                intensity_dict[dimension + "_intensity"] = microframe_intensity
+
+            # Append to the intensity DataFrame
+            intensity_df = pd.concat(
+                [intensity_df, pd.DataFrame([intensity_dict])], ignore_index=True
             )
 
-        return df[["article_id"]].join(cos_sim_columns)
+        # Reshape intensity_df for better readability
+        intensity_df = intensity_df.set_index("article_id")
 
-    def _get_embeddings(self, text):
+        return intensity_df
+
+    def calculate_all_metrics(self, df, antonym_pairs_embeddings):
+        """
+        Executes the calculation of word contributions, microframe bias, and microframe intensity for each article.
+
+        :param df: A DataFrame containing articles with 'article_id' and 'text' columns.
+        :param antonym_pairs_embeddings: A dictionary containing the embeddings for antonym pairs for each dimension.
+        :return: A DataFrame with the structure article_id | dim1_bias | dim1_intensity | ...
+        """
+
+        # Step 1: Calculate word contributions for each article and dimension
+        word_contributions_df = self.calculate_word_contributions(
+            df, antonym_pairs_embeddings
+        )
+
+        # Step 2: Calculate microframe bias for each article and dimension
+        microframe_bias_df = self.calculate_microframe_bias(word_contributions_df)
+
+        # Step 3: Calculate microframe intensity for each article and dimension
+        microframe_intensity_df = self.calculate_microframe_intensity(
+            word_contributions_df
+        )
+
+        # Merge the bias and intensity dataframes
+        final_df = microframe_bias_df.merge(
+            microframe_intensity_df, left_index=True, right_index=True
+        )
+
+        # Reformat the final DataFrame to match the desired structure
+        final_df.reset_index(inplace=True)
+        final_columns = ["article_id"]
+        for dimension in [
+            col.replace("_bias", "")
+            for col in microframe_bias_df.columns
+            if "_bias" in col
+        ]:
+            final_columns.append(dimension + "_bias")
+            final_columns.append(dimension + "_intensity")
+        final_df = final_df[final_columns]
+
+        return final_df
+
+    def get_embeddings_for_text(
+        self, text, remove_stopwords=True, remove_non_words=True
+    ):
         inputs = self.tokenizer(
             text,
             return_tensors="pt",
+            padding=True,
+            truncation=True,
+            add_special_tokens=False,
         ).to(self.model.device)
 
-        non_stopword_indices = [
-            i
-            for i, token in enumerate(inputs.tokens())
-            if token.lower() not in stopwords.words("english")
-        ]
-
+        # Obtain the embeddings
         with torch.no_grad():
             outputs = self.model(**inputs)
+        embeddings = outputs.last_hidden_state.squeeze(
+            0
+        )  # Assume batch_size=1 for simplicity
 
-        embeddings = outputs.last_hidden_state
+        # Initialize lists for filtered tokens' embeddings and words
+        filtered_embeddings = []
+        filtered_words = []
 
-        non_stopword_embeddings = embeddings[:, non_stopword_indices, :]
-        sentence_embedding = torch.mean(non_stopword_embeddings, dim=1)
+        # Obtain a list mapping words to tokens
+        word_ids = inputs.word_ids()
 
-        return sentence_embedding
+        for w_idx in set(word_ids):
+            if w_idx is None:  # Skip special tokens
+                continue
 
-    def _get_contextualized_embedding(self, sentence, words) -> list[torch.Tensor]:
+            # Obtain the start and end token positions for the current word
+            word_tokens_range = inputs.word_to_tokens(w_idx)
+
+            if word_tokens_range is None:
+                continue
+
+            start, end = word_tokens_range
+
+            # Reconstruct the word from tokens to check against stopwords and non-word characters
+            word = self.tokenizer.decode(inputs.input_ids[0][start:end])
+
+            # Normalize the word for checks
+            normalized_word = word.lower().strip(string.punctuation).strip()
+
+            if remove_stopwords and normalized_word in self.stopwords:
+                continue
+
+            if remove_non_words and all(
+                char in self.non_word_characters for char in normalized_word
+            ):
+                continue
+
+            # If the word passes the filters, append its embeddings and the word itself
+            word_embeddings = embeddings[start:end]
+            filtered_embeddings.append(word_embeddings.mean(dim=0))
+            filtered_words.append(normalized_word)
+
+        # Stack the filtered embeddings
+        filtered_embeddings_tensor = (
+            torch.stack(filtered_embeddings)
+            if filtered_embeddings
+            else torch.tensor([])
+        )
+
+        return filtered_words, filtered_embeddings_tensor
+
+    def get_embeddings_for_words(self, sentence, words):
         """
-        Get the contextualized embedding of a word by extracting it from text with its surrounding context
+        Get the contextualized embeddings for a list of words using the sentence as context.
+
+        :param sentence: The sentence to get embeddings from.
+        :param words: A list of words to get embeddings for.
+        :return: A dictionary containing the average embeddings for each word.
         """
+        sentence_words, word_embeddings = self.get_embeddings_for_text(
+            sentence, remove_stopwords=False, remove_non_words=False
+        )
+
+        # Initialize dictionary to hold word embeddings
         embeddings = {}
 
-        inputs = self.tokenizer(sentence, return_tensors="pt").to(self.model.device)
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-        last_hidden_states = outputs.last_hidden_state
-
+        # Iterate over each word to get its embedding
         for word in words:
-            word_tokens = self.tokenizer.tokenize(word)
-            word_ids = self.tokenizer.convert_tokens_to_ids(word_tokens)
-            word_embeddings = []
-            for word_id in word_ids:
-                try:
-                    word_index = (
-                        inputs["input_ids"][0].tolist().index(word_id)
-                    )  # Assumes the word occurs once
-                    word_embedding = last_hidden_states[0, word_index, :].detach()
-                    word_embeddings.append(word_embedding)
-                except ValueError:
-                    pass
+            if word in sentence_words:
+                word_idx = sentence_words.index(word)
 
-            embeddings[word] = (
-                torch.mean(torch.stack(word_embeddings), dim=0)
-                if word_embeddings
-                else torch.zeros(self.model.config.hidden_size)
-            )
+                embedding = word_embeddings[word_idx]
+
+                embeddings[word] = embedding
 
         return embeddings
 
@@ -288,17 +471,13 @@ class FrameAxisProcessor:
         if self.force_recalculate:
             print("Calculating FrameAxis Embeddings")
 
-            nltk.download("stopwords")
-
             antonym_pairs_embeddings = self.precompute_antonym_embeddings()
 
             # save to pickle under /tmp
             with open("/tmp/antonym_pairs_embeddings.pkl", "wb") as f:
                 pickle.dump(antonym_pairs_embeddings, f)
 
-            frameaxis_df = self._calculate_cosine_similarities(
-                self.df, antonym_pairs_embeddings
-            )
+            frameaxis_df = self.calculate_bias(self.df, antonym_pairs_embeddings)
 
             if self.dataframe_path:
                 if self.save_type == "csv":
