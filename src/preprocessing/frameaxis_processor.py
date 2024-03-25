@@ -473,13 +473,7 @@ class FrameAxisProcessor:
 
             antonym_pairs_embeddings = self.precompute_antonym_embeddings()
 
-            # save to pickle under /tmp
-            with open("/tmp/antonym_pairs_embeddings.pkl", "wb") as f:
-                pickle.dump(antonym_pairs_embeddings, f)
-
-            frameaxis_df = self.get_embeddings_for_words(
-                self.df, antonym_pairs_embeddings
-            )
+            frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
 
             if self.dataframe_path:
                 if self.save_type == "csv":
