@@ -8,7 +8,10 @@ import os
 from tqdm import tqdm
 import pandas as pd
 
-from preprocessing.frameaxis_processor import FrameAxisProcessor
+import sys
+
+sys.path.insert(0, "src/preprocessing")
+from src.preprocessing.frameaxis_processor import FrameAxisProcessor
 
 
 def main():
