@@ -340,19 +340,24 @@ class FrameAxisProcessor:
         :return: A DataFrame with the structure article_id | dim1_bias | dim1_intensity | ...
         """
 
+        print("Calculating all metrics...")
+        print("Step 1: Calculating word contributions...")
         # Step 1: Calculate word contributions for each article and dimension
         word_contributions_df = self.calculate_word_contributions(
             df, antonym_pairs_embeddings
         )
 
+        print("Step 2: Calculating microframe bias...")
         # Step 2: Calculate microframe bias for each article and dimension
         microframe_bias_df = self.calculate_microframe_bias(word_contributions_df)
 
+        print("Step 3: Calculating microframe intensity...")
         # Step 3: Calculate microframe intensity for each article and dimension
         microframe_intensity_df = self.calculate_microframe_intensity(
             word_contributions_df
         )
 
+        print("Step 4: Merging bias and intensity dataframes...")
         # Merge the bias and intensity dataframes
         final_df = microframe_bias_df.merge(
             microframe_intensity_df, left_index=True, right_index=True
