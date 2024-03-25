@@ -165,6 +165,10 @@ class FrameAxisProcessor:
             """
             words, embeddings = self.get_embeddings_for_text(text)
 
+            if embeddings.numel() == 0:
+                print(f"No embeddings found for article {article_id}, words: {words}")
+                return None
+
             # Initialize a DataFrame to collect results
             results_df = pd.DataFrame(words, columns=["word"])
             results_df["article_id"] = article_id
