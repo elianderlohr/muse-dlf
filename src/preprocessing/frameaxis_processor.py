@@ -38,7 +38,7 @@ class FrameAxisProcessor:
         force_recalculate (bool): If True, recalculate the FrameAxis Embeddings
         save_type (str): Type of file to save the FrameAxis Embeddings DataFrame
         """
-        self.df = df
+        self.df = df.sample(1000)
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
 
