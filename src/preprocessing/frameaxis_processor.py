@@ -187,7 +187,7 @@ class FrameAxisProcessor:
                 cos_sims = torch.matmul(embeddings_norm, diff_norm.T).squeeze()
 
                 # Add the cosine similarities as a new column for the current dimension
-                results_df[f"{dimension}"] = cos_sims
+                results_df[f"{dimension}"] = cos_sims.cpu().numpy()
 
             return results_df
 
