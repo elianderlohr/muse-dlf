@@ -1,11 +1,6 @@
 import argparse
 import json
 import logging
-from transformers import RobertaModel, RobertaTokenizer
-import torch
-import numpy as np
-import os
-from tqdm import tqdm
 import pandas as pd
 
 import sys
