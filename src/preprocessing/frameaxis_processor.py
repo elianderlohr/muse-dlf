@@ -391,9 +391,8 @@ class FrameAxisProcessor:
         # Obtain the embeddings
         with torch.no_grad():
             outputs = self.model(**inputs)
-        embeddings = outputs.last_hidden_state.squeeze(
-            0
-        )  # Assume batch_size=1 for simplicity
+
+        embeddings = outputs.last_hidden_state.squeeze(0)
 
         # Initialize lists for filtered tokens' embeddings and words
         filtered_embeddings = []
@@ -439,6 +438,12 @@ class FrameAxisProcessor:
             if filtered_embeddings
             else torch.tensor([])
         )
+
+        # if no embeddings were found, print debug info
+        if filtered_embeddings_tensor.numel() == 0:
+            print(
+                f"No embeddings found for input text: {text}, after filtering: {filtered_words}"
+            )
 
         return filtered_words, filtered_embeddings_tensor
 
