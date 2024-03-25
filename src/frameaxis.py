@@ -61,7 +61,7 @@ def main():
         path_name_bert_model=args.model_path,
         path_antonym_pairs=args.path_antonym_pairs,
         save_type="pickle",
-        dim_names=args.dim_names,
+        dim_names=args.dim_names.split(","),
     )
 
     frameaxis_df = frameaxis_processor.get_frameaxis_data()
