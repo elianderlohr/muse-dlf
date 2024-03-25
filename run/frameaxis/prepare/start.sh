@@ -27,11 +27,11 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/immigration_articles.json"
+DATA_PATH="data/mfc/data_prepared.json"
 PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
 MODEL_PATH="models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454"
-OUTPUT_PATH="data/frameaxis/mfc/"
+OUTPUT_PATH="data/frameaxis/mfc/frameaxis_contextualized_mft.pkl"
 
 echo "Data path: $DATA_PATH"
 echo "Antonym pairs path: $PATH_ANTONYM_PAIRS"
@@ -53,8 +53,7 @@ python src/other/frameaxis/frameaxis.py \
     --path_antonym_pairs $PATH_ANTONYM_PAIRS \
     --model_path $MODEL_PATH \
     --output_path $OUTPUT_PATH \
-    --dim_names $DIM_NAMES \
-    --sample_size 100
+    --dim_names $DIM_NAMES
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
