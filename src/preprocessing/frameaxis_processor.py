@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import torch
+import torch.nn.functional as F
 from transformers import BertTokenizer, BertModel, RobertaTokenizerFast, RobertaModel
 from nltk.corpus import stopwords
 import nltk
@@ -179,15 +180,11 @@ class FrameAxisProcessor:
                 diff_vector = neg_embedding - pos_embedding
 
                 # Normalize for cosine similarity calculation
-                diff_norm = diff_vector / np.linalg.norm(
-                    diff_vector, axis=1, keepdims=True
-                )
-                embeddings_norm = embeddings / np.linalg.norm(
-                    embeddings, axis=1, keepdims=True
-                )
+                diff_norm = F.normalize(diff_vector, p=2, dim=1)
+                embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
-                # Compute cosine similarities
-                cos_sims = np.dot(embeddings_norm, diff_norm.T).flatten()
+                # Compute cosine similarities using PyTorch
+                cos_sims = torch.matmul(embeddings_norm, diff_norm.T).squeeze()
 
                 # Add the cosine similarities as a new column for the current dimension
                 results_df[f"{dimension}"] = cos_sims
