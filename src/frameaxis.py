@@ -66,7 +66,11 @@ def main():
 
     frameaxis_df = frameaxis_processor.get_frameaxis_data()
 
-    print(frameaxis_df.head())
+    # print statistics
+    logging.info(f"FrameAxis data shape: {frameaxis_df.shape}")
+    logging.info(f"FrameAxis data columns: {frameaxis_df.columns}")
+    # no of rows with nan
+    logging.info(f"FrameAxis data rows with NaN: {frameaxis_df.isnull().sum().sum()}")
 
 
 if __name__ == "__main__":
