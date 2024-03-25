@@ -116,7 +116,11 @@ class PreProcessor:
         )
         frameaxis_df = frameaxis_processor.get_frameaxis_data()
 
+        print(f"FrameAxis data shape - 1: {frameaxis_df.shape}")
+
         frameaxis_df = frameaxis_df.reset_index(drop=True)
+
+        print(f"FrameAxis data shape - 2: {frameaxis_df.shape}")
 
         y_cols = [
             "Capacity and Resources",
@@ -163,7 +167,11 @@ class PreProcessor:
             list, axis=1
         )
 
+        print(f"FrameAxis data shape - 3: {frameaxis_df.shape}")
+
         frameaxis_df = frameaxis_df[["article_id", "frameaxis_values"]]
+
+        print(f"FrameAxis data shape - 4: {frameaxis_df.shape}")
 
         # Assuming frameaxis_df follows the same index order as df
         frameaxis_df_subset = (
@@ -171,7 +179,12 @@ class PreProcessor:
             .apply(lambda x: x.values.tolist())
             .reset_index(name="frameaxis_values")
         )
+
+        print(f"FrameAxis data shape - 5: {frameaxis_df_subset.shape}")
+
         frameaxis_df_subset = frameaxis_df_subset["frameaxis_values"]
+
+        print(f"FrameAxis data shape - 6: {frameaxis_df_subset.shape}")
 
         return X_subset, X_srl_subset, frameaxis_df_subset, y_subset
 
