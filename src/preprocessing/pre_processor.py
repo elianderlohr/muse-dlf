@@ -175,7 +175,7 @@ class PreProcessor:
 
         # Assuming frameaxis_df follows the same index order as df
         frameaxis_df_subset = (
-            frameaxis_df.groupby(df["article_id"])["frameaxis_values"]
+            frameaxis_df.groupby(frameaxis_df["article_id"])["frameaxis_values"]
             .apply(lambda x: x.values.tolist())
             .reset_index(name="frameaxis_values")
         )
