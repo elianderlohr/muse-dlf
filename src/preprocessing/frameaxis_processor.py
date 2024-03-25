@@ -509,4 +509,7 @@ class FrameAxisProcessor:
             with open(self.dataframe_path, "rb") as f:
                 frameaxis_df = pickle.load(f)
 
+            print(f"FrameAxis data shape: {frameaxis_df.shape}")
+            print(f"Path: {self.dataframe_path}")
+
             return frameaxis_df
