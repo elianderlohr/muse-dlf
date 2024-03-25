@@ -192,7 +192,6 @@ class PreProcessor:
         """
         Returns the train and test datasets.
         """
-
         df = self._load_data(path=path, format=format)
 
         X, X_srl, X_frameaxis, y = self._preprocess(
