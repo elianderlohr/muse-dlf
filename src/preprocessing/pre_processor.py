@@ -211,6 +211,20 @@ class PreProcessor:
             X_frameaxis, y, test_size=self.test_size, random_state=42
         )
 
+        # assert lenth
+        assert len(X_train) == len(y_train)
+        assert len(X_test) == len(y_test)
+        assert len(X_srl_train) == len(y_train)
+        assert len(X_srl_test) == len(y_test)
+        assert len(X_frameaxis_train) == len(y_train)
+        assert len(X_frameaxis_test) == len(y_test)
+
+        # ensure the len is the same between the three
+        assert len(X_train) == len(X_srl_train)
+        assert len(X_train) == len(X_frameaxis_train)
+        assert len(X_test) == len(X_srl_test)
+        assert len(X_test) == len(X_frameaxis_test)
+
         train_dataset = ArticleDataset(
             X_train,
             X_srl_train,
