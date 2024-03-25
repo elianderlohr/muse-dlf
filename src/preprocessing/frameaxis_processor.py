@@ -181,13 +181,12 @@ class FrameAxisProcessor:
 
                 # Normalize for cosine similarity calculation
                 diff_norm = F.normalize(diff_vector, p=2, dim=1)
-
                 diff_norm = diff_norm.to(self.model.device)
 
                 # Make sure embeddings is 2-dimensional
                 if embeddings.dim() == 1:
                     embeddings = embeddings.unsqueeze(0)  # Convert from 1D to 2D
-
+                embeddings = embeddings.to(self.model.device)
                 # Now embeddings is guaranteed to be at least 2D, so dim=1 will be valid
                 embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
