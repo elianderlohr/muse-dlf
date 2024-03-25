@@ -3,10 +3,7 @@ import json
 import logging
 import pandas as pd
 
-import sys
-
-sys.path.insert(0, "src/preprocessing")
-from src.preprocessing.frameaxis_processor import FrameAxisProcessor
+from preprocessing.frameaxis_processor import FrameAxisProcessor
 
 
 def main():
