@@ -89,14 +89,14 @@ def main():
     D_h = wandb.config.D_h
     lambda_orthogonality = wandb.config.lambda_orthogonality
     dropout_prob = wandb.config.dropout_prob
-    M = wandb.config.M_t
-    t = wandb.config.M_t
+    M = 8
+    t = 8
     alpha = wandb.config.alpha
     lr = wandb.config.lr
     K = 15
     embedding_dim = 768
 
-    batch_size = 32
+    batch_size = wandb.config.batch_size
     epochs = 3
     test_size = 0.1
     tau_min = 0.5
@@ -105,7 +105,7 @@ def main():
     # Data Processing
     num_sentences = 24
     num_frames = 15
-    frameaxis_dim = 5
+    frameaxis_dim = 10
     max_sentence_length = 32
     max_args_per_sentence = 10
     max_arg_length = 16
