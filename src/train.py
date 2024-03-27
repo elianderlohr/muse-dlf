@@ -14,8 +14,6 @@ import warnings
 
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
@@ -41,6 +39,7 @@ def load_model(
     path_name_bert_model="bert-base-uncased",
     path_pretrained_model="",
     device="cuda",
+    logger=LoggerManager.get_logger(__name__),
 ):
     # Model instantiation
     model = MUSE(
@@ -61,7 +60,9 @@ def load_model(
     model = model.to(device)
 
     if path_pretrained_model:
-        logger.info("Loading model from path_pretrained_model:", path_pretrained_model)
+        logger.info(
+            "Loading model from path_pretrained_model: %s", path_pretrained_model
+        )
         assert path_pretrained_model != ""
         model.load_state_dict(torch.load(path_pretrained_model, map_location=device))
 
@@ -288,7 +289,7 @@ def main():
     )
 
     # running the model with the given arguments
-    logger.info(f"Running the model with the following arguments: {args}")
+    logger.info("Running the model with the following arguments: %s", args)
 
     # create config dictionary
     config = {
@@ -327,6 +328,7 @@ def main():
         path_name_bert_model=args.path_name_bert_model,
         path_pretrained_model=args.path_name_pretrained_muse_model,
         device="cuda",
+        logger=logger,
     )
 
     if args.name_tokenizer == "roberta-base":
@@ -388,8 +390,8 @@ def main():
     )
 
     logger.info("Log model using WANDB")
-    logger.info("WANDB project name:", project_name)
-    logger.info("WANDB tags:", args.tags)
+    logger.info("WANDB project name: %s", project_name)
+    logger.info("WANDB tags: %s", args.tags)
 
     # Train the model
     trainer = Trainer(

@@ -138,13 +138,13 @@ class LossModule(nn.Module):
         # check if tensor have nan values Ju_fx
         if torch.isnan(Ju_fx).any():
             logger.debug("Ju_fx has nan")
-            logger.debug("Ju_fx:", Ju_fx)
+            logger.debug("Ju_fx: %s", Ju_fx)
 
         Jt_fx = self.focal_triplet_loss(v_fx, vhat_fx, g_fx, F_fx)
 
         if torch.isnan(Jt_fx).any():
             logger.debug("Jt_fx has nan")
-            logger.debug("Jt_fx:", Jt_fx)
+            logger.debug("Jt_fx: %s", Jt_fx)
 
         Jz_fx = (
             Ju_fx
