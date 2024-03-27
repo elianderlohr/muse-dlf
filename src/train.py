@@ -9,8 +9,14 @@ from torch.optim.lr_scheduler import StepLR
 import wandb
 from training.trainer import Trainer
 from transformers import BertTokenizer, RobertaTokenizerFast
-from accelerate import Accelerator, DistributedDataParallelKwargs
+from accelerate import Accelerator
 import warnings
+
+from utils.logging_manager import LoggerManager
+
+LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
+
+logger = LoggerManager.get_logger(__name__)
 
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
@@ -21,7 +27,7 @@ warnings.filterwarnings("ignore", message="invalid value encountered in double_s
 
 # welcome console message
 def welcome_message():
-    print(
+    logger.info(
         """#####################################################
 #                                                   #
 #              Welcome to MUSE!                     #
@@ -68,7 +74,7 @@ def load_model(
     model = model.to(device)
 
     if path_pretrained_model:
-        print("Loading model from path_pretrained_model:", path_pretrained_model)
+        logger.info("Loading model from path_pretrained_model:", path_pretrained_model)
         assert path_pretrained_model != ""
         model.load_state_dict(torch.load(path_pretrained_model, map_location=device))
 
@@ -273,9 +279,18 @@ def main():
 
     args = parser.parse_args()
 
+    # start with seting up wandb and accelerator
+
+    # login to wandb
+    wandb.login(key=args.wandb_api_key)
+
+    # initialize accelerator
+    accelerator = Accelerator(
+        log_with="wandb",
+    )
+
     # running the model with the given arguments
-    print("Running the model with the following arguments:")
-    print(args)
+    logger.info(f"Running the model with the following arguments: {args}")
 
     # create config dictionary
     config = {
@@ -361,14 +376,6 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     scheduler = StepLR(optimizer, step_size=2, gamma=0.1)
 
-    # login to wandb
-    wandb.login(key=args.wandb_api_key)
-
-    # initialize accelerator
-    accelerator = Accelerator(
-        log_with="wandb",
-    )
-
     # prepare components for accelerate
     model, optimizer, train_dataloader, test_dataloader, scheduler = (
         accelerator.prepare(
@@ -382,9 +389,9 @@ def main():
         init_kwargs={"wandb": {"tags": args.tags.split(",")}},
     )
 
-    print("Log model using WANDB")
-    print("WANDB project name:", project_name)
-    print("WANDB tags:", args.tags)
+    logger.info("Log model using WANDB")
+    logger.info("WANDB project name:", project_name)
+    logger.info("WANDB tags:", args.tags)
 
     # Train the model
     trainer = Trainer(

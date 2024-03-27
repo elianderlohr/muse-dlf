@@ -5,6 +5,10 @@ from model.muse.srl_embeddings import SRLEmbeddings
 from model.muse.supervised_module import MUSESupervised
 from model.muse.unsupervised_module import MUSEUnsupervised
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class MUSE(nn.Module):
     def __init__(
@@ -198,7 +202,7 @@ class MUSE(nn.Module):
                 unsupervised_losses += unsupervised_results["loss"]
 
                 if torch.isnan(unsupervised_results["loss"]).any():
-                    print("loss is nan")
+                    logger.debug("loss is nan")
 
                 # Use the vhat (reconstructed embeddings) for supervised predictions
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])

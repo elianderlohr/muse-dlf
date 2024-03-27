@@ -7,6 +7,9 @@ from tqdm import tqdm
 import math
 import evaluate
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
 
 class Trainer:
     def __init__(
@@ -56,7 +59,7 @@ class Trainer:
 
         self.training_management = training_management
         if self.training_management == "accelerate":
-            print("Using Accelerate for training.")
+            logger.info("Using Accelerate for training.")
 
             from accelerate import Accelerator
 
@@ -81,7 +84,7 @@ class Trainer:
                 self.scheduler,
             )
         elif self.training_management == "wandb":
-            print("Using Weights and Biases for training.")
+            logger.info("Using Weights and Biases for training.")
             import wandb
 
             if "wandb_instance" in kwargs:
@@ -92,7 +95,7 @@ class Trainer:
                     "You must provide a wandb instance if you want to use wandb for training."
                 )
         else:
-            print("Using standard PyTorch for training.")
+            logger.info("Using standard PyTorch for training.")
             self.accelerator = None
 
     def _log_metrics(self, metrics):
@@ -101,7 +104,7 @@ class Trainer:
         elif self.training_management == "accelerate":
             self.accelerator.log(metrics)
         else:
-            print(metrics)
+            logger.info(metrics)
 
     def _train(self, epoch, model, train_dataloader, tau, alpha, device):
         model.train()
@@ -243,7 +246,7 @@ class Trainer:
         avg_supervised_loss = supervised_total_loss / len(train_dataloader)
         avg_unsupervised_loss = unsupervised_total_loss / len(train_dataloader)
 
-        print(
+        logger.info(
             f"Epoch {epoch}, Avg Total Loss: {avg_total_loss}, Avg Supervised Loss: {avg_supervised_loss}, Avg Unsupervised Loss: {avg_unsupervised_loss}"
         )
 
@@ -377,7 +380,7 @@ class Trainer:
         eval_results_macro = f1_metric_macro.compute(average="macro")
         eval_accuracy = accuracy_metric.compute()
 
-        print(
+        logger.info(
             f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
         )
 
@@ -397,20 +400,20 @@ class Trainer:
         try:
             os.makedirs(save_dir, exist_ok=True)
         except Exception as e:
-            print(f"Warning: Could not create directory {save_dir}. Exception: {e}")
+            logger.info(f"Warning: Could not create directory {save_dir}. Exception: {e}")
 
         model_save_path = os.path.join(save_dir, f"model_epoch_{epoch}.pth")
         try:
             torch.save(model.state_dict(), model_save_path)
         except Exception as e:
-            print(f"Warning: Failed to save model at {model_save_path}. Exception: {e}")
+            logger.info(f"Warning: Failed to save model at {model_save_path}. Exception: {e}")
 
         metrics_save_path = os.path.join(save_dir, f"metrics_epoch_{epoch}.json")
         try:
             with open(metrics_save_path, "w") as f:
                 json.dump(metrics, f)
         except Exception as e:
-            print(
+            logger.info(
                 f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
             )
 
@@ -430,11 +433,11 @@ class Trainer:
                         try:
                             os.remove(file_path)
                         except Exception as e:
-                            print(
+                            logger.info(
                                 f"Warning: Failed to delete file {file_path}. Exception: {e}"
                             )
         except Exception as e:
-            print(
+            logger.info(
                 f"Warning: An error occurred while managing model files. Exception: {e}"
             )
 
@@ -454,11 +457,11 @@ class Trainer:
                         try:
                             os.remove(file_path)
                         except Exception as e:
-                            print(
+                            logger.info(
                                 f"Warning: Failed to delete file {file_path}. Exception: {e}"
                             )
         except Exception as e:
-            print(
+            logger.info(
                 f"Warning: An error occurred while managing metric files. Exception: {e}"
             )
 

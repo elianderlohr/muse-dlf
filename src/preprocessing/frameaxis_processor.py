@@ -12,6 +12,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 import string
 import json
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class FrameAxisProcessor:
     def __init__(
@@ -50,7 +54,7 @@ class FrameAxisProcessor:
             self.model = RobertaModel.from_pretrained(path_name_bert_model)
 
         if torch.cuda.is_available():
-            print("Using CUDA")
+            logger.info("Using CUDA")
             self.model.cuda()
 
         self.antonym_pairs = {}
@@ -166,7 +170,9 @@ class FrameAxisProcessor:
             words, embeddings = self.get_embeddings_for_text(text)
 
             if embeddings.numel() == 0:
-                print(f"No embeddings found for article {article_id}, words: {words}")
+                logger.info(
+                    f"No embeddings found for article {article_id}, words: {words}"
+                )
                 return None
 
             # Initialize a DataFrame to collect results
@@ -340,24 +346,24 @@ class FrameAxisProcessor:
         :return: A DataFrame with the structure article_id | dim1_bias | dim1_intensity | ...
         """
 
-        print("Calculating all metrics...")
-        print("Step 1: Calculating word contributions...")
+        logger.info("Calculating all metrics...")
+        logger.info("Step 1: Calculating word contributions...")
         # Step 1: Calculate word contributions for each article and dimension
         word_contributions_df = self.calculate_word_contributions(
             df, antonym_pairs_embeddings
         )
 
-        print("Step 2: Calculating microframe bias...")
+        logger.info("Step 2: Calculating microframe bias...")
         # Step 2: Calculate microframe bias for each article and dimension
         microframe_bias_df = self.calculate_microframe_bias(word_contributions_df)
 
-        print("Step 3: Calculating microframe intensity...")
+        logger.info("Step 3: Calculating microframe intensity...")
         # Step 3: Calculate microframe intensity for each article and dimension
         microframe_intensity_df = self.calculate_microframe_intensity(
             word_contributions_df
         )
 
-        print("Step 4: Merging bias and intensity dataframes...")
+        logger.info("Step 4: Merging bias and intensity dataframes...")
         # Merge the bias and intensity dataframes
         final_df = microframe_bias_df.merge(
             microframe_intensity_df, left_index=True, right_index=True
@@ -439,9 +445,9 @@ class FrameAxisProcessor:
             else torch.tensor([])
         )
 
-        # if no embeddings were found, print debug info
+        # if no embeddings were found, logger.info debug info
         if filtered_embeddings_tensor.numel() == 0:
-            print(
+            logger.info(
                 f"No embeddings found for input text: {text}, after filtering: {filtered_words}"
             )
 
@@ -487,7 +493,7 @@ class FrameAxisProcessor:
             self.force_recalculate = True
 
         if self.force_recalculate:
-            print("Calculating FrameAxis Embeddings")
+            logger.info("Calculating FrameAxis Embeddings")
 
             antonym_pairs_embeddings = self.precompute_antonym_embeddings()
 
@@ -505,7 +511,7 @@ class FrameAxisProcessor:
             return frameaxis_df
         else:
             # load from pickle
-            print("Loading FrameAxis Embeddings")
+            logger.info("Loading FrameAxis Embeddings")
             with open(self.dataframe_path, "rb") as f:
                 frameaxis_df = pickle.load(f)
 

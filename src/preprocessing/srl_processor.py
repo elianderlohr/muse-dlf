@@ -3,7 +3,10 @@ import pandas as pd
 import pickle
 from allennlp.predictors.predictor import Predictor
 from tqdm import tqdm
-import json
+
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
 
 
 class SRLProcessor:
@@ -46,7 +49,7 @@ class SRLProcessor:
         """
         Recalculates the SRL components for the sentences in the DataFrame.
         """
-        print("Recalculating SRL components...")
+        logger.info("Recalculating SRL components...")
         predictor = Predictor.from_path(
             "https://storage.googleapis.com/allennlp-public-models/structured-prediction-srl-bert.2020.12.15.tar.gz",
             cuda_device=0,
@@ -71,7 +74,7 @@ class SRLProcessor:
         """
         Loads the SRL components from a pickle file.
         """
-        print("Loading SRL components from pickle...")
+        logger.info("Loading SRL components from pickle...")
         with open(self.dataframe_path, "rb") as f:
             srl_series = pickle.load(f)
         return srl_series

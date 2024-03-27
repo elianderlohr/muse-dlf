@@ -11,6 +11,10 @@ from tqdm import tqdm
 import pickle
 from sklearn.model_selection import train_test_split
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class PreProcessor:
     def __init__(
@@ -252,7 +256,7 @@ class PreProcessor:
         )
 
         if sample_size > 0:
-            print(f"Sampling {sample_size} examples from the dataset.")
+            logger.info(f"Sampling {sample_size} examples from the dataset.")
             train_dataset = torch.utils.data.Subset(train_dataset, range(sample_size))
             test_dataset = torch.utils.data.Subset(test_dataset, range(sample_size))
 

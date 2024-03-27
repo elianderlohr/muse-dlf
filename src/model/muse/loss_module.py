@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class LossModule(nn.Module):
     def __init__(self, lambda_orthogonality, M, t):
@@ -133,14 +137,14 @@ class LossModule(nn.Module):
 
         # check if tensor have nan values Ju_fx
         if torch.isnan(Ju_fx).any():
-            print("Ju_fx has nan")
-            print("Ju_fx:", Ju_fx)
+            logger.debug("Ju_fx has nan")
+            logger.debug("Ju_fx:", Ju_fx)
 
         Jt_fx = self.focal_triplet_loss(v_fx, vhat_fx, g_fx, F_fx)
 
         if torch.isnan(Jt_fx).any():
-            print("Jt_fx has nan")
-            print("Jt_fx:", Jt_fx)
+            logger.debug("Jt_fx has nan")
+            logger.debug("Jt_fx:", Jt_fx)
 
         Jz_fx = (
             Ju_fx
@@ -149,19 +153,19 @@ class LossModule(nn.Module):
         )
 
         if torch.isnan(self.orthogonality_term(F_fx)).any():
-            print("orthogonality_term has nan")
+            logger.debug("orthogonality_term has nan")
 
         if torch.isnan(Jz_p).any():
-            print("Jz_p has nan")
+            logger.debug("Jz_p has nan")
 
         if torch.isnan(Jz_a0).any():
-            print("Jz_a0 has nan")
+            logger.debug("Jz_a0 has nan")
 
         if torch.isnan(Jz_a1).any():
-            print("Jz_a1 has nan")
+            logger.debug("Jz_a1 has nan")
 
         if torch.isnan(Jz_fx).any():
-            print("Jz_fx has nan")
+            logger.debug("Jz_fx has nan")
 
         # Aggregate the losses
         loss = Jz_p + Jz_a0 + Jz_a1 + Jz_fx
