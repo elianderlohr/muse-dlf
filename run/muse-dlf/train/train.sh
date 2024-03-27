@@ -78,8 +78,7 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --batch_size 32 \
-    --epochs 25 \
+    --epochs 20 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454 \
@@ -89,12 +88,13 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
     --D_h 512 \
-    --dropout_prob 0.41813713193324464 \
-    --alpha 0.29939853249854825 \
-    --lambda_orthogonality 0.00016402662815016467 \
-    --lr 0.0018359455575357815 \
-    --M 13 \
-    --t 13
+    --dropout_prob 0.4342323587984932 \
+    --alpha 0.6620279296177292 \
+    --lambda_orthogonality 0.00043929793899324113 \
+    --lr 0.0004131391801485164 \
+    --M 8 \
+    --t 8 \
+    --batch_size 48
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
