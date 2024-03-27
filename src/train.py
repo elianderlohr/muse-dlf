@@ -14,8 +14,6 @@ import warnings
 
 from utils.logging_manager import LoggerManager
 
-LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
-
 logger = LoggerManager.get_logger(__name__)
 
 # Suppress specific warnings from numpy
@@ -25,18 +23,7 @@ warnings.filterwarnings(
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
 
 
-# welcome console message
-def welcome_message():
-    logger.info(
-        """#####################################################
-#                                                   #
-#              Welcome to MUSE!                     #
-#                                                   #
-# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
-#          Learning for Frame Classification        #
-#                                                   #
-#####################################################"""
-    )
+project_name = "muse-dlf"
 
 
 def load_model(
@@ -82,10 +69,6 @@ def load_model(
 
 
 def main():
-
-    project_name = "muse-dlf"
-
-    welcome_message()
 
     parser = argparse.ArgumentParser(description="Train MUSE model")
 
@@ -287,6 +270,21 @@ def main():
     # initialize accelerator
     accelerator = Accelerator(
         log_with="wandb",
+    )
+
+    LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
+
+    logger = LoggerManager.get_logger(__name__)
+
+    logger.info(
+        """#####################################################
+#                                                   #
+#              Welcome to MUSE!                     #
+#                                                   #
+# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
+#          Learning for Frame Classification        #
+#                                                   #
+#####################################################"""
     )
 
     # running the model with the given arguments
