@@ -28,32 +28,25 @@ python -m pip list
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/data_prepared_cleaned.json"
-PATH_ANTONYM_PAIRS="data/axis/mft.json"
-DIM_NAMES="virtue,vice"
-MODEL_PATH="models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454"
-OUTPUT_PATH="data/frameaxis/mfc/frameaxis_contextualized_mft.pkl"
+OUTPUT_PATH="data/srls/mfc/mfc_labeled.pkl"
 
 echo "Data path: $DATA_PATH"
-echo "Antonym pairs path: $PATH_ANTONYM_PAIRS"
-echo "Model path: $MODEL_PATH"
 echo "Output path: $OUTPUT_PATH"
-echo "Dimensions: $DIM_NAMES"
 
 # GPU Setup and Verification
 echo "GPU status:"
 nvidia-smi
 
+export CUDA_VISIBLE_DEVICES=0
+
 # Training Script Execution
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
 
-echo "Running frameaxis.py..."
-python src/frameaxis.py \
+echo "Running srls.py..."
+python src/srls.py \
     --data_path $DATA_PATH \
-    --path_antonym_pairs $PATH_ANTONYM_PAIRS \
-    --model_path $MODEL_PATH \
-    --output_path $OUTPUT_PATH \
-    --dim_names $DIM_NAMES
+    --output_path $OUTPUT_PATH 
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
