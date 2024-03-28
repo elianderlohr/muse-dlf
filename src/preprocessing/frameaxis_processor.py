@@ -47,7 +47,7 @@ class FrameAxisProcessor:
         self.dataframe_path = dataframe_path
 
         if bert_model_name == "bert-base-uncased":
-            self.tokenizer = BertTokenizer.from_pretrained(name_tokenizer)
+            self.tokenizer = BertTokenizerFast.from_pretrained(name_tokenizer)
             self.model = BertModel.from_pretrained(path_name_bert_model)
         elif bert_model_name == "roberta-base":
             self.tokenizer = RobertaTokenizerFast.from_pretrained(name_tokenizer)
@@ -136,13 +136,19 @@ class FrameAxisProcessor:
             pos_embeddings = antonym_avg_embeddings[key][self.dim_names[0]]
             neg_embeddings = antonym_avg_embeddings[key][self.dim_names[1]]
 
-            # Extract tensors from the dictionaries and convert them to a list
             pos_embeddings_list = [embed for embed in pos_embeddings.values()]
             neg_embeddings_list = [embed for embed in neg_embeddings.values()]
 
-            # Now you can safely use torch.stack on the list of tensors
-            pos_embedding_avg = torch.mean(torch.stack(pos_embeddings_list), dim=0)
-            neg_embedding_avg = torch.mean(torch.stack(neg_embeddings_list), dim=0)
+            # only stack if not empty
+            if pos_embeddings_list:
+                pos_embedding_avg = torch.mean(torch.stack(pos_embeddings_list), dim=0)
+            else:
+                pos_embedding_avg = torch.zeros(768)
+
+            if neg_embeddings_list:
+                neg_embedding_avg = torch.mean(torch.stack(neg_embeddings_list), dim=0)
+            else:
+                neg_embedding_avg = torch.zeros(768)
 
             microframes[key] = {
                 self.dim_names[0]: pos_embedding_avg,
@@ -153,115 +159,92 @@ class FrameAxisProcessor:
 
     def calculate_word_contributions(self, df, antonym_pairs_embeddings):
         """
-        Calculates the bias scores for each dimension for all rows (documents) in the DataFrame.
-
-        :param df: A DataFrame containing the articles to calculate word contributions for.
+        Calculates the bias scores for each word in each document and aggregates them into a list of dictionaries.
+        :param df: A DataFrame containing the articles.
         :param antonym_pairs_embeddings: A dictionary containing the embeddings for antonym pairs for each dimension.
-        :return: A DataFrame containing the bias scores for each dimension, indexed by article ID and word.
+        :return: A DataFrame with each row containing a list of dictionaries, each representing a word and its corresponding bias score.
         """
 
         def calculate_word_contribution(article_id, text):
-            """
-            Computes the bias scores for each dimension for a single row (document) in the DataFrame.
-
-            :param row: A Series object representing a row from the DataFrame.
-            :return: A Series containing bias scores for each dimension, indexed by dimension name.
-            """
             words, embeddings = self.get_embeddings_for_text(text)
 
             if embeddings.numel() == 0:
-                logger.info(
-                    f"No embeddings found for article {article_id}, words: {words}"
-                )
-                return None
+                print(f"No embeddings found for article {article_id}, words: {words}")
+                return []
 
-            # Initialize a DataFrame to collect results
-            results_df = pd.DataFrame(words, columns=["word"])
-            results_df["article_id"] = article_id
+            # List to collect word contribution dictionaries
+            word_contributions = []
 
-            # Calculate cosine similarities for each dimension and add as a new column
-            for dimension in antonym_pairs_embeddings:
-                pos_embedding = antonym_pairs_embeddings[dimension][
-                    self.dim_names[0]
-                ].reshape(1, -1)
-                neg_embedding = antonym_pairs_embeddings[dimension][
-                    self.dim_names[1]
-                ].reshape(1, -1)
-                diff_vector = neg_embedding - pos_embedding
+            for word, embedding in zip(words, embeddings):
+                word_dict = {"word": word}
+                for dimension in antonym_pairs_embeddings:
+                    pos_embedding = antonym_pairs_embeddings[dimension][
+                        self.dim_names[0]
+                    ].reshape(1, -1)
+                    neg_embedding = antonym_pairs_embeddings[dimension][
+                        self.dim_names[1]
+                    ].reshape(1, -1)
+                    diff_vector = neg_embedding - pos_embedding
 
-                # Normalize for cosine similarity calculation
-                diff_norm = F.normalize(diff_vector, p=2, dim=1)
-                diff_norm = diff_norm.to(self.model.device)
+                    diff_norm = F.normalize(diff_vector, p=2, dim=1).to(
+                        self.model.device
+                    )
+                    embedding = (
+                        embedding.unsqueeze(0).to(self.model.device)
+                        if embedding.dim() == 1
+                        else embedding.to(self.model.device)
+                    )
+                    embedding_norm = F.normalize(embedding, p=2, dim=1)
 
-                # Make sure embeddings is 2-dimensional
-                if embeddings.dim() == 1:
-                    embeddings = embeddings.unsqueeze(0)  # Convert from 1D to 2D
-                embeddings = embeddings.to(self.model.device)
-                # Now embeddings is guaranteed to be at least 2D, so dim=1 will be valid
-                embeddings_norm = F.normalize(embeddings, p=2, dim=1)
+                    cos_sim = (
+                        torch.matmul(embedding_norm, diff_norm.T).squeeze().cpu().item()
+                    )
 
-                # Compute cosine similarities using PyTorch
-                cos_sims = torch.matmul(embeddings_norm, diff_norm.T).squeeze()
+                    word_dict[dimension] = cos_sim
 
-                # Add the cosine similarities as a new column for the current dimension
-                results_df[f"{dimension}"] = cos_sims.cpu().numpy()
+                word_contributions.append(word_dict)
 
-            return results_df
+            return word_contributions
 
         tqdm.pandas(desc="Calculating Word Contributions")
-        result_dfs = df.progress_apply(
+        df["word_contributions"] = df.progress_apply(
             lambda row: calculate_word_contribution(row["article_id"], row["text"]),
             axis=1,
         )
 
-        final_df = pd.concat(result_dfs.tolist(), ignore_index=True)
-
-        return final_df
+        return df
 
     def calculate_microframe_bias(self, df):
-        # Calculate word frequency within each article
-        word_freq = (
-            df.groupby(["article_id", "word"]).size().reset_index(name="frequency")
-        )
-
-        # Merge word frequency back into the main DataFrame
-        df = df.merge(word_freq, on=["article_id", "word"])
-
         # Initialize a DataFrame to collect microframe bias results
-        bias_df = pd.DataFrame()
+        bias_results = []
 
-        # Process each article
-        for article_id in df["article_id"].unique():
-            # Make a copy of the slice to avoid SettingWithCopyWarning
-            article_df = df[df["article_id"] == article_id].copy()
-            bias_dict = {"article_id": article_id}
-            total_frequency = article_df["frequency"].sum()
+        # Iterate over each row in the DataFrame
+        for idx, row in df.iterrows():
+            # Each 'word_contributions' entry is a list of dictionaries with words and their contributions
+            word_contributions = row["word_contributions"]
 
-            for dimension in [
-                col
-                for col in df.columns
-                if col not in ["article_id", "word", "text", "frequency"]
-            ]:
-                # Calculate weighted word contributions for the dimension
-                # Use .loc to ensure that we are working with a copy and not a view
-                weighted_contributions = article_df[dimension] * article_df["frequency"]
-                article_df.loc[:, dimension + "_weighted"] = weighted_contributions
+            # Initialize a dictionary to hold bias calculations for this article
+            bias_dict = {"article_id": row["article_id"]}
 
-                # Calculate the sum of weighted contributions
-                weighted_sum = weighted_contributions.sum()
+            if word_contributions:
+                dimensions = [
+                    k for k in word_contributions[0].keys() if k not in ["word"]
+                ]
+                for dimension in dimensions:
+                    # Calculate weighted contributions for each dimension
+                    weighted_contributions = sum(
+                        d[dimension] for d in word_contributions if dimension in d
+                    )
 
-                # Calculate the microframe bias for the dimension
-                microframe_bias = (
-                    weighted_sum / total_frequency if total_frequency else 0
-                )
+                    # Calculate microframe bias for the dimension
+                    microframe_bias = weighted_contributions / len(word_contributions)
+                    bias_dict[dimension + "_bias"] = microframe_bias
 
-                # Store results in a dictionary
-                bias_dict[dimension + "_bias"] = microframe_bias
+            # Append the results for this article to the results list
+            bias_results.append(bias_dict)
 
-            # Append the dictionary to bias_df using pd.concat
-            bias_df = pd.concat([bias_df, pd.DataFrame([bias_dict])], ignore_index=True)
-
-        # Reshape bias_df for better readability
+        # Convert the results list to a DataFrame
+        bias_df = pd.DataFrame(bias_results)
         bias_df = bias_df.set_index("article_id")
 
         return bias_df
@@ -273,14 +256,25 @@ class FrameAxisProcessor:
         :param df: A DataFrame with columns for article_id, word, and microframe cosine similarities.
         :return: A dictionary of baseline biases for each microframe dimension.
         """
+
         baseline_bias = {}
-        for dimension in [
-            col
-            for col in df.columns
-            if col not in ["article_id", "word", "text", "frequency"]
-        ]:
-            # Average of the dimension's cosine similarity across all documents
-            baseline_bias[dimension] = df[dimension].mean()
+        for idx, row in df.iterrows():
+            word_contributions = row["word_contributions"]
+
+            if word_contributions:
+                dimensions = [
+                    k for k in word_contributions[0].keys() if k not in ["word"]
+                ]
+                for dimension in dimensions:
+                    baseline_bias.setdefault(dimension, []).extend(
+                        [d[dimension] for d in word_contributions if dimension in d]
+                    )
+
+        for dimension in baseline_bias:
+            baseline_bias[dimension] = sum(baseline_bias[dimension]) / len(
+                baseline_bias[dimension]
+            )
+
         return baseline_bias
 
     def calculate_microframe_intensity(self, df):
@@ -296,32 +290,26 @@ class FrameAxisProcessor:
         # Initialize DataFrame to store intensity results
         intensity_df = pd.DataFrame()
 
-        # Calculate word frequency within each article
-        word_freq = (
-            df.groupby(["article_id", "word"]).size().reset_index(name="frequency")
-        )
+        for idx, row in df.iterrows():
+            word_contributions = row["word_contributions"]
 
-        # Merge word frequency back into the main DataFrame
-        df = df.merge(word_freq, on=["article_id", "word"])
-
-        # Process each article
-        for article_id in df["article_id"].unique():
-            article_df = df[df["article_id"] == article_id]
-            intensity_dict = {"article_id": article_id}
-            total_frequency = article_df["frequency"].sum()
+            # Initialize a DataFrame to store the intensity results for this article
+            intensity_dict = {"article_id": row["article_id"]}
+            total_contributions = len(word_contributions)
 
             for dimension in [
-                col
-                for col in df.columns
-                if col not in ["article_id", "word", "frequency"]
+                k for k in word_contributions[0].keys() if k not in ["word"]
             ]:
-                # Compute the second moment for the dimension
-                deviations_squared = (
-                    (article_df[dimension] - baseline_bias[dimension]) ** 2
-                    * article_df["frequency"]
-                ).sum()
+                # Calculate the second moment for the dimension
+                deviations_squared = sum(
+                    (d[dimension] - baseline_bias[dimension]) ** 2
+                    for d in word_contributions
+                    if dimension in d
+                )
                 microframe_intensity = (
-                    deviations_squared / total_frequency if total_frequency else 0
+                    deviations_squared / total_contributions
+                    if total_contributions
+                    else 0
                 )
 
                 # Store the results
@@ -332,7 +320,6 @@ class FrameAxisProcessor:
                 [intensity_df, pd.DataFrame([intensity_dict])], ignore_index=True
             )
 
-        # Reshape intensity_df for better readability
         intensity_df = intensity_df.set_index("article_id")
 
         return intensity_df
@@ -364,10 +351,9 @@ class FrameAxisProcessor:
         )
 
         logger.info("Step 4: Merging bias and intensity dataframes...")
-        # Merge the bias and intensity dataframes
-        final_df = microframe_bias_df.merge(
-            microframe_intensity_df, left_index=True, right_index=True
-        )
+
+        # Merge the bias and intensity DataFrames row-wise
+        final_df = pd.concat([microframe_bias_df, microframe_intensity_df], axis=1)
 
         # Reformat the final DataFrame to match the desired structure
         final_df.reset_index(inplace=True)
