@@ -142,7 +142,7 @@ def main():
     data_processing = parser.add_argument_group("Data Processing")
 
     data_processing.add_argument(
-        "--num_sentences", type=int, default=24, help="Number of sentences in the input"
+        "--num_sentences", type=int, default=32, help="Number of sentences in the input"
     )
 
     data_processing.add_argument(

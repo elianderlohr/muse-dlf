@@ -59,27 +59,8 @@ class SRLProcessor:
             cuda_device=self.device,
         )
 
-        # Directly process each text entry to get SRLs and associate with article_id and text
-        srl_data = []
-        for _, row in tqdm(
-            self.df.iterrows(), desc="Processing SRL Batches", total=len(self.df)
-        ):
-            article_id, text = row["article_id"], row["text"]
-            srls = self._extract_srl_batch(
-                [text], predictor
-            )  # Process a single text entry as a batch of size 1
-            srl_data.append(
-                {
-                    "article_id": article_id,
-                    "text": text,
-                    "srls": srls[
-                        0
-                    ],  # Extract the first (and only) element as each text is processed individually
-                }
-            )
-
         # Convert the processed data into a DataFrame
-        result_df = pd.DataFrame(srl_data)
+        result_df = self._batch_process_srl_with_ids(self.df, predictor)
 
         # Save the DataFrame if a path is specified
         if self.dataframe_path:
@@ -102,7 +83,7 @@ class SRLProcessor:
             srl_series = pickle.load(f)
         return srl_series
 
-    def _extract_srl_batch(self, batched_sentences, predictor):
+    def _extract_srl_batch(self, batched_sentences, predictor: Predictor):
         """
         Extracts SRL components for a batch of sentences.
         """
@@ -139,16 +120,30 @@ class SRLProcessor:
             )
         return results
 
-    def _batch_process_srl(self, texts, article_ids, predictor, batch_size=32):
+    def _batch_process_srl_with_ids(self, df, predictor, batch_size=32):
         """
-        Extracts SRL components for all sentences in a DataFrame in an optimized, batched manner.
-        Now also includes article IDs to ensure SRL components are associated with the correct articles.
+        Directly process text entries in batches to get SRLs and associate them with article_id and text.
         """
-        results_by_article = defaultdict(list)
-        for i in tqdm(range(0, len(texts), batch_size), desc="Processing SRL Batches"):
-            batched_sentences = texts[i : i + batch_size].tolist()
-            batch_article_ids = article_ids[i : i + batch_size].tolist()
-            batch_results = self._extract_srl_batch(batched_sentences, predictor)
-            for article_id, srls in zip(batch_article_ids, batch_results):
-                results_by_article[article_id].extend(srls)
-        return results_by_article
+        srl_data = []
+        # Use a range with step=batch_size to iterate over the DataFrame in batches
+        for i in tqdm(
+            range(0, len(df), batch_size),
+            desc="Processing SRL Batches",
+            total=len(df) // batch_size + (len(df) % batch_size > 0),
+        ):
+            # Slice the DataFrame to get the current batch
+            batch_df = df.iloc[i : i + batch_size]
+            # Convert the text column of the batch into a list for processing
+            batched_texts = batch_df["text"].tolist()
+            # Extract SRLs for the batch of texts
+            batch_results = self._extract_srl_batch(batched_texts, predictor)
+            # Associate each SRL result with the corresponding article_id and text
+            for j, row in enumerate(batch_df.itertuples()):
+                srl_data.append(
+                    {
+                        "article_id": row.article_id,
+                        "text": row.text,
+                        "srls": batch_results[j],
+                    }
+                )
+        return pd.DataFrame(srl_data)
