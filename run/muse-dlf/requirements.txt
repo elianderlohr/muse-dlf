@@ -12,3 +12,4 @@ scikit-learn
 pandas
 tqdm
 allennlp
+allennlp-models
