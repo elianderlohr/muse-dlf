@@ -11,7 +11,7 @@
 echo "===================== Job Details ====================="
 # Activate the virtual environment
 echo "Activating virtual environment..."
-source run/srls/srl_venv/bin/activate
+source run/srl/srl_venv/bin/activate
 
 # Environment Setup
 echo "Setting up environment..."
