@@ -296,24 +296,24 @@ class FrameAxisProcessor:
             # Initialize a DataFrame to store the intensity results for this article
             intensity_dict = {"article_id": row["article_id"]}
             total_contributions = len(word_contributions)
+            if word_contributions:
+                for dimension in [
+                    k for k in word_contributions[0].keys() if k not in ["word"]
+                ]:
+                    # Calculate the second moment for the dimension
+                    deviations_squared = sum(
+                        (d[dimension] - baseline_bias[dimension]) ** 2
+                        for d in word_contributions
+                        if dimension in d
+                    )
+                    microframe_intensity = (
+                        deviations_squared / total_contributions
+                        if total_contributions
+                        else 0
+                    )
 
-            for dimension in [
-                k for k in word_contributions[0].keys() if k not in ["word"]
-            ]:
-                # Calculate the second moment for the dimension
-                deviations_squared = sum(
-                    (d[dimension] - baseline_bias[dimension]) ** 2
-                    for d in word_contributions
-                    if dimension in d
-                )
-                microframe_intensity = (
-                    deviations_squared / total_contributions
-                    if total_contributions
-                    else 0
-                )
-
-                # Store the results
-                intensity_dict[dimension + "_intensity"] = microframe_intensity
+                    # Store the results
+                    intensity_dict[dimension + "_intensity"] = microframe_intensity
 
             # Append to the intensity DataFrame
             intensity_df = pd.concat(
