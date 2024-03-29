@@ -27,7 +27,10 @@ class SRLEmbeddings(nn.Module):
     ):
         with torch.no_grad():
             sentence_outputs = self.bert_model(
-                input_ids=sentence_ids, attention_mask=sentence_attention_masks
+                input_ids=sentence_ids.view(-1, sentence_ids.size(-1)),
+                attention_mask=sentence_attention_masks.view(
+                    -1, sentence_attention_masks.size(-1)
+                ),
             )
             sentence_embeddings = sentence_outputs.last_hidden_state
 
