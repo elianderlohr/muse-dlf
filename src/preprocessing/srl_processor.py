@@ -102,7 +102,7 @@ class SRLProcessor:
                     elif "ARG1" in tag:
                         arg_components["ARG1"].append(srl["words"][i])
 
-                (
+                if len(arg_components["ARG0"]) > 0 or len(arg_components["ARG1"]) > 0:
                     sentence_results.append(
                         {
                             "predicate": verb_entry["verb"],
@@ -110,14 +110,17 @@ class SRLProcessor:
                             "ARG1": " ".join(arg_components["ARG1"]),
                         }
                     )
-                    if arg_components["ARG0"] or arg_components["ARG1"]
-                    else {"predicate": "", "ARG0": "", "ARG1": ""}
+
+            if len(sentence_results) == 0:
+                sentence_results.append(
+                    {
+                        "predicate": "",
+                        "ARG0": "",
+                        "ARG1": "",
+                    }
                 )
-            results.append(
-                sentence_results
-                if sentence_results
-                else [{"predicate": "", "ARG0": "", "ARG1": ""}]
-            )
+
+            results.append(sentence_results)
         return results
 
     def _batch_process_srl_with_ids(self, df, predictor, batch_size=32):
