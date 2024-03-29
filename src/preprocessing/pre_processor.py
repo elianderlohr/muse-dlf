@@ -154,7 +154,7 @@ class PreProcessor:
 
         # Assuming X_srl follows the same index order as df
         X_srl_subset = (
-            srl_df.groupby(df["article_id"])
+            srl_df.groupby(df["article_id"])["srls"]
             .apply(lambda x: x.values.tolist())
             .reset_index(name="srl_values")
         )
