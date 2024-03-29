@@ -2,6 +2,10 @@ from transformers import BertModel, RobertaModel
 import torch.nn as nn
 import torch
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class SRLEmbeddings(nn.Module):
     def __init__(self, bert_model_name="bert-base-uncased", bert_model_name_or_path=""):
@@ -25,6 +29,20 @@ class SRLEmbeddings(nn.Module):
         arg1_ids,
         arg1_attention_masks,
     ):
+
+        logger.info("sentence_ids: {}".format(sentence_ids.shape))
+        logger.info(
+            "sentence_attention_masks: {}".format(sentence_attention_masks.shape)
+        )
+        logger.info("predicate_ids: {}".format(predicate_ids.shape))
+        logger.info(
+            "predicate_attention_masks: {}".format(predicate_attention_masks.shape)
+        )
+        logger.info("arg0_ids: {}".format(arg0_ids.shape))
+        logger.info("arg0_attention_masks: {}".format(arg0_attention_masks.shape))
+        logger.info("arg1_ids: {}".format(arg1_ids.shape))
+        logger.info("arg1_attention_masks: {}".format(arg1_attention_masks.shape))
+
         with torch.no_grad():
             sentence_outputs = self.bert_model(
                 input_ids=sentence_ids.view(-1, sentence_ids.size(-1)),
