@@ -1,3 +1,4 @@
+import string
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
@@ -36,39 +37,58 @@ class ArticleDataset(Dataset):
     def get_token_id(self, sentence_output, words, max_length=16):
         word_list = words.split()
 
-        word_ids = sentence_output.word_ids()
-
-        # Initialize list to hold token IDs for the words
         token_ids = []
         attention_masks = []
-        for w_idx in set(word_ids):
-            if w_idx is None:  # Skip special tokens
-                continue
 
-            # Obtain the start and end token positions for the current word
-            word_tokens_range = sentence_output.word_to_tokens(w_idx)
+        if len(word_list) > 0:
+            word_ids = sentence_output.word_ids()
 
-            if word_tokens_range is None:
-                continue
+            for w_idx in set(word_ids):
+                if w_idx is None:  # Skip special tokens
+                    continue
 
-            start, end = word_tokens_range
+                # Obtain the start and end token positions for the current word
+                word_tokens_range = sentence_output.word_to_tokens(w_idx)
 
-            word = self.tokenizer.decode(sentence_output.input_ids[0][start:end])
+                if word_tokens_range is None:
+                    continue
 
-            if word not in word_list:
-                continue
+                start, end = word_tokens_range
 
-            # Reconstruct the word from tokens to check against stopwords and non-word characters
-            word_ids = sentence_output.input_ids[0][start:end]
-            word_attention_maks = sentence_output.attention_mask[0][start:end]
+                word = self.tokenizer.decode(sentence_output.input_ids[start:end])
 
-            token_ids.append(word_ids)
-            attention_masks.append(word_attention_maks)
+                normalized_word = word.lower().strip(string.punctuation).strip()
+
+                if (
+                    normalized_word
+                    != word_list[0].lower().strip(string.punctuation).strip()
+                ):
+                    continue
+
+                # Reconstruct the word from tokens to check against stopwords and non-word characters
+                word_ids = sentence_output.input_ids[start:end]
+                word_attention_maks = sentence_output.attention_mask[start:end]
+
+                # Append the token IDs and attention masks
+                token_ids.extend(word_ids)
+                attention_masks.extend(word_attention_maks)
+
+                if len(word_list) == 1:
+                    break
+
+                # Remove the word from the list
+                word_list = word_list[1:]
+        else:
+            pass
 
         # Pad the token IDs and attention masks
         while len(token_ids) < max_length:
-            token_ids.append([0] * len(token_ids[0]))
-            attention_masks.append([0] * len(attention_masks[0]))
+            token_ids.append(0)
+            attention_masks.append(0)
+
+        # Truncate the token IDs and attention masks
+        token_ids = token_ids[:max_length]
+        attention_masks = attention_masks[:max_length]
 
         return token_ids, attention_masks
 
@@ -82,6 +102,7 @@ class ArticleDataset(Dataset):
 
         # Tokenize sentences and get attention masks
         sentence_ids, sentence_attention_masks = [], []
+        sentence_outputs = []
         for sentence in sentences:
             encoded = self.tokenizer(
                 sentence,
@@ -91,6 +112,7 @@ class ArticleDataset(Dataset):
                 padding="max_length",
                 return_attention_mask=True,
             )
+            sentence_outputs.append(encoded)
             sentence_ids.append(encoded["input_ids"])
             sentence_attention_masks.append(encoded["attention_mask"])
 
@@ -120,7 +142,9 @@ class ArticleDataset(Dataset):
             [],
             [],
         )
-        for srl_items in srl_data:
+        for i, srl_items in enumerate(srl_data):
+            sentence_output = sentence_outputs[i]
+
             sentence_predicates, sentence_arg0s, sentence_arg1s = [], [], []
             sentence_predicate_masks, sentence_arg0_masks, sentence_arg1_masks = (
                 [],
@@ -133,15 +157,28 @@ class ArticleDataset(Dataset):
 
             for item in srl_items:
                 predicate_input_ids, predicate_attention_mask = self.get_token_id(
-                    encoded, item["predicate"], self.max_arg_length
+                    sentence_output, item["predicate"], self.max_arg_length
                 )
 
                 arg0_input_ids, arg0_attention_mask = self.get_token_id(
-                    encoded, item["ARG0"], self.max_arg_length
+                    sentence_output, item["ARG0"], self.max_arg_length
                 )
 
                 arg1_input_ids, arg1_attention_mask = self.get_token_id(
-                    encoded, item["ARG1"], self.max_arg_length
+                    sentence_output, item["ARG1"], self.max_arg_length
+                )
+
+                assert (
+                    len(predicate_input_ids)
+                    == len(arg0_input_ids)
+                    == len(arg1_input_ids)
+                    == self.max_arg_length
+                )
+                assert (
+                    len(predicate_attention_mask)
+                    == len(arg0_attention_mask)
+                    == len(arg1_attention_mask)
+                    == self.max_arg_length
                 )
 
                 sentence_predicates.append(predicate_input_ids)
@@ -151,6 +188,25 @@ class ArticleDataset(Dataset):
                 sentence_predicate_masks.append(predicate_attention_mask)
                 sentence_arg0_masks.append(arg0_attention_mask)
                 sentence_arg1_masks.append(arg1_attention_mask)
+
+            for _ in range(self.max_sentences_per_article):
+                sentence_predicates.append([0] * self.max_arg_length)
+                sentence_arg0s.append([0] * self.max_arg_length)
+                sentence_arg1s.append([0] * self.max_arg_length)
+
+                sentence_predicate_masks.append([0] * self.max_arg_length)
+                sentence_arg0_masks.append([0] * self.max_arg_length)
+                sentence_arg1_masks.append([0] * self.max_arg_length)
+
+            sentence_predicates = sentence_predicates[: self.max_args_per_sentence]
+            sentence_arg0s = sentence_arg0s[: self.max_args_per_sentence]
+            sentence_arg1s = sentence_arg1s[: self.max_args_per_sentence]
+
+            sentence_predicate_masks = sentence_predicate_masks[
+                : self.max_args_per_sentence
+            ]
+            sentence_arg0_masks = sentence_arg0_masks[: self.max_args_per_sentence]
+            sentence_arg1_masks = sentence_arg1_masks[: self.max_args_per_sentence]
 
             # Padding for SRL elements
             for _ in range(self.max_args_per_sentence):
@@ -171,6 +227,19 @@ class ArticleDataset(Dataset):
             ]
             sentence_arg0_masks = sentence_arg0_masks[: self.max_args_per_sentence]
             sentence_arg1_masks = sentence_arg1_masks[: self.max_args_per_sentence]
+
+            assert (
+                len(sentence_predicates)
+                == len(sentence_arg0s)
+                == len(sentence_arg1s)
+                == self.max_args_per_sentence
+            )
+            assert (
+                len(sentence_predicate_masks)
+                == len(sentence_arg0_masks)
+                == len(sentence_arg1_masks)
+                == self.max_args_per_sentence
+            )
 
             predicates.append(sentence_predicates)
             arg0s.append(sentence_arg0s)
@@ -203,6 +272,19 @@ class ArticleDataset(Dataset):
         arg1_attention_masks = (
             arg1_attention_masks + [mask_padding] * self.max_sentences_per_article
         )[: self.max_sentences_per_article]
+
+        assert (
+            len(predicates)
+            == len(arg0s)
+            == len(arg1s)
+            == self.max_sentences_per_article
+        )
+        assert (
+            len(predicate_attention_masks)
+            == len(arg0_attention_masks)
+            == len(arg1_attention_masks)
+            == self.max_sentences_per_article
+        )
 
         data = {
             "sentence_ids": torch.tensor(sentence_ids, dtype=torch.long),
