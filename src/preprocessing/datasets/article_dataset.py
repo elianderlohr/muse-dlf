@@ -33,6 +33,45 @@ class ArticleDataset(Dataset):
     def __len__(self):
         return len(self.X)
 
+    def get_token_id(self, sentence_output, words, max_length=16):
+        word_list = words.split()
+
+        word_ids = sentence_output.word_ids()
+
+        # Initialize list to hold token IDs for the words
+        token_ids = []
+        attention_masks = []
+        for w_idx in set(word_ids):
+            if w_idx is None:  # Skip special tokens
+                continue
+
+            # Obtain the start and end token positions for the current word
+            word_tokens_range = sentence_output.word_to_tokens(w_idx)
+
+            if word_tokens_range is None:
+                continue
+
+            start, end = word_tokens_range
+
+            word = self.tokenizer.decode(sentence_output.input_ids[0][start:end])
+
+            if word not in word_list:
+                continue
+
+            # Reconstruct the word from tokens to check against stopwords and non-word characters
+            word_ids = sentence_output.input_ids[0][start:end]
+            word_attention_maks = sentence_output.attention_mask[0][start:end]
+
+            token_ids.append(word_ids)
+            attention_masks.append(word_attention_maks)
+
+        # Pad the token IDs and attention masks
+        while len(token_ids) < max_length:
+            token_ids.append([0] * len(token_ids[0]))
+            attention_masks.append([0] * len(attention_masks[0]))
+
+        return token_ids, attention_masks
+
     def __getitem__(self, idx):
         sentences = self.X.iloc[idx]
         srl_data = self.X_srl.iloc[idx]
@@ -93,38 +132,25 @@ class ArticleDataset(Dataset):
                 srl_items = [srl_items]
 
             for item in srl_items:
-                encoded_predicate = self.tokenizer(
-                    item["predicate"],
-                    add_special_tokens=True,
-                    max_length=self.max_arg_length,
-                    truncation=True,
-                    padding="max_length",
-                    return_attention_mask=True,
-                )
-                encoded_arg0 = self.tokenizer(
-                    item["ARG0"],
-                    add_special_tokens=True,
-                    max_length=self.max_arg_length,
-                    truncation=True,
-                    padding="max_length",
-                    return_attention_mask=True,
-                )
-                encoded_arg1 = self.tokenizer(
-                    item["ARG1"],
-                    add_special_tokens=True,
-                    max_length=self.max_arg_length,
-                    truncation=True,
-                    padding="max_length",
-                    return_attention_mask=True,
+                predicate_input_ids, predicate_attention_mask = self.get_token_id(
+                    encoded, item["predicate"], self.max_arg_length
                 )
 
-                sentence_predicates.append(encoded_predicate["input_ids"])
-                sentence_arg0s.append(encoded_arg0["input_ids"])
-                sentence_arg1s.append(encoded_arg1["input_ids"])
+                arg0_input_ids, arg0_attention_mask = self.get_token_id(
+                    encoded, item["ARG0"], self.max_arg_length
+                )
 
-                sentence_predicate_masks.append(encoded_predicate["attention_mask"])
-                sentence_arg0_masks.append(encoded_arg0["attention_mask"])
-                sentence_arg1_masks.append(encoded_arg1["attention_mask"])
+                arg1_input_ids, arg1_attention_mask = self.get_token_id(
+                    encoded, item["ARG1"], self.max_arg_length
+                )
+
+                sentence_predicates.append(predicate_input_ids)
+                sentence_arg0s.append(arg0_input_ids)
+                sentence_arg1s.append(arg1_input_ids)
+
+                sentence_predicate_masks.append(predicate_attention_mask)
+                sentence_arg0_masks.append(arg0_attention_mask)
+                sentence_arg1_masks.append(arg1_attention_mask)
 
             # Padding for SRL elements
             for _ in range(self.max_args_per_sentence):
