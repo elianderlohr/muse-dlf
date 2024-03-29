@@ -29,8 +29,8 @@ class SRLEmbeddings(nn.Module):
         arg1_ids,
         arg1_attention_masks,
     ):
-        # Assuming the first dimension for attention masks aligns with sentence_ids for simplicity
         with torch.no_grad():
+            # Sentence embeddings
             sentence_embeddings = self.bert_model(
                 input_ids=sentence_ids.view(-1, sentence_ids.size(-1)),
                 attention_mask=sentence_attention_masks.view(
@@ -40,87 +40,59 @@ class SRLEmbeddings(nn.Module):
             sentence_embeddings = sentence_embeddings.view(
                 sentence_ids.size(0), sentence_ids.size(1), -1, self.embedding_dim
             )
+            sentence_embeddings = sentence_embeddings.mean(dim=2)
 
-        sentence_average_embeddings = sentence_embeddings.mean(dim=2)
+            # Predicate embeddings
+            predicate_embeddings = self.bert_model(
+                input_ids=predicate_ids.view(-1, predicate_ids.size(-1)),
+                attention_mask=predicate_attention_masks.view(
+                    -1, predicate_attention_masks.size(-1)
+                ),
+            )[0]
+            predicate_embeddings = predicate_embeddings.view(
+                predicate_ids.size(0),
+                predicate_ids.size(1),
+                predicate_ids.size(2),
+                -1,
+                self.embedding_dim,
+            )
+            predicate_embeddings = predicate_embeddings.mean(dim=3)
 
-        predicate_embeddings = self.extract_embeddings_from_ids(
-            sentence_embeddings, predicate_ids, sentence_ids
-        )
-        arg0_embeddings = self.extract_embeddings_from_ids(
-            sentence_embeddings, arg0_ids, sentence_ids
-        )
-        arg1_embeddings = self.extract_embeddings_from_ids(
-            sentence_embeddings, arg1_ids, sentence_ids
-        )
+            # ARG0 embeddings
+            arg0_embeddings = self.bert_model(
+                input_ids=arg0_ids.view(-1, arg0_ids.size(-1)),
+                attention_mask=arg0_attention_masks.view(
+                    -1, arg0_attention_masks.size(-1)
+                ),
+            )[0]
+            arg0_embeddings = arg0_embeddings.view(
+                arg0_ids.size(0),
+                arg0_ids.size(1),
+                arg0_ids.size(2),
+                -1,
+                self.embedding_dim,
+            )
+            arg0_embeddings = arg0_embeddings.mean(dim=3)
+
+            # ARG1 embeddings
+            arg1_embeddings = self.bert_model(
+                input_ids=arg1_ids.view(-1, arg1_ids.size(-1)),
+                attention_mask=arg1_attention_masks.view(
+                    -1, arg1_attention_masks.size(-1)
+                ),
+            )[0]
+            arg1_embeddings = arg1_embeddings.view(
+                arg1_ids.size(0),
+                arg1_ids.size(1),
+                arg1_ids.size(2),
+                -1,
+                self.embedding_dim,
+            )
+            arg1_embeddings = arg1_embeddings.mean(dim=3)
 
         return (
-            sentence_average_embeddings,
+            sentence_embeddings,
             predicate_embeddings,
             arg0_embeddings,
             arg1_embeddings,
         )
-
-    def extract_embeddings_from_ids(self, sentence_embeddings, token_ids, sentence_ids):
-        print("sentence_embeddings", sentence_embeddings.shape)
-        print("sentence_ids", sentence_ids.shape)
-        print("token_ids", token_ids.shape)
-
-        batch_size, num_sentences, seq_length, emb_dim = sentence_embeddings.shape
-        _, _, num_args, arg_length = token_ids.shape
-
-        averaged_embeddings = []
-        # batch_size
-        for i in range(batch_size):
-            batches = []
-            # num_sentences
-            for j in range(num_sentences):
-                sentences = []
-                # num_args
-                for k in range(num_args):
-                    embedding = []
-
-                    # arg_length
-                    for l in range(arg_length):
-                        token_id = token_ids[i, j, k, l]
-
-                        # skip 0
-                        if token_id == 0:
-                            continue
-
-                        sentence_ids_to_find = sentence_ids[i, j]
-
-                        # find index of token_id in sentence_ids_to_find
-                        idx = (sentence_ids_to_find == token_id).nonzero(as_tuple=True)[
-                            0
-                        ]
-
-                        print(
-                            "try to find token_id",
-                            token_id,
-                            "in",
-                            sentence_ids_to_find,
-                            "found at",
-                            idx,
-                        )
-
-                        # append embedding
-                        embedding.append(sentence_embeddings[i, j, idx])
-
-                    # average embeddings
-                    averaged_embedding = torch.mean(torch.stack(embedding), dim=0)
-                    sentences.append(averaged_embedding)
-                batches.append(sentences)
-            averaged_embeddings.append(batches)
-
-        averaged_embeddings = torch.stack(averaged_embeddings)
-
-        # if not shape is (batch_size, num_sentences, num_args, emb_dim) create empty tensor
-        if averaged_embeddings.shape != (batch_size, num_sentences, num_args, emb_dim):
-            logger.warning(
-                f"Shape of averaged_embeddings is {averaged_embeddings.shape}, expected {(batch_size, num_sentences, num_args, emb_dim)}"
-            )
-            averaged_embeddings = torch.zeros(
-                batch_size, num_sentences, num_args, emb_dim
-            )
-
-        return averaged_embeddings
