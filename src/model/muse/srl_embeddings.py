@@ -83,6 +83,10 @@ class SRLEmbeddings(nn.Module):
                     for l in range(arg_length):
                         token_id = token_ids[i, j, k, l]
 
+                        # skip 0
+                        if token_id == 0:
+                            continue
+
                         sentence_ids_to_find = sentence_ids[i, j]
 
                         # find index of token_id in sentence_ids_to_find
@@ -110,5 +114,13 @@ class SRLEmbeddings(nn.Module):
 
         averaged_embeddings = torch.stack(averaged_embeddings)
 
-        print("averaged_embeddings", averaged_embeddings.shape)
+        # if not shape is (batch_size, num_sentences, num_args, emb_dim) create empty tensor
+        if averaged_embeddings.shape != (batch_size, num_sentences, num_args, emb_dim):
+            logger.warning(
+                f"Shape of averaged_embeddings is {averaged_embeddings.shape}, expected {(batch_size, num_sentences, num_args, emb_dim)}"
+            )
+            averaged_embeddings = torch.zeros(
+                batch_size, num_sentences, num_args, emb_dim
+            )
+
         return averaged_embeddings
