@@ -163,6 +163,7 @@ class PreProcessor:
         # aggregate frameaxis columns into a list of lists for row
         frameaxis_cols = frameaxis_df.columns.tolist()
         frameaxis_cols.remove("article_id")
+        frameaxis_cols.remove("text")
         frameaxis_df["frameaxis_values"] = frameaxis_df[frameaxis_cols].apply(
             list, axis=1
         )
