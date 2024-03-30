@@ -367,6 +367,18 @@ class FrameAxisProcessor:
             final_columns.append(dimension + "_intensity")
         final_df = final_df[final_columns]
 
+
+        # remove duplicate columns
+        def rename_duplicates(df):
+                cols = pd.Series(df.columns)
+                for dup in cols[cols.duplicated()].unique():
+                    cols[cols[cols == dup].index.values.tolist()] = [dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
+                df.columns = cols
+
+        frameaxis_df = rename_duplicates(frameaxis_df)
+
+        frameaxis_df = frameaxis_df.drop('article_id_1', axis=1, inplace=True)
+
         return final_df
 
     def get_embeddings_for_text(
@@ -484,6 +496,8 @@ class FrameAxisProcessor:
             antonym_pairs_embeddings = self.precompute_antonym_embeddings()
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
+
+            
 
             if self.dataframe_path:
                 if self.save_type == "csv":
