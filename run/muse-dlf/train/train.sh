@@ -87,14 +87,14 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --path_antonym_pairs data/axis/mft.json \
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
-    --D_h 512 \
-    --dropout_prob 0.4342323587984932 \
-    --alpha 0.6620279296177292 \
-    --lambda_orthogonality 0.00043929793899324113 \
-    --lr 0.0004131391801485164 \
+    --D_h 768 \
+    --dropout_prob 0.4005432070495279 \
+    --alpha 0.10761110489138535 \
+    --lambda_orthogonality 0.002928179414941946 \
+    --lr 0.00019217069528803613 \
     --M 8 \
     --t 8 \
-    --batch_size 32
+    --batch_size 48
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
