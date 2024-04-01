@@ -103,10 +103,10 @@ def main():
     tau_decay = 5e-4
 
     # Data Processing
-    num_sentences = 24
+    num_sentences = 32
     num_frames = 15
     frameaxis_dim = 10
-    max_sentence_length = 32
+    max_sentence_length = 64
     max_args_per_sentence = 10
     max_arg_length = 16
 

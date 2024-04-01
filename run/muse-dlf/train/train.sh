@@ -66,8 +66,7 @@ echo "GPU status:"
 nvidia-smi
 
 # CUDA configuration
-export CUDA_VISIBLE_DEVICES=0,1
-export TORCH_DISTRIBUTED_DEBUG=DETAIL
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 
 # Training Script Execution
@@ -94,7 +93,10 @@ accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precisi
     --lr 0.00019217069528803613 \
     --M 8 \
     --t 8 \
-    --batch_size 48
+    --batch_size 48 \
+    --num_sentences 32 \
+    --max_sentence_length 64
+
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
