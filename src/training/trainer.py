@@ -7,8 +7,6 @@ from tqdm import tqdm
 import math
 import evaluate
 
-from torch.cuda.amp import autocast, GradScaler
-
 from utils.logging_manager import LoggerManager
 
 logger = LoggerManager.get_logger(__name__)
@@ -113,12 +111,11 @@ class Trainer:
 
     def _train(self, epoch, model, train_dataloader, tau, alpha, device):
         model.train()
-        scaler = GradScaler()
-
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
         global global_steps
 
         local_steps = 0
+        self.optimizer.zero_grad()
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
         ):
@@ -128,120 +125,107 @@ class Trainer:
 
             local_steps += 1
 
-            self.optimizer.zero_grad()
+            sentence_ids = (
+                batch["sentence_ids"]
+                if self.training_management == "accelerate"
+                else batch["sentence_ids"].to(device)
+            )
+            sentence_attention_masks = (
+                batch["sentence_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["sentence_attention_masks"].to(device)
+            )
 
-            with autocast():
+            predicate_ids = (
+                batch["predicate_ids"]
+                if self.training_management == "accelerate"
+                else batch["predicate_ids"].to(device)
+            )
+            predicate_attention_masks = (
+                batch["predicate_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["predicate_attention_masks"].to(device)
+            )
 
-                sentence_ids = (
-                    batch["sentence_ids"]
-                    if self.training_management == "accelerate"
-                    else batch["sentence_ids"].to(device)
-                )
-                sentence_attention_masks = (
-                    batch["sentence_attention_masks"]
-                    if self.training_management == "accelerate"
-                    else batch["sentence_attention_masks"].to(device)
-                )
+            arg0_ids = (
+                batch["arg0_ids"]
+                if self.training_management == "accelerate"
+                else batch["arg0_ids"].to(device)
+            )
+            arg0_attention_masks = (
+                batch["arg0_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["arg0_attention_masks"].to(device)
+            )
 
-                predicate_ids = (
-                    batch["predicate_ids"]
-                    if self.training_management == "accelerate"
-                    else batch["predicate_ids"].to(device)
-                )
-                predicate_attention_masks = (
-                    batch["predicate_attention_masks"]
-                    if self.training_management == "accelerate"
-                    else batch["predicate_attention_masks"].to(device)
-                )
+            arg1_ids = (
+                batch["arg1_ids"]
+                if self.training_management == "accelerate"
+                else batch["arg1_ids"].to(device)
+            )
+            arg1_attention_masks = (
+                batch["arg1_attention_masks"]
+                if self.training_management == "accelerate"
+                else batch["arg1_attention_masks"].to(device)
+            )
 
-                arg0_ids = (
-                    batch["arg0_ids"]
-                    if self.training_management == "accelerate"
-                    else batch["arg0_ids"].to(device)
-                )
-                arg0_attention_masks = (
-                    batch["arg0_attention_masks"]
-                    if self.training_management == "accelerate"
-                    else batch["arg0_attention_masks"].to(device)
-                )
+            frameaxis_data = (
+                batch["frameaxis"]
+                if self.training_management == "accelerate"
+                else batch["frameaxis"].to(device)
+            )
 
-                arg1_ids = (
-                    batch["arg1_ids"]
-                    if self.training_management == "accelerate"
-                    else batch["arg1_ids"].to(device)
-                )
-                arg1_attention_masks = (
-                    batch["arg1_attention_masks"]
-                    if self.training_management == "accelerate"
-                    else batch["arg1_attention_masks"].to(device)
-                )
+            labels = (
+                batch["labels"]
+                if self.training_management == "accelerate"
+                else batch["labels"].to(device)
+            )
 
-                frameaxis_data = (
-                    batch["frameaxis"]
-                    if self.training_management == "accelerate"
-                    else batch["frameaxis"].to(device)
-                )
+            unsupervised_loss, span_logits, sentence_logits, _ = model(
+                sentence_ids,
+                sentence_attention_masks,
+                predicate_ids,
+                predicate_attention_masks,
+                arg0_ids,
+                arg0_attention_masks,
+                arg1_ids,
+                arg1_attention_masks,
+                frameaxis_data,
+                tau,
+            )
 
-                labels = (
-                    batch["labels"]
-                    if self.training_management == "accelerate"
-                    else batch["labels"].to(device)
-                )
+            span_loss = 0.0
+            sentence_loss = 0.0
 
-                unsupervised_loss, span_logits, sentence_logits, _ = model(
-                    sentence_ids,
-                    sentence_attention_masks,
-                    predicate_ids,
-                    predicate_attention_masks,
-                    arg0_ids,
-                    arg0_attention_masks,
-                    arg1_ids,
-                    arg1_attention_masks,
-                    frameaxis_data,
-                    tau,
-                )
+            span_loss = self.loss_function(span_logits, labels.float())
+            sentence_loss = self.loss_function(sentence_logits, labels.float())
 
-                span_loss = 0.0
-                sentence_loss = 0.0
+            supervised_loss = span_loss + sentence_loss
 
-                span_loss = self.loss_function(span_logits, labels.float())
-                sentence_loss = self.loss_function(sentence_logits, labels.float())
+            sum_of_parameters = sum(p.sum() for p in model.parameters())
 
-                supervised_loss = span_loss + sentence_loss
+            zero_sum = sum_of_parameters * 0.0
 
-                sum_of_parameters = sum(p.sum() for p in model.parameters())
+            combined_loss = (
+                alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+            ) + zero_sum
 
-                zero_sum = sum_of_parameters * 0.0
-
-                combined_loss = (
-                    alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-                ) + zero_sum
-
-            scaler.scale(combined_loss).backward()
+            if self.training_management == "accelerate":
+                self.accelerator.backward(combined_loss)
+                self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
+            else:
+                combined_loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
             if (batch_idx + 1) % self.gradient_accumulation_steps == 0 or (
                 batch_idx + 1
             ) == len(train_dataloader):
-                # Gradient clipping
-                scaler.unscale_(
-                    self.optimizer
-                )  # Unscale the gradients of optimizer's assigned params in-place
-                if self.training_management == "accelerate":
-                    self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
-                else:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-
-                scaler.step(self.optimizer)
-                scaler.update()
+                self.optimizer.step()
                 self.optimizer.zero_grad()
 
-            total_loss += combined_loss.item() * self.gradient_accumulation_steps
-            supervised_total_loss += (
-                supervised_loss.item() * self.gradient_accumulation_steps
-            )
-            unsupervised_total_loss += (
-                unsupervised_loss.item() * self.gradient_accumulation_steps
-            )
+            total_loss += combined_loss.item()
+            supervised_total_loss += supervised_loss.item()
+            unsupervised_total_loss += unsupervised_loss.item()
 
             self._log_metrics(
                 {
