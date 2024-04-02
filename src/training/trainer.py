@@ -57,7 +57,7 @@ class Trainer:
         self.tau_min = tau_min
         self.tau_decay = tau_decay
 
-        # self.gradient_accumulation_steps = 4
+        self.gradient_accumulation_steps = 4
 
         self.training_management = training_management
         if self.training_management == "accelerate":
@@ -113,6 +113,8 @@ class Trainer:
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
         global global_steps
 
+        self.optimizer.zero_grad()
+
         local_steps = 0
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
@@ -122,8 +124,6 @@ class Trainer:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
 
             local_steps += 1
-
-            self.optimizer.zero_grad()
 
             sentence_ids = (
                 batch["sentence_ids"]
@@ -217,7 +217,17 @@ class Trainer:
                 combined_loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
-            self.optimizer.step()
+            if (local_steps + 1) % self.gradient_accumulation_steps == 0:
+                if self.training_management == "accelerate":
+                    self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
+                else:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+                # Perform an optimization step
+                self.optimizer.step()
+
+                # Zero gradients for the next accumulation cycle
+                self.optimizer.zero_grad()
 
             total_loss += combined_loss.item()
             supervised_total_loss += supervised_loss.item()
