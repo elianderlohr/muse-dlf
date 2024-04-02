@@ -217,28 +217,31 @@ class Trainer:
                     alpha * supervised_loss + (1 - alpha) * unsupervised_loss
                 ) + zero_sum
 
-            # Scale the loss and call backward
             scaler.scale(combined_loss).backward()
 
-            # Perform model updates and optimizer steps conditionally based on gradient accumulation steps
             if (batch_idx + 1) % self.gradient_accumulation_steps == 0 or (
                 batch_idx + 1
             ) == len(train_dataloader):
-                # Unscale the gradients of optimizer's assigned params in-place
-                scaler.unscale_(self.optimizer)
-                # Optionally clip gradients here
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                # Gradient clipping
+                scaler.unscale_(
+                    self.optimizer
+                )  # Unscale the gradients of optimizer's assigned params in-place
+                if self.training_management == "accelerate":
+                    self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
+                else:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
-                # Step optimizer and update scaler
                 scaler.step(self.optimizer)
                 scaler.update()
-
-                # Zero the parameter gradients
                 self.optimizer.zero_grad()
 
-            total_loss += combined_loss.item()
-            supervised_total_loss += supervised_loss.item()
-            unsupervised_total_loss += unsupervised_loss.item()
+            total_loss += combined_loss.item() * self.gradient_accumulation_steps
+            supervised_total_loss += (
+                supervised_loss.item() * self.gradient_accumulation_steps
+            )
+            unsupervised_total_loss += (
+                unsupervised_loss.item() * self.gradient_accumulation_steps
+            )
 
             self._log_metrics(
                 {
