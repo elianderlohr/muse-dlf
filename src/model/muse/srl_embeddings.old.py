@@ -12,7 +12,7 @@ class SRLEmbeddings(nn.Module):
         elif bert_model_name == "roberta-base":
             self.bert_model = RobertaModel.from_pretrained(bert_model_name_or_path)
 
-        self.embedding_dim = 768  # for bert-base-uncased
+        self.embedding_dim = 768
 
     def forward(
         self,
