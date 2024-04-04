@@ -22,15 +22,43 @@ class SRLEmbeddings(nn.Module):
 
         self.embedding_dim = 768
 
-    def get_embeddings(self, ids, attention_masks, reduce_dim):
-        # Utilizing the BERT/Roberta model to get embeddings and then averaging them over the specified dimension.
-        embeddings = self.bert_model(input_ids=ids, attention_mask=attention_masks)[0]
-        # Reshape for averaging
-        shape = ids.size()[:-1] + (self.embedding_dim,)
-        embeddings = embeddings.view(*shape)
-        # Reduce/average over the specified dimension
-        averaged_embeddings = embeddings.mean(dim=reduce_dim)
-        return averaged_embeddings
+    def get_sentence_embedding(self, ids, attention_masks):
+        # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
+        batch_size, num_sentences, max_sentence_length = ids.size()
+
+        ids_flat = ids.view(-1, max_sentence_length)
+        attention_masks_flat = attention_masks.view(-1, max_sentence_length)
+
+        with torch.no_grad():
+            embeddings = self.bert_model(
+                input_ids=ids_flat, attention_mask=attention_masks_flat
+            )[0]
+
+            embeddings_mean = embeddings.mean(dim=1)
+
+        embeddings_reshaped = embeddings_mean.view(batch_size, num_sentences, -1)
+
+        return embeddings_reshaped
+
+    def get_arg_embedding(self, ids, attention_mask):
+        # Flatten the batch, num_sentences, and num_args dimensions
+        batch_size, num_sentences, num_args, max_arg_length = ids.size()
+
+        ids_flat = ids.view(-1, max_arg_length)
+        attention_mask_flat = attention_mask.view(-1, max_arg_length)
+
+        with torch.no_grad():
+            embeddings = self.bert_model(
+                input_ids=ids_flat, attention_mask=attention_mask_flat
+            )[0]
+
+            embeddings_mean = embeddings.mean(dim=1)
+
+        embeddings_reshaped = embeddings_mean.view(
+            batch_size, num_sentences, num_args, -1
+        )
+
+        return embeddings_reshaped
 
     def forward(
         self,
@@ -44,21 +72,14 @@ class SRLEmbeddings(nn.Module):
         arg1_attention_masks,
     ):
         with torch.no_grad():
-            # Process sentences - average over the last dimension
-            sentence_embeddings = self.get_embeddings(
-                sentence_ids, sentence_attention_masks, reduce_dim=-2
+            sentence_embeddings = self.get_sentence_embedding(
+                sentence_ids, sentence_attention_masks
             )
-
-            # Process predicates, ARG0, ARG1 - reshape and then average over the last dimension
-            predicate_embeddings = self.get_embeddings(
-                predicate_ids, predicate_attention_masks, reduce_dim=-1
+            predicate_embeddings = self.get_arg_embedding(
+                predicate_ids, predicate_attention_masks
             )
-            arg0_embeddings = self.get_embeddings(
-                arg0_ids, arg0_attention_masks, reduce_dim=-1
-            )
-            arg1_embeddings = self.get_embeddings(
-                arg1_ids, arg1_attention_masks, reduce_dim=-1
-            )
+            arg0_embeddings = self.get_arg_embedding(arg0_ids, arg0_attention_masks)
+            arg1_embeddings = self.get_arg_embedding(arg1_ids, arg1_attention_masks)
 
         return (
             sentence_embeddings,
