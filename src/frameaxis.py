@@ -46,11 +46,23 @@ def main():
         required=True,
         help="Path where the embeddings JSON file will be saved",
     )
+
+    # sample size
+    parser.add_argument(
+        "--sample_size",
+        type=int,
+        default=None,
+        help="Number of samples to use from the data",
+    )
+
     args = parser.parse_args()
 
     with open(args.data_path) as f:
         data = json.load(f)
     df = pd.DataFrame(data)
+
+    if args.sample_size:
+        df = df.sample(n=args.sample_size)
 
     frameaxis_processor = FrameAxisProcessor(
         df,

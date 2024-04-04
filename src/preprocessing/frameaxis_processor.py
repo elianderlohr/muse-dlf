@@ -180,25 +180,21 @@ class FrameAxisProcessor:
                 for dimension in antonym_pairs_embeddings:
                     pos_embedding = antonym_pairs_embeddings[dimension][
                         self.dim_names[0]
-                    ].reshape(1, -1)
+                    ]
                     neg_embedding = antonym_pairs_embeddings[dimension][
                         self.dim_names[1]
-                    ].reshape(1, -1)
-                    diff_vector = (neg_embedding - pos_embedding).to(self.model.device)
+                    ]
+                    vf = (pos_embedding - neg_embedding).to(self.model.device)
 
-                    # Ensure embedding is in the right shape and on the correct device
-                    embedding = (
-                        embedding.unsqueeze(0).to(self.model.device)
-                        if embedding.dim() == 1
-                        else embedding.to(self.model.device)
-                    )
+                    vw = embedding.to(self.model.device)
+                    if vw.dim() == 1:
+                        vw = vw.unsqueeze(0)
 
-                    # Calculate cosine similarity directly
-                    dot_product = torch.sum(embedding * diff_vector)
-                    magnitude_product = torch.sqrt(
-                        torch.sum(embedding**2)
-                    ) * torch.sqrt(torch.sum(diff_vector**2))
-                    cos_sim = (dot_product / magnitude_product).cpu().item()
+                    # Calculate cosine similarity using the formula provided
+                    dot_product = torch.matmul(vw, vf.T)
+                    norm_vw = torch.linalg.norm(vw, dim=1)
+                    norm_vf = torch.linalg.norm(vf)
+                    cos_sim = (dot_product / (norm_vw * norm_vf)).squeeze().cpu().item()
 
                     word_dict[dimension] = cos_sim
 
