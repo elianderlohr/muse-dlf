@@ -184,21 +184,21 @@ class FrameAxisProcessor:
                     neg_embedding = antonym_pairs_embeddings[dimension][
                         self.dim_names[1]
                     ].reshape(1, -1)
-                    diff_vector = neg_embedding - pos_embedding
+                    diff_vector = (neg_embedding - pos_embedding).to(self.model.device)
 
-                    diff_norm = F.normalize(diff_vector, p=2, dim=1).to(
-                        self.model.device
-                    )
+                    # Ensure embedding is in the right shape and on the correct device
                     embedding = (
                         embedding.unsqueeze(0).to(self.model.device)
                         if embedding.dim() == 1
                         else embedding.to(self.model.device)
                     )
-                    embedding_norm = F.normalize(embedding, p=2, dim=1)
 
-                    cos_sim = (
-                        torch.matmul(embedding_norm, diff_norm.T).squeeze().cpu().item()
-                    )
+                    # Calculate cosine similarity directly
+                    dot_product = torch.sum(embedding * diff_vector)
+                    magnitude_product = torch.sqrt(
+                        torch.sum(embedding**2)
+                    ) * torch.sqrt(torch.sum(diff_vector**2))
+                    cos_sim = (dot_product / magnitude_product).cpu().item()
 
                     word_dict[dimension] = cos_sim
 
@@ -367,17 +367,19 @@ class FrameAxisProcessor:
             final_columns.append(dimension + "_intensity")
         final_df = final_df[final_columns]
 
-
         # remove duplicate columns
         def rename_duplicates(df):
-                cols = pd.Series(df.columns)
-                for dup in cols[cols.duplicated()].unique():
-                    cols[cols[cols == dup].index.values.tolist()] = [dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
-                df.columns = cols
+            cols = pd.Series(df.columns)
+            for dup in cols[cols.duplicated()].unique():
+                cols[cols[cols == dup].index.values.tolist()] = [
+                    dup + "_" + str(i) if i != 0 else dup
+                    for i in range(sum(cols == dup))
+                ]
+            df.columns = cols
 
         frameaxis_df = rename_duplicates(frameaxis_df)
 
-        frameaxis_df = frameaxis_df.drop('article_id_1', axis=1, inplace=True)
+        frameaxis_df = frameaxis_df.drop("article_id_1", axis=1, inplace=True)
 
         return final_df
 
@@ -496,8 +498,6 @@ class FrameAxisProcessor:
             antonym_pairs_embeddings = self.precompute_antonym_embeddings()
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
-
-            
 
             if self.dataframe_path:
                 if self.save_type == "csv":
