@@ -377,9 +377,10 @@ class FrameAxisProcessor:
                 ]
             df.columns = cols
 
-        frameaxis_df = rename_duplicates(frameaxis_df)
+        final_df = rename_duplicates(final_df)
 
-        frameaxis_df = frameaxis_df.drop("article_id_1", axis=1, inplace=True)
+        if "article_id_1" in final_df.columns:
+            final_df = final_df.drop("article_id_1", axis=1, inplace=True)
 
         return final_df
 
