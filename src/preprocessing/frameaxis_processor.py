@@ -4,7 +4,12 @@ import pandas as pd
 from tqdm import tqdm
 import torch
 import torch.nn.functional as F
-from transformers import BertTokenizer, BertModel, RobertaTokenizerFast, RobertaModel
+from transformers import (
+    BertTokenizerFast,
+    BertModel,
+    RobertaTokenizerFast,
+    RobertaModel,
+)
 from nltk.corpus import stopwords
 import nltk
 import pickle
@@ -187,12 +192,10 @@ class FrameAxisProcessor:
                     vf = (pos_embedding - neg_embedding).to(self.model.device)
 
                     vw = embedding.to(self.model.device)
-                    if vw.dim() == 1:
-                        vw = vw.unsqueeze(0)
 
                     # Calculate cosine similarity using the formula provided
                     dot_product = torch.matmul(vw, vf.T)
-                    norm_vw = torch.linalg.norm(vw, dim=1)
+                    norm_vw = torch.linalg.norm(vw)
                     norm_vf = torch.linalg.norm(vf)
                     cos_sim = (dot_product / (norm_vw * norm_vf)).squeeze().cpu().item()
 
