@@ -61,14 +61,14 @@ export DIM_NAMES="virtue,vice"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
-CUDA_VISIBLE_DEVICES=4 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
-CUDA_VISIBLE_DEVICES=5 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
-CUDA_VISIBLE_DEVICES=6 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
-CUDA_VISIBLE_DEVICES=7 python -m wandb agent --count 10 elianderlohr/muse-dlf/8vqv79qu &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
+CUDA_VISIBLE_DEVICES=4 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
+CUDA_VISIBLE_DEVICES=5 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
+CUDA_VISIBLE_DEVICES=6 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
+CUDA_VISIBLE_DEVICES=7 python -m wandb agent --count 10 elianderlohr/muse-dlf/090sxtea &
 
 # Wait for all background jobs to finish
 wait
