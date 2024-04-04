@@ -363,21 +363,6 @@ class FrameAxisProcessor:
             final_columns.append(dimension + "_intensity")
         final_df = final_df[final_columns]
 
-        # remove duplicate columns
-        def rename_duplicates(df):
-            cols = pd.Series(df.columns)
-            for dup in cols[cols.duplicated()].unique():
-                cols[cols[cols == dup].index.values.tolist()] = [
-                    dup + "_" + str(i) if i != 0 else dup
-                    for i in range(sum(cols == dup))
-                ]
-            df.columns = cols
-
-        final_df = rename_duplicates(final_df)
-
-        if "article_id_1" in final_df.columns:
-            final_df = final_df.drop("article_id_1", axis=1, inplace=True)
-
         return final_df
 
     def get_embeddings_for_text(
