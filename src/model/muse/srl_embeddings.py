@@ -95,23 +95,24 @@ class SRLEmbeddings(nn.Module):
                             # Find the index/indices in sentence_ids where this token_id matches
                             match_indices = torch.where(
                                 sentence_ids[batch_idx, sentence_idx] == token_idx
-                            )
-
-                            embeddings = []
+                            )[0]
 
                             # Gather the embeddings for these indices
                             for idx in match_indices:
-                                embeddings.append(
-                                    sentence_embeddings[batch_idx, sentence_idx, idx]
-                                )
-
-                            # mean over embeddings and add to embeddings_list
-                            embeddings_list.append(torch.stack(embeddings).mean(dim=0))
+                                # Ensure each tensor has a batch dimension
+                                embedding = sentence_embeddings[
+                                    batch_idx, sentence_idx, idx
+                                ].unsqueeze(0)
+                                embeddings_list.append(embedding)
 
                     # If we have collected any embeddings, average them
                     if embeddings_list:
-                        # Stack the collected embeddings and compute the average
-                        avg_embedding = torch.stack(embeddings_list).mean(dim=0)
+                        # Concatenate the collected embeddings along the new batch dimension
+                        all_embeddings = torch.cat(embeddings_list, dim=0)
+                        # Compute the average over the batch dimension
+                        avg_embedding = all_embeddings.mean(dim=0)
+                        # Ensure avg_embedding is properly shaped for assignment
+                        avg_embedding = avg_embedding.squeeze()
                         # Store the averaged embedding
                         arg_embeddings[batch_idx, sentence_idx, arg_idx] = avg_embedding
 
