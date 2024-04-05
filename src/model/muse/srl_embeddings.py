@@ -66,57 +66,65 @@ class SRLEmbeddings(nn.Module):
 
         return embeddings_reshaped, embeddings_mean_reshaped
 
-    def get_arg_embedding(self, predicate_ids, sentence_ids, sentence_embeddings):
-        # Initialize a tensor to store the averaged embeddings
+    def get_arg_embedding(
+        self, predicate_ids, sentence_ids, sentence_attention_masks, sentence_embeddings
+    ):
+        batch_size, num_sentences, seq_len = sentence_ids.shape
+        _, _, num_predicates, pred_token_len = predicate_ids.shape
+        embedding_dim = sentence_embeddings.size(-1)
+
+        # Extend sentence_ids and attention masks to match predicate_ids for broadcasting
+        extended_sentence_ids = (
+            sentence_ids.unsqueeze(2)
+            .unsqueeze(3)
+            .expand(-1, -1, num_predicates, pred_token_len, -1)
+        )
+        extended_attention_masks = (
+            sentence_attention_masks.unsqueeze(2)
+            .unsqueeze(3)
+            .expand(-1, -1, num_predicates, pred_token_len, -1)
+        )
+
+        # Extend predicate_ids for comparison
+        extended_predicate_ids = predicate_ids.unsqueeze(4).expand(
+            -1, -1, -1, -1, seq_len
+        )
+
+        # Create mask for valid predicate tokens (non-padding) and for matching sentence tokens
+        valid_pred_mask = extended_predicate_ids != 1  # Assuming 1 is padding
+        matches = (extended_sentence_ids == extended_predicate_ids) & valid_pred_mask
+
+        # Apply sentence attention mask
+        matches &= extended_attention_masks.bool()
+
+        # Prepare embeddings tensor, initially filled with zeros
         arg_embeddings = torch.zeros(
-            predicate_ids.size(0),
-            predicate_ids.size(1),
-            predicate_ids.size(2),
-            sentence_embeddings.size(-1),
+            batch_size,
+            num_sentences,
+            num_predicates,
+            embedding_dim,
             device=sentence_embeddings.device,
         )
 
-        # Loop over batches, sentences, and arguments
-        for batch_idx in range(predicate_ids.size(0)):
-            for sentence_idx in range(predicate_ids.size(1)):
-                for arg_idx in range(predicate_ids.size(2)):
-                    # Get the current predicate IDs for the argument
-                    current_predicate_ids = predicate_ids[
-                        batch_idx, sentence_idx, arg_idx
+        for batch_idx in range(batch_size):
+            for sent_idx in range(num_sentences):
+                for pred_idx in range(num_predicates):
+                    # Gather all embeddings corresponding to the matches, then average them
+                    match_indices = matches[batch_idx, sent_idx, pred_idx].nonzero()
+                    if match_indices.nelement() == 0:
+                        continue  # Skip if no matches
+
+                    # Flatten indices to use for gathering embeddings across seq_len dimension
+                    flat_indices = match_indices[:, -1]
+                    selected_embeddings = sentence_embeddings[
+                        batch_idx, sent_idx, flat_indices
                     ]
 
-                    # Initialize a list to store the embeddings for this argument
-                    embeddings_list = []
+                    # Average the selected embeddings, ensuring not to divide by zero
+                    if selected_embeddings.nelement() > 0:
+                        avg_embedding = selected_embeddings.mean(dim=0)
+                        arg_embeddings[batch_idx, sent_idx, pred_idx] = avg_embedding
 
-                    for token_idx in current_predicate_ids:
-                        if (
-                            token_idx.item() != 1
-                        ):  # Assuming 1 is a padding value in predicate_ids
-                            # Find the index/indices in sentence_ids where this token_id matches
-                            match_indices = torch.where(
-                                sentence_ids[batch_idx, sentence_idx] == token_idx
-                            )[0]
-
-                            # Gather the embeddings for these indices
-                            for idx in match_indices:
-                                # Ensure each tensor has a batch dimension
-                                embedding = sentence_embeddings[
-                                    batch_idx, sentence_idx, idx
-                                ].unsqueeze(0)
-                                embeddings_list.append(embedding)
-
-                    # If we have collected any embeddings, average them
-                    if embeddings_list:
-                        # Concatenate the collected embeddings along the new batch dimension
-                        all_embeddings = torch.cat(embeddings_list, dim=0)
-                        # Compute the average over the batch dimension
-                        avg_embedding = all_embeddings.mean(dim=0)
-                        # Ensure avg_embedding is properly shaped for assignment
-                        avg_embedding = avg_embedding.squeeze()
-                        # Store the averaged embedding
-                        arg_embeddings[batch_idx, sentence_idx, arg_idx] = avg_embedding
-
-        # Return the averaged argument embeddings
         return arg_embeddings
 
     def forward(
@@ -136,13 +144,16 @@ class SRLEmbeddings(nn.Module):
             )
 
             predicate_embeddings = self.get_arg_embedding(
-                predicate_ids, sentence_ids, sentence_embeddings
+                predicate_ids,
+                sentence_ids,
+                sentence_attention_masks,
+                sentence_embeddings,
             )
             arg0_embeddings = self.get_arg_embedding(
-                arg0_ids, sentence_ids, sentence_embeddings
+                arg0_ids, sentence_ids, sentence_attention_masks, sentence_embeddings
             )
             arg1_embeddings = self.get_arg_embedding(
-                arg1_ids, sentence_ids, sentence_embeddings
+                arg1_ids, sentence_ids, sentence_attention_masks, sentence_embeddings
             )
 
         return (
