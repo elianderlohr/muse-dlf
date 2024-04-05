@@ -393,7 +393,7 @@ class FrameAxisProcessor:
         word_ids = inputs.word_ids()
 
         for w_idx in set(word_ids):
-            if w_idx is None:  # Skip special tokens
+            if w_idx is None:
                 continue
 
             # Obtain the start and end token positions for the current word
