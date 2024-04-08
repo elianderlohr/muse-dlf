@@ -86,16 +86,18 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --path_antonym_pairs data/axis/mft.json \
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
-    --D_h 768 \
-    --dropout_prob 0.4005432070495279 \
-    --alpha 0.10761110489138535 \
-    --lambda_orthogonality 0.002928179414941946 \
-    --lr 0.00019217069528803613 \
+    --D_h 2056 \
+    --dropout_prob 0.5215390430626027 \
+    --alpha 0.4810069106077247 \
+    --lambda_orthogonality 0.0013368507658845805 \
+    --lr 0.0002815525244637543 \
     --M 8 \
     --t 8 \
     --batch_size 32 \
     --num_sentences 32 \
-    --max_sentence_length 64
+    --max_sentence_length 64 \
+    --max_args_per_sentence 10 \
+    --max_arg_length 10
 
 
 # Cleanup and Closeout
