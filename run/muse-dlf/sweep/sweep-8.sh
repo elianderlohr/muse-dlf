@@ -52,7 +52,7 @@ nvidia-smi
 export PATH_DATA="data/mfc/data_prepared_cleaned.json"
 export SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 export NAME_TOKENIZER="roberta-base"
-export PATH_NAME_BERT_MODEL="models/roberta-base-finetune/2024-03-08_11-13-01/checkpoint-32454"
+export PATH_NAME_BERT_MODEL="models/roberta-base-finetune/finetuned-roberta/checkpoint-32454"
 export PATH_SRLS="data/srls/mfc/mfc_labeled.pkl"
 export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
 export PATH_ANTONYM_PAIRS="data/axis/mft.json"
