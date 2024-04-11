@@ -117,7 +117,7 @@ class Trainer:
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
         ):
-            logger.info(f"Batch size: {batch["sentence_ids"].shape}")
+            logger.info("Batch size:", batch["sentence_ids"].shape)
 
             global_steps += 1
             if global_steps % 50 == 0:
