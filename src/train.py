@@ -373,7 +373,7 @@ def main():
     )
 
     # prepare components for accelerate
-    model, optimizer, train_dataloader, test_dataloader = accelerator.prepare(
+    model, train_dataloader, test_dataloader = accelerator.prepare(
         model, train_dataloader, test_dataloader
     )
 
