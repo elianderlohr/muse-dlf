@@ -117,8 +117,6 @@ class Trainer:
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
         ):
-            logger.info("Batch size:", batch["sentence_ids"].shape)
-
             global_steps += 1
             if global_steps % 50 == 0:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))

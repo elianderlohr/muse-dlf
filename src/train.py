@@ -4,6 +4,7 @@ from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from transformers import AdamW, get_linear_schedule_with_warmup
 from torch.optim.lr_scheduler import StepLR
 
 import wandb
@@ -371,17 +372,22 @@ def main():
         sample_size=args.sample_size,
     )
 
+    # prepare components for accelerate
+    model, optimizer, train_dataloader, test_dataloader = accelerator.prepare(
+        model, train_dataloader, test_dataloader
+    )
+
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = StepLR(optimizer, step_size=2, gamma=0.1)
-
-    # prepare components for accelerate
-    model, optimizer, train_dataloader, test_dataloader, scheduler = (
-        accelerator.prepare(
-            model, optimizer, train_dataloader, test_dataloader, scheduler
-        )
+    optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=5e-7, eps=1e-8)
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=10,
+        num_training_steps=len(train_dataloader) * args.epochs,
     )
+
+    # prepare optimizer and scheduler
+    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
     accelerator.init_trackers(
         project_name,
