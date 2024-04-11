@@ -117,6 +117,8 @@ class Trainer:
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
         ):
+            self._log_metrics("Batch size: ", batch["sentence_ids"].shape)
+
             global_steps += 1
             if global_steps % 50 == 0:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
@@ -225,9 +227,10 @@ class Trainer:
 
             self._log_metrics(
                 {
-                    "combined_loss": combined_loss.item(),
-                    "supervised_loss": supervised_loss.item(),
-                    "unsupervised_loss": unsupervised_loss.item(),
+                    "batch_combined_loss": combined_loss.item(),
+                    "batch_supervised_loss": supervised_loss.item(),
+                    "batch_unsupervised_loss": unsupervised_loss.item(),
+                    "tau": tau,
                     "epoch": epoch,
                 }
             )
@@ -254,9 +257,9 @@ class Trainer:
 
         self._log_metrics(
             {
-                "total_loss": avg_total_loss,
-                "supervised_loss": avg_supervised_loss,
-                "unsupervised_loss": avg_unsupervised_loss,
+                "epoch_combined_loss": avg_total_loss,
+                "epoch_supervised_loss": avg_supervised_loss,
+                "epoch_unsupervised_loss": avg_unsupervised_loss,
                 "epoch": epoch,
             },
         )
