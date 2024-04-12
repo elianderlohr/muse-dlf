@@ -10,7 +10,11 @@ from torch.optim.lr_scheduler import StepLR
 
 import wandb
 from training.trainer import Trainer
-from transformers import BertTokenizer, RobertaTokenizerFast
+from transformers import (
+    BertTokenizer,
+    RobertaTokenizerFast,
+    get_linear_schedule_with_warmup,
+)
 from accelerate import Accelerator, DistributedDataParallelKwargs
 import warnings
 import os
@@ -97,7 +101,7 @@ def main():
     embedding_dim = 768
 
     batch_size = wandb.config.batch_size
-    epochs = 3
+    epochs = 15
     test_size = 0.1
     tau_min = 0.5
     tau_decay = 5e-4
@@ -184,8 +188,12 @@ def main():
 
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = StepLR(optimizer, step_size=2, gamma=0.1)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=5e-7, eps=1e-8)
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=10,
+        num_training_steps=len(train_dataloader) * epochs,
+    )
 
     # Train the model
     trainer = Trainer(
