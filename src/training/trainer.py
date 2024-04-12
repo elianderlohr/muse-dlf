@@ -25,6 +25,7 @@ class Trainer:
         training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
+        early_stop=10,
         **kwargs,
     ):
         """
@@ -56,6 +57,7 @@ class Trainer:
         self.save_path = save_path
         self.tau_min = tau_min
         self.tau_decay = tau_decay
+        self.early_stop = early_stop
 
         # self.gradient_accumulation_steps = 4
 
@@ -108,10 +110,30 @@ class Trainer:
         else:
             logger.info(metrics)
 
-    def _train(self, epoch, model, train_dataloader, tau, alpha, device):
+    def _train(
+        self,
+        epoch,
+        model,
+        train_dataloader,
+        tau,
+        alpha,
+        device,
+        early_stopping={
+            "best_accuracy": 0,
+            "best_micro_f1": 0,
+            "best_macro_f1": 0,
+            "early_stop": 0,
+            "early_stopped": False,
+        },
+    ):
         model.train()
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
         global global_steps
+
+        # Load the evaluate metrics
+        f1_metric_micro = evaluate.load("f1", config_name="micro")
+        f1_metric_macro = evaluate.load("f1", config_name="macro")
+        accuracy_metric = evaluate.load("accuracy")
 
         local_steps = 0
         for batch_idx, batch in enumerate(
@@ -181,7 +203,7 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
-            unsupervised_loss, span_logits, sentence_logits, _ = model(
+            unsupervised_loss, span_logits, sentence_logits, combined_logits = model(
                 sentence_ids,
                 sentence_attention_masks,
                 predicate_ids,
@@ -193,6 +215,8 @@ class Trainer:
                 frameaxis_data,
                 tau,
             )
+
+            # LOSS
 
             span_loss = 0.0
             sentence_loss = 0.0
@@ -218,6 +242,7 @@ class Trainer:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
             self.optimizer.step()
+            self.scheduler.step()
 
             total_loss += combined_loss.item()
             supervised_total_loss += supervised_loss.item()
@@ -232,6 +257,71 @@ class Trainer:
                     "epoch": epoch,
                 }
             )
+
+            # Check train metrics every 50 steps
+            if global_steps % 50 == 0:
+                combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
+
+                if self.training_management == "accelerate":
+                    combined_pred, labels = self.accelerator.gather_for_metrics(
+                        (combined_pred, labels)
+                    )
+
+                # transform from one-hot to class index
+                combined_pred = combined_pred.argmax(dim=1)
+                labels = labels.argmax(dim=1)
+
+                f1_metric_macro.add_batch(
+                    predictions=combined_pred.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                f1_metric_micro.add_batch(
+                    predictions=combined_pred.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                accuracy_metric.add_batch(
+                    predictions=combined_pred.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                eval_results_micro = f1_metric_micro.compute(average="micro")
+                eval_results_macro = f1_metric_macro.compute(average="macro")
+                eval_accuracy = accuracy_metric.compute()
+
+                logger.info(
+                    f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
+                )
+
+                metrics = {
+                    "train_micro_f1": eval_results_micro["f1"],
+                    "train_macro_f1": eval_results_macro["f1"],
+                    "train_accuracy": eval_accuracy["accuracy"],
+                    "epoch": epoch,
+                    "batch": local_steps,
+                    "global_steps": global_steps,
+                }
+
+                self._log_metrics(metrics)
+
+                if eval_accuracy["accuracy"] > early_stopping["best_accuracy"]:
+                    early_stopping["best_accuracy"] = eval_accuracy["accuracy"]
+                    early_stopping["best_micro_f1"] = eval_results_micro["f1"]
+                    early_stopping["best_macro_f1"] = eval_results_macro["f1"]
+                    early_stopping["early_stop"] = 0
+
+                    # Save the best model
+                    self._save_best_model(model, metrics)
+                else:
+                    early_stopping["early_stop"] += 1
+
+                    if early_stopping["early_stop"] >= self.early_stop:
+                        logger.info("Early stopping triggered.")
+
+                        early_stopping["early_stopped"] = True
+
+                        return early_stopping
 
             del (
                 sentence_ids,
@@ -261,6 +351,8 @@ class Trainer:
                 "epoch": epoch,
             },
         )
+
+        return early_stopping
 
     def _evaluate(self, epoch, model, test_dataloader, device, tau):
         model.eval()
@@ -398,7 +490,36 @@ class Trainer:
 
         return metrics
 
-    def _save_model(self, epoch, model, metrics, keep_last_n=3):
+    def _save_best_model(self, model, metrics):
+        # save dir path
+        save_dir = os.path.join(self.save_path)
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+        except Exception as e:
+            logger.info(
+                f"Warning: Could not create directory {save_dir}. Exception: {e}"
+            )
+
+        # save model
+        model_save_path = os.path.join(save_dir, f"model.pth")
+        try:
+            torch.save(model.state_dict(), model_save_path)
+        except Exception as e:
+            logger.info(
+                f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
+            )
+
+        # save metrics
+        metrics_save_path = os.path.join(save_dir, f"metrics.json")
+        try:
+            with open(metrics_save_path, "w") as f:
+                json.dump(metrics, f)
+        except Exception as e:
+            logger.info(
+                f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
+            )
+
+    def OLD_save_model(self, epoch, model, metrics, keep_last_n=3):
         save_dir = os.path.join(self.save_path)
         try:
             os.makedirs(save_dir, exist_ok=True)
@@ -481,19 +602,26 @@ class Trainer:
         global global_steps
         global_steps = 0
 
+        early_stopping = {
+            "best_accuracy": 0,
+            "best_micro_f1": 0,
+            "best_macro_f1": 0,
+            "early_stop": 0,
+            "early_stopped": False,
+        }
+
         for epoch in range(1, epochs + 1):
-            self._train(
+            early_stopping = self._train(
                 epoch,
                 self.model,
                 self.train_dataloader,
                 tau,
                 alpha,
                 self.device,
-            )
-            metrics = self._evaluate(
-                epoch, self.model, self.test_dataloader, self.device, tau
+                early_stopping,
             )
 
-            self.scheduler.step()
+            if early_stopping["early_stopped"]:
+                break
 
-            self._save_model(epoch, self.model, metrics)
+            self._evaluate(epoch, self.model, self.test_dataloader, self.device, tau)
