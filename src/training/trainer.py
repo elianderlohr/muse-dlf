@@ -25,7 +25,7 @@ class Trainer:
         training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
-        early_stop=10,
+        early_stop=20,
         **kwargs,
     ):
         """
