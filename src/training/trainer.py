@@ -259,7 +259,7 @@ class Trainer:
             )
 
             # Check train metrics every 50 steps
-            if global_steps % 50 == 0:
+            if local_steps % 50 == 0:
                 combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
 
                 if self.training_management == "accelerate":
@@ -311,8 +311,9 @@ class Trainer:
                     early_stopping["best_macro_f1"] = eval_results_macro["f1"]
                     early_stopping["early_stop"] = 0
 
-                    # Save the best model
-                    self._save_best_model(model, metrics)
+                    if eval_accuracy["accuracy"] > 0.5:
+                        # Save the best model
+                        self._save_best_model(model, metrics)
                 else:
                     early_stopping["early_stop"] += 1
 
