@@ -11,17 +11,20 @@ parameters:
       - 1024
       - 1280
       - 1536
-  M_t:
-    distribution: int_uniform
-    min: 4
-    max: 14
+      - 2056
   alpha:
     distribution: uniform
     max: 0.9
     min: 0.1
+  batch_size:
+    values:
+      - 8
+      - 16
+      - 32
+      - 48
   dropout_prob:
     distribution: uniform
-    max: 0.5
+    max: 0.9
     min: 0.1
   lambda_orthogonality:
     distribution: uniform
@@ -30,5 +33,5 @@ parameters:
   lr:
     distribution: uniform
     max: 0.01
-    min: 5e-05
+    min: 5e-06
 program: src/sweep.py

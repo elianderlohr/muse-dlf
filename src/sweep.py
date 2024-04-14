@@ -210,7 +210,13 @@ def main():
         wandb_instance=wandb_instance,
     )
 
-    trainer.run_training(epochs=epochs, alpha=alpha)
+    early_stopping = trainer.run_training(epochs=epochs, alpha=alpha)
+
+    if early_stopping["early_stopped"]:
+        print("Early stopping triggered.")
+        wandb_instance.finish(early_stopping["stopping_code"])
+    else:
+        wandb_instance.finish()
 
 
 if __name__ == "__main__":

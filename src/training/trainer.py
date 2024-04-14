@@ -609,6 +609,7 @@ class Trainer:
             "best_macro_f1": 0,
             "early_stop": 0,
             "early_stopped": False,
+            "stopping_code": 0,
         }
 
         for epoch in range(1, epochs + 1):
@@ -623,6 +624,18 @@ class Trainer:
             )
 
             if early_stopping["early_stopped"]:
+                early_stopping["stopping_code"] = 101
                 break
 
-            self._evaluate(epoch, self.model, self.test_dataloader, self.device, tau)
+            metrics = self._evaluate(
+                epoch, self.model, self.test_dataloader, self.device, tau
+            )
+
+            # accuracy is below 0.5 after first 2 epochs then stop training
+            if epoch > 2 and metrics["accuracy"] < 0.5:
+                logger.info("Accuracy is below 0.5. Stopping training.")
+                early_stopping["early_stopped"] = True
+                early_stopping["stopping_code"] = 102
+                break
+
+        return early_stopping
