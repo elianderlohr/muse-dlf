@@ -344,7 +344,7 @@ class FrameAxisProcessor:
 
         # dump to pickle
         with open(base_path + "/frameaxis_word_contributions.pkl", "wb") as f:
-            pickle.dump(antonym_pairs_embeddings, f)
+            pickle.dump(word_contributions_df, f)
 
         logger.info("Step 2: Calculating microframe bias...")
         # Step 2: Calculate microframe bias for each article and dimension
