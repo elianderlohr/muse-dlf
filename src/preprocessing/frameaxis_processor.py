@@ -339,6 +339,13 @@ class FrameAxisProcessor:
             df, antonym_pairs_embeddings
         )
 
+        # get dir from dataframe_path
+        base_path = os.path.dirname(self.dataframe_path)
+
+        # dump to pickle
+        with open(base_path + "/frameaxis_word_contributions.pkl", "wb") as f:
+            pickle.dump(antonym_pairs_embeddings, f)
+
         logger.info("Step 2: Calculating microframe bias...")
         # Step 2: Calculate microframe bias for each article and dimension
         microframe_bias_df = self.calculate_microframe_bias(word_contributions_df)
@@ -481,6 +488,13 @@ class FrameAxisProcessor:
             logger.info("Calculating FrameAxis Embeddings")
 
             antonym_pairs_embeddings = self.precompute_antonym_embeddings()
+
+            # get dir from dataframe_path
+            base_path = os.path.dirname(self.dataframe_path)
+
+            # dump to pickle
+            with open(base_path + "/frameaxis_antonym_embeddings.pkl", "wb") as f:
+                pickle.dump(antonym_pairs_embeddings, f)
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
 
