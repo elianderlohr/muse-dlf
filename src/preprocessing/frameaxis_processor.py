@@ -194,10 +194,11 @@ class FrameAxisProcessor:
                     vw = embedding.to(self.model.device)
 
                     # Calculate cosine similarity using the formula provided
-                    dot_product = torch.matmul(vw, vf.T)
-                    norm_vw = torch.linalg.norm(vw)
-                    norm_vf = torch.linalg.norm(vf)
-                    cos_sim = (dot_product / (norm_vw * norm_vf)).squeeze().cpu().item()
+                    cos_sim = (
+                        F.cosine_similarity(vw.unsqueeze(0), vf.unsqueeze(0))
+                        .cpu()
+                        .item()
+                    )
 
                     word_dict[dimension] = cos_sim
 
@@ -343,7 +344,7 @@ class FrameAxisProcessor:
         base_path = os.path.dirname(self.dataframe_path)
 
         # dump to pickle
-        with open(base_path + "/frameaxis_word_contributions.pkl", "wb") as f:
+        with open(base_path + "/frameaxis_word_contributions_new.pkl", "wb") as f:
             pickle.dump(word_contributions_df, f)
 
         logger.info("Step 2: Calculating microframe bias...")
