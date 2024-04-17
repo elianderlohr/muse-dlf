@@ -499,7 +499,7 @@ class FrameAxisProcessor:
             # load from frameaxis_antonym_embeddings if exists
             if os.path.exists(base_path + "/frameaxis_antonym_embeddings.pkl"):
                 logger.info("Loading FrameAxis Embeddings")
-                with open(self.dataframe_path, "rb") as f:
+                with open(base_path + "/frameaxis_antonym_embeddings.pkl", "rb") as f:
                     antonym_pairs_embeddings = pickle.load(f)
             else:
                 antonym_pairs_embeddings = self.precompute_antonym_embeddings()
