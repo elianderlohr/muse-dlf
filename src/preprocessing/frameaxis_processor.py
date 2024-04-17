@@ -170,7 +170,7 @@ class FrameAxisProcessor:
         :return: A DataFrame with each row containing a list of dictionaries, each representing a word and its corresponding bias score.
         """
 
-        def calculate_word_contribution(article_id, text, method="cosine"):
+        def calculate_word_contribution(article_id, text, method="projection"):
             words, embeddings = self.get_embeddings_for_text(text)
 
             if embeddings.numel() == 0:
