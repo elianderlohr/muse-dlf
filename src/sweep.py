@@ -1,6 +1,8 @@
 import argparse
 from datetime import datetime
 import json
+from logging import _Level
+from turtle import title
 from model.muse.muse import MUSE
 from preprocessing.pre_processor import PreProcessor
 import torch
@@ -13,9 +15,9 @@ from training.trainer import Trainer
 from transformers import (
     BertTokenizer,
     RobertaTokenizerFast,
+    AdamW,
     get_linear_schedule_with_warmup,
 )
-from accelerate import Accelerator, DistributedDataParallelKwargs
 import warnings
 import os
 
@@ -107,12 +109,12 @@ def main():
     tau_decay = 5e-4
 
     # Data Processing
-    num_sentences = 32
+    num_sentences = 32  # correct
     num_frames = 15
-    frameaxis_dim = 10
-    max_sentence_length = 64
-    max_args_per_sentence = 10
-    max_arg_length = 16
+    frameaxis_dim = 10  # correct
+    max_sentence_length = 64  # correct
+    max_args_per_sentence = 10  # correct
+    max_arg_length = 16  # correct
 
     # Input/Output Paths
     name_tokenizer = os.getenv("NAME_TOKENIZER")
@@ -188,7 +190,7 @@ def main():
 
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=5e-7, eps=1e-8)
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=5e-7, eps=1e-8)
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=10,

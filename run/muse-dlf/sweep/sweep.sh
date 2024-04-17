@@ -69,7 +69,7 @@ CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/muse-dlf/q4
 # Wait for all background jobs to finish
 wait
 
-# Cleanup and Closeout
+# Cleanup and Closeoutf
 echo "Deactivating virtual environment..."
 deactivate
 echo "==================== Job Complete ===================="

@@ -4,6 +4,8 @@ import torch
 import json
 from tqdm import tqdm
 import math
+
+from wandb import AlertLevel
 import evaluate
 
 from utils.logging_manager import LoggerManager
@@ -69,6 +71,7 @@ class Trainer:
 
             if "accelerator_instance" in kwargs:
                 self.accelerator: Accelerator = kwargs["accelerator_instance"]
+                self.wandb = self.accelerator.get_tracker("wandb")
             else:
                 raise ValueError(
                     "You must provide an accelerator instance if you want to use Accelerate for training."
@@ -87,6 +90,7 @@ class Trainer:
                 self.test_dataloader,
                 self.scheduler,
             )
+
         elif self.training_management == "wandb":
             logger.info("Using Weights and Biases for training.")
             import wandb
@@ -110,10 +114,17 @@ class Trainer:
         else:
             logger.info(metrics)
 
+    def _log_alert(self, title, text):
+        if self.training_management == "wandb":
+            self.wandb.alert(title=title, text=text, level=AlertLevel.INFO)
+        elif self.training_management == "accelerate":
+            self.wandb.alert(title=title, text=text, level=AlertLevel.INFO)
+        else:
+            logger.info(f"{title} - {text}")
+
     def _train(
         self,
         epoch,
-        model,
         train_dataloader,
         tau,
         alpha,
@@ -126,7 +137,7 @@ class Trainer:
             "early_stopped": False,
         },
     ):
-        model.train()
+        self.model.train()
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
         global global_steps
 
@@ -203,17 +214,19 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
-            unsupervised_loss, span_logits, sentence_logits, combined_logits = model(
-                sentence_ids,
-                sentence_attention_masks,
-                predicate_ids,
-                predicate_attention_masks,
-                arg0_ids,
-                arg0_attention_masks,
-                arg1_ids,
-                arg1_attention_masks,
-                frameaxis_data,
-                tau,
+            unsupervised_loss, span_logits, sentence_logits, combined_logits = (
+                self.model(
+                    sentence_ids,
+                    sentence_attention_masks,
+                    predicate_ids,
+                    predicate_attention_masks,
+                    arg0_ids,
+                    arg0_attention_masks,
+                    arg1_ids,
+                    arg1_attention_masks,
+                    frameaxis_data,
+                    tau,
+                )
             )
 
             # LOSS
@@ -226,7 +239,7 @@ class Trainer:
 
             supervised_loss = span_loss + sentence_loss
 
-            sum_of_parameters = sum(p.sum() for p in model.parameters())
+            sum_of_parameters = sum(p.sum() for p in self.model.parameters())
 
             zero_sum = sum_of_parameters * 0.0
 
@@ -236,10 +249,10 @@ class Trainer:
 
             if self.training_management == "accelerate":
                 self.accelerator.backward(combined_loss)
-                self.accelerator.clip_grad_norm_(model.parameters(), 1.0)
+                self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
             else:
                 combined_loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
 
             self.optimizer.step()
             self.scheduler.step()
@@ -312,8 +325,7 @@ class Trainer:
                     early_stopping["early_stop"] = 0
 
                     if eval_accuracy["accuracy"] > 0.5:
-                        # Save the best model
-                        self._save_best_model(model, metrics)
+                        self._save_best_model(metrics)
                 else:
                     early_stopping["early_stop"] += 1
 
@@ -355,8 +367,8 @@ class Trainer:
 
         return early_stopping
 
-    def _evaluate(self, epoch, model, test_dataloader, device, tau):
-        model.eval()
+    def _evaluate(self, epoch, test_dataloader, device, tau):
+        self.model.eval()
 
         # Load the evaluate metrics
         f1_metric_micro = evaluate.load("f1", config_name="micro")
@@ -423,7 +435,7 @@ class Trainer:
             )
 
             with torch.no_grad():
-                _, _, _, combined_logits = model(
+                _, _, _, combined_logits = self.model(
                     sentence_ids,
                     sentence_attention_masks,
                     predicate_ids,
@@ -491,7 +503,7 @@ class Trainer:
 
         return metrics
 
-    def _save_best_model(self, model, metrics):
+    def _save_best_model(self, metrics):
         # save dir path
         save_dir = os.path.join(self.save_path)
         try:
@@ -504,7 +516,7 @@ class Trainer:
         # save model
         model_save_path = os.path.join(save_dir, f"model.pth")
         try:
-            torch.save(model.state_dict(), model_save_path)
+            torch.save(self.model.state_dict(), model_save_path)
         except Exception as e:
             logger.info(
                 f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
@@ -518,80 +530,6 @@ class Trainer:
         except Exception as e:
             logger.info(
                 f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
-            )
-
-    def OLD_save_model(self, epoch, model, metrics, keep_last_n=3):
-        save_dir = os.path.join(self.save_path)
-        try:
-            os.makedirs(save_dir, exist_ok=True)
-        except Exception as e:
-            logger.info(
-                f"Warning: Could not create directory {save_dir}. Exception: {e}"
-            )
-
-        model_save_path = os.path.join(save_dir, f"model_epoch_{epoch}.pth")
-        try:
-            torch.save(model.state_dict(), model_save_path)
-        except Exception as e:
-            logger.info(
-                f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
-            )
-
-        metrics_save_path = os.path.join(save_dir, f"metrics_epoch_{epoch}.json")
-        try:
-            with open(metrics_save_path, "w") as f:
-                json.dump(metrics, f)
-        except Exception as e:
-            logger.info(
-                f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
-            )
-
-        # Handling model files
-        try:
-            model_files = [
-                file
-                for file in os.listdir(save_dir)
-                if file.startswith("model_epoch_") and file.endswith(".pth")
-            ]
-            model_files.sort(key=lambda x: int(x.split("_")[2].split(".")[0]))
-
-            if len(model_files) > keep_last_n:
-                for file_to_delete in model_files[:-keep_last_n]:
-                    file_path = os.path.join(save_dir, file_to_delete)
-                    if os.path.exists(file_path):
-                        try:
-                            os.remove(file_path)
-                        except Exception as e:
-                            logger.info(
-                                f"Warning: Failed to delete file {file_path}. Exception: {e}"
-                            )
-        except Exception as e:
-            logger.info(
-                f"Warning: An error occurred while managing model files. Exception: {e}"
-            )
-
-        # Handling metric files
-        try:
-            metric_files = [
-                file
-                for file in os.listdir(save_dir)
-                if file.startswith("metrics_epoch_") and file.endswith(".json")
-            ]
-            metric_files.sort(key=lambda x: int(x.split("_")[2].split(".")[0]))
-
-            if len(metric_files) > keep_last_n:
-                for file_to_delete in metric_files[:-keep_last_n]:
-                    file_path = os.path.join(save_dir, file_to_delete)
-                    if os.path.exists(file_path):
-                        try:
-                            os.remove(file_path)
-                        except Exception as e:
-                            logger.info(
-                                f"Warning: Failed to delete file {file_path}. Exception: {e}"
-                            )
-        except Exception as e:
-            logger.info(
-                f"Warning: An error occurred while managing metric files. Exception: {e}"
             )
 
     def run_training(self, epochs, alpha=0.5):
@@ -615,7 +553,6 @@ class Trainer:
         for epoch in range(1, epochs + 1):
             early_stopping = self._train(
                 epoch,
-                self.model,
                 self.train_dataloader,
                 tau,
                 alpha,
@@ -625,17 +562,23 @@ class Trainer:
 
             if early_stopping["early_stopped"]:
                 early_stopping["stopping_code"] = 101
+                self._log_alert(
+                    title="Early stopping triggered.",
+                    text="The model has been early stopped.",
+                )
                 break
 
-            metrics = self._evaluate(
-                epoch, self.model, self.test_dataloader, self.device, tau
-            )
+            metrics = self._evaluate(epoch, self.test_dataloader, self.device, tau)
 
             # accuracy is below 0.5 after first 2 epochs then stop training
             if epoch > 2 and metrics["accuracy"] < 0.5:
                 logger.info("Accuracy is below 0.5. Stopping training.")
                 early_stopping["early_stopped"] = True
                 early_stopping["stopping_code"] = 102
+                self._log_alert(
+                    title="Accuracy is below 0.5.",
+                    text="The model never surpassed 0.5 accuracy.",
+                )
                 break
 
         return early_stopping
