@@ -28,7 +28,7 @@ python -m pip list
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/data_prepared_cleaned.json"
-PATH_ANTONYM_PAIRS="data/axis/mft_projection.json"
+PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
 MODEL_PATH="models/roberta-base-finetune/finetuned-roberta/checkpoint-32454"
 OUTPUT_PATH="data/frameaxis/mfc/frameaxis_mft_projection.pkl"
