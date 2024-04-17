@@ -170,7 +170,7 @@ class FrameAxisProcessor:
         :return: A DataFrame with each row containing a list of dictionaries, each representing a word and its corresponding bias score.
         """
 
-        def calculate_word_contribution(article_id, text):
+        def calculate_word_contribution(article_id, text, method="cosine"):
             words, embeddings = self.get_embeddings_for_text(text)
 
             if embeddings.numel() == 0:
@@ -193,14 +193,19 @@ class FrameAxisProcessor:
 
                     vw = embedding.to(self.model.device)
 
-                    # Calculate cosine similarity using the formula provided
-                    cos_sim = (
-                        F.cosine_similarity(vw.unsqueeze(0), vf.unsqueeze(0))
-                        .cpu()
-                        .item()
-                    )
+                    if method == "cosine":
+                        # Calculate cosine similarity using the formula provided
+                        cos_sim = (
+                            F.cosine_similarity(vw.unsqueeze(0), vf.unsqueeze(0))
+                            .cpu()
+                            .item()
+                        )
 
-                    word_dict[dimension] = cos_sim
+                        word_dict[dimension] = cos_sim
+                    if method == "projection":
+                        projection = torch.dot(embedding, vf) / torch.norm(vf)
+
+                        word_dict[dimension] = projection
 
                 word_contributions.append(word_dict)
 
@@ -344,8 +349,8 @@ class FrameAxisProcessor:
         base_path = os.path.dirname(self.dataframe_path)
 
         # dump to pickle
-        with open(base_path + "/frameaxis_word_contributions_new.pkl", "wb") as f:
-            pickle.dump(word_contributions_df, f)
+        # with open(base_path + "/frameaxis_word_contributions_projection.pkl", "wb") as f:
+        #     pickle.dump(word_contributions_df, f)
 
         logger.info("Step 2: Calculating microframe bias...")
         # Step 2: Calculate microframe bias for each article and dimension
@@ -488,14 +493,16 @@ class FrameAxisProcessor:
         if self.force_recalculate:
             logger.info("Calculating FrameAxis Embeddings")
 
-            antonym_pairs_embeddings = self.precompute_antonym_embeddings()
-
             # get dir from dataframe_path
             base_path = os.path.dirname(self.dataframe_path)
 
-            # dump to pickle
-            with open(base_path + "/frameaxis_antonym_embeddings.pkl", "wb") as f:
-                pickle.dump(antonym_pairs_embeddings, f)
+            # load from frameaxis_antonym_embeddings if exists
+            if os.path.exists(base_path + "/frameaxis_antonym_embeddings.pkl"):
+                logger.info("Loading FrameAxis Embeddings")
+                with open(self.dataframe_path, "rb") as f:
+                    antonym_pairs_embeddings = pickle.load(f)
+            else:
+                antonym_pairs_embeddings = self.precompute_antonym_embeddings()
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
 
