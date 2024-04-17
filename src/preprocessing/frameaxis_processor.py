@@ -170,7 +170,7 @@ class FrameAxisProcessor:
         :return: A DataFrame with each row containing a list of dictionaries, each representing a word and its corresponding bias score.
         """
 
-        def calculate_word_contribution(article_id, text, method="projection"):
+        def calculate_word_contribution(article_id, text, method="cosine"):
             words, embeddings = self.get_embeddings_for_text(text)
 
             if embeddings.numel() == 0:
@@ -205,7 +205,7 @@ class FrameAxisProcessor:
                     if method == "projection":
                         projection = torch.dot(embedding, vf) / torch.norm(vf)
 
-                        word_dict[dimension] = projection
+                        word_dict[dimension] = projection.cpu().item()
 
                 word_contributions.append(word_dict)
 

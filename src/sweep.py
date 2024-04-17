@@ -1,14 +1,6 @@
-import argparse
-from datetime import datetime
-import json
-from logging import _Level
-from turtle import title
 from model.muse.muse import MUSE
 from preprocessing.pre_processor import PreProcessor
-import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
 
 import wandb
 from training.trainer import Trainer
