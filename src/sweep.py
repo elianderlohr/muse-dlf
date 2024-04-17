@@ -55,7 +55,6 @@ def load_model(
     dropout_prob,
     bert_model_name="bert-base-uncased",
     path_name_bert_model="bert-base-uncased",
-    path_pretrained_model="",
     device="cuda",
 ):
     # Model instantiation
@@ -75,11 +74,6 @@ def load_model(
     )
 
     model = model.to(device)
-
-    if path_pretrained_model:
-        print("Loading model from path_pretrained_model:", path_pretrained_model)
-        assert path_pretrained_model != ""
-        model.load_state_dict(torch.load(path_pretrained_model, map_location=device))
 
     return model
 
@@ -118,7 +112,6 @@ def main():
 
     # Input/Output Paths
     name_tokenizer = os.getenv("NAME_TOKENIZER")
-    path_name_pretrained_muse_model = os.getenv("PATH_NAME_PRETRAINED_MUSE_MODEL")
     path_name_bert_model = os.getenv("PATH_NAME_BERT_MODEL")
     path_srls = os.getenv("PATH_SRLS")
     path_frameaxis = os.getenv("PATH_FRAMEAXIS")
@@ -144,7 +137,6 @@ def main():
         dropout_prob=dropout_prob,
         bert_model_name=name_tokenizer,
         path_name_bert_model=path_name_bert_model,
-        path_pretrained_model=path_name_pretrained_muse_model,
         device="cuda",
     )
 
