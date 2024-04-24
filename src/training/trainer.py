@@ -284,7 +284,7 @@ class Trainer:
             )
 
             # Check train metrics every 50 steps
-            if local_steps % 5 == 0:  # TODO: Change to 50
+            if local_steps % 50 == 0:
                 combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
                 span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
                 sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
