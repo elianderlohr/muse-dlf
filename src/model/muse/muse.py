@@ -5,6 +5,8 @@ from model.muse.srl_embeddings import SRLEmbeddings
 from model.muse.supervised_module import MUSESupervised
 from model.muse.unsupervised_module import MUSEUnsupervised
 
+from src.model.muse import unsupervised_frameaxis_module
+from src.model.muse.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
 logger = LoggerManager.get_logger(__name__)
@@ -36,8 +38,17 @@ class MUSE(nn.Module):
             embedding_dim,
             D_h,
             K,
+            lambda_orthogonality=lambda_orthogonality,
+            M=M,
+            t=t,
+            dropout_prob=dropout_prob,
+        )
+
+        self.unsupervised_fx = MUSEFrameAxisUnsupervised(
+            embedding_dim,
+            D_h,
+            K,
             frameaxis_dim=frameaxis_dim,
-            num_frames=num_frames,
             lambda_orthogonality=lambda_orthogonality,
             M=M,
             t=t,
@@ -178,7 +189,6 @@ class MUSE(nn.Module):
             d_p_sentence_list = []
             d_a0_sentence_list = []
             d_a1_sentence_list = []
-            d_fx_sentence_list = []
 
             # Process each span
             for span_idx in range(predicate_embeddings.size(2)):
@@ -192,11 +202,9 @@ class MUSE(nn.Module):
                     v_a0_span,
                     v_a1_span,
                     s_sentence_span,
-                    v_fx,
                     negatives_p,
                     negatives_a0,
                     negatives_a1,
-                    negatives_fx,
                     tau,
                 )
                 unsupervised_losses += unsupervised_results["loss"]
@@ -208,18 +216,28 @@ class MUSE(nn.Module):
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])
                 d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
                 d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
-                d_fx_sentence_list.append(unsupervised_results["fx"]["d"])
 
             # Aggregating across all spans
             d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
             d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
             d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
-            d_fx_sentence = torch.stack(d_fx_sentence_list, dim=1)
 
             d_p_list.append(d_p_sentence)
             d_a0_list.append(d_a0_sentence)
             d_a1_list.append(d_a1_sentence)
-            d_fx_list.append(d_fx_sentence)
+
+            # As per sentence only one frameaxis data set is present calculate only once
+            unsupervised_fx_results = self.unsupervised_fx(
+                s_sentence_span,
+                v_fx,
+                negatives_fx,
+                tau,
+            )
+
+            d_fx_list.append(unsupervised_fx_results["fx"]["d"])
+
+            # add the loss to the unsupervised losses
+            unsupervised_losses += unsupervised_fx_results["loss"]
 
         # Aggregating across all spans
         d_p_aggregated = torch.stack(d_p_list, dim=1)
@@ -241,8 +259,11 @@ class MUSE(nn.Module):
         valid_losses = ~torch.isnan(unsupervised_losses)
 
         # Take average by summing the valid losses and dividing by num sentences so that padded sentences are also taken in equation
-        unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
-            sentence_embeddings.shape[1] * sentence_embeddings.shape[2]
-        )
+        # unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
+        #    sentence_embeddings.shape[1] * sentence_embeddings.shape[2]
+        # )
+
+        # todo remove balancing
+        unsupervised_loss = unsupervised_losses[valid_losses].sum()
 
         return unsupervised_loss, span_pred, sentence_pred, combined_pred

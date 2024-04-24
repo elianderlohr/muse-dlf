@@ -15,8 +15,6 @@ class MUSEUnsupervised(nn.Module):
         D_w,
         D_h,
         K,
-        frameaxis_dim,
-        num_frames,
         lambda_orthogonality,
         M,
         t,
@@ -31,26 +29,18 @@ class MUSEUnsupervised(nn.Module):
             D_w, D_h, K, dropout_prob=dropout_prob
         )
 
-        self.frameaxis_autoencoder = FrameAxisAutoencoder(
-            D_w, D_h, frameaxis_dim, K, dropout_prob=dropout_prob
-        )
-
     def forward(
         self,
         v_p,
         v_a0,
         v_a1,
         v_sentence,
-        v_fx,
         p_negatives,
         a0_negatives,
         a1_negatives,
-        fx_negatives,
         tau,
     ):
         outputs = self.combined_autoencoder(v_p, v_a0, v_a1, v_sentence, tau)
-
-        outputs_fx = self.frameaxis_autoencoder(v_fx, v_sentence, tau)
 
         outputs_p = outputs["p"]
         outputs_p["v"] = v_p
@@ -61,25 +51,28 @@ class MUSEUnsupervised(nn.Module):
         outputs_a1 = outputs["a1"]
         outputs_a1["v"] = v_a1
 
-        outputs_fx["v"] = v_fx
-
-        loss = self.loss_fn(
+        loss_p = self.loss_fn(
             outputs_p,
-            outputs_a0,
-            outputs_a1,
-            outputs_fx,
             p_negatives,
-            a0_negatives,
-            a1_negatives,
-            fx_negatives,
         )
+
+        loss_a0 = self.loss_fn(
+            outputs_a0,
+            a0_negatives,
+        )
+
+        loss_a1 = self.loss_fn(
+            outputs_a1,
+            a1_negatives,
+        )
+
+        loss = loss_p + loss_a0 + loss_a1
 
         results = {
             "loss": loss,
             "p": outputs["p"],
             "a0": outputs["a0"],
             "a1": outputs["a1"],
-            "fx": outputs_fx,
         }
 
         return results

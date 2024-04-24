@@ -42,7 +42,7 @@ class MUSESupervised(nn.Module):
         d_p = d_p.mean(dim=2)
         d_a0 = d_a0.mean(dim=2)
         d_a1 = d_a1.mean(dim=2)
-        d_fx = d_fx.mean(dim=2)
+        # d_fx = d_fx.mean(dim=2) # This is not needed as d_fx is already aggregated
 
         # Take the mean over descriptors
         w_u = (d_p + d_a0 + d_a1 + d_fx) / 4

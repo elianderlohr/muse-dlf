@@ -8,3 +8,4 @@ data/frameaxis/mfc/
 .pyo
 .pyc
 .env
+data/srls/mfc/mfc_labeled.pkl
