@@ -146,6 +146,16 @@ class Trainer:
         f1_metric_macro = evaluate.load("f1", config_name="macro")
         accuracy_metric = evaluate.load("accuracy")
 
+        # metrics for span
+        f1_metric_micro_span = evaluate.load("f1", config_name="micro")
+        f1_metric_macro_span = evaluate.load("f1", config_name="macro")
+        accuracy_metric_span = evaluate.load("accuracy")
+
+        # metrics for sentence
+        f1_metric_micro_sentence = evaluate.load("f1", config_name="micro")
+        f1_metric_macro_sentence = evaluate.load("f1", config_name="macro")
+        accuracy_metric_sentence = evaluate.load("accuracy")
+
         local_steps = 0
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
@@ -265,6 +275,8 @@ class Trainer:
                 {
                     "batch_combined_loss": combined_loss.item(),
                     "batch_supervised_loss": supervised_loss.item(),
+                    "batch_span_loss": span_loss.item(),
+                    "batch_sentence_loss": sentence_loss.item(),
                     "batch_unsupervised_loss": unsupervised_loss.item(),
                     "tau": tau,
                     "epoch": epoch,
@@ -284,24 +296,72 @@ class Trainer:
                 combined_pred = combined_pred.argmax(dim=1)
                 labels = labels.argmax(dim=1)
 
+                # Macro F!
+
                 f1_metric_macro.add_batch(
                     predictions=combined_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
+
+                f1_metric_macro_span.add_batch(
+                    predictions=span_logits.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                f1_metric_macro_sentence.add_batch(
+                    predictions=sentence_logits.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                # Micro F1
 
                 f1_metric_micro.add_batch(
                     predictions=combined_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
+                f1_metric_micro_span.add_batch(
+                    predictions=span_logits.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                f1_metric_micro_sentence.add_batch(
+                    predictions=sentence_logits.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                # Accuracy
+
                 accuracy_metric.add_batch(
                     predictions=combined_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
+                accuracy_metric_span.add_batch(
+                    predictions=span_logits.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
+                accuracy_metric_sentence.add_batch(
+                    predictions=sentence_logits.cpu().numpy(),
+                    references=labels.cpu().numpy(),
+                )
+
                 eval_results_micro = f1_metric_micro.compute(average="micro")
+                eval_results_micro_span = f1_metric_micro_span.compute(average="micro")
+                eval_results_micro_sentence = f1_metric_micro_sentence.compute(
+                    average="micro"
+                )
+
                 eval_results_macro = f1_metric_macro.compute(average="macro")
+                eval_results_macro_span = f1_metric_macro_span.compute(average="macro")
+                eval_results_macro_sentence = f1_metric_macro_sentence.compute(
+                    average="macro"
+                )
+
                 eval_accuracy = accuracy_metric.compute()
+                eval_accuracy_span = accuracy_metric_span.compute()
+                eval_accuracy_sentence = accuracy_metric_sentence.compute()
 
                 logger.info(
                     f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
@@ -309,8 +369,14 @@ class Trainer:
 
                 metrics = {
                     "train_micro_f1": eval_results_micro["f1"],
+                    "train_micro_f1_span": eval_results_micro_span["f1"],
+                    "train_micro_f1_sentence": eval_results_micro_sentence["f1"],
                     "train_macro_f1": eval_results_macro["f1"],
+                    "train_macro_f1_span": eval_results_macro_span["f1"],
+                    "train_macro_f1_sentence": eval_results_macro_sentence["f1"],
                     "train_accuracy": eval_accuracy["accuracy"],
+                    "train_accuracy_span": eval_accuracy_span["accuracy"],
+                    "train_accuracy_sentence": eval_accuracy_sentence["accuracy"],
                     "epoch": epoch,
                     "batch": local_steps,
                     "global_steps": global_steps,
@@ -374,6 +440,16 @@ class Trainer:
         f1_metric_micro = evaluate.load("f1", config_name="micro")
         f1_metric_macro = evaluate.load("f1", config_name="macro")
         accuracy_metric = evaluate.load("accuracy")
+
+        # metrics for span
+        f1_metric_micro_span = evaluate.load("f1", config_name="micro")
+        f1_metric_macro_span = evaluate.load("f1", config_name="macro")
+        accuracy_metric_span = evaluate.load("accuracy")
+
+        # metrics for sentence
+        f1_metric_micro_sentence = evaluate.load("f1", config_name="micro")
+        f1_metric_macro_sentence = evaluate.load("f1", config_name="macro")
+        accuracy_metric_sentence = evaluate.load("accuracy")
 
         for batch_idx, batch in enumerate(
             tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
@@ -459,17 +535,53 @@ class Trainer:
             combined_pred = combined_pred.argmax(dim=1)
             labels = labels.argmax(dim=1)
 
+            # Macro F1
+
             f1_metric_macro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
+
+            f1_metric_macro_span.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
+
+            f1_metric_macro_sentence.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
+
+            # Micro F1
 
             f1_metric_micro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
 
+            f1_metric_micro_span.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
+
+            f1_metric_micro_sentence.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
+
+            # Accuracy
+
             accuracy_metric.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
+
+            accuracy_metric_span.add_batch(
+                predictions=combined_pred.cpu().numpy(),
+                references=labels.cpu().numpy(),
+            )
+
+            accuracy_metric_sentence.add_batch(
                 predictions=combined_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
@@ -484,9 +596,20 @@ class Trainer:
             )
             torch.cuda.empty_cache()
 
+        # Micro F1
         eval_results_micro = f1_metric_micro.compute(average="micro")
+        eval_results_micro_span = f1_metric_micro_span.compute(average="micro")
+        eval_results_micro_sentence = f1_metric_micro_sentence.compute(average="micro")
+
+        # Macro F1
         eval_results_macro = f1_metric_macro.compute(average="macro")
+        eval_results_macro_span = f1_metric_macro_span.compute(average="macro")
+        eval_results_macro_sentence = f1_metric_macro_sentence.compute(average="macro")
+
+        # Accuracy
         eval_accuracy = accuracy_metric.compute()
+        eval_accuracy_span = accuracy_metric_span.compute()
+        eval_accuracy_sentence = accuracy_metric_sentence.compute()
 
         logger.info(
             f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
@@ -494,8 +617,14 @@ class Trainer:
 
         metrics = {
             "micro_f1": eval_results_micro["f1"],
+            "micro_f1_span": eval_results_micro_span["f1"],
+            "micro_f1_sentence": eval_results_micro_sentence["f1"],
             "macro_f1": eval_results_macro["f1"],
+            "macro_f1_span": eval_results_macro_span["f1"],
+            "macro_f1_sentence": eval_results_macro_sentence["f1"],
             "accuracy": eval_accuracy["accuracy"],
+            "accuracy_span": eval_accuracy_span["accuracy"],
+            "accuracy_sentence": eval_accuracy_sentence["accuracy"],
             "epoch": epoch,
         }
 
