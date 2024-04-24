@@ -286,14 +286,25 @@ class Trainer:
             # Check train metrics every 50 steps
             if local_steps % 50 == 0:
                 combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
+                span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
+                sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
 
                 if self.training_management == "accelerate":
                     combined_pred, labels = self.accelerator.gather_for_metrics(
                         (combined_pred, labels)
                     )
+                    span_pred, labels = self.accelerator.gather_for_metrics(
+                        (span_pred, labels)
+                    )
+
+                    sentence_pred, labels = self.accelerator.gather_for_metrics(
+                        (sentence_pred, labels)
+                    )
 
                 # transform from one-hot to class index
                 combined_pred = combined_pred.argmax(dim=1)
+                span_pred = span_pred.argmax(dim=1)
+                sentence_pred = sentence_pred.argmax(dim=1)
                 labels = labels.argmax(dim=1)
 
                 # Macro F!
@@ -304,12 +315,12 @@ class Trainer:
                 )
 
                 f1_metric_macro_span.add_batch(
-                    predictions=span_logits.cpu().numpy(),
+                    predictions=span_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
                 f1_metric_macro_sentence.add_batch(
-                    predictions=sentence_logits.cpu().numpy(),
+                    predictions=sentence_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
@@ -321,12 +332,12 @@ class Trainer:
                 )
 
                 f1_metric_micro_span.add_batch(
-                    predictions=span_logits.cpu().numpy(),
+                    predictions=span_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
                 f1_metric_micro_sentence.add_batch(
-                    predictions=sentence_logits.cpu().numpy(),
+                    predictions=sentence_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
@@ -338,12 +349,12 @@ class Trainer:
                 )
 
                 accuracy_metric_span.add_batch(
-                    predictions=span_logits.cpu().numpy(),
+                    predictions=span_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
                 accuracy_metric_sentence.add_batch(
-                    predictions=sentence_logits.cpu().numpy(),
+                    predictions=sentence_pred.cpu().numpy(),
                     references=labels.cpu().numpy(),
                 )
 
@@ -511,7 +522,7 @@ class Trainer:
             )
 
             with torch.no_grad():
-                _, _, _, combined_logits = self.model(
+                _, span_logits, sentence_logits, combined_logits = self.model(
                     sentence_ids,
                     sentence_attention_masks,
                     predicate_ids,
@@ -525,14 +536,25 @@ class Trainer:
                 )
 
             combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
+            span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
+            sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
 
             if self.training_management == "accelerate":
                 combined_pred, labels = self.accelerator.gather_for_metrics(
                     (combined_pred, labels)
                 )
+                span_pred, labels = self.accelerator.gather_for_metrics(
+                    (span_pred, labels)
+                )
+                sentence_pred, labels = self.accelerator.gather_for_metrics(
+                    (sentence_pred, labels)
+                )
 
             # transform from one-hot to class index
             combined_pred = combined_pred.argmax(dim=1)
+            span_pred = span_pred.argmax(dim=1)
+            sentence_pred = sentence_pred.argmax(dim=1)
+
             labels = labels.argmax(dim=1)
 
             # Macro F1
@@ -543,12 +565,12 @@ class Trainer:
             )
 
             f1_metric_macro_span.add_batch(
-                predictions=combined_pred.cpu().numpy(),
+                predictions=span_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
 
             f1_metric_macro_sentence.add_batch(
-                predictions=combined_pred.cpu().numpy(),
+                predictions=sentence_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
 
@@ -560,12 +582,12 @@ class Trainer:
             )
 
             f1_metric_micro_span.add_batch(
-                predictions=combined_pred.cpu().numpy(),
+                predictions=span_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
 
             f1_metric_micro_sentence.add_batch(
-                predictions=combined_pred.cpu().numpy(),
+                predictions=sentence_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
 
@@ -577,12 +599,12 @@ class Trainer:
             )
 
             accuracy_metric_span.add_batch(
-                predictions=combined_pred.cpu().numpy(),
+                predictions=span_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
 
             accuracy_metric_sentence.add_batch(
-                predictions=combined_pred.cpu().numpy(),
+                predictions=sentence_pred.cpu().numpy(),
                 references=labels.cpu().numpy(),
             )
 
