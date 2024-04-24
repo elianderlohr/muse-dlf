@@ -4,9 +4,7 @@ import torch.nn as nn
 from model.muse.srl_embeddings import SRLEmbeddings
 from model.muse.supervised_module import MUSESupervised
 from model.muse.unsupervised_module import MUSEUnsupervised
-
-from src.model.muse import unsupervised_frameaxis_module
-from src.model.muse.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
+from model.muse.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
 logger = LoggerManager.get_logger(__name__)
