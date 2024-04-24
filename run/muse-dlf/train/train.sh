@@ -77,7 +77,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 20 \
+    --epochs 10 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/finetuned-roberta/checkpoint-32454 \
@@ -86,11 +86,11 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --path_antonym_pairs data/axis/mft.json \
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
-    --D_h 2056 \
-    --dropout_prob 0.5215390430626027 \
-    --alpha 0.4810069106077247 \
-    --lambda_orthogonality 0.0013368507658845805 \
-    --lr 0.0002815525244637543 \
+    --D_h 256 \
+    --dropout_prob 0.3 \
+    --alpha 0.1 \
+    --lambda_orthogonality 0.01 \
+    --lr 0.0001 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
