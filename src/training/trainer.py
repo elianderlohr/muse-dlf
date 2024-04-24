@@ -284,78 +284,81 @@ class Trainer:
             )
 
             # Check train metrics every 50 steps
-            if local_steps % 50 == 0:
+            if local_steps % 5 == 0:  # TODO: Change to 50
                 combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
                 span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
                 sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
 
                 if self.training_management == "accelerate":
-                    combined_pred, labels = self.accelerator.gather_for_metrics(
-                        (combined_pred, labels)
+                    combined_pred, combined_labels = (
+                        self.accelerator.gather_for_metrics((combined_pred, labels))
                     )
-                    span_pred, labels = self.accelerator.gather_for_metrics(
+                    span_pred, span_labels = self.accelerator.gather_for_metrics(
                         (span_pred, labels)
                     )
 
-                    sentence_pred, labels = self.accelerator.gather_for_metrics(
-                        (sentence_pred, labels)
+                    sentence_pred, sentence_labels = (
+                        self.accelerator.gather_for_metrics((sentence_pred, labels))
                     )
 
                 # transform from one-hot to class index
                 combined_pred = combined_pred.argmax(dim=1)
                 span_pred = span_pred.argmax(dim=1)
                 sentence_pred = sentence_pred.argmax(dim=1)
-                labels = labels.argmax(dim=1)
+
+                combined_labels = combined_labels.argmax(dim=1)
+                span_labels = span_labels.argmax(dim=1)
+                sentence_labels = sentence_labels.argmax(dim=1)
 
                 # Macro F!
 
                 f1_metric_macro.add_batch(
                     predictions=combined_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
                 )
 
                 f1_metric_macro_span.add_batch(
                     predictions=span_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
                 )
 
                 f1_metric_macro_sentence.add_batch(
                     predictions=sentence_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
                 )
 
                 # Micro F1
 
                 f1_metric_micro.add_batch(
                     predictions=combined_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
                 )
 
                 f1_metric_micro_span.add_batch(
                     predictions=span_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
                 )
 
                 f1_metric_micro_sentence.add_batch(
                     predictions=sentence_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
                 )
 
                 # Accuracy
 
                 accuracy_metric.add_batch(
                     predictions=combined_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
                 )
 
                 accuracy_metric_span.add_batch(
                     predictions=span_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
                 )
 
                 accuracy_metric_sentence.add_batch(
                     predictions=sentence_pred.cpu().numpy(),
-                    references=labels.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
                 )
 
                 eval_results_micro = f1_metric_micro.compute(average="micro")
@@ -540,13 +543,13 @@ class Trainer:
             sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
 
             if self.training_management == "accelerate":
-                combined_pred, labels = self.accelerator.gather_for_metrics(
+                combined_pred, combined_labels = self.accelerator.gather_for_metrics(
                     (combined_pred, labels)
                 )
-                span_pred, labels = self.accelerator.gather_for_metrics(
+                span_pred, span_labels = self.accelerator.gather_for_metrics(
                     (span_pred, labels)
                 )
-                sentence_pred, labels = self.accelerator.gather_for_metrics(
+                sentence_pred, sentence_labels = self.accelerator.gather_for_metrics(
                     (sentence_pred, labels)
                 )
 
@@ -555,57 +558,59 @@ class Trainer:
             span_pred = span_pred.argmax(dim=1)
             sentence_pred = sentence_pred.argmax(dim=1)
 
-            labels = labels.argmax(dim=1)
+            combined_labels = combined_labels.argmax(dim=1)
+            span_labels = span_labels.argmax(dim=1)
+            sentence_labels = sentence_labels.argmax(dim=1)
 
             # Macro F1
 
             f1_metric_macro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=combined_labels.cpu().numpy(),
             )
 
             f1_metric_macro_span.add_batch(
                 predictions=span_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=span_labels.cpu().numpy(),
             )
 
             f1_metric_macro_sentence.add_batch(
                 predictions=sentence_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=sentence_labels.cpu().numpy(),
             )
 
             # Micro F1
 
             f1_metric_micro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=combined_labels.cpu().numpy(),
             )
 
             f1_metric_micro_span.add_batch(
                 predictions=span_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=span_labels.cpu().numpy(),
             )
 
             f1_metric_micro_sentence.add_batch(
                 predictions=sentence_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=sentence_labels.cpu().numpy(),
             )
 
             # Accuracy
 
             accuracy_metric.add_batch(
                 predictions=combined_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=combined_labels.cpu().numpy(),
             )
 
             accuracy_metric_span.add_batch(
                 predictions=span_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=span_labels.cpu().numpy(),
             )
 
             accuracy_metric_sentence.add_batch(
                 predictions=sentence_pred.cpu().numpy(),
-                references=labels.cpu().numpy(),
+                references=sentence_labels.cpu().numpy(),
             )
 
             # Explicitly delete tensors to free up memory
