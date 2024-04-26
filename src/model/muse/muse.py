@@ -257,11 +257,8 @@ class MUSE(nn.Module):
         valid_losses = ~torch.isnan(unsupervised_losses)
 
         # Take average by summing the valid losses and dividing by num sentences so that padded sentences are also taken in equation
-        # unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
-        #    sentence_embeddings.shape[1] * sentence_embeddings.shape[2]
-        # )
-
-        # todo remove balancing
-        unsupervised_loss = unsupervised_losses[valid_losses].sum()
+        unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
+            sentence_embeddings.shape[1] * sentence_embeddings.shape[2]
+        )
 
         return unsupervised_loss, span_pred, sentence_pred, combined_pred
