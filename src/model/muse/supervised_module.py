@@ -27,8 +27,6 @@ class MUSESupervised(nn.Module):
             frameaxis_dim if sentence_prediction_method == "custom" else 0
         )
 
-        print("wr_shape", wr_shape)
-
         self.Wr = nn.Linear(wr_shape, D_w)
         self.Wt = nn.Linear(D_w, K)
         self.relu = nn.ReLU()
@@ -85,11 +83,8 @@ class MUSESupervised(nn.Module):
         w_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
         y_hat_u = w_u.sum(dim=1)
 
-        if self.sentence_prediction_method == "friss":
-            # Concatenate vs with frameaxis_data if sentence_prediction_method is False
+        if self.sentence_prediction_method == "custom":
             vs = torch.cat([vs, frameaxis_data], dim=-1)
-
-        print("vs shape", vs.shape)
 
         ws = self.dropout_1(vs)
         ws = self.relu(self.Wr(vs))
