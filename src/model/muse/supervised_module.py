@@ -45,39 +45,39 @@ class MUSESupervised(nn.Module):
         print("frameaxis_data shape:", frameaxis_data.shape)
         print("sentence_attention_mask shape:", sentence_attention_mask.shape)
 
-        # Mask for valid sentence embeddings, propagated to arguments
-        valid_sentences_mask = sentence_attention_mask.unsqueeze(-1)  # [B, S, 1]
-
-        print("d_p shape:", d_p.shape)
+        # Adjust mask for use with d_p, d_a0, d_a1, and d_fx
+        valid_sentences_mask = sentence_attention_mask.unsqueeze(-1).unsqueeze(
+            -1
+        )  # [B, S, 1, 1]
         print("valid_sentences_mask shape:", valid_sentences_mask.shape)
 
-        # Function to calculate masked mean over valid embeddings for each sentence
         def masked_mean(tensor, mask):
-            mask = mask.unsqueeze(-1).expand_as(
-                tensor
-            )  # Ensure mask shape matches tensor
+            # Ensure mask shape matches tensor
+            mask = mask.expand_as(tensor)
             masked_tensor = tensor * mask.float()
-            sum_tensor = masked_tensor.sum(
-                dim=2
-            )  # Sum valid embeddings within each sentence
-            count_tensor = mask.sum(dim=2)  # Count valid embeddings
+            sum_tensor = masked_tensor.sum(dim=2)  # Sum along the third dim (num_args)
+            count_tensor = mask.sum(dim=2)
             mean_tensor = sum_tensor / count_tensor.clamp(min=1)  # Safe division
             return mean_tensor
 
-        # First mean calculation per sentence
-        d_p_mean = masked_mean(d_p, valid_sentences_mask)
-        d_a0_mean = masked_mean(d_a0, valid_sentences_mask)
-        d_a1_mean = masked_mean(d_a1, valid_sentences_mask)
-        d_fx_mean = masked_mean(d_fx, valid_sentences_mask)
+        # Apply masked mean
+        d_p_mean = masked_mean(d_p, valid_sentences_mask.squeeze(-1))
+        d_a0_mean = masked_mean(d_a0, valid_sentences_mask.squeeze(-1))
+        d_a1_mean = masked_mean(d_a1, valid_sentences_mask.squeeze(-1))
+        d_fx_mean = masked_mean(
+            d_fx, valid_sentences_mask.squeeze(-1).squeeze(-1)
+        )  # For d_fx, adjust mask as needed
 
-        # Second mean calculation across sentences, only if they are valid as per sentence mask
         def mean_across_sentences(tensor):
-            valid_sentences_tensor = tensor * valid_sentences_mask.float()
-            sum_tensor = valid_sentences_tensor.sum(dim=1)  # Sum across all sentences
-            count_tensor = valid_sentences_mask.sum(dim=1)  # Count valid sentences
-            mean_tensor = sum_tensor / count_tensor.clamp(min=1)  # Safe division
+            valid_sentences_tensor = (
+                tensor * valid_sentences_mask.squeeze(-1).float()
+            )  # Adjust for single feature dimension
+            sum_tensor = valid_sentences_tensor.sum(dim=1)
+            count_tensor = valid_sentences_mask.sum(dim=1)
+            mean_tensor = sum_tensor / count_tensor.clamp(min=1)
             return mean_tensor
 
+        # Aggregate means across sentences
         d_p_final = mean_across_sentences(d_p_mean)
         d_a0_final = mean_across_sentences(d_a0_mean)
         d_a1_final = mean_across_sentences(d_a1_mean)
