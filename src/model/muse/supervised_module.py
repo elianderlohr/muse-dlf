@@ -23,15 +23,12 @@ class MUSESupervised(nn.Module):
         self.dropout_2 = nn.Dropout(dropout_prob)
 
         wr_shape = (
-            D_w
-            + (frameaxis_dim if sentence_prediction_method == "custom" else 0)
-            * num_sentences
-        )
+            D_w + (frameaxis_dim if sentence_prediction_method == "custom" else 0)
+        ) * num_sentences
 
         self.Wr = nn.Linear(wr_shape, D_w * num_sentences)
         self.Wt = nn.Linear(D_w * num_sentences, K * num_sentences)
         self.relu = nn.ReLU()
-        self.softmax = nn.Softmax(dim=1)
 
         self.flatten = nn.Flatten(start_dim=1)
 
