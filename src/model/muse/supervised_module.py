@@ -53,16 +53,20 @@ class MUSESupervised(nn.Module):
         # mean to dim 8, 32, ignore where mask is False
         d_p_sentence_masked = d_p * args_sentence_mask.unsqueeze(-1)
         d_p_sentence = d_p_sentence_masked.mean(dim=2)
+        d_p_mean = d_p_sentence.mean(dim=1)
 
         d_a0_sentence_masked = d_a0 * args_sentence_mask.unsqueeze(-1)
         d_a0_sentence = d_a0_sentence_masked.mean(dim=2)
+        d_a0_mean = d_a0_sentence.mean(dim=1)
 
         d_a1_sentence_masked = d_a1 * args_sentence_mask.unsqueeze(-1)
         d_a1_sentence = d_a1_sentence_masked.mean(dim=2)
+        d_a1_mean = d_a1_sentence.mean(dim=1)
+
+        d_fx_mean = d_fx.mean(dim=1)
 
         # Combine and normalize the final descriptor
-        w_u = (d_p_sentence + d_a0_sentence + d_a1_sentence + d_fx) / 4
-        y_hat_u = w_u.sum(dim=1)
+        y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
         if self.sentence_prediction_method == "custom":
             vs = torch.cat([vs, frameaxis_data], dim=-1)
