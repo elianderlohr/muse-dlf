@@ -36,8 +36,20 @@ class MUSESupervised(nn.Module):
     def forward(
         self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data, sentence_attention_mask
     ):
+        # print shapes of all inputs
+        print("d_p shape:", d_p.shape)
+        print("d_a0 shape:", d_a0.shape)
+        print("d_a1 shape:", d_a1.shape)
+        print("d_fx shape:", d_fx.shape)
+        print("vs shape:", vs.shape)
+        print("frameaxis_data shape:", frameaxis_data.shape)
+        print("sentence_attention_mask shape:", sentence_attention_mask.shape)
+
         # Mask for valid sentence embeddings, propagated to arguments
         valid_sentences_mask = sentence_attention_mask.unsqueeze(-1)  # [B, S, 1]
+
+        print("d_p shape:", d_p.shape)
+        print("valid_sentences_mask shape:", valid_sentences_mask.shape)
 
         # Function to calculate masked mean over valid embeddings for each sentence
         def masked_mean(tensor, mask):
@@ -83,7 +95,10 @@ class MUSESupervised(nn.Module):
         ws = self.relu(self.Wr(vs))  # vs should have shape [B, S, D_w]
 
         # Apply attention mask to ws before aggregation
-        mask = sentence_attention_mask.unsqueeze(-1).expand_as(ws).float()
+        mask = valid_sentences_mask.unsqueeze(-1).unsqueeze(-1)
+        num_spans = ws.size(1)
+        mask = mask.expand(-1, -1, num_spans, 1)
+
         ws *= mask  # Mask out padded sentences
 
         # Summing masked embeddings and computing mean across sentences
