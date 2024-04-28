@@ -100,6 +100,10 @@ class MUSESupervised(nn.Module):
         logits = self.Wt(document_representation)
         y_hat_s = self.softmax(logits)
 
+        # print shape of y_hat_s
+        print("y_hat_s.shape", y_hat_s.shape)
+        print("y_hat_u.shape", y_hat_u.shape)
+
         if self.combine_method == "sum":
             # Sum the two predictions
             combined = y_hat_u + y_hat_s
