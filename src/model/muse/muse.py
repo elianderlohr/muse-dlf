@@ -25,8 +25,7 @@ class MUSE(nn.Module):
         dropout_prob=0.3,
         bert_model_name="bert-base-uncased",
         bert_model_name_or_path="",
-        supervised_sentence_prediction_method="friss",
-        supervised_combine_method="sum",
+        supervised_sentence_prediction_method="friss",  # friss or custom
     ):
         super(MUSE, self).__init__()
 
@@ -64,7 +63,6 @@ class MUSE(nn.Module):
             num_sentences=num_sentences,
             dropout_prob=dropout_prob,
             sentence_prediction_method=supervised_sentence_prediction_method,
-            combine_method=supervised_combine_method,
         )
 
     def negative_sampling(self, embeddings, num_negatives=-1):

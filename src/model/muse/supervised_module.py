@@ -12,8 +12,7 @@ class MUSESupervised(nn.Module):
         frameaxis_dim,
         num_sentences,
         dropout_prob=0.3,
-        sentence_prediction_method="friss",
-        combine_method="sum",
+        sentence_prediction_method="friss",  # friss or custom
     ):
         super(MUSESupervised, self).__init__()
 
@@ -33,7 +32,6 @@ class MUSESupervised(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
         self.sentence_prediction_method = sentence_prediction_method
-        self.combine_method = combine_method
 
     def forward(
         self,
@@ -98,11 +96,7 @@ class MUSESupervised(nn.Module):
         document_representation = self.dropout_2(ws)
         y_hat_s = self.Wt(document_representation)
 
-        if self.combine_method == "sum":
-            # Sum the two predictions
-            combined = y_hat_u + y_hat_s
-        elif self.combine_method == "avg":
-            # Average the two predictions
-            combined = (y_hat_u + y_hat_s) / 2
+        # Sum the two predictions
+        combined = y_hat_u + y_hat_s
 
         return y_hat_u, y_hat_s, combined

@@ -40,7 +40,6 @@ def load_model(
     path_name_bert_model="bert-base-uncased",
     path_pretrained_model="",
     supervised_sentence_prediction_method="friss",
-    supervised_combine_method="sum",
     device="cuda",
     logger=LoggerManager.get_logger(__name__),
 ):
@@ -59,7 +58,6 @@ def load_model(
         bert_model_name=bert_model_name,
         bert_model_name_or_path=path_name_bert_model,
         supervised_sentence_prediction_method=supervised_sentence_prediction_method,
-        supervised_combine_method=supervised_combine_method,
     )
 
     model = model.to(device)
@@ -138,13 +136,6 @@ def main():
         type=str,
         default="friss",
         help="Method used for sentence prediction",
-    )
-    # supervised_combine_method
-    model_config.add_argument(
-        "--supervised_combine_method",
-        type=str,
-        default="sum",
-        help="Method used for combining the sentences",
     )
 
     # Training Parameters
@@ -331,7 +322,6 @@ def main():
         "tau_min": args.tau_min,
         "tau_decay": args.tau_decay,
         "supervised_sentence_prediction_method": args.supervised_sentence_prediction_method,
-        "supervised_combine_method": args.supervised_combine_method,
     }
 
     model = load_model(
@@ -349,7 +339,6 @@ def main():
         path_name_bert_model=args.path_name_bert_model,
         path_pretrained_model=args.path_name_pretrained_muse_model,
         supervised_sentence_prediction_method=args.supervised_sentence_prediction_method,
-        supervised_combine_method=args.supervised_combine_method,
         device="cuda",
         logger=logger,
     )
