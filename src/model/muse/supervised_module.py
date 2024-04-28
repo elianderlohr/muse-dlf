@@ -1,3 +1,4 @@
+from errno import WSABASEERR
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -44,56 +45,38 @@ class MUSESupervised(nn.Module):
         sentence_attention_mask,
         args_mask,
     ):
-        # Print shapes of all inputs for debugging
-        print("d_p shape:", d_p.shape)
-        print("d_a0 shape:", d_a0.shape)
-        print("d_a1 shape:", d_a1.shape)
-        print("d_fx shape:", d_fx.shape)
-        print("vs shape:", vs.shape)
-        print("frameaxis_data shape:", frameaxis_data.shape)
-        print("sentence_attention_mask shape:", sentence_attention_mask.shape)
-        print("args_mask shape:", args_mask.shape)
+        batch_size, num_sentences, num_args, max_arg_length = args_mask.size()
 
-        args_frame_mask = args_mask.any(dim=3)
-        print("args_frame_mask shape:", args_frame_mask.shape)
+        # Initialize masks
+        args_sentence_mask = args_mask.any(dim=3)
+        args_frame_mask = args_mask.view(batch_size, num_sentences, -1).any(dim=2)
 
-        masked_d_p = d_p * args_frame_mask.unsqueeze(-1)
-        masked_d_a0 = d_a0 * args_frame_mask.unsqueeze(-1)
-        masked_d_a1 = d_a1 * args_frame_mask.unsqueeze(-1)
+        # mean to dim 8, 32, ignore where mask is False
+        d_p_sentence_masked = d_p * args_sentence_mask.unsqueeze(-1)
+        d_p_sentence_masked = d_p_sentence_masked.mean(dim=2)
 
-        print("masked_d_p shape:", masked_d_p.shape)
-        print("masked_d_a0 shape:", masked_d_a0.shape)
-        print("masked_d_a1 shape:", masked_d_a1.shape)
+        # mean to dim 8, ignore where mask is False
+        d_p_masked = d_p_sentence_masked * args_frame_mask.unsqueeze(-1)
+        d_p_masked = d_p_masked.mean(dim=1)
 
-        d_p_mean = masked_d_p.sum(dim=[2, 3]) / args_frame_mask.sum(dim=2).unsqueeze(
-            -1
-        ).clamp(min=1)
-        d_a0_mean = masked_d_a0.sum(dim=[2, 3]) / args_frame_mask.sum(dim=2).unsqueeze(
-            -1
-        ).clamp(min=1)
-        d_a1_mean = masked_d_a1.sum(dim=[2, 3]) / args_frame_mask.sum(dim=2).unsqueeze(
-            -1
-        ).clamp(min=1)
+        d_a0_sentence_masked = d_a0 * args_sentence_mask.unsqueeze(-1)
+        d_a0_sentence_masked = d_a0_sentence_masked.mean(dim=2)
 
-        print("d_p_mean shape:", d_p_mean.shape)
-        print("d_a0_mean shape:", d_a0_mean.shape)
-        print("d_a1_mean shape:", d_a1_mean.shape)
+        d_a0_masked = d_a0_sentence_masked * args_frame_mask.unsqueeze(-1)
+        d_a0_masked = d_a0_masked.mean(dim=1)
 
-        frame_level_mask_d_fx = args_frame_mask.unsqueeze(-1).repeat(
-            1, 1, 1, 15 // 10 + 1
-        )[:, :, :, :15]
+        d_a1_sentence_masked = d_a1 * args_sentence_mask.unsqueeze(-1)
+        d_a1_sentence_masked = d_a1_sentence_masked.mean(dim=2)
 
-        print("frame_level_mask_d_fx shape:", frame_level_mask_d_fx.shape)
+        d_a1_masked = d_a1_sentence_masked * args_frame_mask.unsqueeze(-1)
+        d_a1_masked = d_a1_masked.mean(dim=1)
 
-        masked_d_fx = d_fx * frame_level_mask_d_fx.float()
+        d_p_mean = d_p_masked
+        d_a0_mean = d_a0_masked
+        d_a1_mean = d_a1_masked
 
-        print("masked_d_fx shape:", masked_d_fx.shape)
-
-        d_fx_mean = masked_d_fx.sum(dim=2) / frame_level_mask_d_fx.sum(dim=2).clamp(
-            min=1
-        )
-
-        print("d_fx_mean shape:", d_fx_mean.shape)
+        d_fx_sentence_masked = d_fx * args_frame_mask.unsqueeze(-1)
+        d_fx_mean = d_fx_sentence_masked.mean(dim=1)
 
         # Combine and normalize the final descriptor
         w_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
@@ -106,17 +89,14 @@ class MUSESupervised(nn.Module):
         ws = self.dropout_1(vs)
         ws = self.relu(self.Wr(vs))  # vs should have shape [B, S, D_w]
 
-        ws *= sentence_attention_mask
+        # attention maks
+        sentence_mask = sentence_attention_mask.any(dim=2)
 
-        # Summing masked embeddings and computing mean across sentences
-        summed_embeddings = ws.sum(dim=1)
-        valid_sentences_count = sentence_attention_mask.sum(dim=1)
-        document_representation = summed_embeddings / valid_sentences_count.clamp(
-            min=1
-        )  # Avoid division by zero
+        ws = ws * sentence_mask.unsqueeze(-1)
+        ws = ws.mean(dim=1)
 
         # Apply second dropout and output layer
-        document_representation = self.dropout_2(document_representation)
+        document_representation = self.dropout_2(ws)
         logits = self.Wt(document_representation)
         y_hat_s = self.softmax(logits)
 
