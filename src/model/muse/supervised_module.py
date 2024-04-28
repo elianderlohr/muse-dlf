@@ -80,8 +80,7 @@ class MUSESupervised(nn.Module):
         d_fx_mean = d_fx_sentence_masked.mean(dim=1)
 
         # Combine and normalize the final descriptor
-        w_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
-        y_hat_u = w_u.sum(dim=1)
+        y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
         if self.sentence_prediction_method == "custom":
             vs = torch.cat([vs, frameaxis_data], dim=-1)
@@ -97,8 +96,7 @@ class MUSESupervised(nn.Module):
 
         # Apply second dropout and output layer
         document_representation = self.dropout_2(ws)
-        logits = self.Wt(document_representation)
-        y_hat_s = self.softmax(logits)
+        y_hat_s = self.Wt(document_representation)
 
         # print shape of y_hat_s
         print("y_hat_s.shape", y_hat_s.shape)
