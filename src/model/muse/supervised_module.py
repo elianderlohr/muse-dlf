@@ -44,7 +44,7 @@ class MUSESupervised(nn.Module):
         sentence_attention_mask,
         args_mask,
     ):
-        # print shapes of all inputs
+        # Print shapes of all inputs for debugging
         print("d_p shape:", d_p.shape)
         print("d_a0 shape:", d_a0.shape)
         print("d_a1 shape:", d_a1.shape)
@@ -54,46 +54,49 @@ class MUSESupervised(nn.Module):
         print("sentence_attention_mask shape:", sentence_attention_mask.shape)
         print("args_mask shape:", args_mask.shape)
 
-        # Adjust mask for use with d_p, d_a0, d_a1, and d_fx
-        valid_sentences_mask = sentence_attention_mask.unsqueeze(-1).unsqueeze(
+        masked_d_p = d_p * args_mask.unsqueeze(-1)
+        masked_d_a0 = d_a0 * args_mask.unsqueeze(-1)
+        masked_d_a1 = d_a1 * args_mask.unsqueeze(-1)
+
+        print("masked_d_p shape:", masked_d_p.shape)
+        print("masked_d_a0 shape:", masked_d_a0.shape)
+        print("masked_d_a1 shape:", masked_d_a1.shape)
+
+        d_p_mean = masked_d_p.sum(dim=[2, 3]) / args_mask.sum(dim=[2, 3]).unsqueeze(
             -1
-        )  # [B, S, 1, 1]
-        print("valid_sentences_mask shape:", valid_sentences_mask.shape)
+        ).clamp(min=1)
+        d_a0_mean = masked_d_a0.sum(dim=[2, 3]) / args_mask.sum(dim=[2, 3]).unsqueeze(
+            -1
+        ).clamp(min=1)
+        d_a1_mean = masked_d_a1.sum(dim=[2, 3]) / args_mask.sum(dim=[2, 3]).unsqueeze(
+            -1
+        ).clamp(min=1)
 
-        def masked_mean(tensor, mask):
-            # Ensure mask shape matches tensor
-            mask = mask.expand_as(tensor)
-            masked_tensor = tensor * mask.float()
-            sum_tensor = masked_tensor.sum(dim=2)  # Sum along the third dim (num_args)
-            count_tensor = mask.sum(dim=2)
-            mean_tensor = sum_tensor / count_tensor.clamp(min=1)  # Safe division
-            return mean_tensor
+        print("d_p_mean shape:", d_p_mean.shape)
+        print("d_a0_mean shape:", d_a0_mean.shape)
+        print("d_a1_mean shape:", d_a1_mean.shape)
 
-        # Apply masked mean
-        d_p_mean = masked_mean(d_p, valid_sentences_mask.squeeze(-1))
-        d_a0_mean = masked_mean(d_a0, valid_sentences_mask.squeeze(-1))
-        d_a1_mean = masked_mean(d_a1, valid_sentences_mask.squeeze(-1))
-        d_fx_mean = masked_mean(
-            d_fx, valid_sentences_mask.squeeze(-1).squeeze(-1)
-        )  # For d_fx, adjust mask as needed
+        frame_level_mask = args_mask.any(dim=3)
+        print("frame_level_mask shape:", frame_level_mask.shape)
 
-        def mean_across_sentences(tensor):
-            valid_sentences_tensor = (
-                tensor * valid_sentences_mask.squeeze(-1).float()
-            )  # Adjust for single feature dimension
-            sum_tensor = valid_sentences_tensor.sum(dim=1)
-            count_tensor = valid_sentences_mask.sum(dim=1)
-            mean_tensor = sum_tensor / count_tensor.clamp(min=1)
-            return mean_tensor
+        frame_level_mask_d_fx = frame_level_mask.unsqueeze(-1).repeat(
+            1, 1, 1, 15 // 10 + 1
+        )[:, :, :, :15]
 
-        # Aggregate means across sentences
-        d_p_final = mean_across_sentences(d_p_mean)
-        d_a0_final = mean_across_sentences(d_a0_mean)
-        d_a1_final = mean_across_sentences(d_a1_mean)
-        d_fx_final = mean_across_sentences(d_fx_mean)
+        print("frame_level_mask_d_fx shape:", frame_level_mask_d_fx.shape)
+
+        masked_d_fx = d_fx * frame_level_mask_d_fx.float()
+
+        print("masked_d_fx shape:", masked_d_fx.shape)
+
+        d_fx_mean = masked_d_fx.sum(dim=2) / frame_level_mask_d_fx.sum(dim=2).clamp(
+            min=1
+        )
+
+        print("d_fx_mean shape:", d_fx_mean.shape)
 
         # Combine and normalize the final descriptor
-        w_u = (d_p_final + d_a0_final + d_a1_final + d_fx_final) / 4
+        w_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
         y_hat_u = w_u.sum(dim=1)
 
         if self.sentence_prediction_method == "friss":
@@ -103,16 +106,11 @@ class MUSESupervised(nn.Module):
         ws = self.dropout_1(vs)
         ws = self.relu(self.Wr(vs))  # vs should have shape [B, S, D_w]
 
-        # Apply attention mask to ws before aggregation
-        mask = valid_sentences_mask.unsqueeze(-1).unsqueeze(-1)
-        num_spans = ws.size(1)
-        mask = mask.expand(-1, -1, num_spans, 1)
-
-        ws *= mask  # Mask out padded sentences
+        ws *= sentence_attention_mask
 
         # Summing masked embeddings and computing mean across sentences
         summed_embeddings = ws.sum(dim=1)
-        valid_sentences_count = mask.sum(dim=1)
+        valid_sentences_count = sentence_attention_mask.sum(dim=1)
         document_representation = summed_embeddings / valid_sentences_count.clamp(
             min=1
         )  # Avoid division by zero
