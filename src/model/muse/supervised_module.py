@@ -22,14 +22,18 @@ class MUSESupervised(nn.Module):
         self.dropout_1 = nn.Dropout(dropout_prob)
         self.dropout_2 = nn.Dropout(dropout_prob)
 
-        wr_shape = D_w + (
-            frameaxis_dim if sentence_prediction_method == "custom" else 0
+        wr_shape = (
+            D_w
+            + (frameaxis_dim if sentence_prediction_method == "custom" else 0)
+            * num_sentences
         )
 
-        self.Wr = nn.Linear(wr_shape, D_w)
-        self.Wt = nn.Linear(D_w, K)
+        self.Wr = nn.Linear(wr_shape, D_w * num_sentences)
+        self.Wt = nn.Linear(D_w * num_sentences, K * num_sentences)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
+
+        self.flatten = nn.Flatten(start_dim=1)
 
         self.sentence_prediction_method = sentence_prediction_method
 
@@ -44,57 +48,43 @@ class MUSESupervised(nn.Module):
         sentence_attention_mask,
         args_mask,
     ):
-        batch_size, num_sentences, num_args, max_arg_length = args_mask.size()
+        batch_size, num_sentences, _, _ = args_mask.size()
 
         # Initialize masks
         args_sentence_mask = args_mask.any(dim=3)
-        args_frame_mask = args_mask.view(batch_size, num_sentences, -1).any(dim=2)
 
         # mean to dim 8, 32, ignore where mask is False
         d_p_sentence_masked = d_p * args_sentence_mask.unsqueeze(-1)
-        d_p_sentence_masked = d_p_sentence_masked.mean(dim=2)
-
-        # mean to dim 8, ignore where mask is False
-        d_p_masked = d_p_sentence_masked * args_frame_mask.unsqueeze(-1)
-        d_p_masked = d_p_masked.mean(dim=1)
+        d_p_sentence = d_p_sentence_masked.mean(dim=2)
 
         d_a0_sentence_masked = d_a0 * args_sentence_mask.unsqueeze(-1)
-        d_a0_sentence_masked = d_a0_sentence_masked.mean(dim=2)
-
-        d_a0_masked = d_a0_sentence_masked * args_frame_mask.unsqueeze(-1)
-        d_a0_masked = d_a0_masked.mean(dim=1)
+        d_a0_sentence = d_a0_sentence_masked.mean(dim=2)
 
         d_a1_sentence_masked = d_a1 * args_sentence_mask.unsqueeze(-1)
-        d_a1_sentence_masked = d_a1_sentence_masked.mean(dim=2)
-
-        d_a1_masked = d_a1_sentence_masked * args_frame_mask.unsqueeze(-1)
-        d_a1_masked = d_a1_masked.mean(dim=1)
-
-        d_p_mean = d_p_masked
-        d_a0_mean = d_a0_masked
-        d_a1_mean = d_a1_masked
-
-        d_fx_sentence_masked = d_fx * args_frame_mask.unsqueeze(-1)
-        d_fx_mean = d_fx_sentence_masked.mean(dim=1)
+        d_a1_sentence = d_a1_sentence_masked.mean(dim=2)
 
         # Combine and normalize the final descriptor
-        y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
+        w_u = (d_p_sentence + d_a0_sentence + d_a1_sentence + d_fx) / 4
+        y_hat_u = w_u.sum(dim=1)
 
         if self.sentence_prediction_method == "custom":
             vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-        ws = self.dropout_1(vs)
-        ws = self.relu(self.Wr(vs))
+        ws_flattened = self.flatten(vs)
+
+        ws = self.dropout_1(ws_flattened)
+        ws = self.relu(self.Wr(ws))
+
+        ws = self.dropout_2(ws)
+        ws = self.Wt(ws)
+
+        ws_unflatten = ws.view(batch_size, num_sentences, -1)
 
         # attention maks
         sentence_mask = sentence_attention_mask.any(dim=2)
 
-        ws = ws * sentence_mask.unsqueeze(-1)
-        ws = ws.mean(dim=1)
-
-        # Apply second dropout and output layer
-        document_representation = self.dropout_2(ws)
-        y_hat_s = self.Wt(document_representation)
+        ws_unflatten = ws_unflatten * sentence_mask.unsqueeze(-1)
+        y_hat_s = ws_unflatten.sum(dim=1) / sentence_mask.sum(dim=1).unsqueeze(-1)
 
         # Sum the two predictions
         combined = y_hat_u + y_hat_s
