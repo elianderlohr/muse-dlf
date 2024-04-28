@@ -34,7 +34,15 @@ class MUSESupervised(nn.Module):
         self.combine_method = combine_method
 
     def forward(
-        self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data, sentence_attention_mask
+        self,
+        d_p,
+        d_a0,
+        d_a1,
+        d_fx,
+        vs,
+        frameaxis_data,
+        sentence_attention_mask,
+        args_mask,
     ):
         # print shapes of all inputs
         print("d_p shape:", d_p.shape)
@@ -44,6 +52,7 @@ class MUSESupervised(nn.Module):
         print("vs shape:", vs.shape)
         print("frameaxis_data shape:", frameaxis_data.shape)
         print("sentence_attention_mask shape:", sentence_attention_mask.shape)
+        print("args_mask shape:", args_mask.shape)
 
         # Adjust mask for use with d_p, d_a0, d_a1, and d_fx
         valid_sentences_mask = sentence_attention_mask.unsqueeze(-1).unsqueeze(
