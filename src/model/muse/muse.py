@@ -25,6 +25,8 @@ class MUSE(nn.Module):
         dropout_prob=0.3,
         bert_model_name="bert-base-uncased",
         bert_model_name_or_path="",
+        supervised_sentence_prediction_method="friss",
+        supervised_combine_method="sum",
     ):
         super(MUSE, self).__init__()
 
@@ -61,6 +63,8 @@ class MUSE(nn.Module):
             frameaxis_dim=frameaxis_dim,
             num_sentences=num_sentences,
             dropout_prob=dropout_prob,
+            sentence_prediction_method=supervised_sentence_prediction_method,
+            combine_method=supervised_combine_method,
         )
 
     def negative_sampling(self, embeddings, num_negatives=-1):
@@ -251,6 +255,7 @@ class MUSE(nn.Module):
             d_fx_aggregated,
             sentence_embeddings,
             frameaxis_data,
+            sentence_attention_masks,
         )
 
         # Identify valid (non-nan) losses

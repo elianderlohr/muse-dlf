@@ -97,7 +97,9 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
-    --max_arg_length 10
+    --max_arg_length 10 \
+    --supervised_sentence_prediction_method "avg" \
+    --supervised_sentence_prediction_method "custom"
 
 
 # Cleanup and Closeout

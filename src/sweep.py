@@ -47,6 +47,8 @@ def load_model(
     dropout_prob,
     bert_model_name="bert-base-uncased",
     path_name_bert_model="bert-base-uncased",
+    supervised_sentence_prediction_method="friss",
+    supervised_combine_method="sum",
     device="cuda",
 ):
     # Model instantiation
@@ -63,6 +65,8 @@ def load_model(
         dropout_prob=dropout_prob,
         bert_model_name=bert_model_name,
         bert_model_name_or_path=path_name_bert_model,
+        supervised_sentence_prediction_method=supervised_sentence_prediction_method,
+        supervised_combine_method=supervised_combine_method,
     )
 
     model = model.to(device)
@@ -87,6 +91,11 @@ def main():
     lr = wandb.config.lr
     K = 15
     embedding_dim = 768
+
+    supervised_sentence_prediction_method = (
+        wandb.config.supervised_sentence_prediction_method
+    )
+    supervised_combine_method = wandb.config.supervised_combine_method
 
     batch_size = wandb.config.batch_size
     epochs = 10
@@ -129,6 +138,8 @@ def main():
         dropout_prob=dropout_prob,
         bert_model_name=name_tokenizer,
         path_name_bert_model=path_name_bert_model,
+        supervised_sentence_prediction_method=supervised_sentence_prediction_method,
+        supervised_combine_method=supervised_combine_method,
         device="cuda",
     )
 
