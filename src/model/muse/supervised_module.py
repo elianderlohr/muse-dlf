@@ -54,21 +54,24 @@ class MUSESupervised(nn.Module):
         print("sentence_attention_mask shape:", sentence_attention_mask.shape)
         print("args_mask shape:", args_mask.shape)
 
-        masked_d_p = d_p * args_mask.unsqueeze(-1)
-        masked_d_a0 = d_a0 * args_mask.unsqueeze(-1)
-        masked_d_a1 = d_a1 * args_mask.unsqueeze(-1)
+        args_frame_mask = args_mask.any(dim=3)
+        print("args_frame_mask shape:", args_frame_mask.shape)
+
+        masked_d_p = d_p * args_frame_mask.unsqueeze(-1)
+        masked_d_a0 = d_a0 * args_frame_mask.unsqueeze(-1)
+        masked_d_a1 = d_a1 * args_frame_mask.unsqueeze(-1)
 
         print("masked_d_p shape:", masked_d_p.shape)
         print("masked_d_a0 shape:", masked_d_a0.shape)
         print("masked_d_a1 shape:", masked_d_a1.shape)
 
-        d_p_mean = masked_d_p.sum(dim=[2, 3]) / args_mask.sum(dim=[2, 3]).unsqueeze(
+        d_p_mean = masked_d_p.sum(dim=[2, 3]) / args_frame_mask.sum(dim=2).unsqueeze(
             -1
         ).clamp(min=1)
-        d_a0_mean = masked_d_a0.sum(dim=[2, 3]) / args_mask.sum(dim=[2, 3]).unsqueeze(
+        d_a0_mean = masked_d_a0.sum(dim=[2, 3]) / args_frame_mask.sum(dim=2).unsqueeze(
             -1
         ).clamp(min=1)
-        d_a1_mean = masked_d_a1.sum(dim=[2, 3]) / args_mask.sum(dim=[2, 3]).unsqueeze(
+        d_a1_mean = masked_d_a1.sum(dim=[2, 3]) / args_frame_mask.sum(dim=2).unsqueeze(
             -1
         ).clamp(min=1)
 
@@ -76,10 +79,7 @@ class MUSESupervised(nn.Module):
         print("d_a0_mean shape:", d_a0_mean.shape)
         print("d_a1_mean shape:", d_a1_mean.shape)
 
-        frame_level_mask = args_mask.any(dim=3)
-        print("frame_level_mask shape:", frame_level_mask.shape)
-
-        frame_level_mask_d_fx = frame_level_mask.unsqueeze(-1).repeat(
+        frame_level_mask_d_fx = args_frame_mask.unsqueeze(-1).repeat(
             1, 1, 1, 15 // 10 + 1
         )[:, :, :, :15]
 
