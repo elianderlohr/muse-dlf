@@ -23,9 +23,13 @@ class MUSESupervised(nn.Module):
         self.dropout_1 = nn.Dropout(dropout_prob)
         self.dropout_2 = nn.Dropout(dropout_prob)
 
-        self.Wr = nn.Linear(
-            D_w + (frameaxis_dim if sentence_prediction_method == "custom" else 0), D_w
+        wr_shape = D_w + (
+            frameaxis_dim if sentence_prediction_method == "custom" else 0
         )
+
+        print("wr_shape", wr_shape)
+
+        self.Wr = nn.Linear(wr_shape, D_w)
         self.Wt = nn.Linear(D_w, K)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
@@ -85,8 +89,10 @@ class MUSESupervised(nn.Module):
             # Concatenate vs with frameaxis_data if sentence_prediction_method is False
             vs = torch.cat([vs, frameaxis_data], dim=-1)
 
+        print("vs shape", vs.shape)
+
         ws = self.dropout_1(vs)
-        ws = self.relu(self.Wr(vs))  # vs should have shape [B, S, D_w]
+        ws = self.relu(self.Wr(vs))
 
         # attention maks
         sentence_mask = sentence_attention_mask.any(dim=2)
