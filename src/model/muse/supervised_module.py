@@ -55,9 +55,9 @@ class MUSESupervised(nn.Module):
         sentence_attention_mask,
         args_mask,
     ):
-        d_p_mean = torch.mean(d_p, dim=1)
-        d_a0_mean = torch.mean(d_a0, dim=1)
-        d_a1_mean = torch.mean(d_a1, dim=1)
+        d_p_mean = torch.mean(d_p, dim=2)
+        d_a0_mean = torch.mean(d_a0, dim=2)
+        d_a1_mean = torch.mean(d_a1, dim=2)
 
         # Combine and normalize the final descriptor
         w_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx) / 4
