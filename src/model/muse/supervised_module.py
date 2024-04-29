@@ -19,20 +19,28 @@ class MUSESupervised(nn.Module):
         self.D_w = D_w
         self.frameaxis_dim = frameaxis_dim
 
-        wr_shape = D_w + (
-            frameaxis_dim if sentence_prediction_method == "custom" else 0
-        )
+        D_h = D_w + (frameaxis_dim if sentence_prediction_method == "custom" else 0)
 
+        # Feed-forward networks for sentence embeddings
         self.feed_forward_sentence = nn.Sequential(
-            nn.Linear(wr_shape, D_w),
-            nn.BatchNorm1d(D_w),
+            nn.Linear(
+                D_h * num_sentences,
+                D_h * num_sentences,
+            ),
+            nn.BatchNorm1d(D_h * num_sentences),
             nn.ReLU(),
             nn.Dropout(dropout_prob),
-            nn.Linear(D_w, D_w),
+            nn.Linear(
+                D_h * num_sentences,
+                D_w,
+            ),
             nn.ReLU(),
             nn.Dropout(dropout_prob),
             nn.Linear(D_w, num_frames),
         )
+
+        # Flatten
+        self.flatten = nn.Flatten(start_dim=1)
 
         self.sentence_prediction_method = sentence_prediction_method
 
@@ -97,16 +105,9 @@ class MUSESupervised(nn.Module):
             vs = torch.cat([vs, frameaxis_data], dim=-1)
 
         # reshape vs from [batch_size, num_sentences, D_w] to [batch_size * num_sentences, D_w]
-        ws_flattened = vs.view(-1, vs.size(-1))
+        ws_flattened = self.flatten(vs)
 
-        ws = self.feed_forward_sentence(ws_flattened)
-
-        ws_unflatten = ws.view(batch_size, num_sentences, -1)
-
-        ws_unflatten_masked = ws_unflatten * sentence_mask.unsqueeze(-1)
-        y_hat_s = ws_unflatten_masked.sum(dim=1) / sentence_mask.sum(dim=1).unsqueeze(
-            -1
-        )
+        y_hat_s = self.feed_forward_sentence(ws_flattened)
 
         # Sum the two predictions
         combined = y_hat_u + y_hat_s
