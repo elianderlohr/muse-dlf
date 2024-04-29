@@ -253,8 +253,6 @@ class MUSE(nn.Module):
             d_fx_aggregated,
             sentence_embeddings,
             frameaxis_data,
-            sentence_attention_masks,
-            predicate_attention_masks,
         )
 
         # Identify valid (non-nan) losses
