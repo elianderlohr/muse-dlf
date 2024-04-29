@@ -51,28 +51,39 @@ class MUSESupervised(nn.Module):
 
         # args masks
         args_sentence_mask = args_mask.any(dim=3)
-        # attention maks
         sentence_mask = sentence_attention_mask.any(dim=2)
 
         # mean to dim 8, 32, ignore where mask is False
         d_p_sentence_masked = d_p * args_sentence_mask.unsqueeze(-1)
-        d_p_sentence = d_p_sentence_masked.sum(dim=2) / args_sentence_mask.sum(
-            dim=2
-        ).unsqueeze(-1)
+        d_p_sentence_masked_sum = d_p_sentence_masked.sum(dim=2)
+        args_sentence_mask_count = args_sentence_mask.sum(dim=2).unsqueeze(-1)
+        d_p_sentence = torch.where(
+            args_sentence_mask_count > 0,
+            d_p_sentence_masked_sum / args_sentence_mask_count,
+            torch.zeros_like(d_p_sentence_masked_sum),
+        )
         d_p_masked = d_p_sentence * sentence_mask.unsqueeze(-1)
         d_p_mean = d_p_masked.sum(dim=1) / sentence_mask.sum(dim=1).unsqueeze(-1)
 
         d_a0_sentence_masked = d_a0 * args_sentence_mask.unsqueeze(-1)
-        d_a0_sentence = d_a0_sentence_masked.sum(dim=2) / args_sentence_mask.sum(
-            dim=2
-        ).unsqueeze(-1)
+        d_a0_sentence_masked_sum = d_a0_sentence_masked.sum(dim=2)
+        args_sentence_mask_count_a0 = args_sentence_mask.sum(dim=2).unsqueeze(-1)
+        d_a0_sentence = torch.where(
+            args_sentence_mask_count_a0 > 0,
+            d_a0_sentence_masked_sum / args_sentence_mask_count_a0,
+            torch.zeros_like(d_a0_sentence_masked_sum),
+        )
         d_a0_masked = d_a0_sentence * sentence_mask.unsqueeze(-1)
         d_a0_mean = d_a0_masked.sum(dim=1) / sentence_mask.sum(dim=1).unsqueeze(-1)
 
         d_a1_sentence_masked = d_a1 * args_sentence_mask.unsqueeze(-1)
-        d_a1_sentence = d_a1_sentence_masked.sum(dim=2) / args_sentence_mask.sum(
-            dim=2
-        ).unsqueeze(-1)
+        d_a1_sentence_masked_sum = d_a1_sentence_masked.sum(dim=2)
+        args_sentence_mask_count_a1 = args_sentence_mask.sum(dim=2).unsqueeze(-1)
+        d_a1_sentence = torch.where(
+            args_sentence_mask_count_a1 > 0,
+            d_a1_sentence_masked_sum / args_sentence_mask_count_a1,
+            torch.zeros_like(d_a1_sentence_masked_sum),
+        )
         d_a1_masked = d_a1_sentence * sentence_mask.unsqueeze(-1)
         d_a1_mean = d_a1_masked.sum(dim=1) / sentence_mask.sum(dim=1).unsqueeze(-1)
 
