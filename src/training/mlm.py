@@ -210,7 +210,7 @@ def main():
         overwrite_output_dir=True,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
-        save_total_limit=2,
+        save_total_limit=5,
         report_to="wandb",
         run_name=args.project_name,
         dataloader_num_workers=accelerator.num_processes,

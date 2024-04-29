@@ -11,7 +11,7 @@
 echo "===================== Job Details ====================="
 # Activate the virtual environment
 echo "Activating virtual environment..."
-source py39venv/bin/activate
+source run/muse-dlf/muse-dlf/bin/activate
 
 # Environment Setup
 echo "Setting up environment..."
@@ -24,7 +24,6 @@ python -m pip --version
 # Display installed package versions for verification
 echo "Installed package versions:"
 python -m pip list
-
 
 # Load WANDB_API_KEY from .env file
 echo "Loading WANDB_API_KEY from .env file..."
@@ -55,7 +54,7 @@ echo "GPU status:"
 nvidia-smi
 
 # CUDA configuration
-export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # Training Script Execution
 echo "=================== Training Start ==================="
@@ -63,7 +62,7 @@ echo "=================== Training Start ==================="
 # accelerate config --config_file run/accelerate_config.yaml
 
 echo "Launching training script with Accelerate..."
-accelerate launch --multi_gpu --num_processes 2 --num_machines 1 --mixed_precision fp16 --config_file run/muse-dlf/accelerate_config.yaml src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 1000 --patience 15
+accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/accelerate_config.yaml src/training/mlm.py --wb_api_key $WANDB_API_KEY --data_path $DATA_PATH --output_path $OUTPUT_PATH --batch_size 32 --epochs 1000 --patience 15
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
