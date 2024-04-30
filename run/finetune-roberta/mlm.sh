@@ -71,7 +71,7 @@ accelerate launch --multi_gpu \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
     --batch_size 32 \
-    --epochs 1000 \
+    --epochs 100 \
     --patience 15
 
 # Cleanup and Closeout
