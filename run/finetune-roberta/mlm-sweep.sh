@@ -57,11 +57,7 @@ echo "=================== Training Start ==================="
 # accelerate config --config_file run/accelerate_config.yaml
 
 echo "Launching training script with Accelerate..."
-CUDA_VISIBLE_DEVICES=0 accelerate launch  \
-    --num_processes 1 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=0 python src/training/mlm.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
@@ -69,11 +65,7 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=1 accelerate launch  \
-    --num_processes 1 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=1 python src/training/mlm.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
@@ -81,11 +73,7 @@ CUDA_VISIBLE_DEVICES=1 accelerate launch  \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=2 accelerate launch  \
-    --num_processes 1 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=2 python src/training/mlm.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
@@ -93,11 +81,7 @@ CUDA_VISIBLE_DEVICES=2 accelerate launch  \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=3 accelerate launch  \
-    --num_processes 1 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=3 python src/training/mlm.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
