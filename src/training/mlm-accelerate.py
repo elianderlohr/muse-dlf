@@ -13,6 +13,7 @@ from transformers.integrations import WandbCallback
 from datasets import load_dataset
 import wandb
 import torch
+from accelerate import Accelerator
 import math
 import os
 from datetime import datetime
@@ -183,14 +184,25 @@ def main():
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True)
 
+    accelerator = Accelerator()
+
     # generate wandb run name use current date and time
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    custom_run_name = f"{args.project_name}-{current_time}"
+    custom_run_name = (
+        f"{args.project_name}-{accelerator.local_process_index}-{current_time}"
+    )
 
-    wandb.login(key=args.wb_api_key)
-
-    # Initialize wandb run here if you need to pass specific configuration
-    wandb.init(project=args.project_name, name=custom_run_name, config=args)
+    if accelerator.is_main_process:
+        if args.wb_api_key:
+            logging.info("Logging into wandb")
+            wandb.login(key=args.wb_api_key)
+        else:
+            raise ValueError("Wandb API key not provided")
+        # Initialize wandb run here if you need to pass specific configuration
+        wandb.init(project=args.project_name, name=custom_run_name, config=args)
+    # Ensure wandb is silent on processes that are not the main process
+    else:
+        wandb.init(mode="disabled")
 
     # create the args.output_path if it does not exist
     if not os.path.exists(args.output_path):
@@ -206,6 +218,7 @@ def main():
         save_total_limit=5,
         report_to="wandb",
         run_name=args.project_name,
+        dataloader_num_workers=accelerator.num_processes,
         evaluation_strategy="epoch",
         logging_strategy="epoch",
         save_strategy="epoch",
@@ -226,11 +239,18 @@ def main():
         ],
     )
 
+    logging.info("Set up accelerator")
+
+    model, data_collator, train_dataset, eval_dataset, trainer = accelerator.prepare(
+        model, data_collator, train_dataset, eval_dataset, trainer
+    )
+
     trainer.train()
 
     logging.info("Training complete")
 
-    wandb.finish()
+    if accelerator.is_main_process:
+        wandb.finish()
 
 
 if __name__ == "__main__":
