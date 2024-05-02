@@ -69,7 +69,7 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=0 accelerate launch  \
+CUDA_VISIBLE_DEVICES=1 accelerate launch  \
     --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
@@ -81,7 +81,7 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=0 accelerate launch  \
+CUDA_VISIBLE_DEVICES=2 accelerate launch  \
     --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
@@ -93,7 +93,7 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=0 accelerate launch  \
+CUDA_VISIBLE_DEVICES=3 accelerate launch  \
     --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
