@@ -4,8 +4,6 @@
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=muse-dlf-sweep
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=elias.anderlohr@gmail.com
 #SBATCH --gres=gpu:4
 
 echo "===================== Job Details ====================="
