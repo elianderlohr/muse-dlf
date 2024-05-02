@@ -9,7 +9,7 @@
 echo "===================== Job Details ====================="
 # Activate the virtual environment
 echo "Activating virtual environment..."
-source run/muse-dlf/muse-dlf/bin/activate
+source run/venv/bin/activate
 
 # Environment Setup
 echo "Setting up environment..."
