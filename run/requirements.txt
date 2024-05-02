@@ -13,3 +13,6 @@ pandas
 tqdm
 allennlp
 allennlp-models
+spacy
+pydantic
+evaluate
