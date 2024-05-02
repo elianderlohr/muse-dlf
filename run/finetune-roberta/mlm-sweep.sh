@@ -57,7 +57,7 @@ echo "=================== Training Start ==================="
 # accelerate config --config_file run/accelerate_config.yaml
 
 echo "Launching training script with Accelerate..."
-CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
@@ -69,7 +69,7 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
@@ -81,7 +81,7 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
@@ -93,7 +93,7 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+CUDA_VISIBLE_DEVICES=0 accelerate launch  \
     --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
