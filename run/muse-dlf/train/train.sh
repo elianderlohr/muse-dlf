@@ -78,7 +78,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --epochs 10 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
-    --path_name_bert_model models/roberta-base-finetune/finetuned-roberta/checkpoint-32454 \
+    --path_name_bert_model models/roberta-base-finetune/roberta-v1/model-1 \
     --path_srls data/srls/mfc/mfc_labeled.pkl \
     --path_frameaxis data/frameaxis/mfc/frameaxis_mft.pkl \
     --path_antonym_pairs data/axis/mft.json \
