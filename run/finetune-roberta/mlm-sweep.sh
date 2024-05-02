@@ -54,12 +54,11 @@ nvidia-smi
 # Training Script Execution
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
-export CUDA_VISIBLE_DEVICES=0,1,2,3
 # accelerate config --config_file run/accelerate_config.yaml
 
 echo "Launching training script with Accelerate..."
 CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
-    --num_processes 4 \
+    --num_processes 1 \
     --num_machines 1 \
     --mixed_precision fp16 \
     --config_file run/accelerate_config.yaml src/training/mlm.py \
@@ -69,7 +68,46 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
     --batch_size 32 \
     --learning_rate 2e-5 \
     --epochs 100 \
-    --patience 15
+    --patience 15 &
+CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+    --num_processes 1 \
+    --num_machines 1 \
+    --mixed_precision fp16 \
+    --config_file run/accelerate_config.yaml src/training/mlm.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path $OUTPUT_PATH \
+    --batch_size 16 \
+    --learning_rate 2e-5 \
+    --epochs 100 \
+    --patience 15 &
+CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+    --num_processes 1 \
+    --num_machines 1 \
+    --mixed_precision fp16 \
+    --config_file run/accelerate_config.yaml src/training/mlm.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path $OUTPUT_PATH \
+    --batch_size 8 \
+    --learning_rate 2e-5 \
+    --epochs 100 \
+    --patience 15 &
+CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+    --num_processes 1 \
+    --num_machines 1 \
+    --mixed_precision fp16 \
+    --config_file run/accelerate_config.yaml src/training/mlm.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path $OUTPUT_PATH \
+    --batch_size 64 \
+    --learning_rate 2e-5 \
+    --epochs 100 \
+    --patience 15 &
+
+# Wait for all processes to complete
+wait
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
