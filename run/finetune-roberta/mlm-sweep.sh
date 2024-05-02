@@ -85,8 +85,8 @@ CUDA_VISIBLE_DEVICES=3 python src/training/mlm.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
-    --batch_size 64 \
-    --learning_rate 2e-5 \
+    --batch_size 32 \
+    --learning_rate 2e-6 \
     --epochs 100 \
     --patience 15 &
 
