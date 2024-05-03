@@ -181,7 +181,7 @@ def main():
         raise ValueError("Model not supported")
 
     tokenizer = RobertaTokenizer.from_pretrained(model_name)
-    model = RobertaForMaskedLM.from_pretrained(model_name)
+    # model = RobertaForMaskedLM.from_pretrained(model_name)
 
     logging.info("Model and tokenizer loaded")
 
@@ -227,9 +227,12 @@ def main():
 
     logging.info("Start Hyperparameter Optimization...")
 
+    def model_init(trial):
+        return RobertaForMaskedLM.from_pretrained(model_name)
+
     trainer = Trainer(
-        model=model,
-        # model_init=model,
+        model=None,
+        model_init=model_init,
         args=training_args,
         data_collator=data_collator,
         train_dataset=train_dataset,
