@@ -228,8 +228,8 @@ def main():
     logging.info("Start Hyperparameter Optimization...")
 
     trainer = Trainer(
-        model=None,
-        model_init=model,
+        model=model,
+        # model_init=model,
         args=training_args,
         data_collator=data_collator,
         train_dataset=train_dataset,
