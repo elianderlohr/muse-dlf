@@ -66,7 +66,7 @@ accelerate launch --multi_gpu \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/1" \
-    --batch_size 32 \
+    --batch_size 16 \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15
@@ -79,7 +79,7 @@ accelerate launch --multi_gpu \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/2" \
-    --batch_size 16 \
+    --batch_size 12 \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15
@@ -96,7 +96,7 @@ accelerate launch --multi_gpu \
     --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15
-    
+
 accelerate launch --multi_gpu \
     --num_processes 4 \
     --num_machines 1 \
