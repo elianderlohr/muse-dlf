@@ -58,16 +58,55 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 # accelerate config --config_file run/accelerate_config.yaml
 
 echo "Launching training script with Accelerate..."
-CUDA_VISIBLE_DEVICES=0 accelerate launch --multi_gpu \
+accelerate launch --multi_gpu \
     --num_processes 4 \
     --num_machines 1 \
     --mixed_precision fp16 \
     --config_file run/accelerate_config.yaml src/training/mlm.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
-    --output_path $OUTPUT_PATH \
+    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/1" \
     --batch_size 32 \
     --learning_rate 2e-5 \
+    --epochs 100 \
+    --patience 15
+
+accelerate launch --multi_gpu \
+    --num_processes 4 \
+    --num_machines 1 \
+    --mixed_precision fp16 \
+    --config_file run/accelerate_config.yaml src/training/mlm.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/2" \
+    --batch_size 16 \
+    --learning_rate 2e-5 \
+    --epochs 100 \
+    --patience 15
+
+accelerate launch --multi_gpu \
+    --num_processes 4 \
+    --num_machines 1 \
+    --mixed_precision fp16 \
+    --config_file run/accelerate_config.yaml src/training/mlm.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/3" \
+    --batch_size 8 \
+    --learning_rate 2e-5 \
+    --epochs 100 \
+    --patience 15
+    
+accelerate launch --multi_gpu \
+    --num_processes 4 \
+    --num_machines 1 \
+    --mixed_precision fp16 \
+    --config_file run/accelerate_config.yaml src/training/mlm.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/4" \
+    --batch_size 32 \
+    --learning_rate 2e-6 \
     --epochs 100 \
     --patience 15
 
