@@ -1,5 +1,6 @@
 import argparse
 import logging
+from turtle import back
 from transformers import (
     RobertaForMaskedLM,
     RobertaTokenizer,
@@ -90,6 +91,17 @@ def load_data(data_path, tokenizer):
     eval_dataset = eval_dataset.map(tokenize_function, batched=True)
 
     return train_dataset, eval_dataset
+
+
+def wandb_hp_space(trial):
+    return {
+        "method": "bayes",
+        "metric": {"name": "perplexity", "goal": "minimize"},
+        "parameters": {
+            "per_device_train_batch_size": {"values": [8, 16, 32, 48]},
+            "learning_rate": {"distribution": "log_uniform", "min": 1e-6, "max": 1e-4},
+        },
+    }
 
 
 def main():
@@ -202,20 +214,22 @@ def main():
         output_dir=args.output_path,
         overwrite_output_dir=True,
         num_train_epochs=args.epochs,
-        per_device_train_batch_size=args.batch_size,
+        # per_device_train_batch_size=args.batch_size,
         save_total_limit=5,
         report_to="wandb",
+        fp16=True,
         run_name=args.project_name,
         evaluation_strategy="epoch",
         logging_strategy="epoch",
         save_strategy="epoch",
-        learning_rate=args.learning_rate,
+        # learning_rate=args.learning_rate,
     )
 
-    logging.info("Start training...")
+    logging.info("Start Hyperparameter Optimization...")
 
     trainer = Trainer(
-        model=model,
+        model=None,
+        model_init=model,
         args=training_args,
         data_collator=data_collator,
         train_dataset=train_dataset,
@@ -226,9 +240,14 @@ def main():
         ],
     )
 
-    trainer.train()
+    trainer.hyperparameter_search(
+        direction="minimize",
+        backend="wandb",
+        hp_space=wandb_hp_space,
+        n_trials=5,
+    )
 
-    logging.info("Training complete")
+    logging.info("Hyperparameter Optimization complete")
 
     wandb.finish()
 
