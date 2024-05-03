@@ -51,42 +51,35 @@ echo "Output path: $OUTPUT_PATH"
 echo "GPU status:"
 nvidia-smi
 
+
 # Training Script Execution
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
 # accelerate config --config_file run/accelerate_config.yaml
 
 echo "Launching training script with Accelerate..."
-CUDA_VISIBLE_DEVICES=0 python src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=0 python src/training/mlm-hp.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/1/" \
-    --batch_size 32 \
-    --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=1 python src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=1 python src/training/mlm-hp.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/2/" \
-    --batch_size 16 \
-    --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=2 python src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=2 python src/training/mlm-hp.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/3/" \
-    --batch_size 8 \
-    --learning_rate 2e-5 \
     --epochs 100 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=3 python src/training/mlm.py \
+CUDA_VISIBLE_DEVICES=3 python src/training/mlm-hp.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/4/" \
-    --batch_size 32 \
-    --learning_rate 2e-6 \
     --epochs 100 \
     --patience 15 &
 
