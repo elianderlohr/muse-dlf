@@ -57,6 +57,7 @@ CUDA_VISIBLE_DEVICES=0 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
+    --model_name roberta-base \
     --batch_size 8 \
     --epochs 1 \
     --patience 15 &
@@ -64,6 +65,7 @@ CUDA_VISIBLE_DEVICES=1 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
+    --model_name roberta-base \
     --batch_size 16 \
     --epochs 1 \
     --patience 15 &
@@ -71,6 +73,7 @@ CUDA_VISIBLE_DEVICES=2 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
+    --model_name roberta-base \
     --batch_size 24 \
     --epochs 1 \
     --patience 15 &
@@ -78,6 +81,7 @@ CUDA_VISIBLE_DEVICES=3 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
+    --model_name roberta-base \
     --batch_size 32 \
     --epochs 1 \
     --patience 15 &
