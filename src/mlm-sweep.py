@@ -37,6 +37,8 @@ def main():
 
     # Iterate over each learning rate and instantiate RoBERTaMLM class
     for learning_rate in learning_rates:
+        print(f"Training with learning rate: {learning_rate}")
+
         args.learning_rate = learning_rate
         trainer = RoBERTaMLM(args)
         trainer.train_muse()
