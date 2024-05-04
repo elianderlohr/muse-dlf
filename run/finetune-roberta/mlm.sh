@@ -1,6 +1,4 @@
 #!/bin/bash
-
-# SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=roberta-base-finetune
@@ -43,7 +41,7 @@ fi
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/"
-OUTPUT_PATH="models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/"
+OUTPUT_PATH="models/roberta-base-finetune/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $OUTPUT_PATH"
 
@@ -54,61 +52,38 @@ nvidia-smi
 # Training Script Execution
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
-export CUDA_VISIBLE_DEVICES=0,1,2,3
-# accelerate config --config_file run/accelerate_config.yaml
-
 echo "Launching training script with Accelerate..."
-accelerate launch --multi_gpu \
-    --num_processes 4 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
+export CUDA_VISIBLE_DEVICES=0 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/1" \
-    --batch_size 16 \
-    --learning_rate 2e-5 \
-    --epochs 100 \
-    --patience 15
-
-accelerate launch --multi_gpu \
-    --num_processes 4 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
-    --wb_api_key $WANDB_API_KEY \
-    --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/2" \
-    --batch_size 12 \
-    --learning_rate 2e-5 \
-    --epochs 100 \
-    --patience 15
-
-accelerate launch --multi_gpu \
-    --num_processes 4 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
-    --wb_api_key $WANDB_API_KEY \
-    --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/3" \
+    --output_path $OUTPUT_PATH \
     --batch_size 8 \
-    --learning_rate 2e-5 \
-    --epochs 100 \
-    --patience 15
-
-accelerate launch --multi_gpu \
-    --num_processes 4 \
-    --num_machines 1 \
-    --mixed_precision fp16 \
-    --config_file run/accelerate_config.yaml src/training/mlm.py \
+    --epochs 1 \
+    --patience 15 &
+export CUDA_VISIBLE_DEVICES=1 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/4" \
+    --output_path $OUTPUT_PATH \
+    --batch_size 16 \
+    --epochs 1 \
+    --patience 15 &
+export CUDA_VISIBLE_DEVICES=2 python src/mlm-sweep.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path $OUTPUT_PATH \
+    --batch_size 24 \
+    --epochs 1 \
+    --patience 15 &
+export CUDA_VISIBLE_DEVICES=3 python src/mlm-sweep.py \
+    --wb_api_key $WANDB_API_KEY \
+    --data_path $DATA_PATH \
+    --output_path $OUTPUT_PATH \
     --batch_size 32 \
-    --learning_rate 2e-6 \
-    --epochs 100 \
-    --patience 15
+    --epochs 1 \
+    --patience 15 &
+
+# Wait for all processes to complete
+wait
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
