@@ -1,6 +1,4 @@
 #!/bin/bash
-
-# SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=roberta-base-finetune
@@ -43,7 +41,7 @@ fi
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/"
-OUTPUT_PATH="models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/"
+OUTPUT_PATH="models/roberta-base-finetune/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $OUTPUT_PATH"
 
@@ -51,36 +49,37 @@ echo "Output path: $OUTPUT_PATH"
 echo "GPU status:"
 nvidia-smi
 
-
 # Training Script Execution
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
-# accelerate config --config_file run/accelerate_config.yaml
-
 echo "Launching training script with Accelerate..."
-CUDA_VISIBLE_DEVICES=0 python src/training/mlm-hp.py \
+export CUDA_VISIBLE_DEVICES=0 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/1/" \
-    --epochs 100 \
+    --output_path $OUTPUT_PATH \
+    --batch_size 8 \
+    --epochs 1 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=1 python src/training/mlm-hp.py \
+export CUDA_VISIBLE_DEVICES=1 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/2/" \
-    --epochs 100 \
+    --output_path $OUTPUT_PATH \
+    --batch_size 16 \
+    --epochs 1 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=2 python src/training/mlm-hp.py \
+export CUDA_VISIBLE_DEVICES=2 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/3/" \
-    --epochs 100 \
+    --output_path $OUTPUT_PATH \
+    --batch_size 24 \
+    --epochs 1 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=3 python src/training/mlm-hp.py \
+export CUDA_VISIBLE_DEVICES=3 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
-    --output_path "models/roberta-base-finetune/$(date +'%Y-%m-%d_%H-%M-%S')/4/" \
-    --epochs 100 \
+    --output_path $OUTPUT_PATH \
+    --batch_size 32 \
+    --epochs 1 \
     --patience 15 &
 
 # Wait for all processes to complete
