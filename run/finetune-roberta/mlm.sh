@@ -59,7 +59,7 @@ CUDA_VISIBLE_DEVICES=0 python src/mlm-sweep.py \
     --output_path $OUTPUT_PATH \
     --project_name "roberta-base-finetune" \
     --batch_size 8 \
-    --epochs 1 \
+    --epochs 100 \
     --patience 15 &
 CUDA_VISIBLE_DEVICES=1 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
@@ -67,7 +67,7 @@ CUDA_VISIBLE_DEVICES=1 python src/mlm-sweep.py \
     --output_path $OUTPUT_PATH \
     --project_name "roberta-base-finetune" \
     --batch_size 16 \
-    --epochs 1 \
+    --epochs 100 \
     --patience 15 &
 CUDA_VISIBLE_DEVICES=2 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
@@ -75,7 +75,7 @@ CUDA_VISIBLE_DEVICES=2 python src/mlm-sweep.py \
     --output_path $OUTPUT_PATH \
     --project_name "roberta-base-finetune" \
     --batch_size 24 \
-    --epochs 1 \
+    --epochs 100 \
     --patience 15 &
 CUDA_VISIBLE_DEVICES=3 python src/mlm-sweep.py \
     --wb_api_key $WANDB_API_KEY \
@@ -83,7 +83,7 @@ CUDA_VISIBLE_DEVICES=3 python src/mlm-sweep.py \
     --output_path $OUTPUT_PATH \
     --project_name "roberta-base-finetune" \
     --batch_size 32 \
-    --epochs 1 \
+    --epochs 100 \
     --patience 15 &
 
 # Wait for all processes to complete
