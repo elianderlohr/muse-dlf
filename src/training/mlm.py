@@ -3,6 +3,7 @@ import logging
 import math
 import os
 from datetime import datetime
+import random
 
 import torch
 import wandb
@@ -120,7 +121,9 @@ class RoBERTaMLM:
 
         # generate wandb run name use current date and time
         current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        custom_run_name = f"{self.args.project_name}-{current_time}"
+        # generate random number between 1 and 99999
+        random_number = str(random.randint(1, 99999))
+        custom_run_name = f"{self.args.project_name}-{current_time}-{random_number}"
 
         wandb.login(key=self.args.wb_api_key)
 
