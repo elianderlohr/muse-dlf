@@ -6,3 +6,7 @@
 ## TODO FrameAxis
 
 - [ ] Apply lemmatization to find words for microframe creation
+
+## TODO SRL / MuSE-DLF
+
+- [ ] Sentences are sometimes not correctly split e.g. "Our Sen. John McCain" -> "Our Sen." and "John McCain" which leads to wrong SRL results
