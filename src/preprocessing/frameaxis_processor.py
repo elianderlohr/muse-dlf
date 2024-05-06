@@ -16,6 +16,8 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import string
 import json
+import nltk
+from nltk.stem import WordNetLemmatizer
 
 from utils.logging_manager import LoggerManager
 
@@ -50,6 +52,7 @@ class FrameAxisProcessor:
         self.df = df
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
+        self.lemmatizer = WordNetLemmatizer()
 
         if bert_model_name == "bert-base-uncased":
             self.tokenizer = BertTokenizerFast.from_pretrained(name_tokenizer)
@@ -99,7 +102,9 @@ class FrameAxisProcessor:
         ):
             # Access the article text from the 'text' column
             article_text = row["text"]
-            embeddings = self.get_embeddings_for_words(article_text, frame_axis_words)
+            embeddings = self.get_embeddings_for_words(
+                article_text, frame_axis_words, True
+            )
 
             # Add the embeddings to the microframes based on the word
             for word, embedding in embeddings.items():
@@ -451,17 +456,24 @@ class FrameAxisProcessor:
 
         return filtered_words, filtered_embeddings_tensor
 
-    def get_embeddings_for_words(self, sentence, words):
+    def get_embeddings_for_words(self, sentence, words, use_lemmatization=False):
         """
         Get the contextualized embeddings for a list of words using the sentence as context.
 
         :param sentence: The sentence to get embeddings from.
         :param words: A list of words to get embeddings for.
+        :param use_lemmatization: Boolean to control lemmatization.
         :return: A dictionary containing the average embeddings for each word.
         """
         sentence_words, word_embeddings = self.get_embeddings_for_text(
             sentence, remove_stopwords=False, remove_non_words=False
         )
+
+        if use_lemmatization:
+            sentence_words = [
+                self.lemmatizer.lemmatize(word) for word in sentence_words
+            ]
+            words = [self.lemmatizer.lemmatize(word) for word in words]
 
         # Initialize dictionary to hold word embeddings
         embeddings = {}
@@ -470,9 +482,7 @@ class FrameAxisProcessor:
         for word in words:
             if word in sentence_words:
                 word_idx = sentence_words.index(word)
-
-                embedding = word_embeddings[word_idx]
-
+                embedding = word_embeddings[sentence_words[word_idx]]
                 embeddings[word] = embedding
 
         return embeddings
