@@ -54,7 +54,7 @@ done
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/data_prepared_cleaned.json"
+DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
 SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $SAVE_PATH"

@@ -47,7 +47,7 @@ nvidia-smi
 
 # CUDA configuration
 
-export PATH_DATA="data/mfc/data_prepared_cleaned.json"
+export PATH_DATA="data/mfc/immigration_labeled_preprocessed.json"
 export SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 export NAME_TOKENIZER="roberta-base"
 export PATH_NAME_BERT_MODEL="models/roberta-base-finetune/roberta-v1/model-1"

@@ -1,11 +1,12 @@
 # TODO
 
-- [ ] Test if balancing of unsupervised loss (e.g. divide by num sentences) is necessary/useful
+- [x] Test if balancing of unsupervised loss (e.g. divide by num sentences) is necessary/useful
+  - Balacing by number of batch_size x num_sentences x num_args is necessary and useful
 - [ ] Test if adding frameaxis data to the supervised sentenced prediction is useful
 
 ## TODO FrameAxis
 
-- [ ] Apply lemmatization to find words for microframe creation
+- [x] Apply lemmatization to find words for microframe creation
 
 ## TODO SRL / MuSE-DLF
 

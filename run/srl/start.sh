@@ -25,7 +25,7 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/data_prepared_cleaned.json"
+DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
 OUTPUT_PATH="data/srls/mfc/mfc_labeled.pkl"
 
 echo "Data path: $DATA_PATH"

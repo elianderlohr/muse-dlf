@@ -25,7 +25,7 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/data_prepared_cleaned.json"
+DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
 PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
 MODEL_PATH="models/roberta-base-finetune/roberta-v1/model-1"
