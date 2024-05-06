@@ -12,12 +12,11 @@ from transformers import (
 )
 from nltk.corpus import stopwords
 import nltk
+from nltk.stem import WordNetLemmatizer
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import string
 import json
-import nltk
-from nltk.stem import WordNetLemmatizer
 
 from utils.logging_manager import LoggerManager
 
@@ -103,7 +102,7 @@ class FrameAxisProcessor:
             # Access the article text from the 'text' column
             article_text = row["text"]
             embeddings = self.get_embeddings_for_words(
-                article_text, frame_axis_words, True
+                article_text, frame_axis_words, use_lemmatization=True
             )
 
             # Add the embeddings to the microframes based on the word
@@ -482,7 +481,9 @@ class FrameAxisProcessor:
         for word in words:
             if word in sentence_words:
                 word_idx = sentence_words.index(word)
-                embedding = word_embeddings[sentence_words[word_idx]]
+
+                embedding = word_embeddings[word_idx]
+
                 embeddings[word] = embedding
 
         return embeddings
