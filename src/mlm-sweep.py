@@ -35,6 +35,9 @@ def main():
         args.learning_rate_min, args.learning_rate_max, args.num_learning_rates
     )
 
+    # skip the first learning rate
+    learning_rates = learning_rates[1:]
+
     # Iterate over each learning rate and instantiate RoBERTaMLM class
     for learning_rate in learning_rates:
         print(f"Training with learning rate: {learning_rate}")
