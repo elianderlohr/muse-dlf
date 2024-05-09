@@ -508,17 +508,6 @@ class FrameAxisProcessor:
         if self.force_recalculate:
             logger.info("Calculating FrameAxis Embeddings")
 
-            # get dir from dataframe_path
-            base_path = os.path.dirname(self.dataframe_path)
-
-            # load from frameaxis_antonym_embeddings if exists
-            if os.path.exists(base_path + "/frameaxis_antonym_embeddings.pkl"):
-                logger.info("Loading FrameAxis Embeddings")
-                with open(base_path + "/frameaxis_antonym_embeddings.pkl", "rb") as f:
-                    antonym_pairs_embeddings = pickle.load(f)
-            else:
-                antonym_pairs_embeddings = self.precompute_antonym_embeddings()
-
             # get filename from dataframe_path
             filename = os.path.basename(self.dataframe_path)
 
@@ -527,9 +516,17 @@ class FrameAxisProcessor:
                 ".pkl", "_antonym_embeddings.pkl"
             )
 
-            # dump to pickle
-            with open(antonym_pairs_embeddings_filename, "wb") as f:
-                pickle.dump(antonym_pairs_embeddings, f)
+            # load from frameaxis_antonym_embeddings if exists
+            if os.path.exists(antonym_pairs_embeddings_filename):
+                logger.info("Loading FrameAxis Embeddings")
+                with open(antonym_pairs_embeddings_filename, "rb") as f:
+                    antonym_pairs_embeddings = pickle.load(f)
+            else:
+                antonym_pairs_embeddings = self.precompute_antonym_embeddings()
+
+                # dump to pickle
+                with open(antonym_pairs_embeddings_filename, "wb") as f:
+                    pickle.dump(antonym_pairs_embeddings, f)
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
 
