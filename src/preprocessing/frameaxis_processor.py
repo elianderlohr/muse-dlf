@@ -51,6 +51,7 @@ class FrameAxisProcessor:
         self.df = df
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
+
         self.lemmatizer = WordNetLemmatizer()
 
         if bert_model_name == "bert-base-uncased":
@@ -349,12 +350,15 @@ class FrameAxisProcessor:
             df, antonym_pairs_embeddings
         )
 
-        # get dir from dataframe_path
-        base_path = os.path.dirname(self.dataframe_path)
+        # get filename from dataframe_path
+        filename = os.path.basename(self.dataframe_path)
+
+        # create new file name for contributions by append contributions to filename
+        contributions_filename = filename.replace(".pkl", "_contributions.pkl")
 
         # dump to pickle
-        # with open(base_path + "/frameaxis_word_contributions_projection.pkl", "wb") as f:
-        #     pickle.dump(word_contributions_df, f)
+        with open(contributions_filename, "wb") as f:
+            pickle.dump(word_contributions_df, f)
 
         logger.info("Step 2: Calculating microframe bias...")
         # Step 2: Calculate microframe bias for each article and dimension
@@ -514,6 +518,18 @@ class FrameAxisProcessor:
                     antonym_pairs_embeddings = pickle.load(f)
             else:
                 antonym_pairs_embeddings = self.precompute_antonym_embeddings()
+
+            # get filename from dataframe_path
+            filename = os.path.basename(self.dataframe_path)
+
+            # create new file name for antonym_pairs_embeddings by append antonym_pairs_embeddings to filename
+            antonym_pairs_embeddings_filename = filename.replace(
+                ".pkl", "_antonym_embeddings.pkl"
+            )
+
+            # dump to pickle
+            with open(antonym_pairs_embeddings_filename, "wb") as f:
+                pickle.dump(antonym_pairs_embeddings, f)
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
 

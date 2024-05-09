@@ -7,7 +7,8 @@
 ## TODO FrameAxis
 
 - [x] Apply lemmatization to find words for microframe creation
+- [ ] Use the span annotations to see how the microframes are predicting
 
 ## TODO SRL / MuSE-DLF
 
-- [ ] Sentences are sometimes not correctly split e.g. "Our Sen. John McCain" -> "Our Sen." and "John McCain" which leads to wrong SRL results
+- [x] Sentences are sometimes not correctly split e.g. "Our Sen. John McCain" -> "Our Sen." and "John McCain" which leads to wrong SRL results
