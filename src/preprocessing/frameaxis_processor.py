@@ -350,14 +350,14 @@ class FrameAxisProcessor:
             df, antonym_pairs_embeddings
         )
 
-        # get filename from dataframe_path
-        filename = os.path.basename(self.dataframe_path)
-
         # create new file name for contributions by append contributions to filename
-        contributions_filename = filename.replace(".pkl", "_contributions.pkl")
+        contributions_filename = self.dataframe_path.replace(
+            ".pkl", "_contributions.pkl"
+        )
 
         # dump to pickle
         with open(contributions_filename, "wb") as f:
+            print("Saving contributions to " + contributions_filename)
             pickle.dump(word_contributions_df, f)
 
         logger.info("Step 2: Calculating microframe bias...")
@@ -508,11 +508,8 @@ class FrameAxisProcessor:
         if self.force_recalculate:
             logger.info("Calculating FrameAxis Embeddings")
 
-            # get filename from dataframe_path
-            filename = os.path.basename(self.dataframe_path)
-
             # create new file name for antonym_pairs_embeddings by append antonym_pairs_embeddings to filename
-            antonym_pairs_embeddings_filename = filename.replace(
+            antonym_pairs_embeddings_filename = self.dataframe_path.replace(
                 ".pkl", "_antonym_embeddings.pkl"
             )
 
