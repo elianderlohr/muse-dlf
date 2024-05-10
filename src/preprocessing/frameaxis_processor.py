@@ -522,10 +522,15 @@ class FrameAxisProcessor:
                 with open(antonym_pairs_embeddings_filename, "rb") as f:
                     antonym_pairs_embeddings = pickle.load(f)
             else:
+                logger.info("Precomputing FrameAxis Embeddings")
                 antonym_pairs_embeddings = self.precompute_antonym_embeddings()
 
                 # dump to pickle
                 with open(antonym_pairs_embeddings_filename, "wb") as f:
+                    logger.info(
+                        "Saving FrameAxis Embeddings to "
+                        + antonym_pairs_embeddings_filename
+                    )
                     pickle.dump(antonym_pairs_embeddings, f)
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)

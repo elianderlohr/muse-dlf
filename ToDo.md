@@ -7,7 +7,10 @@
 ## TODO FrameAxis
 
 - [x] Apply lemmatization to find words for microframe creation
-- [ ] Use the span annotations to see how the microframes are predicting
+- [ ] FrameAxis Analysis:
+  - [ ] Analyse how only the microframe bias / intensity value for sentences annoated with span based document frame are placed in bias / intensity chart
+  - [ ] Show microframe bias and intensity shift per Word, e.g. identify how different words shift the bias based on the document frame
+  - [ ] Plot the bias and intensity per document instead of sentence
 
 ## TODO SRL / MuSE-DLF
 
