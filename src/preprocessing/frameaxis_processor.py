@@ -347,6 +347,7 @@ class FrameAxisProcessor:
 
         logger.info("Calculating all metrics...")
         logger.info("Step 1: Calculating word contributions...")
+        logger.info("     DEBUG: df shape: " + str(df.shape))
         # Step 1: Calculate word contributions for each article and dimension
         word_contributions_df = self.calculate_word_contributions(
             df, antonym_pairs_embeddings
