@@ -46,6 +46,13 @@ def main():
         required=True,
         help="Path where the embeddings JSON file will be saved",
     )
+    # path_microframes
+    parser.add_argument(
+        "--path_microframes",
+        type=str,
+        default=None,
+        help="Path to the pickle file containing the calculated microframes.",
+    )
 
     # sample size
     parser.add_argument(
@@ -68,6 +75,7 @@ def main():
         df,
         dataframe_path=args.output_path,
         force_recalculate=True,
+        path_microframes=args.path_microframes,
         bert_model_name="roberta-base",
         name_tokenizer="roberta-base",
         path_name_bert_model=args.model_path,

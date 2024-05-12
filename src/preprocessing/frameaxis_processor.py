@@ -29,6 +29,7 @@ class FrameAxisProcessor:
         df,
         path_antonym_pairs="frameaxis/axes/custom.tsv",
         dataframe_path=None,
+        path_microframes="",
         bert_model_name="bert-base-uncased",
         name_tokenizer="bert-base-uncased",
         path_name_bert_model="bert-base-uncased",
@@ -51,6 +52,7 @@ class FrameAxisProcessor:
         self.df = df
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
+        self.path_microframes = path_microframes
 
         self.lemmatizer = WordNetLemmatizer()
 
@@ -390,7 +392,7 @@ class FrameAxisProcessor:
         return final_df
 
     def get_embeddings_for_text(
-        self, text, remove_stopwords=True, remove_non_words=True
+        self, text, remove_stopwords=True, remove_non_words=True, remove_numbers=True
     ):
         inputs = self.tokenizer(
             text,
@@ -437,6 +439,9 @@ class FrameAxisProcessor:
             if remove_non_words and all(
                 char in self.non_word_characters for char in normalized_word
             ):
+                continue
+
+            if remove_numbers and normalized_word.isnumeric():
                 continue
 
             # If the word passes the filters, append its embeddings and the word itself
@@ -508,10 +513,13 @@ class FrameAxisProcessor:
         if self.force_recalculate:
             logger.info("Calculating FrameAxis Embeddings")
 
-            # create new file name for antonym_pairs_embeddings by append antonym_pairs_embeddings to filename
-            antonym_pairs_embeddings_filename = self.dataframe_path.replace(
-                ".pkl", "_antonym_embeddings.pkl"
-            )
+            if len(self.path_microframes) > 0 and os.path.exists(self.path_microframes):
+                antonym_pairs_embeddings_filename = self.self.path_microframes
+            else:
+                # create new file name for antonym_pairs_embeddings by append antonym_pairs_embeddings to filename
+                antonym_pairs_embeddings_filename = self.dataframe_path.replace(
+                    ".pkl", "_antonym_embeddings.pkl"
+                )
 
             # load from frameaxis_antonym_embeddings if exists
             if os.path.exists(antonym_pairs_embeddings_filename):
