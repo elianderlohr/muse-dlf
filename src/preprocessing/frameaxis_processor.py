@@ -513,7 +513,11 @@ class FrameAxisProcessor:
         if self.force_recalculate:
             logger.info("Calculating FrameAxis Embeddings")
 
-            if len(self.path_microframes) > 0 and os.path.exists(self.path_microframes):
+            if (
+                self.path_microframes
+                and len(self.path_microframes) > 0
+                and os.path.exists(self.path_microframes)
+            ):
                 antonym_pairs_embeddings_filename = self.self.path_microframes
             else:
                 # create new file name for antonym_pairs_embeddings by append antonym_pairs_embeddings to filename

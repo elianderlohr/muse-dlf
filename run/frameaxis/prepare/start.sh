@@ -37,6 +37,7 @@ echo "Antonym pairs path: $PATH_ANTONYM_PAIRS"
 echo "Model path: $MODEL_PATH"
 echo "Output path: $OUTPUT_PATH"
 echo "Dimensions: $DIM_NAMES"
+echo "Microframe path: $PATH_MICROFRAME"
 
 # GPU Setup and Verification
 echo "GPU status:"
@@ -52,7 +53,8 @@ python src/frameaxis.py \
     --path_antonym_pairs $PATH_ANTONYM_PAIRS \
     --model_path $MODEL_PATH \
     --output_path $OUTPUT_PATH \
-    --dim_names $DIM_NAMES
+    --dim_names $DIM_NAMES \
+    --path_microframe $PATH_MICROFRAME
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
