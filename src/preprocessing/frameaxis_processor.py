@@ -353,6 +353,11 @@ class FrameAxisProcessor:
             df, antonym_pairs_embeddings
         )
 
+        logger.info(
+            "     DEBUG: word_contributions_df shape: "
+            + str(word_contributions_df.shape)
+        )
+
         # create new file name for contributions by append contributions to filename
         contributions_filename = self.dataframe_path.replace(
             ".pkl", "_contributions.pkl"
@@ -367,16 +372,26 @@ class FrameAxisProcessor:
         # Step 2: Calculate microframe bias for each article and dimension
         microframe_bias_df = self.calculate_microframe_bias(word_contributions_df)
 
+        logger.info(
+            "     DEBUG: microframe_bias_df shape: " + str(microframe_bias_df.shape)
+        )
+
         logger.info("Step 3: Calculating microframe intensity...")
         # Step 3: Calculate microframe intensity for each article and dimension
         microframe_intensity_df = self.calculate_microframe_intensity(
             word_contributions_df
         )
 
-        logger.info("Step 4: Merging bias and intensity dataframes...")
+        logger.info(
+            "     DEBUG: microframe_intensity_df shape: "
+            + str(microframe_intensity_df.shape)
+        )
 
+        logger.info("Step 4: Merging bias and intensity dataframes...")
         # Merge the bias and intensity DataFrames row-wise
         final_df = pd.concat([microframe_bias_df, microframe_intensity_df], axis=1)
+
+        logger.info("     DEBUG: final_df shape: " + str(final_df.shape))
 
         # Reformat the final DataFrame to match the desired structure
         final_df.reset_index(inplace=True)
