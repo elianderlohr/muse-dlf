@@ -36,6 +36,7 @@ class FrameAxisProcessor:
         force_recalculate=False,
         save_type="pickle",
         dim_names=["positive", "negative"],
+        word_blacklist=[],
     ):
         """
         FrameAxisProcessor constructor
@@ -53,6 +54,8 @@ class FrameAxisProcessor:
         self.force_recalculate = force_recalculate
         self.dataframe_path = dataframe_path
         self.path_microframes = path_microframes
+
+        self.word_blacklist = word_blacklist
 
         self.lemmatizer = WordNetLemmatizer()
 
@@ -408,7 +411,12 @@ class FrameAxisProcessor:
         return final_df
 
     def get_embeddings_for_text(
-        self, text, remove_stopwords=True, remove_non_words=True, remove_numbers=True
+        self,
+        text,
+        remove_stopwords=True,
+        remove_non_words=True,
+        remove_numbers=True,
+        remove_word_blacklist=True,
     ):
         inputs = self.tokenizer(
             text,
@@ -458,6 +466,9 @@ class FrameAxisProcessor:
                 continue
 
             if remove_numbers and normalized_word.isnumeric():
+                continue
+
+            if remove_word_blacklist and normalized_word in self.word_blacklist:
                 continue
 
             # If the word passes the filters, append its embeddings and the word itself
