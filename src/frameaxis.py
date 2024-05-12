@@ -82,7 +82,17 @@ def main():
         path_antonym_pairs=args.path_antonym_pairs,
         save_type="pickle",
         dim_names=args.dim_names.split(","),
-        word_blacklist=["immigrant", "immigration", "illegal", "legal"],
+        word_blacklist=[
+            "immigrant",
+            "immigrants",
+            "immigration",
+            "illegal",
+            "illegally",
+            "illegals",
+            "legally",
+            "legalize",
+            "legal",
+        ],
     )
 
     frameaxis_df = frameaxis_processor.get_frameaxis_data()
