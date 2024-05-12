@@ -518,7 +518,7 @@ class FrameAxisProcessor:
                 and len(self.path_microframes) > 0
                 and os.path.exists(self.path_microframes)
             ):
-                antonym_pairs_embeddings_filename = self.self.path_microframes
+                antonym_pairs_embeddings_filename = self.path_microframes
             else:
                 # create new file name for antonym_pairs_embeddings by append antonym_pairs_embeddings to filename
                 antonym_pairs_embeddings_filename = self.dataframe_path.replace(
