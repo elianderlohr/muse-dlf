@@ -57,9 +57,17 @@ class MUSESupervised(nn.Module):
         d_a0_mean = torch.mean(d_a0, dim=2).mean(dim=1)
         d_a1_mean = torch.mean(d_a1, dim=2).mean(dim=1)
 
+        # print shapes of all tensors
+        print(f"d_p_mean: {d_p_mean.shape}")
+        print(f"d_a0_mean: {d_a0_mean.shape}")
+        print(f"d_a1_mean: {d_a1_mean.shape}")
+        print(f"d_fx: {d_fx.shape}")
+
         # Combine and normalize the final descriptor
         y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx) / 4
         # y_hat_u = w_u.sum(dim=1)
+
+        print(f"y_hat_u: {y_hat_u.shape}")
 
         if self.sentence_prediction_method == "custom":
             vs = torch.cat([vs, frameaxis_data], dim=-1)
