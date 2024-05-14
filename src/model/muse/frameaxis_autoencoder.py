@@ -23,7 +23,7 @@ class FrameAxisAutoencoder(nn.Module):
         # Additional layers and parameters
         self.dropout1 = nn.Dropout(dropout_prob)
         self.dropout2 = nn.Dropout(dropout_prob)
-        self.batch_norm = nn.BatchNorm1d(D_h)
+        self.batch_norm = nn.BatchNorm1d(frameaxis_dim)
         self.activation = nn.ReLU()
         self.activation2 = nn.Sigmoid()
 
