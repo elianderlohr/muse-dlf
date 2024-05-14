@@ -4,17 +4,17 @@ import torch.nn.functional as F
 from torch.nn.functional import log_softmax, softmax
 
 
-class FrameAxisAutoencoder(nn.Module):
+class OLDFrameAxisAutoencoder(nn.Module):
     def __init__(self, D_w, D_h, frameaxis_dim, K, dropout_prob=0.3):
-        super(FrameAxisAutoencoder, self).__init__()
+        super(OLDFrameAxisAutoencoder, self).__init__()
 
         self.K = K
 
         # Shared feed-forward layer for all views
-        self.feed_forward_1 = nn.Linear(frameaxis_dim, frameaxis_dim)
+        self.feed_forward_1 = nn.Linear(D_w + frameaxis_dim, D_h)
 
         # Unique feed-forward layers for each view
-        self.feed_forward_2 = nn.Linear(frameaxis_dim, K)
+        self.feed_forward_2 = nn.Linear(D_h, K)
 
         self.F = nn.Parameter(torch.Tensor(K, frameaxis_dim))
 
@@ -70,7 +70,7 @@ class FrameAxisAutoencoder(nn.Module):
         return y
 
     def forward(self, v_frameaxis, v_sentence, tau):
-        h = self.process_through_first(v_frameaxis)
+        h = self.process_through_first(v_frameaxis, v_sentence)
 
         logits = self.feed_forward_2(h)
 
@@ -82,9 +82,12 @@ class FrameAxisAutoencoder(nn.Module):
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
 
-    def process_through_first(self, v_z):
+    def process_through_first(self, v_z, v_sentence):
+        # Concatenating v_z with the sentence embedding
+        concatenated = torch.cat((v_z, v_sentence), dim=-1)
+
         # Applying dropout
-        dropped = self.dropout1(v_z)
+        dropped = self.dropout1(concatenated)
 
         # Passing through the shared linear layer
         h_shared = self.feed_forward_1(dropped)
