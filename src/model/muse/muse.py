@@ -246,7 +246,7 @@ class MUSE(nn.Module):
         d_fx_aggregated = torch.stack(d_fx_list, dim=1)
 
         # Supervised predictions
-        span_pred, sentence_pred, combined_pred = self.supervised(
+        span_pred, sentence_pred, combined_pred, other = self.supervised(
             d_p_aggregated,
             d_a0_aggregated,
             d_a1_aggregated,
@@ -265,4 +265,4 @@ class MUSE(nn.Module):
             * sentence_embeddings.shape[2]
         )
 
-        return unsupervised_loss, span_pred, sentence_pred, combined_pred
+        return unsupervised_loss, span_pred, sentence_pred, combined_pred, other

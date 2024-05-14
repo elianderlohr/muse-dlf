@@ -72,4 +72,11 @@ class MUSESupervised(nn.Module):
         # Sum the two predictions
         combined = y_hat_u + y_hat_s
 
-        return y_hat_u, y_hat_s, combined
+        other = {
+            "predicate": d_p_mean,
+            "arg0": d_a0_mean,
+            "arg1": d_a1_mean,
+            "frameaxis": d_fx,
+        }
+
+        return y_hat_u, y_hat_s, combined, other
