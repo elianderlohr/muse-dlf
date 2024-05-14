@@ -57,6 +57,7 @@ class FrameAxisAutoencoder(nn.Module):
             y = self.gumbel_logsoftmax_sample(logits, tau)
         else:
             y = self.gumbel_softmax_sample(logits, tau)
+
         if hard:
             shape = y.size()
             _, ind = y.max(dim=-1)
@@ -75,7 +76,7 @@ class FrameAxisAutoencoder(nn.Module):
 
         d = torch.softmax(logits, dim=1)
 
-        g = self.custom_gumbel_softmax(d, tau=tau, hard=False, log=False)
+        g = self.custom_gumbel_softmax(d, tau=tau, hard=True, log=True)
 
         vhat = torch.matmul(g, self.F)
 
