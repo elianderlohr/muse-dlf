@@ -52,7 +52,7 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         fx_negatives,
         tau,
     ):
-        outputs_fx = self.frameaxis_autoencoder(v_fx, tau)
+        outputs_fx = self.frameaxis_autoencoder(v_fx, v_sentence, tau)
 
         outputs_fx["v"] = v_fx
 
