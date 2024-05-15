@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from combined_autoencoder import CombinedAutoencoder
-from loss_module import LossModule
+from model.muse_dlf_v2.combined_autoencoder import CombinedAutoencoder
+from model.muse_dlf_v2.loss_module import LossModule
 
 
 class MUSEUnsupervised(nn.Module):

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from frameaxis_autoencoder import FrameAxisAutoencoder
-from loss_module import LossModule
+from model.muse_dlf_v2.frameaxis_autoencoder import FrameAxisAutoencoder
+from model.muse_dlf_v2.loss_module import LossModule
 
 
 class MUSEFrameAxisUnsupervised(nn.Module):
