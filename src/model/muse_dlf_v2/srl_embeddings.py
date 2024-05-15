@@ -22,7 +22,7 @@ class SRLEmbeddings(nn.Module):
             self.model = RobertaModel.from_pretrained(model_name_or_path)
         else:
             raise ValueError(
-                "Unsupported model_type. Choose either 'bert-base-uncased' or 'roberta-base'."
+                f"Unsupported model_type. Choose either 'bert-base-uncased' or 'roberta-base'. Found: {model_type}"
             )
 
         # Move model to CUDA if available
@@ -30,7 +30,9 @@ class SRLEmbeddings(nn.Module):
             self.model.cuda()
 
         if pooling not in ["mean", "cls"]:
-            raise ValueError("Unsupported pooling type. Choose either 'mean' or 'cls'.")
+            raise ValueError(
+                f"Unsupported pooling type. Choose either 'mean' or 'cls'. Found: {pooling}"
+            )
 
         self.pooling = pooling
 

@@ -52,7 +52,9 @@ class MUSEDLF(nn.Module):
 
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
-            bert_model_name, bert_model_name_or_path, pooling=srl_embeddings_pooling
+            model_name_or_path=bert_model_name_or_path,
+            model_type=bert_model_name,
+            pooling=srl_embeddings_pooling,
         )
 
         # Unsupervised training module

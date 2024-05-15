@@ -31,7 +31,9 @@ class MUSESupervised(nn.Module):
         elif activation_function == "elu":
             self.activation = nn.ELU()
         else:
-            raise ValueError("Unsupported activation function. Use 'relu' or 'gelu'.")
+            raise ValueError(
+                f"Unsupported activation function. Use 'relu', 'gelu', 'leaky_relu' or 'elu'. Found: {activation_function}."
+            )
 
         # Feed-forward networks for sentence embeddings
         layers = []
