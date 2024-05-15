@@ -452,7 +452,6 @@ def main():
         "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
         "supervised_num_layers": args.supervised_num_layers,
         "supervised_activation": args.supervised_activation,
-        "supervised_sentence_prediction_method": args.supervised_sentence_prediction_method,
     }
 
     model = load_model(

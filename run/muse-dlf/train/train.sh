@@ -113,8 +113,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
-    --supervised_activation relu \
-    --supervised_sentence_prediction_method "custom"
+    --supervised_activation relu 
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
