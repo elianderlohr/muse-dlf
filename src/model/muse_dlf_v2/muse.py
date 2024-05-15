@@ -184,11 +184,8 @@ class MUSEDLF(nn.Module):
         sentence_ids,
         sentence_attention_masks,
         predicate_ids,
-        predicate_attention_masks,
         arg0_ids,
-        arg0_attention_masks,
         arg1_ids,
-        arg1_attention_masks,
         frameaxis_data,
         tau,
     ):
@@ -198,11 +195,8 @@ class MUSEDLF(nn.Module):
                 sentence_ids,
                 sentence_attention_masks,
                 predicate_ids,
-                predicate_attention_masks,
                 arg0_ids,
-                arg0_attention_masks,
                 arg1_ids,
-                arg1_attention_masks,
             )
         )
 

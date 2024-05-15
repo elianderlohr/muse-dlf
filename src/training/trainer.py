@@ -204,21 +204,11 @@ class Trainer:
                 if self.training_management == "accelerate"
                 else batch["predicate_ids"].to(device)
             )
-            predicate_attention_masks = (
-                batch["predicate_attention_masks"]
-                if self.training_management == "accelerate"
-                else batch["predicate_attention_masks"].to(device)
-            )
 
             arg0_ids = (
                 batch["arg0_ids"]
                 if self.training_management == "accelerate"
                 else batch["arg0_ids"].to(device)
-            )
-            arg0_attention_masks = (
-                batch["arg0_attention_masks"]
-                if self.training_management == "accelerate"
-                else batch["arg0_attention_masks"].to(device)
             )
 
             arg1_ids = (
@@ -226,12 +216,6 @@ class Trainer:
                 if self.training_management == "accelerate"
                 else batch["arg1_ids"].to(device)
             )
-            arg1_attention_masks = (
-                batch["arg1_attention_masks"]
-                if self.training_management == "accelerate"
-                else batch["arg1_attention_masks"].to(device)
-            )
-
             frameaxis_data = (
                 batch["frameaxis"]
                 if self.training_management == "accelerate"
@@ -249,11 +233,8 @@ class Trainer:
                     sentence_ids,
                     sentence_attention_masks,
                     predicate_ids,
-                    predicate_attention_masks,
                     arg0_ids,
-                    arg0_attention_masks,
                     arg1_ids,
-                    arg1_attention_masks,
                     frameaxis_data,
                     tau,
                 )
@@ -661,32 +642,17 @@ class Trainer:
                 if self.training_management == "accelerate"
                 else batch["predicate_ids"].to(device)
             )
-            predicate_attention_masks = (
-                batch["predicate_attention_masks"]
-                if self.training_management == "accelerate"
-                else batch["predicate_attention_masks"].to(device)
-            )
 
             arg0_ids = (
                 batch["arg0_ids"]
                 if self.training_management == "accelerate"
                 else batch["arg0_ids"].to(device)
             )
-            arg0_attention_masks = (
-                batch["arg0_attention_masks"]
-                if self.training_management == "accelerate"
-                else batch["arg0_attention_masks"].to(device)
-            )
 
             arg1_ids = (
                 batch["arg1_ids"]
                 if self.training_management == "accelerate"
                 else batch["arg1_ids"].to(device)
-            )
-            arg1_attention_masks = (
-                batch["arg1_attention_masks"]
-                if self.training_management == "accelerate"
-                else batch["arg1_attention_masks"].to(device)
             )
 
             frameaxis_data = (
@@ -706,11 +672,8 @@ class Trainer:
                     sentence_ids,
                     sentence_attention_masks,
                     predicate_ids,
-                    predicate_attention_masks,
                     arg0_ids,
-                    arg0_attention_masks,
                     arg1_ids,
-                    arg1_attention_masks,
                     frameaxis_data,
                     tau,
                 )
