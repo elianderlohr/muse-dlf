@@ -101,7 +101,7 @@ class MUSEDLF(nn.Module):
             dropout_prob=dropout_prob,
             concat_frameaxis=supervised_concat_frameaxis,
             num_layers=supervised_num_layers,
-            activation=supervised_activation,
+            activation_function=supervised_activation,
         )
 
     def negative_sampling(self, embeddings, num_negatives=-1):
