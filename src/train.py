@@ -1,5 +1,5 @@
 import argparse
-from model.muse.muse import MUSE
+from model.muse_dlf_v2.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
@@ -27,37 +27,67 @@ project_name = "muse-dlf"
 
 def load_model(
     embedding_dim,
-    D_h,
+    frameaxis_dim,
+    hidden_dim,
+    num_classes,
+    num_sentences,
+    dropout_prob,
+    bert_model_name,
+    bert_model_name_or_path,
+    srl_embeddings_pooling,
     lambda_orthogonality,
     M,
     t,
-    num_sentences,
-    K,
-    num_frames,
-    frameaxis_dim,
-    dropout_prob,
-    bert_model_name="bert-base-uncased",
-    path_name_bert_model="bert-base-uncased",
+    muse_unsupervised_num_layers,
+    muse_unsupervised_activation,
+    muse_unsupervised_use_batch_norm,
+    muse_unsupervised_matmul_input,
+    muse_unsupervised_gumbel_softmax_hard,
+    muse_unsupervised_gumbel_softmax_log,
+    muse_frameaxis_unsupervised_num_layers,
+    muse_frameaxis_unsupervised_activation,
+    muse_frameaxis_unsupervised_use_batch_norm,
+    muse_frameaxis_unsupervised_matmul_input,
+    muse_frameaxis_unsupervised_concat_frameaxis,
+    muse_frameaxis_unsupervised_gumbel_softmax_hard,
+    muse_frameaxis_unsupervised_gumbel_softmax_log,
+    supervised_concat_frameaxis,
+    supervised_num_layers,
+    supervised_activation,
     path_pretrained_model="",
-    supervised_sentence_prediction_method="friss",
     device="cuda",
     logger=LoggerManager.get_logger(__name__),
 ):
     # Model instantiation
-    model = MUSE(
-        embedding_dim,
-        D_h,
-        lambda_orthogonality,
-        M,
-        t,
-        num_sentences,
-        K,
-        num_frames,
+    model = MUSEDLF(
+        embedding_dim=embedding_dim,
         frameaxis_dim=frameaxis_dim,
+        hidden_dim=hidden_dim,
+        num_classes=num_classes,
+        num_sentences=num_sentences,
         dropout_prob=dropout_prob,
         bert_model_name=bert_model_name,
-        bert_model_name_or_path=path_name_bert_model,
-        supervised_sentence_prediction_method=supervised_sentence_prediction_method,
+        bert_model_name_or_path=bert_model_name_or_path,
+        srl_embeddings_pooling=srl_embeddings_pooling,
+        lambda_orthogonality=lambda_orthogonality,
+        M=M,
+        t=t,
+        muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+        muse_unsupervised_activation=muse_unsupervised_activation,
+        muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+        muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+        muse_unsupervised_gumbel_softmax_hard=muse_unsupervised_gumbel_softmax_hard,
+        muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+        muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+        muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+        muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+        muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+        muse_frameaxis_unsupervised_concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
+        muse_frameaxis_unsupervised_gumbel_softmax_hard=muse_frameaxis_unsupervised_gumbel_softmax_hard,
+        muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+        supervised_concat_frameaxis=supervised_concat_frameaxis,
+        supervised_num_layers=supervised_num_layers,
+        supervised_activation=supervised_activation,
     )
 
     model = model.to(device)
@@ -101,10 +131,22 @@ def main():
         help="Dimension of the word embeddings",
     )
     model_config.add_argument(
-        "--D_h",
+        "--hidden_dim",
         type=int,
         default=768,
         help="Dimension of the hidden layer in the model",
+    )
+    model_config.add_argument(
+        "--num_classes",
+        type=int,
+        default=10,
+        help="Number of classes",
+    )
+    model_config.add_argument(
+        "--frameaxis_dim",
+        type=int,
+        default=15,
+        help="Dimension of the frame axis",
     )
     model_config.add_argument(
         "--lambda_orthogonality",
@@ -125,17 +167,100 @@ def main():
         help="Number of negative samples used for loss function",
     )
     model_config.add_argument(
-        "--K",
+        "--muse_unsupervised_num_layers",
         type=int,
-        default=15,
-        help="Number of latent classes used in the auto encoder",
+        default=2,
+        help="Number of layers in the MUSE unsupervised encoder",
     )
-    # supervised_sentence_prediction_method
     model_config.add_argument(
-        "--supervised_sentence_prediction_method",
+        "--muse_unsupervised_activation",
         type=str,
-        default="friss",
-        help="Method used for sentence prediction",
+        default="relu",
+        help="Activation function in the MUSE unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_unsupervised_use_batch_norm",
+        type=bool,
+        default=True,
+        help="Use batch normalization in the MUSE unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_unsupervised_matmul_input",
+        type=str,
+        default="g",
+        help="Input type for matmul in the MUSE unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_unsupervised_gumbel_softmax_hard",
+        type=bool,
+        default=False,
+        help="Use hard gumbel softmax in the MUSE unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_unsupervised_gumbel_softmax_log",
+        type=bool,
+        default=False,
+        help="Use log gumbel softmax in the MUSE unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_frameaxis_unsupervised_num_layers",
+        type=int,
+        default=2,
+        help="Number of layers in the MUSE frameaxis unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_frameaxis_unsupervised_activation",
+        type=str,
+        default="relu",
+        help="Activation function in the MUSE frameaxis unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_frameaxis_unsupervised_use_batch_norm",
+        type=bool,
+        default=True,
+        help="Use batch normalization in the MUSE frameaxis unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_frameaxis_unsupervised_matmul_input",
+        type=str,
+        default="g",
+        help="Input type for matmul in the MUSE frameaxis unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_frameaxis_unsupervised_concat_frameaxis",
+        type=bool,
+        default=True,
+        help="Concatenate frameaxis with sentence in the MUSE frameaxis unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_frameaxis_unsupervised_gumbel_softmax_hard",
+        type=bool,
+        default=False,
+        help="Use hard gumbel softmax in the MUSE frameaxis unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--muse_frameaxis_unsupervised_gumbel_softmax_log",
+        type=bool,
+        default=False,
+        help="Use log gumbel softmax in the MUSE frameaxis unsupervised encoder",
+    )
+    model_config.add_argument(
+        "--supervised_concat_frameaxis",
+        type=bool,
+        default=True,
+        help="Concatenate frameaxis with sentence in the supervised module",
+    )
+    model_config.add_argument(
+        "--supervised_num_layers",
+        type=int,
+        default=2,
+        help="Number of layers in the supervised module",
+    )
+    model_config.add_argument(
+        "--supervised_activation",
+        type=str,
+        default="relu",
+        help="Activation function in the supervised module",
     )
 
     # Training Parameters
@@ -147,19 +272,32 @@ def main():
     training_params.add_argument(
         "--lr", type=float, default=5e-4, help="Learning rate for the optimizer"
     )
+    training_params.add_argument(
+        "--batch_size", type=int, default=24, help="Batch size"
+    )
+    training_params.add_argument(
+        "--epochs", type=int, default=10, help="Number of epochs"
+    )
+    training_params.add_argument(
+        "--test_size", type=float, default=0.1, help="Size of the test set"
+    )
+    training_params.add_argument(
+        "--tau_min", type=float, default=0.5, help="Minimum temperature parameter"
+    )
+    training_params.add_argument(
+        "--tau_decay",
+        type=float,
+        default=5e-4,
+        help="Decay parameter for the temperature",
+    )
 
     # Data Processing
     data_processing = parser.add_argument_group("Data Processing")
-
     data_processing.add_argument(
         "--num_sentences", type=int, default=32, help="Number of sentences in the input"
     )
-
     data_processing.add_argument(
         "--num_frames", type=int, default=15, help="Number of frames in the input"
-    )
-    data_processing.add_argument(
-        "--frameaxis_dim", type=int, default=15, help="Dimension of the frame axis"
     )
     data_processing.add_argument(
         "--max_sentence_length",
@@ -230,27 +368,6 @@ def main():
         required=True,
     )
 
-    # Training Parameters
-    training_params = parser.add_argument_group("Training Parameters")
-    training_params.add_argument(
-        "--batch_size", type=int, default=24, help="Batch size"
-    )
-    training_params.add_argument(
-        "--epochs", type=int, default=10, help="Number of epochs"
-    )
-    training_params.add_argument(
-        "--test_size", type=float, default=0.1, help="Size of the test set"
-    )
-    training_params.add_argument(
-        "--tau_min", type=float, default=0.5, help="Minimum temperature parameter"
-    )
-    training_params.add_argument(
-        "--tau_decay",
-        type=float,
-        default=5e-4,
-        help="Decay parameter for the temperature",
-    )
-
     # Advanced Settings
     advanced_settings = parser.add_argument_group("Advanced Settings")
     advanced_settings.add_argument(
@@ -265,15 +382,13 @@ def main():
         default=False,
         help="Force recalculate FrameAxis",
     )
-
-    # sample size
     advanced_settings.add_argument(
         "--sample_size", type=int, default=-1, help="Sample size"
     )
 
     args = parser.parse_args()
 
-    # start with seting up wandb and accelerator
+    # start with setting up wandb and accelerator
 
     # login to wandb
     wandb.login(key=args.wandb_api_key)
@@ -304,12 +419,12 @@ def main():
     # create config dictionary
     config = {
         "embedding_dim": args.embedding_dim,
-        "D_h": args.D_h,
+        "hidden_dim": args.hidden_dim,
+        "num_classes": args.num_classes,
         "lambda_orthogonality": args.lambda_orthogonality,
         "dropout_prob": args.dropout_prob,
         "M": args.M,
         "t": args.t,
-        "K": args.K,
         "num_sentences": args.num_sentences,
         "num_frames": args.num_frames,
         "frameaxis_dim": args.frameaxis_dim,
@@ -321,24 +436,55 @@ def main():
         "test_size": args.test_size,
         "tau_min": args.tau_min,
         "tau_decay": args.tau_decay,
+        "muse_unsupervised_num_layers": args.muse_unsupervised_num_layers,
+        "muse_unsupervised_activation": args.muse_unsupervised_activation,
+        "muse_unsupervised_use_batch_norm": args.muse_unsupervised_use_batch_norm,
+        "muse_unsupervised_matmul_input": args.muse_unsupervised_matmul_input,
+        "muse_unsupervised_gumbel_softmax_hard": args.muse_unsupervised_gumbel_softmax_hard,
+        "muse_unsupervised_gumbel_softmax_log": args.muse_unsupervised_gumbel_softmax_log,
+        "muse_frameaxis_unsupervised_num_layers": args.muse_frameaxis_unsupervised_num_layers,
+        "muse_frameaxis_unsupervised_activation": args.muse_frameaxis_unsupervised_activation,
+        "muse_frameaxis_unsupervised_use_batch_norm": args.muse_frameaxis_unsupervised_use_batch_norm,
+        "muse_frameaxis_unsupervised_matmul_input": args.muse_frameaxis_unsupervised_matmul_input,
+        "muse_frameaxis_unsupervised_concat_frameaxis": args.muse_frameaxis_unsupervised_concat_frameaxis,
+        "muse_frameaxis_unsupervised_gumbel_softmax_hard": args.muse_frameaxis_unsupervised_gumbel_softmax_hard,
+        "muse_frameaxis_unsupervised_gumbel_softmax_log": args.muse_frameaxis_unsupervised_gumbel_softmax_log,
+        "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
+        "supervised_num_layers": args.supervised_num_layers,
+        "supervised_activation": args.supervised_activation,
         "supervised_sentence_prediction_method": args.supervised_sentence_prediction_method,
     }
 
     model = load_model(
         embedding_dim=args.embedding_dim,
-        D_h=args.D_h,
+        frameaxis_dim=args.frameaxis_dim,
+        hidden_dim=args.hidden_dim,
+        num_classes=args.num_classes,
+        num_sentences=args.num_sentences,
+        dropout_prob=args.dropout_prob,
+        bert_model_name=args.name_tokenizer,
+        bert_model_name_or_path=args.path_name_bert_model,
+        srl_embeddings_pooling="mean",
         lambda_orthogonality=args.lambda_orthogonality,
         M=args.M,
         t=args.t,
-        num_sentences=args.num_sentences,
-        K=args.K,
-        num_frames=args.num_frames,
-        frameaxis_dim=args.frameaxis_dim,
-        dropout_prob=args.dropout_prob,
-        bert_model_name=args.name_tokenizer,
-        path_name_bert_model=args.path_name_bert_model,
+        muse_unsupervised_num_layers=args.muse_unsupervised_num_layers,
+        muse_unsupervised_activation=args.muse_unsupervised_activation,
+        muse_unsupervised_use_batch_norm=args.muse_unsupervised_use_batch_norm,
+        muse_unsupervised_matmul_input=args.muse_unsupervised_matmul_input,
+        muse_unsupervised_gumbel_softmax_hard=args.muse_unsupervised_gumbel_softmax_hard,
+        muse_unsupervised_gumbel_softmax_log=args.muse_unsupervised_gumbel_softmax_log,
+        muse_frameaxis_unsupervised_num_layers=args.muse_frameaxis_unsupervised_num_layers,
+        muse_frameaxis_unsupervised_activation=args.muse_frameaxis_unsupervised_activation,
+        muse_frameaxis_unsupervised_use_batch_norm=args.muse_frameaxis_unsupervised_use_batch_norm,
+        muse_frameaxis_unsupervised_matmul_input=args.muse_frameaxis_unsupervised_matmul_input,
+        muse_frameaxis_unsupervised_concat_frameaxis=args.muse_frameaxis_unsupervised_concat_frameaxis,
+        muse_frameaxis_unsupervised_gumbel_softmax_hard=args.muse_frameaxis_unsupervised_gumbel_softmax_hard,
+        muse_frameaxis_unsupervised_gumbel_softmax_log=args.muse_frameaxis_unsupervised_gumbel_softmax_log,
+        supervised_concat_frameaxis=args.supervised_concat_frameaxis,
+        supervised_num_layers=args.supervised_num_layers,
+        supervised_activation=args.supervised_activation,
         path_pretrained_model=args.path_name_pretrained_muse_model,
-        supervised_sentence_prediction_method=args.supervised_sentence_prediction_method,
         device="cuda",
         logger=logger,
     )
