@@ -76,9 +76,7 @@ class CombinedAutoencoder(nn.Module):
 
         self._debug = _debug
 
-        logger.debug(
-            f"CombinedAutoencoder initialized with parameters: {self.__dict__}"
-        )
+        logger.debug(f"✅ CombinedAutoencoder successfully initialized")
 
     def _get_activation(self, activation):
         if activation == "relu":

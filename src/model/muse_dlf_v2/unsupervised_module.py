@@ -51,7 +51,7 @@ class MUSEUnsupervised(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        logger.debug(f"MUSEUnsupervised initialized with parameters: {self.__dict__}")
+        logger.debug(f"✅ MUSEUnsupervised successfully initialized")
 
     def forward(
         self,

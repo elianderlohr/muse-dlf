@@ -63,9 +63,7 @@ class FrameAxisAutoencoder(nn.Module):
         self._debug = _debug
 
         # Debugging
-        logger.debug(
-            f"FrameAxisAutoencoder initialized with parameters: {self.__dict__}"
-        )
+        logger.debug(f"✅ FrameAxisAutoencoder successfully initialized")
 
     def _get_activation(self, activation):
         if activation == "relu":

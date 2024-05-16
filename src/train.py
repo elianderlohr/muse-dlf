@@ -429,9 +429,9 @@ def main():
     if args.debug:
         torch.manual_seed(42)
 
-        logger.info("######## DEBUG MODE ########")
-        logger.info("Setting seed to 42")
-        logger.info("############################")
+        logger.debug("######## DEBUG MODE ########")
+        logger.debug("Setting seed to 42")
+        logger.debug("############################")
 
     # create config dictionary
     config = {
