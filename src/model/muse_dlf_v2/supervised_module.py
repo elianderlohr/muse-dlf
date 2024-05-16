@@ -3,8 +3,6 @@ import torch.nn as nn
 
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 
 class MUSESupervised(nn.Module):
     def __init__(
@@ -20,6 +18,9 @@ class MUSESupervised(nn.Module):
         _debug=False,
     ):
         super(MUSESupervised, self).__init__()
+
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
 
         self.embedding_dim = embedding_dim
         self.frameaxis_dim = frameaxis_dim
@@ -63,7 +64,7 @@ class MUSESupervised(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        logger.debug(f"✅ MUSESupervised successfully initialized")
+        self.logger.debug(f"✅ MUSESupervised successfully initialized")
 
     def forward(
         self,
@@ -81,10 +82,10 @@ class MUSESupervised(nn.Module):
         d_fx_mean = torch.mean(d_fx, dim=1)
 
         # Debugging:
-        logger.debug(f"d_p_mean: {d_p_mean.shape}")
-        logger.debug(f"d_a0_mean: {d_a0_mean.shape}")
-        logger.debug(f"d_a1_mean: {d_a1_mean.shape}")
-        logger.debug(f"d_fx_mean: {d_fx_mean.shape}")
+        self.logger.debug(f"d_p_mean: {d_p_mean.shape}")
+        self.logger.debug(f"d_a0_mean: {d_a0_mean.shape}")
+        self.logger.debug(f"d_a1_mean: {d_a1_mean.shape}")
+        self.logger.debug(f"d_fx_mean: {d_fx_mean.shape}")
 
         # Combine and normalize the final descriptor
         y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4

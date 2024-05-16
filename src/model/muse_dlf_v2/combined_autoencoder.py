@@ -5,8 +5,6 @@ from torch.nn.functional import log_softmax, softmax
 
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 
 class CombinedAutoencoder(nn.Module):
     def __init__(
@@ -24,6 +22,9 @@ class CombinedAutoencoder(nn.Module):
         _debug=False,
     ):
         super(CombinedAutoencoder, self).__init__()
+
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
 
         self.hidden_dim = hidden_dim
         self.num_classes = num_classes
@@ -76,7 +77,7 @@ class CombinedAutoencoder(nn.Module):
 
         self._debug = _debug
 
-        logger.debug(f"✅ CombinedAutoencoder successfully initialized")
+        self.logger.debug(f"✅ CombinedAutoencoder successfully initialized")
 
     def _get_activation(self, activation):
         if activation == "relu":
@@ -137,18 +138,18 @@ class CombinedAutoencoder(nn.Module):
         h_a1 = self.process_through_shared(v_a1, v_sentence)
 
         # Debugging
-        logger.debug(f"h_p: {h_p.shape}")
-        logger.debug(f"h_a0: {h_a0.shape}")
-        logger.debug(f"h_a1: {h_a1.shape}")
+        self.logger.debug(f"h_p: {h_p.shape}")
+        self.logger.debug(f"h_a0: {h_a0.shape}")
+        self.logger.debug(f"h_a1: {h_a1.shape}")
 
         logits_p = self.feed_forward_unique["p"](h_p)
         logits_a0 = self.feed_forward_unique["a0"](h_a0)
         logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
         # Debugging
-        logger.debug(f"logits_p: {logits_p.shape}")
-        logger.debug(f"logits_a0: {logits_a0.shape}")
-        logger.debug(f"logits_a1: {logits_a1.shape}")
+        self.logger.debug(f"logits_p: {logits_p.shape}")
+        self.logger.debug(f"logits_a0: {logits_a0.shape}")
+        self.logger.debug(f"logits_a1: {logits_a1.shape}")
 
         d_p = torch.softmax(logits_p, dim=1)
         d_a0 = torch.softmax(logits_a0, dim=1)
@@ -172,9 +173,9 @@ class CombinedAutoencoder(nn.Module):
             )
 
         # Debugging
-        logger.debug(f"vhat_p: {vhat_p.shape}")
-        logger.debug(f"vhat_a0: {vhat_a0.shape}")
-        logger.debug(f"vhat_a1: {vhat_a1.shape}")
+        self.logger.debug(f"vhat_p: {vhat_p.shape}")
+        self.logger.debug(f"vhat_a0: {vhat_a0.shape}")
+        self.logger.debug(f"vhat_a1: {vhat_a1.shape}")
 
         return {
             "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},

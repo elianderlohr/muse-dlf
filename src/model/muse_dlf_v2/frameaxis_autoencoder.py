@@ -5,8 +5,6 @@ from torch.nn.functional import log_softmax, softmax
 
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 
 class FrameAxisAutoencoder(nn.Module):
     def __init__(
@@ -26,6 +24,9 @@ class FrameAxisAutoencoder(nn.Module):
         _debug=False,
     ):
         super(FrameAxisAutoencoder, self).__init__()
+
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
 
         self.num_classes = num_classes
         self.num_layers = num_layers
@@ -63,7 +64,7 @@ class FrameAxisAutoencoder(nn.Module):
         self._debug = _debug
 
         # Debugging
-        logger.debug(f"✅ FrameAxisAutoencoder successfully initialized")
+        self.logger.debug(f"✅ FrameAxisAutoencoder successfully initialized")
 
     def _get_activation(self, activation):
         if activation == "relu":

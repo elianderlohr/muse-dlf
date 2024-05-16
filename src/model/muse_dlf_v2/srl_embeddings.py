@@ -4,8 +4,6 @@ import torch
 
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 
 class SRLEmbeddings(nn.Module):
     def __init__(
@@ -16,6 +14,9 @@ class SRLEmbeddings(nn.Module):
         _debug=False,
     ):
         super(SRLEmbeddings, self).__init__()
+
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
 
         if model_type == "bert-base-uncased":
             self.model = BertModel.from_pretrained(model_name_or_path)
@@ -42,7 +43,7 @@ class SRLEmbeddings(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        logger.info(f"✅ SRLEmbeddings successfully initialized")
+        self.logger.info(f"✅ SRLEmbeddings successfully initialized")
 
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]

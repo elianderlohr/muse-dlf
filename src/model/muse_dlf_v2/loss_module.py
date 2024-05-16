@@ -3,12 +3,13 @@ import torch.nn as nn
 
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 
 class LossModule(nn.Module):
     def __init__(self, lambda_orthogonality, M, t, _debug=False):
         super(LossModule, self).__init__()
+
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
 
         self.lambda_orthogonality = lambda_orthogonality
         self.M = M
@@ -18,7 +19,7 @@ class LossModule(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        logger.info(f"✅ LossModule successfully initialized")
+        self.logger.info(f"✅ LossModule successfully initialized")
 
     def contrastive_loss(self, v, vhat, negatives):
         batch_size = vhat.size(0)

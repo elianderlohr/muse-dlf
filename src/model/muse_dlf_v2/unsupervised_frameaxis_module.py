@@ -6,8 +6,6 @@ from model.muse_dlf_v2.loss_module import LossModule
 
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 
 class MUSEFrameAxisUnsupervised(nn.Module):
     def __init__(
@@ -33,6 +31,9 @@ class MUSEFrameAxisUnsupervised(nn.Module):
     ):
         super(MUSEFrameAxisUnsupervised, self).__init__()
 
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
+
         self.loss_fn = LossModule(lambda_orthogonality, M, t, _debug=_debug)
 
         self.frameaxis_autoencoder = FrameAxisAutoencoder(
@@ -54,7 +55,7 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        logger.debug(f"✅ MUSEFrameAxisUnsupervised successfully initialized")
+        self.logger.debug(f"✅ MUSEFrameAxisUnsupervised successfully initialized")
 
     def forward(
         self,

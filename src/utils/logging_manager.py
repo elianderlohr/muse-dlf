@@ -5,6 +5,7 @@ class LoggerManager:
     _instance = None
     _accelerate_used = False
     _log_level = "INFO"
+    _loggers = {}
 
     def __new__(cls):
         if cls._instance is None:
@@ -17,23 +18,19 @@ class LoggerManager:
         cls._log_level = log_level
 
     @classmethod
-    def get_logger(cls, name):
-        if cls._accelerate_used:
-            try:
-                from accelerate.logging import get_logger as get_accelerate_logger
+    def _configure_accelerate_logger(cls, name):
+        from accelerate.logging import get_logger as get_accelerate_logger
 
-                logger = get_accelerate_logger(name)
-                logger.setLevel(
-                    getattr(logging, cls._log_level)
-                )  # Set the logging level
-                return logger
-            except ImportError:
-                pass  # Fall through to standard logger if Accelerate is not available
+        # Create the accelerate logger with the specified log level
+        logger = get_accelerate_logger(name, log_level=cls._log_level)
+        return logger
 
-        # Setup standard logger
+    @classmethod
+    def _configure_standard_logger(cls, name):
+        # Set up standard logger
         logger = logging.getLogger(name)
+        logger.setLevel(getattr(logging, cls._log_level))
         if not logger.handlers:
-            logger.setLevel(getattr(logging, cls._log_level))
             ch = logging.StreamHandler()
             ch.setLevel(getattr(logging, cls._log_level))
             formatter = logging.Formatter(
@@ -41,4 +38,21 @@ class LoggerManager:
             )
             ch.setFormatter(formatter)
             logger.addHandler(ch)
+        return logger
+
+    @classmethod
+    def get_logger(cls, name):
+        if name in cls._loggers:
+            return cls._loggers[name]
+
+        if cls._accelerate_used:
+            try:
+                logger = cls._configure_accelerate_logger(name)
+                cls._loggers[name] = logger
+                return logger
+            except ImportError:
+                pass  # Fall through to standard logger if Accelerate is not available
+
+        logger = cls._configure_standard_logger(name)
+        cls._loggers[name] = logger
         return logger

@@ -7,8 +7,6 @@ from model.muse_dlf_v2.unsupervised_module import MUSEUnsupervised
 from model.muse_dlf_v2.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
-logger = LoggerManager.get_logger(__name__)
-
 
 class MUSEDLF(nn.Module):
     def __init__(
@@ -51,6 +49,9 @@ class MUSEDLF(nn.Module):
         _debug=False,
     ):
         super(MUSEDLF, self).__init__()
+
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
 
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
@@ -113,7 +114,7 @@ class MUSEDLF(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        logger.debug(f"✅ MUSEDLF successfully initialized")
+        self.logger.debug(f"✅ MUSEDLF successfully initialized")
 
     def negative_sampling(self, embeddings, num_negatives=-1):
         if num_negatives == -1:
@@ -254,16 +255,16 @@ class MUSEDLF(nn.Module):
                 unsupervised_losses += unsupervised_results["loss"]
 
                 if torch.isnan(unsupervised_results["loss"]).any():
-                    logger.debug("loss is nan")
+                    self.logger.debug("loss is nan")
 
                 # Debugging:
-                logger.debug(
+                self.logger.debug(
                     f"UNSUPERVISED: d_p: {unsupervised_results['p']['d'].shape}"
                 )
-                logger.debug(
+                self.logger.debug(
                     f"UNSUPERVISED: d_a0: {unsupervised_results['a0']['d'].shape}"
                 )
-                logger.debug(
+                self.logger.debug(
                     f"UNSUPERVISED: d_a1: {unsupervised_results['a1']['d'].shape}"
                 )
 
@@ -278,9 +279,9 @@ class MUSEDLF(nn.Module):
             d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
 
             # Debugging:
-            logger.debug(f"AGGREGATED: d_p: {d_p_sentence.shape}")
-            logger.debug(f"AGGREGATED: d_a0: {d_a0_sentence.shape}")
-            logger.debug(f"AGGREGATED: d_a1: {d_a1_sentence.shape}")
+            self.logger.debug(f"AGGREGATED: d_p: {d_p_sentence.shape}")
+            self.logger.debug(f"AGGREGATED: d_a0: {d_a0_sentence.shape}")
+            self.logger.debug(f"AGGREGATED: d_a1: {d_a1_sentence.shape}")
 
             d_p_list.append(d_p_sentence)
             d_a0_list.append(d_a0_sentence)
@@ -306,10 +307,10 @@ class MUSEDLF(nn.Module):
         d_fx_aggregated = torch.stack(d_fx_list, dim=1)
 
         # Debugging:
-        logger.debug(f"AGGREGATED: d_p: {d_p_aggregated.shape}")
-        logger.debug(f"AGGREGATED: d_a0: {d_a0_aggregated.shape}")
-        logger.debug(f"AGGREGATED: d_a1: {d_a1_aggregated.shape}")
-        logger.debug(f"AGGREGATED: d_fx: {d_fx_aggregated.shape}")
+        self.logger.debug(f"AGGREGATED: d_p: {d_p_aggregated.shape}")
+        self.logger.debug(f"AGGREGATED: d_a0: {d_a0_aggregated.shape}")
+        self.logger.debug(f"AGGREGATED: d_a1: {d_a1_aggregated.shape}")
+        self.logger.debug(f"AGGREGATED: d_fx: {d_fx_aggregated.shape}")
 
         # Supervised predictions
         span_pred, sentence_pred, combined_pred, other = self.supervised(

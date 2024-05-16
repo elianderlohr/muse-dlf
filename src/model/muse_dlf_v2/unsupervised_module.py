@@ -4,10 +4,7 @@ import torch.nn.functional as F
 from model.muse_dlf_v2.combined_autoencoder import CombinedAutoencoder
 from model.muse_dlf_v2.loss_module import LossModule
 
-
 from utils.logging_manager import LoggerManager
-
-logger = LoggerManager.get_logger(__name__)
 
 
 class MUSEUnsupervised(nn.Module):
@@ -32,6 +29,9 @@ class MUSEUnsupervised(nn.Module):
     ):
         super(MUSEUnsupervised, self).__init__()
 
+        # init logger
+        self.logger = LoggerManager.get_logger(__name__)
+
         self.combined_autoencoder = CombinedAutoencoder(
             embedding_dim=embedding_dim,
             hidden_dim=hidden_dim,
@@ -51,7 +51,7 @@ class MUSEUnsupervised(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        logger.debug(f"✅ MUSEUnsupervised successfully initialized")
+        self.logger.debug(f"✅ MUSEUnsupervised successfully initialized")
 
     def forward(
         self,
