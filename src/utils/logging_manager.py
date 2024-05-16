@@ -1,5 +1,5 @@
 import logging
-from custom_logger import CustomLogger
+from utils.custom_logger import CustomLogger
 
 
 class LoggerManager:
