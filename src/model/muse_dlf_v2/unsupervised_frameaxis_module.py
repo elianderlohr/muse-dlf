@@ -25,10 +25,11 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         concat_frameaxis=True,  # whether to concatenate frameaxis with sentence
         gumbel_softmax_hard=False,  # whether to use hard gumbel softmax
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
+        _debug=False,
     ):
         super(MUSEFrameAxisUnsupervised, self).__init__()
 
-        self.loss_fn = LossModule(lambda_orthogonality, M, t)
+        self.loss_fn = LossModule(lambda_orthogonality, M, t, _debug=_debug)
 
         self.frameaxis_autoencoder = FrameAxisAutoencoder(
             embedding_dim=embedding_dim,
@@ -43,7 +44,10 @@ class MUSEFrameAxisUnsupervised(nn.Module):
             concat_frameaxis=concat_frameaxis,
             hard=gumbel_softmax_hard,
             log=gumbel_softmax_log,
+            _debug=_debug,
         )
+
+        self._debug = _debug
 
     def forward(
         self,

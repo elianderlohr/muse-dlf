@@ -57,6 +57,7 @@ class MUSEDLF(nn.Module):
             model_name_or_path=bert_model_name_or_path,
             model_type=bert_model_name,
             pooling=srl_embeddings_pooling,
+            _debug=_debug,
         )
 
         # Unsupervised training module
@@ -74,6 +75,7 @@ class MUSEDLF(nn.Module):
             matmul_input=muse_unsupervised_matmul_input,
             gumbel_softmax_hard=muse_unsupervised_gumbel_softmax_hard,
             gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+            _debug=_debug,
         )
 
         self.unsupervised_fx = MUSEFrameAxisUnsupervised(
@@ -92,6 +94,7 @@ class MUSEDLF(nn.Module):
             concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
             gumbel_softmax_hard=muse_frameaxis_unsupervised_gumbel_softmax_hard,
             gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+            _debug=_debug,
         )
 
         # Supervised training module

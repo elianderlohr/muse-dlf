@@ -7,13 +7,15 @@ logger = LoggerManager.get_logger(__name__)
 
 
 class LossModule(nn.Module):
-    def __init__(self, lambda_orthogonality, M, t):
+    def __init__(self, lambda_orthogonality, M, t, _debug=False):
         super(LossModule, self).__init__()
 
         self.lambda_orthogonality = lambda_orthogonality
         self.M = M
         self.t = t
         self.triplet_loss = nn.TripletMarginLoss(margin=M)
+
+        self._debug = _debug
 
     def contrastive_loss(self, v, vhat, negatives):
         batch_size = vhat.size(0)

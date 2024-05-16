@@ -41,7 +41,7 @@ class MUSEUnsupervised(nn.Module):
             _debug=_debug,
         )
 
-        self.loss_fn = LossModule(lambda_orthogonality, M, t)
+        self.loss_fn = LossModule(lambda_orthogonality, M, t, _debug=_debug)
 
         self._debug = _debug
 

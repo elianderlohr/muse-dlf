@@ -19,6 +19,7 @@ class FrameAxisAutoencoder(nn.Module):
         concat_frameaxis=True,  # whether to concatenate frameaxis with sentence
         hard=False,  # whether to use hard gumbel softmax
         log=False,  # whether to use log gumbel softmax
+        _debug=False,
     ):
         super(FrameAxisAutoencoder, self).__init__()
 
@@ -54,6 +55,8 @@ class FrameAxisAutoencoder(nn.Module):
 
         # Additional layers and parameters
         self.dropout = nn.Dropout(dropout_prob)
+
+        self._debug = _debug
 
     def _get_activation(self, activation):
         if activation == "relu":

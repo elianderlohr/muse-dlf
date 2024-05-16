@@ -13,6 +13,7 @@ class SRLEmbeddings(nn.Module):
         model_name_or_path: str,
         model_type: str = "bert-base-uncased",
         pooling: str = "mean",
+        _debug=False,
     ):
         super(SRLEmbeddings, self).__init__()
 
@@ -37,6 +38,8 @@ class SRLEmbeddings(nn.Module):
         self.pooling = pooling
 
         self.embedding_dim = self.model.config.hidden_size
+
+        self._debug = _debug
 
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
