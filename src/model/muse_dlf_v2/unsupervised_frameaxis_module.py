@@ -4,6 +4,10 @@ import torch.nn.functional as F
 from model.muse_dlf_v2.frameaxis_autoencoder import FrameAxisAutoencoder
 from model.muse_dlf_v2.loss_module import LossModule
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class MUSEFrameAxisUnsupervised(nn.Module):
     def __init__(
@@ -48,6 +52,11 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         )
 
         self._debug = _debug
+
+        if self._debug:
+            logger.debug(
+                f"MUSEFrameAxisUnsupervised initialized with parameters: {self.__dict__}"
+            )
 
     def forward(
         self,

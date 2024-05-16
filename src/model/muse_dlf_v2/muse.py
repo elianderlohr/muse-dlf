@@ -112,6 +112,9 @@ class MUSEDLF(nn.Module):
 
         self._debug = _debug
 
+        if self._debug:
+            logger.debug(f"MUSEDLF initialized with parameters: {self.__dict__}")
+
     def negative_sampling(self, embeddings, num_negatives=-1):
         if num_negatives == -1:
             num_negatives = embeddings.size(0)

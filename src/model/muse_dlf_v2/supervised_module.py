@@ -62,6 +62,9 @@ class MUSESupervised(nn.Module):
 
         self._debug = _debug
 
+        if self._debug:
+            logger.debug(f"MUSESupervised initialized with parameters: {self.__dict__}")
+
     def forward(
         self,
         d_p,

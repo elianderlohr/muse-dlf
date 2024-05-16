@@ -41,6 +41,9 @@ class SRLEmbeddings(nn.Module):
 
         self._debug = _debug
 
+        if self._debug:
+            logger.info(f"SRLEmbeddings initialized with parameters: {self.__dict__}")
+
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
         batch_size, num_sentences, max_sentence_length = ids.size()

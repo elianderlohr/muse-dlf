@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.functional import log_softmax, softmax
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class FrameAxisAutoencoder(nn.Module):
     def __init__(
@@ -57,6 +61,11 @@ class FrameAxisAutoencoder(nn.Module):
         self.dropout = nn.Dropout(dropout_prob)
 
         self._debug = _debug
+
+        if self._debug:
+            logger.debug(
+                f"FrameAxisAutoencoder initialized with parameters: {self.__dict__}"
+            )
 
     def _get_activation(self, activation):
         if activation == "relu":

@@ -76,6 +76,11 @@ class CombinedAutoencoder(nn.Module):
 
         self._debug = _debug
 
+        if self._debug:
+            logger.debug(
+                f"CombinedAutoencoder initialized with parameters: {self.__dict__}"
+            )
+
     def _get_activation(self, activation):
         if activation == "relu":
             return nn.ReLU()

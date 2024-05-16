@@ -5,6 +5,11 @@ from model.muse_dlf_v2.combined_autoencoder import CombinedAutoencoder
 from model.muse_dlf_v2.loss_module import LossModule
 
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
+
 class MUSEUnsupervised(nn.Module):
     def __init__(
         self,
@@ -44,6 +49,11 @@ class MUSEUnsupervised(nn.Module):
         self.loss_fn = LossModule(lambda_orthogonality, M, t, _debug=_debug)
 
         self._debug = _debug
+
+        if self._debug:
+            logger.debug(
+                f"MUSEUnsupervised initialized with parameters: {self.__dict__}"
+            )
 
     def forward(
         self,
