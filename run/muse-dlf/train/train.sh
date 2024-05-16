@@ -51,10 +51,12 @@ do
         ;;
         debug=true)
         DEBUG="--debug true"
+        TAGS="$TAGS,debug"
         shift
         ;;
     esac
 done
+
 
 # Data and Output Configuration
 echo "Configuring paths..."
