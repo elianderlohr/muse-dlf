@@ -402,8 +402,10 @@ def main():
     accelerator = Accelerator(
         log_with="wandb",
     )
-
-    LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
+    if args.debug:
+        LoggerManager.use_accelerate(accelerate_used=False, log_level="DEBUG")
+    else:
+        LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
 
     logger = LoggerManager.get_logger(__name__)
 

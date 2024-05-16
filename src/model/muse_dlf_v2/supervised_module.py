@@ -81,10 +81,10 @@ class MUSESupervised(nn.Module):
         d_fx_mean = torch.mean(d_fx, dim=1)
 
         if self._debug:
-            logger.info(f"SUPERVISED: d_p_mean: {d_p_mean.shape}")
-            logger.info(f"SUPERVISED: d_a0_mean: {d_a0_mean.shape}")
-            logger.info(f"SUPERVISED: d_a1_mean: {d_a1_mean.shape}")
-            logger.info(f"SUPERVISED: d_fx_mean: {d_fx_mean.shape}")
+            logger.debug(f"d_p_mean: {d_p_mean.shape}")
+            logger.debug(f"d_a0_mean: {d_a0_mean.shape}")
+            logger.debug(f"d_a1_mean: {d_a1_mean.shape}")
+            logger.debug(f"d_fx_mean: {d_fx_mean.shape}")
 
         # Combine and normalize the final descriptor
         y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
