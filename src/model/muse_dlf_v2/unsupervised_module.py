@@ -23,6 +23,7 @@ class MUSEUnsupervised(nn.Module):
         matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         gumbel_softmax_hard=False,  # whether to use hard gumbel softmax
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
+        _debug=False,
     ):
         super(MUSEUnsupervised, self).__init__()
 
@@ -37,9 +38,12 @@ class MUSEUnsupervised(nn.Module):
             matmul_input=matmul_input,
             hard=gumbel_softmax_hard,
             log=gumbel_softmax_log,
+            _debug=_debug,
         )
 
         self.loss_fn = LossModule(lambda_orthogonality, M, t)
+
+        self._debug = _debug
 
     def forward(
         self,
