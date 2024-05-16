@@ -1,4 +1,5 @@
 import logging
+from custom_logger import CustomLogger
 
 
 class LoggerManager:
@@ -16,29 +17,22 @@ class LoggerManager:
     def use_accelerate(cls, accelerate_used, log_level="INFO"):
         cls._accelerate_used = accelerate_used
         cls._log_level = log_level
+        logging.basicConfig(
+            level=getattr(logging, cls._log_level),
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        )
 
     @classmethod
     def _configure_accelerate_logger(cls, name):
         from accelerate.logging import get_logger as get_accelerate_logger
 
-        # Create the accelerate logger with the specified log level
-        logger = get_accelerate_logger(name, log_level=cls._log_level)
-        return logger
+        logger = get_accelerate_logger(name)
+        return CustomLogger(logger, cls._accelerate_used)
 
     @classmethod
     def _configure_standard_logger(cls, name):
-        # Set up standard logger
         logger = logging.getLogger(name)
-        logger.setLevel(getattr(logging, cls._log_level))
-        if not logger.handlers:
-            ch = logging.StreamHandler()
-            ch.setLevel(getattr(logging, cls._log_level))
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
-            ch.setFormatter(formatter)
-            logger.addHandler(ch)
-        return logger
+        return CustomLogger(logger, cls._accelerate_used)
 
     @classmethod
     def get_logger(cls, name):
@@ -51,8 +45,13 @@ class LoggerManager:
                 cls._loggers[name] = logger
                 return logger
             except ImportError:
+                print("Accelerate not available")
                 pass  # Fall through to standard logger if Accelerate is not available
 
         logger = cls._configure_standard_logger(name)
         cls._loggers[name] = logger
         return logger
+
+    @classmethod
+    def clear(cls):
+        cls._loggers.clear()
