@@ -112,8 +112,8 @@ class MUSEDLF(nn.Module):
 
         self._debug = _debug
 
-        if self._debug:
-            logger.debug(f"MUSEDLF initialized with parameters: {self.__dict__}")
+        # Debugging:
+        logger.debug(f"MUSEDLF initialized with parameters: {self.__dict__}")
 
     def negative_sampling(self, embeddings, num_negatives=-1):
         if num_negatives == -1:
@@ -256,16 +256,16 @@ class MUSEDLF(nn.Module):
                 if torch.isnan(unsupervised_results["loss"]).any():
                     logger.debug("loss is nan")
 
-                if self._debug:
-                    logger.debug(
-                        f"UNSUPERVISED: d_p: {unsupervised_results['p']['d'].shape}"
-                    )
-                    logger.debug(
-                        f"UNSUPERVISED: d_a0: {unsupervised_results['a0']['d'].shape}"
-                    )
-                    logger.debug(
-                        f"UNSUPERVISED: d_a1: {unsupervised_results['a1']['d'].shape}"
-                    )
+                # Debugging:
+                logger.debug(
+                    f"UNSUPERVISED: d_p: {unsupervised_results['p']['d'].shape}"
+                )
+                logger.debug(
+                    f"UNSUPERVISED: d_a0: {unsupervised_results['a0']['d'].shape}"
+                )
+                logger.debug(
+                    f"UNSUPERVISED: d_a1: {unsupervised_results['a1']['d'].shape}"
+                )
 
                 # Use the vhat (reconstructed embeddings) for supervised predictions
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])
@@ -277,10 +277,10 @@ class MUSEDLF(nn.Module):
             d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
             d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
 
-            if self._debug:
-                logger.debug(f"AGGREGATED: d_p: {d_p_sentence.shape}")
-                logger.debug(f"AGGREGATED: d_a0: {d_a0_sentence.shape}")
-                logger.debug(f"AGGREGATED: d_a1: {d_a1_sentence.shape}")
+            # Debugging:
+            logger.debug(f"AGGREGATED: d_p: {d_p_sentence.shape}")
+            logger.debug(f"AGGREGATED: d_a0: {d_a0_sentence.shape}")
+            logger.debug(f"AGGREGATED: d_a1: {d_a1_sentence.shape}")
 
             d_p_list.append(d_p_sentence)
             d_a0_list.append(d_a0_sentence)
@@ -305,11 +305,11 @@ class MUSEDLF(nn.Module):
         d_a1_aggregated = torch.stack(d_a1_list, dim=1)
         d_fx_aggregated = torch.stack(d_fx_list, dim=1)
 
-        if self._debug:
-            logger.debug(f"AGGREGATED: d_p: {d_p_aggregated.shape}")
-            logger.debug(f"AGGREGATED: d_a0: {d_a0_aggregated.shape}")
-            logger.debug(f"AGGREGATED: d_a1: {d_a1_aggregated.shape}")
-            logger.debug(f"AGGREGATED: d_fx: {d_fx_aggregated.shape}")
+        # Debugging:
+        logger.debug(f"AGGREGATED: d_p: {d_p_aggregated.shape}")
+        logger.debug(f"AGGREGATED: d_a0: {d_a0_aggregated.shape}")
+        logger.debug(f"AGGREGATED: d_a1: {d_a1_aggregated.shape}")
+        logger.debug(f"AGGREGATED: d_fx: {d_fx_aggregated.shape}")
 
         # Supervised predictions
         span_pred, sentence_pred, combined_pred, other = self.supervised(

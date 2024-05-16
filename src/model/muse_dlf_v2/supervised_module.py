@@ -62,8 +62,8 @@ class MUSESupervised(nn.Module):
 
         self._debug = _debug
 
-        if self._debug:
-            logger.debug(f"MUSESupervised initialized with parameters: {self.__dict__}")
+        # Debugging:
+        logger.debug(f"MUSESupervised initialized with parameters: {self.__dict__}")
 
     def forward(
         self,
@@ -80,11 +80,11 @@ class MUSESupervised(nn.Module):
 
         d_fx_mean = torch.mean(d_fx, dim=1)
 
-        if self._debug:
-            logger.debug(f"d_p_mean: {d_p_mean.shape}")
-            logger.debug(f"d_a0_mean: {d_a0_mean.shape}")
-            logger.debug(f"d_a1_mean: {d_a1_mean.shape}")
-            logger.debug(f"d_fx_mean: {d_fx_mean.shape}")
+        # Debugging:
+        logger.debug(f"d_p_mean: {d_p_mean.shape}")
+        logger.debug(f"d_a0_mean: {d_a0_mean.shape}")
+        logger.debug(f"d_a1_mean: {d_a1_mean.shape}")
+        logger.debug(f"d_fx_mean: {d_fx_mean.shape}")
 
         # Combine and normalize the final descriptor
         y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4

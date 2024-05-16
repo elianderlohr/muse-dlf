@@ -53,10 +53,10 @@ class MUSEFrameAxisUnsupervised(nn.Module):
 
         self._debug = _debug
 
-        if self._debug:
-            logger.debug(
-                f"MUSEFrameAxisUnsupervised initialized with parameters: {self.__dict__}"
-            )
+        # Debugging:
+        logger.debug(
+            f"MUSEFrameAxisUnsupervised initialized with parameters: {self.__dict__}"
+        )
 
     def forward(
         self,

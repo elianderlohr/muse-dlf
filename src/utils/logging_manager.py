@@ -22,7 +22,11 @@ class LoggerManager:
             try:
                 from accelerate.logging import get_logger as get_accelerate_logger
 
-                return get_accelerate_logger(name, log_level=cls._log_level)
+                logger = get_accelerate_logger(name)
+                logger.setLevel(
+                    getattr(logging, cls._log_level)
+                )  # Set the logging level
+                return logger
             except ImportError:
                 pass  # Fall through to standard logger if Accelerate is not available
 

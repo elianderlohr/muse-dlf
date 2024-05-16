@@ -403,7 +403,7 @@ def main():
         log_with="wandb",
     )
     if args.debug:
-        LoggerManager.use_accelerate(accelerate_used=False, log_level="DEBUG")
+        LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
     else:
         LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
 
@@ -419,9 +419,11 @@ def main():
 #                                                   #
 #####################################################"""
     )
-
     # running the model with the given arguments
     logger.info("Running the model with the following arguments: %s", args)
+
+    # use logging in following mode
+    logger.info("Using logging in %s mode", LoggerManager._log_level)
 
     # if debug mode is on, set the seed
     if args.debug:
