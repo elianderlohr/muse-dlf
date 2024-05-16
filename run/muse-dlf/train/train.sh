@@ -82,7 +82,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
     --epochs 10 \
-    --frameaxis_dim 15 \
+    --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-v1/model-1 \
     --path_srls data/srls/mfc/mfc_labeled.pkl \
@@ -92,7 +92,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --save_path $SAVE_PATH \
     --embedding_dim 768 \
     --hidden_dim 768 \
-    --num_classes 10 \
+    --num_classes 15 \
     --dropout_prob 0.3 \
     --alpha 0.1 \
     --lambda_orthogonality 0.01 \

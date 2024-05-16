@@ -141,13 +141,13 @@ def main():
     model_config.add_argument(
         "--num_classes",
         type=int,
-        default=10,
+        default=15,
         help="Number of classes",
     )
     model_config.add_argument(
         "--frameaxis_dim",
         type=int,
-        default=15,
+        default=10,
         help="Dimension of the frame axis",
     )
     model_config.add_argument(
@@ -417,21 +417,28 @@ def main():
 # MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
 #          Learning for Frame Classification        #
 #                                                   #
-#####################################################"""
+#####################################################""",
+        main_process_only=True,
     )
     # running the model with the given arguments
-    logger.info("Running the model with the following arguments: %s", args)
+    logger.info(
+        "Running the model with the following arguments: %s",
+        args,
+        main_process_only=True,
+    )
 
     # use logging in following mode
-    logger.info("Using logging in %s mode", LoggerManager._log_level)
+    logger.info(
+        "Using logging in %s mode", LoggerManager._log_level, main_process_only=True
+    )
 
     # if debug mode is on, set the seed
     if args.debug:
         torch.manual_seed(42)
 
-        logger.debug("######## DEBUG MODE ########")
-        logger.debug("Setting seed to 42")
-        logger.debug("############################")
+        logger.debug("######## DEBUG MODE ########", main_process_only=True)
+        logger.debug("Setting seed to 42", main_process_only=True)
+        logger.debug("############################", main_process_only=True)
 
     # create config dictionary
     config = {
@@ -570,9 +577,9 @@ def main():
         init_kwargs={"wandb": {"tags": args.tags.split(",")}},
     )
 
-    logger.info("Log model using WANDB")
-    logger.info("WANDB project name: %s", project_name)
-    logger.info("WANDB tags: %s", args.tags)
+    logger.info("Log model using WANDB", main_process_only=True)
+    logger.info("WANDB project name: %s", project_name, main_process_only=True)
+    logger.info("WANDB tags: %s", args.tags, main_process_only=True)
 
     # Train the model
     trainer = Trainer(
