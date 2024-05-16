@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 
+from utils.logging_manager import LoggerManager
+
+logger = LoggerManager.get_logger(__name__)
+
 
 class MUSESupervised(nn.Module):
     def __init__(
@@ -13,6 +17,7 @@ class MUSESupervised(nn.Module):
         concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
         num_layers=3,  # Number of layers in feed-forward network
         activation_function="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
+        _debug=False,
     ):
         super(MUSESupervised, self).__init__()
 
@@ -55,6 +60,8 @@ class MUSESupervised(nn.Module):
 
         self.concat_frameaxis = concat_frameaxis
 
+        self._debug = _debug
+
     def forward(
         self,
         d_p,
@@ -69,6 +76,12 @@ class MUSESupervised(nn.Module):
         d_a1_mean = torch.mean(d_a1, dim=2).mean(dim=1)
 
         d_fx_mean = torch.mean(d_fx, dim=1)
+
+        if self._debug:
+            logger.info(f"SUPERVISED: d_p_mean: {d_p_mean.shape}")
+            logger.info(f"SUPERVISED: d_a0_mean: {d_a0_mean.shape}")
+            logger.info(f"SUPERVISED: d_a1_mean: {d_a1_mean.shape}")
+            logger.info(f"SUPERVISED: d_fx_mean: {d_fx_mean.shape}")
 
         # Combine and normalize the final descriptor
         y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4

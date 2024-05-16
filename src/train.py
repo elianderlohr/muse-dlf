@@ -57,6 +57,7 @@ def load_model(
     path_pretrained_model="",
     device="cuda",
     logger=LoggerManager.get_logger(__name__),
+    _debug=False,
 ):
     # Model instantiation
     model = MUSEDLF(
@@ -88,6 +89,7 @@ def load_model(
         supervised_concat_frameaxis=supervised_concat_frameaxis,
         supervised_num_layers=supervised_num_layers,
         supervised_activation=supervised_activation,
+        _debug=_debug,
     )
 
     model = model.to(device)
@@ -386,6 +388,9 @@ def main():
         "--sample_size", type=int, default=-1, help="Sample size"
     )
 
+    # debug
+    parser.add_argument("--debug", type=bool, default=False, help="Debug mode")
+
     args = parser.parse_args()
 
     # start with setting up wandb and accelerator
@@ -415,6 +420,14 @@ def main():
 
     # running the model with the given arguments
     logger.info("Running the model with the following arguments: %s", args)
+
+    # if debug mode is on, set the seed
+    if args.debug:
+        torch.manual_seed(42)
+
+        logger.info("######## DEBUG MODE ########")
+        logger.info("Setting seed to 42")
+        logger.info("############################")
 
     # create config dictionary
     config = {
@@ -452,6 +465,7 @@ def main():
         "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
         "supervised_num_layers": args.supervised_num_layers,
         "supervised_activation": args.supervised_activation,
+        "debug": args.debug,
     }
 
     model = load_model(
@@ -486,6 +500,7 @@ def main():
         path_pretrained_model=args.path_name_pretrained_muse_model,
         device="cuda",
         logger=logger,
+        _debug=args.debug,
     )
 
     if args.name_tokenizer == "roberta-base":
