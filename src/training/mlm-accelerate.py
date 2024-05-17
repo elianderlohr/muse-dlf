@@ -184,7 +184,7 @@ def main():
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True)
 
-    accelerator = Accelerator()
+    accelerator = Accelerator(log_with="wandb")
 
     # generate wandb run name use current date and time
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -203,6 +203,12 @@ def main():
     # Ensure wandb is silent on processes that are not the main process
     else:
         wandb.init(mode="disabled")
+
+    # print some accelerator info
+    logging.info("Accelerator info")
+    logging.info(f"  num_processes: {accelerator.num_processes}")
+    logging.info(f"  process_index: {accelerator.process_index}")
+    logging.info(f"  device: {accelerator.device}")
 
     # create the args.output_path if it does not exist
     if not os.path.exists(args.output_path):
