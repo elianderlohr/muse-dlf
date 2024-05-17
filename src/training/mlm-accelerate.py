@@ -17,6 +17,7 @@ from accelerate import Accelerator
 import math
 import os
 from datetime import datetime
+import random
 
 
 class LogPerplexityCallback(WandbCallback):
@@ -188,9 +189,9 @@ def main():
 
     # generate wandb run name use current date and time
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    custom_run_name = (
-        f"{args.project_name}-{accelerator.local_process_index}-{current_time}"
-    )
+    # generate random number between 1 and 99999
+    random_number = str(random.randint(1, 99999))
+    custom_run_name = f"{args.project_name}-{current_time}-{random_number}"
 
     if accelerator.is_main_process:
         if args.wb_api_key:
@@ -204,11 +205,15 @@ def main():
     else:
         wandb.init(mode="disabled")
 
+    output_path_full = os.path.join(args.output_path, custom_run_name)
+
     # print some accelerator info
     logging.info("Accelerator info")
     logging.info(f"  num_processes: {accelerator.num_processes}")
     logging.info(f"  process_index: {accelerator.process_index}")
     logging.info(f"  device: {accelerator.device}")
+
+    logging.info("Output path: " + output_path_full)
 
     # create the args.output_path if it does not exist
     if not os.path.exists(args.output_path):
@@ -217,7 +222,7 @@ def main():
     logging.info("Setting up Trainer")
 
     training_args = TrainingArguments(
-        output_dir=args.output_path,
+        output_dir=output_path_full,
         overwrite_output_dir=True,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
