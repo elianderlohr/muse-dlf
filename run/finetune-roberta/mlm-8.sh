@@ -2,7 +2,7 @@
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=roberta-base-finetune
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:8
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
