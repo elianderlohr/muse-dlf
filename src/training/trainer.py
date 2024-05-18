@@ -333,6 +333,15 @@ class Trainer:
                     frameaxis_pred, frameaxis_labels = (
                         self.accelerator.gather_for_metrics((frameaxis_pred, labels))
                     )
+                else:
+                    combined_labels = labels
+                    span_labels = labels
+                    sentence_labels = labels
+
+                    predicate_labels = labels
+                    arg0_labels = labels
+                    arg1_labels = labels
+                    frameaxis_labels = labels
 
                 # transform from one-hot to class index
                 combined_pred = combined_pred.argmax(dim=1)
@@ -714,6 +723,15 @@ class Trainer:
                 frameaxis_pred, frameaxis_labels = self.accelerator.gather_for_metrics(
                     (frameaxis_pred, labels)
                 )
+            else:
+                combined_labels = labels
+                span_labels = labels
+                sentence_labels = labels
+
+                predicate_labels = labels
+                arg0_labels = labels
+                arg1_labels = labels
+                frameaxis_labels = labels
 
             # transform from one-hot to class index
             combined_pred = combined_pred.argmax(dim=1)

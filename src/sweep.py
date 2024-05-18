@@ -7,10 +7,9 @@ from training.trainer import Trainer
 from transformers import (
     BertTokenizer,
     RobertaTokenizerFast,
-    AdamW,
     get_linear_schedule_with_warmup,
 )
-from torch.optim import Adam
+from torch.optim import Adam, AdamW
 import warnings
 import os
 

@@ -4,7 +4,8 @@ from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from transformers import AdamW, get_linear_schedule_with_warmup
+from transformers import AdamW
+from transformers import get_linear_schedule_with_warmup
 from torch.optim.lr_scheduler import StepLR
 
 import wandb
