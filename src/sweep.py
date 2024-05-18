@@ -1,4 +1,4 @@
-from model.muse.muse import MUSE
+from model.muse_dlf_v2.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
@@ -10,6 +10,7 @@ from transformers import (
     AdamW,
     get_linear_schedule_with_warmup,
 )
+from torch.optim import Adam
 import warnings
 import os
 
@@ -36,35 +37,64 @@ def welcome_message():
 
 def load_model(
     embedding_dim,
-    D_h,
+    frameaxis_dim,
+    hidden_dim,
+    num_classes,
+    num_sentences,
+    dropout_prob,
+    bert_model_name,
+    bert_model_name_or_path,
+    srl_embeddings_pooling,
     lambda_orthogonality,
     M,
     t,
-    num_sentences,
-    K,
-    num_frames,
-    frameaxis_dim,
-    dropout_prob,
-    bert_model_name="bert-base-uncased",
-    path_name_bert_model="bert-base-uncased",
-    supervised_sentence_prediction_method="friss",  # friss or custom
+    muse_unsupervised_num_layers,
+    muse_unsupervised_activation,
+    muse_unsupervised_use_batch_norm,
+    muse_unsupervised_matmul_input,
+    muse_unsupervised_gumbel_softmax_hard,
+    muse_unsupervised_gumbel_softmax_log,
+    muse_frameaxis_unsupervised_num_layers,
+    muse_frameaxis_unsupervised_activation,
+    muse_frameaxis_unsupervised_use_batch_norm,
+    muse_frameaxis_unsupervised_matmul_input,
+    muse_frameaxis_unsupervised_concat_frameaxis,
+    muse_frameaxis_unsupervised_gumbel_softmax_hard,
+    muse_frameaxis_unsupervised_gumbel_softmax_log,
+    supervised_concat_frameaxis,
+    supervised_num_layers,
+    supervised_activation,
     device="cuda",
 ):
-    # Model instantiation
-    model = MUSE(
-        embedding_dim,
-        D_h,
-        lambda_orthogonality,
-        M,
-        t,
-        num_sentences,
-        K,
-        num_frames,
+    model = MUSEDLF(
+        embedding_dim=embedding_dim,
         frameaxis_dim=frameaxis_dim,
+        hidden_dim=hidden_dim,
+        num_classes=num_classes,
+        num_sentences=num_sentences,
         dropout_prob=dropout_prob,
         bert_model_name=bert_model_name,
-        bert_model_name_or_path=path_name_bert_model,
-        supervised_sentence_prediction_method=supervised_sentence_prediction_method,
+        bert_model_name_or_path=bert_model_name_or_path,
+        srl_embeddings_pooling=srl_embeddings_pooling,
+        lambda_orthogonality=lambda_orthogonality,
+        M=M,
+        t=t,
+        muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+        muse_unsupervised_activation=muse_unsupervised_activation,
+        muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+        muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+        muse_unsupervised_gumbel_softmax_hard=muse_unsupervised_gumbel_softmax_hard,
+        muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+        muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+        muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+        muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+        muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+        muse_frameaxis_unsupervised_concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
+        muse_frameaxis_unsupervised_gumbel_softmax_hard=muse_frameaxis_unsupervised_gumbel_softmax_hard,
+        muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+        supervised_concat_frameaxis=supervised_concat_frameaxis,
+        supervised_num_layers=supervised_num_layers,
+        supervised_activation=supervised_activation,
     )
 
     model = model.to(device)
@@ -75,40 +105,79 @@ def load_model(
 def main():
 
     wandb.login()
+    wandb_instance = wandb.init(project="slmuse-dlf")
 
-    wandb_instance = wandb.init(project="muse-dlf")
-
-    path_data = os.getenv("PATH_DATA")
-
-    D_h = wandb.config.D_h
-    lambda_orthogonality = wandb.config.lambda_orthogonality
-    dropout_prob = wandb.config.dropout_prob
+    # Hardcoded parameters
+    embedding_dim = 768
+    num_classes = 15
     M = 8
     t = 8
+    num_sentences = 32
+    frameaxis_dim = 10
+    max_sentence_length = 32
+    max_args_per_sentence = 10
+    max_arg_length = 16
+    test_size = 0.1
+    epochs = 10
+
+    # Parameters from wandb.config
+    hidden_dim = wandb.config.hidden_dim
+    dropout_prob = wandb.config.dropout_prob
+    lambda_orthogonality = wandb.config.lambda_orthogonality
+    muse_unsupervised_num_layers = wandb.config.muse_unsupervised_num_layers
+    muse_unsupervised_activation = wandb.config.muse_unsupervised_activation
+    muse_unsupervised_use_batch_norm = wandb.config.muse_unsupervised_use_batch_norm
+    muse_unsupervised_matmul_input = wandb.config.muse_unsupervised_matmul_input
+    muse_unsupervised_gumbel_softmax_hard = (
+        wandb.config.muse_unsupervised_gumbel_softmax_hard
+    )
+    muse_unsupervised_gumbel_softmax_log = (
+        wandb.config.muse_unsupervised_gumbel_softmax_log
+    )
+    muse_frameaxis_unsupervised_num_layers = (
+        wandb.config.muse_frameaxis_unsupervised_num_layers
+    )
+    muse_frameaxis_unsupervised_activation = (
+        wandb.config.muse_frameaxis_unsupervised_activation
+    )
+    muse_frameaxis_unsupervised_use_batch_norm = (
+        wandb.config.muse_frameaxis_unsupervised_use_batch_norm
+    )
+    muse_frameaxis_unsupervised_matmul_input = (
+        wandb.config.muse_frameaxis_unsupervised_matmul_input
+    )
+    muse_frameaxis_unsupervised_concat_frameaxis = (
+        wandb.config.muse_frameaxis_unsupervised_concat_frameaxis
+    )
+    muse_frameaxis_unsupervised_gumbel_softmax_hard = (
+        wandb.config.muse_frameaxis_unsupervised_gumbel_softmax_hard
+    )
+    muse_frameaxis_unsupervised_gumbel_softmax_log = (
+        wandb.config.muse_frameaxis_unsupervised_gumbel_softmax_log
+    )
+    supervised_concat_frameaxis = wandb.config.supervised_concat_frameaxis
+    supervised_num_layers = wandb.config.supervised_num_layers
+    supervised_activation = wandb.config.supervised_activation
+    srl_embeddings_pooling = wandb.config.srl_embeddings_pooling
+
     alpha = wandb.config.alpha
     lr = wandb.config.lr
-    K = 15
-    embedding_dim = 768
-
-    supervised_sentence_prediction_method = (
-        wandb.config.supervised_sentence_prediction_method
-    )
-
     batch_size = wandb.config.batch_size
-    epochs = 10
-    test_size = 0.1
-    tau_min = 0.5
-    tau_decay = 5e-4
+    tau_min = wandb.config.tau_min
+    tau_decay = wandb.config.tau_decay
 
-    # Data Processing
-    num_sentences = 32  # correct
-    num_frames = 15
-    frameaxis_dim = 10  # correct
-    max_sentence_length = 64  # correct
-    max_args_per_sentence = 10  # correct
-    max_arg_length = 16  # correct
+    optimizer_type = wandb.config.optimizer
+    if optimizer_type == "adam":
+        weight_decay = wandb.config.adam_weight_decay
+        eps = wandb.config.adam_eps
+    elif optimizer_type == "adamw":
+        weight_decay = wandb.config.adamw_weight_decay
+        eps = wandb.config.adamw_eps
+    else:
+        raise ValueError("Unsupported optimizer type")
 
     # Input/Output Paths
+    path_data = os.getenv("PATH_DATA")
     name_tokenizer = os.getenv("NAME_TOKENIZER")
     path_name_bert_model = os.getenv("PATH_NAME_BERT_MODEL")
     path_srls = os.getenv("PATH_SRLS")
@@ -124,18 +193,33 @@ def main():
 
     model = load_model(
         embedding_dim=embedding_dim,
-        D_h=D_h,
+        frameaxis_dim=frameaxis_dim,
+        hidden_dim=hidden_dim,
+        num_classes=num_classes,
+        num_sentences=num_sentences,
+        dropout_prob=dropout_prob,
+        bert_model_name=name_tokenizer,
+        bert_model_name_or_path=path_name_bert_model,
+        srl_embeddings_pooling=srl_embeddings_pooling,
         lambda_orthogonality=lambda_orthogonality,
         M=M,
         t=t,
-        num_sentences=num_sentences,
-        K=K,
-        num_frames=num_frames,
-        frameaxis_dim=frameaxis_dim,
-        dropout_prob=dropout_prob,
-        bert_model_name=name_tokenizer,
-        path_name_bert_model=path_name_bert_model,
-        supervised_sentence_prediction_method=supervised_sentence_prediction_method,
+        muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+        muse_unsupervised_activation=muse_unsupervised_activation,
+        muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+        muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+        muse_unsupervised_gumbel_softmax_hard=muse_unsupervised_gumbel_softmax_hard,
+        muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+        muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+        muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+        muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+        muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+        muse_frameaxis_unsupervised_concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
+        muse_frameaxis_unsupervised_gumbel_softmax_hard=muse_frameaxis_unsupervised_gumbel_softmax_hard,
+        muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+        supervised_concat_frameaxis=supervised_concat_frameaxis,
+        supervised_num_layers=supervised_num_layers,
+        supervised_activation=supervised_activation,
         device="cuda",
     )
 
@@ -179,9 +263,13 @@ def main():
         sample_size=sample_size,
     )
 
-    # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
-    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=5e-7, eps=1e-8)
+
+    if optimizer_type == "adam":
+        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+    elif optimizer_type == "adamw":
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=10,

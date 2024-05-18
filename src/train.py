@@ -299,9 +299,6 @@ def main():
         "--num_sentences", type=int, default=32, help="Number of sentences in the input"
     )
     data_processing.add_argument(
-        "--num_frames", type=int, default=15, help="Number of frames in the input"
-    )
-    data_processing.add_argument(
         "--max_sentence_length",
         type=int,
         default=32,
@@ -450,7 +447,6 @@ def main():
         "M": args.M,
         "t": args.t,
         "num_sentences": args.num_sentences,
-        "num_frames": args.num_frames,
         "frameaxis_dim": args.frameaxis_dim,
         "max_sentence_length": args.max_sentence_length,
         "max_args_per_sentence": args.max_args_per_sentence,
