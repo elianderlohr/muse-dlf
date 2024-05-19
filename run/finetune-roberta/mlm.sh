@@ -63,7 +63,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --project_name "roberta-base-finetune" \
     --batch_size 24 \
     --learning_rate 0.000025 \
-    --epochs 100 \
+    --epochs 150 \
     --patience 15
 
 # Cleanup and Closeout
