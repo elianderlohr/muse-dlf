@@ -28,7 +28,7 @@ echo "Configuring paths..."
 DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
 PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
-MODEL_PATH="models/roberta-base-finetune/roberta-base-finetune-2024-05-16_05-34-31-73594/checkpoint-32060"
+MODEL_PATH="models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
 OUTPUT_PATH="data/frameaxis/mfc/frameaxis_mft.pkl"
 PATH_MICROFRAME="data/frameaxis/mfc/frameaxis_mft_microframes.pkl"
 
