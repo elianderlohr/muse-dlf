@@ -37,20 +37,6 @@ else
     echo "WANDB_API_KEY successfully loaded."
 fi
 
-# Data and Output Configuration
-echo "Configuring paths..."
-DATA_PATH="data/mfc/"
-OUTPUT_PATH="models/roberta-base-finetune/"
-echo "Data path: $DATA_PATH"
-echo "Output path: $OUTPUT_PATH"
-
-# GPU Setup and Verification
-echo "GPU status:"
-nvidia-smi
-
-# make all 4 gpu devices visible
-export CUDA_VISIBLE_DEVICES=0,1,2,3
-
 # Training Script Execution
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
