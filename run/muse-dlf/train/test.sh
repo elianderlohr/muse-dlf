@@ -3,7 +3,6 @@
 # SLURM Directives
 #SBATCH --nodes=1
 #SBATCH --job-name=muse-dlf-train
-#SBATCH --export=NONE
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
