@@ -3,11 +3,17 @@
 # SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
+#SBATCH --gres=gpu:4
+#SBATCH --mem=32G
 #SBATCH --job-name=muse-dlf-train
-#SBATCH --gres=gpu:2
-#SBATCH --mem=64G
 
 echo "===================== Job Details ====================="
+# Display job settings
+echo "Job settings at start:"
+scontrol show job $SLURM_JOB_ID
+
+echo "===================== Job Setup ====================="
+
 # Activate the virtual environment
 echo "Activating virtual environment..."
 source run/venv/bin/activate
