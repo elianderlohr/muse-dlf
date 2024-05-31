@@ -4,16 +4,16 @@ from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from transformers import AdamW
-from transformers import get_linear_schedule_with_warmup
-from torch.optim.lr_scheduler import StepLR
-
-import wandb
-from training.trainer import Trainer
-from transformers import BertTokenizer, RobertaTokenizerFast
+from transformers import (
+    AdamW,
+    BertTokenizer,
+    RobertaTokenizerFast,
+    get_linear_schedule_with_warmup,
+)
 from accelerate import Accelerator
 import warnings
-
+import wandb
+from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
 # Suppress specific warnings from numpy
@@ -21,7 +21,6 @@ warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
 )
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
-
 
 project_name = "muse-dlf"
 
@@ -106,7 +105,6 @@ def load_model(
 
 
 def main():
-
     parser = argparse.ArgumentParser(description="Train MUSE model")
 
     # Required arguments
@@ -140,21 +138,15 @@ def main():
         help="Dimension of the hidden layer in the model",
     )
     model_config.add_argument(
-        "--num_classes",
-        type=int,
-        default=15,
-        help="Number of classes",
+        "--num_classes", type=int, default=15, help="Number of classes"
     )
     model_config.add_argument(
-        "--frameaxis_dim",
-        type=int,
-        default=10,
-        help="Dimension of the frame axis",
+        "--frameaxis_dim", type=int, default=10, help="Dimension of the frame axis"
     )
     model_config.add_argument(
         "--lambda_orthogonality",
         type=float,
-        default=1e-3,  # 10−3
+        default=1e-3,
         help="Orthogonality regularization parameter",
     )
     model_config.add_argument(
@@ -271,7 +263,6 @@ def main():
     training_params.add_argument(
         "--alpha", type=float, default=0.5, help="Alpha parameter for the loss function"
     )
-    # learning rate
     training_params.add_argument(
         "--lr", type=float, default=5e-4, help="Learning rate for the optimizer"
     )
@@ -397,9 +388,7 @@ def main():
     wandb.login(key=args.wandb_api_key)
 
     # initialize accelerator
-    accelerator = Accelerator(
-        log_with="wandb",
-    )
+    accelerator = Accelerator(log_with="wandb")
     if args.debug:
         LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
     else:

@@ -992,14 +992,27 @@ class Trainer:
         }
 
         for epoch in range(1, epochs + 1):
-            early_stopping = self._train(
-                epoch,
-                self.train_dataloader,
-                tau,
-                alpha,
-                self.device,
-                early_stopping,
-            )
+            try:
+                early_stopping = self._train(
+                    epoch,
+                    self.train_dataloader,
+                    tau,
+                    alpha,
+                    self.device,
+                    early_stopping,
+                )
+            except Exception as e:
+                logger.error(
+                    f"Training failed at epoch {epoch} with exception: {e}",
+                    exc_info=True,
+                )
+                self._log_alert(
+                    title=f"Training failed at epoch {epoch}",
+                    text=f"Exception: {str(e)}",
+                )
+                early_stopping["early_stopped"] = True
+                early_stopping["stopping_code"] = 103
+                break
 
             if early_stopping["early_stopped"]:
                 early_stopping["stopping_code"] = 101
@@ -1009,7 +1022,20 @@ class Trainer:
                 )
                 break
 
-            metrics = self._evaluate(epoch, self.test_dataloader, self.device, tau)
+            try:
+                metrics = self._evaluate(epoch, self.test_dataloader, self.device, tau)
+            except Exception as e:
+                logger.error(
+                    f"Evaluation failed at epoch {epoch} with exception: {e}",
+                    exc_info=True,
+                )
+                self._log_alert(
+                    title=f"Evaluation failed at epoch {epoch}",
+                    text=f"Exception: {str(e)}",
+                )
+                early_stopping["early_stopped"] = True
+                early_stopping["stopping_code"] = 104
+                break
 
             # accuracy is below 0.5 after first 2 epochs then stop training
             if epoch > 2 and metrics["accuracy"] < 0.5:
