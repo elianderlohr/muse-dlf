@@ -500,10 +500,14 @@ def main():
         _debug=args.debug,
     )
 
+    logger.info("Model loaded successfully")
+
     if args.name_tokenizer == "roberta-base":
         tokenizer = RobertaTokenizerFast.from_pretrained(args.name_tokenizer)
     elif args.name_tokenizer == "bert-base-uncased":
         tokenizer = BertTokenizer.from_pretrained(args.name_tokenizer)
+
+    logger.info("Tokenizer loaded successfully")
 
     # Preprocess the dim_names
     dim_names = args.dim_names.split(",")
@@ -524,6 +528,8 @@ def main():
         path_antonym_pairs=args.path_antonym_pairs,
         dim_names=dim_names,
     )
+
+    logger.info("Preprocessor loaded successfully")
 
     # Load the data
     _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
@@ -553,6 +559,8 @@ def main():
         num_warmup_steps=10,
         num_training_steps=len(train_dataloader) * args.epochs,
     )
+
+    logger.info("Loss function and optimizer loaded successfully")
 
     # prepare optimizer and scheduler
     optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
