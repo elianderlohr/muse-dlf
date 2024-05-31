@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --job-name=muse-dlf-train
 #SBATCH --gres=gpu:2
-#SBATCH --mem=32G
+#SBATCH --mem=64G
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
