@@ -6,7 +6,6 @@ from preprocessing.frameaxis_processor import FrameAxisProcessor
 from preprocessing.srl_processor import SRLProcessor
 import torch
 from torch.utils.data import DataLoader
-from allennlp.predictors.predictor import Predictor
 from tqdm import tqdm
 import pickle
 from sklearn.model_selection import train_test_split

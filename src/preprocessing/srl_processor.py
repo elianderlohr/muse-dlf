@@ -2,7 +2,6 @@ from collections import defaultdict
 import os
 import pandas as pd
 import pickle
-from allennlp.predictors.predictor import Predictor
 from tqdm import tqdm
 
 from utils.logging_manager import LoggerManager
@@ -54,6 +53,9 @@ class SRLProcessor:
         with columns for article_id, text, and srls, where srls is a list of SRL components for each text entry.
         """
         logger.info("Recalculating SRL components...")
+
+        from allennlp.predictors.predictor import Predictor  # Load here only if needed
+
         predictor = Predictor.from_path(
             "https://storage.googleapis.com/allennlp-public-models/structured-prediction-srl-bert.2020.12.15.tar.gz",
             cuda_device=self.device,
@@ -83,7 +85,7 @@ class SRLProcessor:
             srl_series = pickle.load(f)
         return srl_series
 
-    def _extract_srl_batch(self, batched_sentences, predictor: Predictor):
+    def _extract_srl_batch(self, batched_sentences, predictor):
         """
         Extracts SRL components for a batch of sentences.
         """
