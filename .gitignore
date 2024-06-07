@@ -4,6 +4,7 @@ data/mfc
 data/semeval
 data/glove
 data/frameaxis/mfc/
+data/srls/
 .ipynb_checkpoints
 .pyo
 .pyc
