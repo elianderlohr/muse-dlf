@@ -4,6 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=muse-dlf-sweep
+#SBATCH --mem=32G
 #SBATCH --gres=gpu:8
 
 echo "===================== Job Details ====================="
