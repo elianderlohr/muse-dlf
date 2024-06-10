@@ -41,7 +41,7 @@ fi
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/"
+DATA_PATH="data/semeval/muse-dlf/"
 OUTPUT_PATH="models/semeval-roberta-finetune/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $OUTPUT_PATH"
