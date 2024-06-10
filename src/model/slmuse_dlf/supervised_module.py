@@ -75,11 +75,17 @@ class MUSESupervised(nn.Module):
         vs,
         frameaxis_data,
     ):
-        d_p_mean = torch.mean(d_p, dim=2).mean(dim=1)
-        d_a0_mean = torch.mean(d_a0, dim=2).mean(dim=1)
-        d_a1_mean = torch.mean(d_a1, dim=2).mean(dim=1)
+        batch_size, num_sentences, num_args, embedding_dim = d_p.shape
 
-        d_fx_mean = torch.mean(d_fx, dim=1)
+        d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
+        d_a0_flatten = d_a0.view(batch_size, num_sentences * num_args, embedding_dim)
+        d_a1_flatten = d_a1.view(batch_size, num_sentences * num_args, embedding_dim)
+
+        d_p_mean = d_p_flatten.mean(dim=1)
+        d_a0_mean = d_a0_flatten.mean(dim=1)
+        d_a1_mean = d_a1_flatten.mean(dim=1)
+
+        d_fx_mean = d_fx.mean(dim=1)
 
         # Debugging:
         self.logger.debug(f"d_p_mean: {d_p_mean.shape}")

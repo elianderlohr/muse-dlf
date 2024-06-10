@@ -1,5 +1,5 @@
 import argparse
-from model.muse_dlf_v2.muse import MUSEDLF
+from model.slmuse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn

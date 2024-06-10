@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-from model.muse_dlf_v2.srl_embeddings import SRLEmbeddings
-from model.muse_dlf_v2.supervised_module import MUSESupervised
-from model.muse_dlf_v2.unsupervised_module import MUSEUnsupervised
-from model.muse_dlf_v2.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
+from model.slmuse_dlf.srl_embeddings import SRLEmbeddings
+from model.slmuse_dlf.supervised_module import MUSESupervised
+from model.slmuse_dlf.unsupervised_module import MUSEUnsupervised
+from model.slmuse_dlf.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
 

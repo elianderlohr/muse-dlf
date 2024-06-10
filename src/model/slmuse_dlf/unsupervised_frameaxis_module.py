@@ -1,16 +1,17 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.muse_dlf_v2.combined_autoencoder import CombinedAutoencoder
-from model.muse_dlf_v2.loss_module import LossModule
+from model.slmuse_dlf.frameaxis_autoencoder import FrameAxisAutoencoder
+from model.slmuse_dlf.loss_module import LossModule
 
 from utils.logging_manager import LoggerManager
 
 
-class MUSEUnsupervised(nn.Module):
+class MUSEFrameAxisUnsupervised(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
+        frameaxis_dim,  # frameaxis dimension
         hidden_dim,  # hidden dimension
         num_classes,  # number of classes to predict
         # LossModule Parameters
@@ -23,17 +24,21 @@ class MUSEUnsupervised(nn.Module):
         activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
         use_batch_norm=True,  # whether to use batch normalization
         matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
+        concat_frameaxis=True,  # whether to concatenate frameaxis with sentence
         gumbel_softmax_hard=False,  # whether to use hard gumbel softmax
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(MUSEUnsupervised, self).__init__()
+        super(MUSEFrameAxisUnsupervised, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.combined_autoencoder = CombinedAutoencoder(
+        self.loss_fn = LossModule(lambda_orthogonality, M, t, _debug=_debug)
+
+        self.frameaxis_autoencoder = FrameAxisAutoencoder(
             embedding_dim=embedding_dim,
+            frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,
             num_classes=num_classes,
             num_layers=num_layers,
@@ -41,62 +46,36 @@ class MUSEUnsupervised(nn.Module):
             activation=activation,
             use_batch_norm=use_batch_norm,
             matmul_input=matmul_input,
+            concat_frameaxis=concat_frameaxis,
             hard=gumbel_softmax_hard,
             log=gumbel_softmax_log,
             _debug=_debug,
         )
 
-        self.loss_fn = LossModule(lambda_orthogonality, M, t, _debug=_debug)
-
         self._debug = _debug
 
         # Debugging:
-        self.logger.debug(f"✅ MUSEUnsupervised successfully initialized")
+        self.logger.debug(f"✅ MUSEFrameAxisUnsupervised successfully initialized")
 
     def forward(
         self,
-        v_p,
-        v_a0,
-        v_a1,
         v_sentence,
-        p_negatives,
-        a0_negatives,
-        a1_negatives,
+        v_fx,
+        fx_negatives,
         tau,
     ):
-        outputs = self.combined_autoencoder(v_p, v_a0, v_a1, v_sentence, tau)
+        outputs_fx = self.frameaxis_autoencoder(v_fx, v_sentence, tau)
 
-        outputs_p = outputs["p"]
-        outputs_p["v"] = v_p
+        outputs_fx["v"] = v_fx
 
-        outputs_a0 = outputs["a0"]
-        outputs_a0["v"] = v_a0
-
-        outputs_a1 = outputs["a1"]
-        outputs_a1["v"] = v_a1
-
-        loss_p = self.loss_fn(
-            outputs_p,
-            p_negatives,
+        loss = self.loss_fn(
+            outputs_fx,
+            fx_negatives,
         )
-
-        loss_a0 = self.loss_fn(
-            outputs_a0,
-            a0_negatives,
-        )
-
-        loss_a1 = self.loss_fn(
-            outputs_a1,
-            a1_negatives,
-        )
-
-        loss = loss_p + loss_a0 + loss_a1
 
         results = {
             "loss": loss,
-            "p": outputs["p"],
-            "a0": outputs["a0"],
-            "a1": outputs["a1"],
+            "fx": outputs_fx,
         }
 
         return results
