@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 
 import json
@@ -128,6 +129,7 @@ class Trainer:
         train_dataloader,
         tau,
         alpha,
+        experiment_id,
         device,
         early_stopping={
             "best_accuracy": 0,
@@ -142,39 +144,73 @@ class Trainer:
         global global_steps
 
         # Load the evaluate metrics
-        f1_metric_micro = evaluate.load("f1", config_name="micro")
-        f1_metric_macro = evaluate.load("f1", config_name="macro")
-        accuracy_metric = evaluate.load("accuracy")
+        f1_metric_micro = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # metrics for span
-        f1_metric_micro_span = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_span = evaluate.load("f1", config_name="macro")
-        accuracy_metric_span = evaluate.load("accuracy")
+        f1_metric_micro_span = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_span = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_span = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # metrics for sentence
-        f1_metric_micro_sentence = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_sentence = evaluate.load("f1", config_name="macro")
-        accuracy_metric_sentence = evaluate.load("accuracy")
+        f1_metric_micro_sentence = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_sentence = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_sentence = evaluate.load(
+            "accuracy", experiment_id=experiment_id
+        )
 
         # predicate
-        f1_metric_micro_predicate = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_predicate = evaluate.load("f1", config_name="macro")
-        accuracy_metric_predicate = evaluate.load("accuracy")
+        f1_metric_micro_predicate = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_predicate = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_predicate = evaluate.load(
+            "accuracy", experiment_id=experiment_id
+        )
 
         # arg0
-        f1_metric_micro_arg0 = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_arg0 = evaluate.load("f1", config_name="macro")
-        accuracy_metric_arg0 = evaluate.load("accuracy")
+        f1_metric_micro_arg0 = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_arg0 = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_arg0 = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # arg1
-        f1_metric_micro_arg1 = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_arg1 = evaluate.load("f1", config_name="macro")
-        accuracy_metric_arg1 = evaluate.load("accuracy")
+        f1_metric_micro_arg1 = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_arg1 = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_arg1 = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # frameaxis
-        f1_metric_micro_frameaxis = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_frameaxis = evaluate.load("f1", config_name="macro")
-        accuracy_metric_frameaxis = evaluate.load("accuracy")
+        f1_metric_micro_frameaxis = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_frameaxis = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_frameaxis = evaluate.load(
+            "accuracy", experiment_id=experiment_id
+        )
 
         local_steps = 0
         for batch_idx, batch in enumerate(
@@ -594,43 +630,77 @@ class Trainer:
 
         return early_stopping
 
-    def _evaluate(self, epoch, test_dataloader, device, tau):
+    def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
         self.model.eval()
 
         # Load the evaluate metrics
-        f1_metric_micro = evaluate.load("f1", config_name="micro")
-        f1_metric_macro = evaluate.load("f1", config_name="macro")
-        accuracy_metric = evaluate.load("accuracy")
+        f1_metric_micro = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # metrics for span
-        f1_metric_micro_span = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_span = evaluate.load("f1", config_name="macro")
-        accuracy_metric_span = evaluate.load("accuracy")
+        f1_metric_micro_span = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_span = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_span = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # metrics for sentence
-        f1_metric_micro_sentence = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_sentence = evaluate.load("f1", config_name="macro")
-        accuracy_metric_sentence = evaluate.load("accuracy")
+        f1_metric_micro_sentence = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_sentence = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_sentence = evaluate.load(
+            "accuracy", experiment_id=experiment_id
+        )
 
         # predicate
-        f1_metric_micro_predicate = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_predicate = evaluate.load("f1", config_name="macro")
-        accuracy_metric_predicate = evaluate.load("accuracy")
+        f1_metric_micro_predicate = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_predicate = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_predicate = evaluate.load(
+            "accuracy", experiment_id=experiment_id
+        )
 
         # arg0
-        f1_metric_micro_arg0 = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_arg0 = evaluate.load("f1", config_name="macro")
-        accuracy_metric_arg0 = evaluate.load("accuracy")
+        f1_metric_micro_arg0 = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_arg0 = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_arg0 = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # arg1
-        f1_metric_micro_arg1 = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_arg1 = evaluate.load("f1", config_name="macro")
-        accuracy_metric_arg1 = evaluate.load("accuracy")
+        f1_metric_micro_arg1 = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_arg1 = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_arg1 = evaluate.load("accuracy", experiment_id=experiment_id)
 
         # frameaxis
-        f1_metric_micro_frameaxis = evaluate.load("f1", config_name="micro")
-        f1_metric_macro_frameaxis = evaluate.load("f1", config_name="macro")
-        accuracy_metric_frameaxis = evaluate.load("accuracy")
+        f1_metric_micro_frameaxis = evaluate.load(
+            "f1", config_name="micro", experiment_id=experiment_id
+        )
+        f1_metric_macro_frameaxis = evaluate.load(
+            "f1", config_name="macro", experiment_id=experiment_id
+        )
+        accuracy_metric_frameaxis = evaluate.load(
+            "accuracy", experiment_id=experiment_id
+        )
 
         for batch_idx, batch in enumerate(
             tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
@@ -991,6 +1061,8 @@ class Trainer:
             "stopping_code": 0,
         }
 
+        experiment_id = f"experiment_{int(time.time())}"
+
         for epoch in range(1, epochs + 1):
             try:
                 early_stopping = self._train(
@@ -998,6 +1070,7 @@ class Trainer:
                     self.train_dataloader,
                     tau,
                     alpha,
+                    experiment_id,
                     self.device,
                     early_stopping,
                 )
@@ -1023,7 +1096,9 @@ class Trainer:
                 break
 
             try:
-                metrics = self._evaluate(epoch, self.test_dataloader, self.device, tau)
+                metrics = self._evaluate(
+                    epoch, self.test_dataloader, self.device, tau, experiment_id
+                )
             except Exception as e:
                 logger.error(
                     f"Evaluation failed at epoch {epoch} with exception: {e}",
