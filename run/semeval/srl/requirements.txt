@@ -1,0 +1,4 @@
+logging  
+argparse  
+allennlp
+allennlp-models
