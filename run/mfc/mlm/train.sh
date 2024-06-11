@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --job-name=mfc-roberta-finetune-8
+#SBATCH --job-name=semeval-roberta-finetune-4
 #SBATCH --mem=32G
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:4
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
@@ -41,8 +41,8 @@ fi
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/"
-OUTPUT_PATH="models/roberta-base-finetune/"
+DATA_PATH="data/semeval/muse-dlf/"
+OUTPUT_PATH="models/semeval-roberta-finetune/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $OUTPUT_PATH"
 
@@ -51,19 +51,19 @@ echo "GPU status:"
 nvidia-smi
 
 # make all 4 gpu devices visible
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # Training Script Execution
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
 echo "Launching training script with Accelerate..."
-accelerate launch --multi_gpu --num_processes 8 --num_machines 1 --mixed_precision fp16 --config_file run/finetune-roberta/accelerate_config.yaml src/training/mlm-accelerate.py \
+accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/semeval/mlm/accelerate_config.yaml src/training/mlm-accelerate.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
     --project_name "roberta-base-finetune" \
-    --batch_size 24 \
-    --learning_rate 0.000025 \
+    --batch_size 32 \
+    --learning_rate 0.00002575 \
     --epochs 150 \
     --patience 15
 
