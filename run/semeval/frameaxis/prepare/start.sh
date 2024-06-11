@@ -29,7 +29,7 @@ echo "Configuring paths..."
 DATA_PATH="data/semeval/muse-dlf/semeval_train.json"
 PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
-MODEL_PATH="models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
+MODEL_PATH="models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3710"
 OUTPUT_PATH="data/frameaxis/semeval/frameaxis_semeval_mft.pkl"
 PATH_MICROFRAME="data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl"
 
