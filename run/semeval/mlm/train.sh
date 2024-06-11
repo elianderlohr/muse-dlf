@@ -61,7 +61,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
-    --project_name "roberta-base-finetune" \
+    --project_name "semeval-roberta-finetune" \
     --batch_size 32 \
     --learning_rate 0.00002575 \
     --epochs 150 \
