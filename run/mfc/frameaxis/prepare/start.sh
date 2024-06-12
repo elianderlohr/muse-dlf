@@ -33,6 +33,7 @@ MODEL_PATH="models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-
 OUTPUT_PATH="data/frameaxis/mfc/frameaxis_mft.pkl"
 PATH_MICROFRAME="data/frameaxis/mfc/frameaxis_mft_microframes.pkl"
 
+
 echo "Data path: $DATA_PATH"
 echo "Antonym pairs path: $PATH_ANTONYM_PAIRS"
 echo "Model path: $MODEL_PATH"
@@ -55,7 +56,8 @@ python src/frameaxis.py \
     --model_path $MODEL_PATH \
     --output_path $OUTPUT_PATH \
     --dim_names $DIM_NAMES \
-    --path_microframe $PATH_MICROFRAME
+    --path_microframe $PATH_MICROFRAME \
+    --word_blacklist "immigrant" "immigrants" "immigration" "illegal" "illegally" "illegals" "legally" "legalize" "legal"
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."

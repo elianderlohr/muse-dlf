@@ -54,6 +54,15 @@ def main():
         help="Path to the pickle file containing the calculated microframes.",
     )
 
+    # blacklisted words
+    parser.add_argument(
+        "--word_blacklist",
+        nargs="+",
+        type=str,
+        default=[],
+        help="List of words to be blacklisted",
+    )
+
     # sample size
     parser.add_argument(
         "--sample_size",
@@ -63,6 +72,8 @@ def main():
     )
 
     args = parser.parse_args()
+
+    logging.info(f"Ignoring the following words: {args.word_blacklist}")
 
     with open(args.data_path) as f:
         data = json.load(f)
@@ -82,17 +93,7 @@ def main():
         path_antonym_pairs=args.path_antonym_pairs,
         save_type="pickle",
         dim_names=args.dim_names.split(","),
-        word_blacklist=[
-            "immigrant",
-            "immigrants",
-            "immigration",
-            "illegal",
-            "illegally",
-            "illegals",
-            "legally",
-            "legalize",
-            "legal",
-        ],
+        word_blacklist=args.word_blacklist,
     )
 
     frameaxis_df = frameaxis_processor.get_frameaxis_data()

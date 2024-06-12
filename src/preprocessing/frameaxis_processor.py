@@ -17,6 +17,7 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import string
 import json
+import re
 
 from utils.logging_manager import LoggerManager
 
@@ -44,11 +45,18 @@ class FrameAxisProcessor:
         Args:
         df (pd.DataFrame): DataFrame with text data
         path_antonym_pairs (str): Path to the antonym pairs file
-        dataframe_path (str): Path to save the FrameAxis Embeddings DataFrame for saving and loading
-        name_tokenizer (str): Name or path of the model
-        path_name_bert_model (str): Name or path of the model
-        force_recalculate (bool): If True, recalculate the FrameAxis Embeddings
-        save_type (str): Type of file to save the FrameAxis Embeddings DataFrame
+        dataframe_path (str): Path to save the dataframe
+        path_microframes (str): Path to the microframes
+        bert_model_name (str): Name of the BERT model
+        name_tokenizer (str): Name of the tokenizer
+        path_name_bert_model (str): Path to the BERT model
+        force_recalculate (bool): Force recalculation of the frameaxis
+        save_type (str): Type of file to save the dataframe
+        dim_names (list): List of dimension names
+        word_blacklist (list): List of words to blacklist
+
+        Returns:
+        None
         """
         self.df = df
         self.force_recalculate = force_recalculate
@@ -418,6 +426,30 @@ class FrameAxisProcessor:
         remove_numbers=True,
         remove_word_blacklist=True,
     ):
+        def normalize_word(word):
+            # Normalize the word for checks
+            normalized_word = word.lower().strip(string.punctuation).strip()
+
+            # Step 1: Replace "-" if space before and after
+            normalized_word = re.sub(r"(?<=\s)-(?=\s)", " ", normalized_word)
+
+            # Step 2: Replace "(", ")", "[", "]", "{", "}"
+            normalized_word = re.sub(r"[()\[\]{}]", "", normalized_word)
+
+            # Step 3: Replace ".", ",", "."
+            normalized_word = re.sub(r"[.,]", "", normalized_word)
+
+            # Step 4: Replace "”", "\"", "'"
+            normalized_word = re.sub(r'[”"“‘\'\*]', "", normalized_word)
+
+            # Remove all non-letters except "-"
+            normalized_word = re.sub(r"[^a-zA-Z\s-]", "", normalized_word)
+
+            # Remove extra spaces
+            normalized_word = re.sub(r"\s+", " ", normalized_word).strip()
+
+            return normalized_word
+
         inputs = self.tokenizer(
             text,
             return_tensors="pt",
@@ -455,7 +487,7 @@ class FrameAxisProcessor:
             word = self.tokenizer.decode(inputs.input_ids[0][start:end])
 
             # Normalize the word for checks
-            normalized_word = word.lower().strip(string.punctuation).strip()
+            normalized_word = normalize_word(word)
 
             if remove_stopwords and normalized_word in self.stopwords:
                 continue
@@ -469,6 +501,10 @@ class FrameAxisProcessor:
                 continue
 
             if remove_word_blacklist and normalized_word in self.word_blacklist:
+                continue
+
+            # if word is empty, skip
+            if not normalized_word:
                 continue
 
             # If the word passes the filters, append its embeddings and the word itself
