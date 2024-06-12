@@ -453,6 +453,23 @@ class FrameAxisProcessor:
         doc = self.nlp(text)
         entities = [(ent.text, ent.start_char, ent.end_char) for ent in doc.ents]
 
+        # Create a list of token entities initialized to None
+        num_tokens = len(inputs.input_ids[0])
+        token_entities = [None] * num_tokens
+
+        # Map entities to token indices
+        for ent_text, ent_start, ent_end in entities:
+            start_idx = len(
+                self.tokenizer.encode(text[:ent_start], add_special_tokens=False)
+            )
+            end_idx = (
+                start_idx
+                + len(self.tokenizer.encode(ent_text, add_special_tokens=False))
+                - 1
+            )
+            for i in range(start_idx, min(end_idx, num_tokens - 1) + 1):
+                token_entities[i] = ent_text
+
         # Obtain the embeddings
         with torch.no_grad():
             outputs = self.model(**inputs)
@@ -462,18 +479,6 @@ class FrameAxisProcessor:
         # Initialize lists for filtered tokens' embeddings and words
         filtered_embeddings = []
         filtered_words = []
-
-        # Map tokens to entities
-        token_entities = [None] * len(inputs.input_ids[0])
-        for ent_text, ent_start, ent_end in entities:
-            start_idx = len(
-                self.tokenizer.encode(text[:ent_start], add_special_tokens=False)
-            )
-            end_idx = start_idx + len(
-                self.tokenizer.encode(ent_text, add_special_tokens=False)
-            )
-            for i in range(start_idx, end_idx):
-                token_entities[i] = ent_text
 
         word_ids = inputs.word_ids()
         for w_idx in set(word_ids):
