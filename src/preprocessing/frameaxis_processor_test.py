@@ -17,8 +17,6 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import string
 import json
-import re
-import spacy
 
 from utils.logging_manager import LoggerManager
 
@@ -96,9 +94,6 @@ class FrameAxisProcessor:
             raise ValueError(
                 "Invalid save_type. Must be one of 'csv', 'pickle', or 'json'."
             )
-
-        # spacy model
-        self.nlp = spacy.load("en_core_web_sm")
 
         # Lemmatize the antonym pairs
         self.lemmatized_antonym_pairs = self._lemmatize_antonym_pairs()
@@ -454,17 +449,6 @@ class FrameAxisProcessor:
         remove_numbers=True,
         remove_word_blacklist=True,
     ):
-        def normalize_word(word):
-            normalized_word = word.lower().strip(string.punctuation).strip()
-            normalized_word = re.sub(r"(?<=\s)-(?=\s)", " ", normalized_word)
-            normalized_word = re.sub(r"[()\[\]{}]", "", normalized_word)
-            normalized_word = re.sub(r"[.,]", "", normalized_word)
-            normalized_word = re.sub(r'[”"“‘\'\*]', "", normalized_word)
-            normalized_word = re.sub(r"[^a-zA-Z\s-]", "", normalized_word)
-            normalized_word = re.sub(r"\s+", " ", normalized_word).strip()
-            return normalized_word
-
-        # Tokenize the text
         inputs = self.tokenizer(
             text,
             return_tensors="pt",
@@ -472,27 +456,6 @@ class FrameAxisProcessor:
             truncation=True,
             add_special_tokens=False,
         ).to(self.model.device)
-
-        # Use SpaCy's NER to detect entities in the text
-        doc = self.nlp(text)
-        entities = [(ent.text, ent.start_char, ent.end_char) for ent in doc.ents]
-
-        # Create a list of token entities initialized to None
-        num_tokens = len(inputs.input_ids[0])
-        token_entities = [None] * num_tokens
-
-        # Map entities to token indices
-        for ent_text, ent_start, ent_end in entities:
-            start_idx = len(
-                self.tokenizer.encode(text[:ent_start], add_special_tokens=False)
-            )
-            end_idx = (
-                start_idx
-                + len(self.tokenizer.encode(ent_text, add_special_tokens=False))
-                - 1
-            )
-            for i in range(start_idx, min(end_idx, num_tokens - 1) + 1):
-                token_entities[i] = ent_text
 
         # Obtain the embeddings
         with torch.no_grad():
@@ -504,30 +467,26 @@ class FrameAxisProcessor:
         filtered_embeddings = []
         filtered_words = []
 
+        # Obtain a list mapping words to tokens
         word_ids = inputs.word_ids()
+
         for w_idx in set(word_ids):
             if w_idx is None:
                 continue
 
             # Obtain the start and end token positions for the current word
             word_tokens_range = inputs.word_to_tokens(w_idx)
+
             if word_tokens_range is None:
                 continue
 
             start, end = word_tokens_range
 
-            # Check if the tokens belong to an entity
-            entity = token_entities[start]
-            if entity:
-                # Normalize the entity
-                normalized_word = normalize_word(entity)
-                # If the word has already been processed, skip it
-                if normalized_word in filtered_words:
-                    continue
-            else:
-                # Reconstruct the word from tokens
-                word = self.tokenizer.decode(inputs.input_ids[0][start:end])
-                normalized_word = normalize_word(word)
+            # Reconstruct the word from tokens to check against stopwords and non-word characters
+            word = self.tokenizer.decode(inputs.input_ids[0][start:end])
+
+            # Normalize the word for checks
+            normalized_word = word.lower().strip(string.punctuation).strip()
 
             if remove_stopwords and normalized_word in self.stopwords:
                 continue
@@ -543,19 +502,19 @@ class FrameAxisProcessor:
             if remove_word_blacklist and normalized_word in self.word_blacklist:
                 continue
 
-            if not normalized_word:
-                continue
-
+            # If the word passes the filters, append its embeddings and the word itself
             word_embeddings = embeddings[start:end]
             filtered_embeddings.append(word_embeddings.mean(dim=0))
             filtered_words.append(normalized_word)
 
+        # Stack the filtered embeddings
         filtered_embeddings_tensor = (
             torch.stack(filtered_embeddings)
             if filtered_embeddings
             else torch.tensor([])
         )
 
+        # if no embeddings were found, logger.info debug info
         if filtered_embeddings_tensor.numel() == 0:
             logger.info(
                 f"No embeddings found for input text: {text}, after filtering: {filtered_words}"
