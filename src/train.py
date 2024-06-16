@@ -5,11 +5,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from transformers import (
-    AdamW,
     BertTokenizer,
     RobertaTokenizerFast,
     get_linear_schedule_with_warmup,
 )
+from torch.optim import Adam, AdamW
 from accelerate import Accelerator
 import warnings
 import wandb
@@ -257,6 +257,13 @@ def main():
         default="relu",
         help="Activation function in the supervised module",
     )
+    # srl_embedding_pooling
+    model_config.add_argument(
+        "--srl_embeddings_pooling",
+        type=str,
+        default="mean",
+        help="Pooling method for SRL embeddings",
+    )
 
     # Training Parameters
     training_params = parser.add_argument_group("Training Parameters")
@@ -265,6 +272,35 @@ def main():
     )
     training_params.add_argument(
         "--lr", type=float, default=5e-4, help="Learning rate for the optimizer"
+    )
+    # adam_eps
+    training_params.add_argument(
+        "--adam_eps", type=float, default=1e-8, help="Adam epsilon parameter"
+    )
+    # adam_weight_decay
+    training_params.add_argument(
+        "--adam_weight_decay",
+        type=float,
+        default=5e-7,
+        help="Adam weight decay parameter",
+    )
+    # adamw_eps
+    training_params.add_argument(
+        "--adamw_eps", type=float, default=1e-8, help="AdamW epsilon parameter"
+    )
+    # adamw_weight_decay
+    training_params.add_argument(
+        "--adamw_weight_decay",
+        type=float,
+        default=5e-7,
+        help="AdamW weight decay parameter",
+    )
+    # optimizer
+    training_params.add_argument(
+        "--optimizer",
+        type=str,
+        default="adamw",
+        help="Optimizer to use for training",
     )
     training_params.add_argument(
         "--batch_size", type=int, default=24, help="Batch size"
@@ -462,6 +498,13 @@ def main():
         "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
         "supervised_num_layers": args.supervised_num_layers,
         "supervised_activation": args.supervised_activation,
+        "srl_embeddings_pooling": args.srl_embeddings_pooling,
+        "lr": args.lr,
+        "adam_eps": args.adam_eps,
+        "adam_weight_decay": args.adam_weight_decay,
+        "adamw_eps": args.adamw_eps,
+        "adamw_weight_decay": args.adamw_weight_decay,
+        "optimizer": args.optimizer,
         "debug": args.debug,
     }
 
@@ -474,7 +517,7 @@ def main():
         dropout_prob=args.dropout_prob,
         bert_model_name=args.name_tokenizer,
         bert_model_name_or_path=args.path_name_bert_model,
-        srl_embeddings_pooling="mean",
+        srl_embeddings_pooling=args.srl_embeddings_pooling,
         lambda_orthogonality=args.lambda_orthogonality,
         M=args.M,
         t=args.t,
@@ -553,7 +596,22 @@ def main():
 
     # Loss function and optimizer
     loss_function = nn.CrossEntropyLoss()
-    optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=5e-7, eps=1e-8)
+
+    lr = args.lr
+
+    optimizer_type = args.optimizer
+    if optimizer_type == "adam":
+        weight_decay = args.adam_weight_decay
+        eps = args.adam_eps
+
+        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+    elif optimizer_type == "adamw":
+
+        weight_decay = args.adamw_weight_decay
+        eps = args.adamw_eps
+
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=10,
