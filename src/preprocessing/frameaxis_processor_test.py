@@ -100,6 +100,18 @@ class FrameAxisProcessor:
         # spacy model
         self.nlp = spacy.load("en_core_web_sm")
 
+        # Lemmatize the antonym pairs
+        self.lemmatized_antonym_pairs = self._lemmatize_antonym_pairs()
+
+    def _lemmatize_antonym_pairs(self):
+        lemmatized_pairs = {}
+        for dimension, pairs in self.antonym_pairs.items():
+            lemmatized_pairs[dimension] = {
+                "vice": [self.lemmatizer.lemmatize(word) for word in pairs["vice"]],
+                "virtue": [self.lemmatizer.lemmatize(word) for word in pairs["virtue"]],
+            }
+        return lemmatized_pairs
+
     def _load_antonym_pairs(self, axis_path):
         axes_df = pd.read_csv(axis_path, sep="\t", header=None)
         return [tuple(x) for x in axes_df.values]
@@ -220,8 +232,10 @@ class FrameAxisProcessor:
 
                     # Skip seed words for the current dimension
                     if (
-                        lemmatized_word in self.antonym_pairs[dimension]["vice"]
-                        or lemmatized_word in self.antonym_pairs[dimension]["virtue"]
+                        lemmatized_word
+                        in self.lemmatized_antonym_pairs[dimension]["vice"]
+                        or lemmatized_word
+                        in self.lemmatized_antonym_pairs[dimension]["virtue"]
                     ):
                         continue
 
