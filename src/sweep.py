@@ -23,14 +23,14 @@ warnings.filterwarnings("ignore", message="invalid value encountered in double_s
 # welcome console message
 def welcome_message():
     print(
-        """#####################################################
-#                                                   #
-#              Welcome to MUSE!                     #
-#                                                   #
-# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
-#          Learning for Frame Classification        #
-#                                                   #
-#####################################################"""
+        "#####################################################\n"
+        "#                                                   #\n"
+        "#              Welcome to MUSE-DLF SWEEP!                     #\n"
+        "#                                                   #\n"
+        "# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #\n"
+        "#          Learning for Frame Classification        #\n"
+        "#                                                   #\n"
+        "#####################################################"
     )
 
 

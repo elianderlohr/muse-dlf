@@ -1,4 +1,6 @@
 import argparse
+
+from networkx import project
 from model.slmuse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
@@ -21,8 +23,6 @@ warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
 )
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
-
-project_name = "muse-dlf"
 
 
 def load_model(
@@ -114,6 +114,11 @@ def main():
     )
     required_args.add_argument(
         "--wandb_api_key", type=str, required=True, help="Wandb API key"
+    )
+
+    # project_name = "muse-dlf"
+    required_args.add_argument(
+        "--project_name", type=str, required=True, help="Wandb project name"
     )
 
     parser.add_argument(
@@ -435,14 +440,14 @@ def main():
     logger.info(
         """#####################################################
 #                                                   #
-#              Welcome to MUSE!                     #
+#              Welcome to MUSE-DLF TRAIN!           #
 #                                                   #
 # MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
 #          Learning for Frame Classification        #
 #                                                   #
-#####################################################""",
-        main_process_only=True,
+#####################################################"""
     )
+
     # running the model with the given arguments
     logger.info(
         "Running the model with the following arguments: %s",
@@ -622,6 +627,8 @@ def main():
 
     # prepare optimizer and scheduler
     optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
+
+    project_name = args.project_name
 
     accelerator.init_trackers(
         project_name,

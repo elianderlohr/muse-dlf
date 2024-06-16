@@ -86,6 +86,7 @@ echo "=================== Training Start ==================="
 
 echo "Launching training script with Accelerate..."
 accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/train.py \
+    --project_name slmuse-dlf \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
