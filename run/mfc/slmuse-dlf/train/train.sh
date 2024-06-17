@@ -7,7 +7,6 @@
 #SBATCH --gres=gpu:4
 #SBATCH --mem=32G
 
-
 echo "===================== Job Details ====================="
 # Display job settings
 echo "Job settings at start:"
@@ -48,8 +47,7 @@ else
     echo "WANDB_API_KEY successfully loaded."
 fi
 
-# parse arguments
-
+# Parse arguments
 for arg in "$@"
 do
     case $arg in
@@ -65,7 +63,6 @@ do
     esac
 done
 
-
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
@@ -80,11 +77,20 @@ nvidia-smi
 # CUDA configuration
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 
+# Clear GPU memory function
+function clear_gpu_memory {
+    echo "Clearing GPU memory..."
+    python -c "import torch; torch.cuda.empty_cache()"
+}
+
+# Clear GPU memory before starting
+clear_gpu_memory
+
 # Training Script Execution
 echo "=================== Training Start ==================="
 
 echo "Launching training script with Accelerate..."
-accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/train.py \
+accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision bf16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/train.py \
     --project_name slmuse-dlf \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
@@ -107,7 +113,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --lr 0.00026578471506395236 \
     --M 8 \
     --t 8 \
-    --batch_size 8 \
+    --batch_size 32 \
     --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
