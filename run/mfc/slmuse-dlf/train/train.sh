@@ -102,10 +102,10 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --embedding_dim 768 \
     --hidden_dim 512 \
     --num_classes 15 \
-    --dropout_prob 0.32774422394607194 \
-    --alpha 0.5034441604495093 \
-    --lambda_orthogonality 0.00964171989918276 \
-    --lr 0.00026578471506395236 \
+    --dropout_prob 0.3 \
+    --alpha 0.5 \
+    --lambda_orthogonality 0.003 \
+    --lr 0.0005 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
@@ -114,13 +114,13 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --max_args_per_sentence 10 \
     --max_arg_length 10 \
     --muse_unsupervised_num_layers 1 \
-    --muse_unsupervised_activation gelu \
+    --muse_unsupervised_activation relu \
     --muse_unsupervised_use_batch_norm False \
     --muse_unsupervised_matmul_input g \
     --muse_unsupervised_gumbel_softmax_hard False \
     --muse_unsupervised_gumbel_softmax_log False \
     --muse_frameaxis_unsupervised_num_layers 2 \
-    --muse_frameaxis_unsupervised_activation leaky_relu \
+    --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
     --muse_frameaxis_unsupervised_concat_frameaxis True \
@@ -129,14 +129,12 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_concat_frameaxis False \
     --supervised_num_layers 2 \
     --supervised_activation relu \
-    --adam_eps 0.00000007040431110217 \
-    --adam_weight_decay 0.005420053846453683 \
-    --adamw_eps 0.00000009552917806829 \
-    --adamw_weight_decay 0.0454194460057666 \
+    --adamw_eps 0.0000001 \
+    --adamw_weight_decay 0.0001 \
     --optimizer adamw \
     --srl_embeddings_pooling mean \
-    --tau_decay 0.0004831628844801305 \
-    --tau_min 0.4456249116694878 \
+    --tau_decay 0.0005 \
+    --tau_min 0.5 \
     $DEBUG
 
 
