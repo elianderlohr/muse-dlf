@@ -103,6 +103,17 @@ def load_model(
     return model
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "True", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "False", "f", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Train MUSE model")
 
@@ -179,7 +190,7 @@ def main():
     )
     model_config.add_argument(
         "--muse_unsupervised_use_batch_norm",
-        type=bool,
+        type=str2bool,
         default=True,
         help="Use batch normalization in the MUSE unsupervised encoder",
     )
@@ -191,13 +202,13 @@ def main():
     )
     model_config.add_argument(
         "--muse_unsupervised_gumbel_softmax_hard",
-        type=bool,
+        type=str2bool,
         default=False,
         help="Use hard gumbel softmax in the MUSE unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_unsupervised_gumbel_softmax_log",
-        type=bool,
+        type=str2bool,
         default=False,
         help="Use log gumbel softmax in the MUSE unsupervised encoder",
     )
@@ -215,7 +226,7 @@ def main():
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_use_batch_norm",
-        type=bool,
+        type=str2bool,
         default=True,
         help="Use batch normalization in the MUSE frameaxis unsupervised encoder",
     )
@@ -227,25 +238,25 @@ def main():
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_concat_frameaxis",
-        type=bool,
+        type=str2bool,
         default=True,
         help="Concatenate frameaxis with sentence in the MUSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_gumbel_softmax_hard",
-        type=bool,
+        type=str2bool,
         default=False,
         help="Use hard gumbel softmax in the MUSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_gumbel_softmax_log",
-        type=bool,
+        type=str2bool,
         default=False,
         help="Use log gumbel softmax in the MUSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--supervised_concat_frameaxis",
-        type=bool,
+        type=str2bool,
         default=True,
         help="Concatenate frameaxis with sentence in the supervised module",
     )
@@ -403,13 +414,13 @@ def main():
     advanced_settings = parser.add_argument_group("Advanced Settings")
     advanced_settings.add_argument(
         "--force_recalculate_srls",
-        type=bool,
+        type=str2bool,
         default=False,
         help="Force recalculate SRLs",
     )
     advanced_settings.add_argument(
         "--force_recalculate_frameaxis",
-        type=bool,
+        type=str2bool,
         default=False,
         help="Force recalculate FrameAxis",
     )
@@ -418,7 +429,7 @@ def main():
     )
 
     # debug
-    parser.add_argument("--debug", type=bool, default=False, help="Debug mode")
+    parser.add_argument("--debug", type=str2bool, default=False, help="Debug mode")
 
     args = parser.parse_args()
 
@@ -509,6 +520,7 @@ def main():
         "adamw_eps": args.adamw_eps,
         "adamw_weight_decay": args.adamw_weight_decay,
         "optimizer": args.optimizer,
+        "alpha": args.alpha,
         "debug": args.debug,
     }
 
