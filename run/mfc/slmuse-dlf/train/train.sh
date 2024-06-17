@@ -108,7 +108,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --lr 0.00026578471506395236 \
     --M 8 \
     --t 8 \
-    --batch_size 32 \
+    --batch_size 8 \
     --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
@@ -138,6 +138,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tau_decay 0.0004831628844801305 \
     --tau_min 0.4456249116694878 \
     $DEBUG
+
 
 
 # Cleanup and Closeout
