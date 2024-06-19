@@ -87,12 +87,6 @@ class MUSESupervised(nn.Module):
 
         d_fx_mean = d_fx.mean(dim=1)
 
-        # Debugging:
-        self.logger.debug(f"d_p_mean: {d_p_mean.shape}")
-        self.logger.debug(f"d_a0_mean: {d_a0_mean.shape}")
-        self.logger.debug(f"d_a1_mean: {d_a1_mean.shape}")
-        self.logger.debug(f"d_fx_mean: {d_fx_mean.shape}")
-
         # Combine and normalize the final descriptor
         y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 

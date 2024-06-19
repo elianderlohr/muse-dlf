@@ -257,17 +257,6 @@ class MUSEDLF(nn.Module):
                 if torch.isnan(unsupervised_results["loss"]).any():
                     self.logger.debug("loss is nan")
 
-                # Debugging:
-                self.logger.debug(
-                    f"UNSUPERVISED: d_p: {unsupervised_results['p']['d'].shape}"
-                )
-                self.logger.debug(
-                    f"UNSUPERVISED: d_a0: {unsupervised_results['a0']['d'].shape}"
-                )
-                self.logger.debug(
-                    f"UNSUPERVISED: d_a1: {unsupervised_results['a1']['d'].shape}"
-                )
-
                 # Use the vhat (reconstructed embeddings) for supervised predictions
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])
                 d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
@@ -277,11 +266,6 @@ class MUSEDLF(nn.Module):
             d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
             d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
             d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
-
-            # Debugging:
-            self.logger.debug(f"AGGREGATED: d_p: {d_p_sentence.shape}")
-            self.logger.debug(f"AGGREGATED: d_a0: {d_a0_sentence.shape}")
-            self.logger.debug(f"AGGREGATED: d_a1: {d_a1_sentence.shape}")
 
             d_p_list.append(d_p_sentence)
             d_a0_list.append(d_a0_sentence)
@@ -305,12 +289,6 @@ class MUSEDLF(nn.Module):
         d_a0_aggregated = torch.stack(d_a0_list, dim=1)
         d_a1_aggregated = torch.stack(d_a1_list, dim=1)
         d_fx_aggregated = torch.stack(d_fx_list, dim=1)
-
-        # Debugging:
-        self.logger.debug(f"AGGREGATED: d_p: {d_p_aggregated.shape}")
-        self.logger.debug(f"AGGREGATED: d_a0: {d_a0_aggregated.shape}")
-        self.logger.debug(f"AGGREGATED: d_a1: {d_a1_aggregated.shape}")
-        self.logger.debug(f"AGGREGATED: d_fx: {d_fx_aggregated.shape}")
 
         # Supervised predictions
         span_pred, sentence_pred, combined_pred, other = self.supervised(

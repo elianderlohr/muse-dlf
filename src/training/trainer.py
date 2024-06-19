@@ -300,6 +300,22 @@ class Trainer:
             arg1_loss = self.loss_function(other["arg1"], labels.float())
             frameaxis_loss = self.loss_function(other["frameaxis"], labels.float())
 
+            # if predicate_loss nan or inf log debug
+            if torch.isnan(predicate_loss) or torch.isinf(predicate_loss):
+                logger.error(f"predicate_loss: {predicate_loss}")
+                logger.error(f"other[predicate]: {other['predicate']}")
+                logger.error(f"labels: {labels}")
+            
+            if torch.isnan(arg0_loss) or torch.isinf(arg0_loss):
+                logger.error(f"arg0_loss: {arg0_loss}")
+                logger.error(f"other[arg0]: {other['arg0']}")
+                logger.error(f"labels: {labels}")
+            
+            if torch.isnan(arg1_loss) or torch.isinf(arg1_loss):
+                logger.error(f"arg1_loss: {arg1_loss}")
+                logger.error(f"other[arg1]: {other['arg1']}")
+                logger.error(f"labels: {labels}")
+
             if self.training_management == "accelerate":
                 self.accelerator.backward(combined_loss)
                 self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
