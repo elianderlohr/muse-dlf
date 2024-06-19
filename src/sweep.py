@@ -171,10 +171,8 @@ def main():
     optimizer_type = wandb.config.optimizer
     if optimizer_type == "adam":
         weight_decay = wandb.config.adam_weight_decay
-        eps = wandb.config.adam_eps
     elif optimizer_type == "adamw":
         weight_decay = wandb.config.adamw_weight_decay
-        eps = wandb.config.adamw_eps
     else:
         raise ValueError("Unsupported optimizer type")
 
@@ -280,9 +278,9 @@ def main():
     loss_function = nn.CrossEntropyLoss()
 
     if optimizer_type == "adam":
-        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     elif optimizer_type == "adamw":
-        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     scheduler = get_linear_schedule_with_warmup(
         optimizer,

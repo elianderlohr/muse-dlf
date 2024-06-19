@@ -291,20 +291,12 @@ def main():
     training_params.add_argument(
         "--lr", type=float, default=5e-4, help="Learning rate for the optimizer"
     )
-    # adam_eps
-    training_params.add_argument(
-        "--adam_eps", type=float, default=1e-8, help="Adam epsilon parameter"
-    )
     # adam_weight_decay
     training_params.add_argument(
         "--adam_weight_decay",
         type=float,
         default=5e-7,
         help="Adam weight decay parameter",
-    )
-    # adamw_eps
-    training_params.add_argument(
-        "--adamw_eps", type=float, default=1e-8, help="AdamW epsilon parameter"
     )
     # adamw_weight_decay
     training_params.add_argument(
@@ -527,9 +519,7 @@ def main():
         "supervised_activation": args.supervised_activation,
         "srl_embeddings_pooling": args.srl_embeddings_pooling,
         "lr": args.lr,
-        "adam_eps": args.adam_eps,
         "adam_weight_decay": args.adam_weight_decay,
-        "adamw_eps": args.adamw_eps,
         "adamw_weight_decay": args.adamw_weight_decay,
         "optimizer": args.optimizer,
         "alpha": args.alpha,
@@ -630,15 +620,13 @@ def main():
     optimizer_type = args.optimizer
     if optimizer_type == "adam":
         weight_decay = args.adam_weight_decay
-        eps = args.adam_eps
 
-        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     elif optimizer_type == "adamw":
 
         weight_decay = args.adamw_weight_decay
-        eps = args.adamw_eps
 
-        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay, eps=eps)
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     scheduler = get_linear_schedule_with_warmup(
         optimizer,

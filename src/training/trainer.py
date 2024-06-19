@@ -294,6 +294,24 @@ class Trainer:
                 alpha * supervised_loss + (1 - alpha) * unsupervised_loss
             ) + zero_sum
 
+            # In the forward method of your model
+            if torch.isnan(unsupervised_loss).any():
+                logger.debug("NaN in unsupervised_loss")
+            if torch.isnan(span_pred).any():
+                logger.debug("NaN in span_pred")
+            if torch.isnan(sentence_pred).any():
+                logger.debug("NaN in sentence_pred")
+            if torch.isnan(combined_pred).any():
+                logger.debug("NaN in combined_pred")
+            if torch.isnan(other["predicate"]).any():
+                logger.debug("NaN in other['predicate']")
+            if torch.isnan(other["arg0"]).any():
+                logger.debug("NaN in other['arg0']")
+            if torch.isnan(other["arg1"]).any():
+                logger.debug("NaN in other['arg1']")
+            if torch.isnan(other["frameaxis"]).any():
+                logger.debug("NaN in other['frameaxis']")
+
             # other loss (debug)
             predicate_loss = self.loss_function(other["predicate"], labels.float())
             arg0_loss = self.loss_function(other["arg0"], labels.float())
@@ -305,12 +323,12 @@ class Trainer:
                 logger.error(f"predicate_loss: {predicate_loss}")
                 logger.error(f"other[predicate]: {other['predicate']}")
                 logger.error(f"labels: {labels}")
-            
+
             if torch.isnan(arg0_loss) or torch.isinf(arg0_loss):
                 logger.error(f"arg0_loss: {arg0_loss}")
                 logger.error(f"other[arg0]: {other['arg0']}")
                 logger.error(f"labels: {labels}")
-            
+
             if torch.isnan(arg1_loss) or torch.isinf(arg1_loss):
                 logger.error(f"arg1_loss: {arg1_loss}")
                 logger.error(f"other[arg1]: {other['arg1']}")
