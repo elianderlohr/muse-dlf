@@ -1,3 +1,6 @@
+import random
+import numpy as np
+import torch
 from model.slmuse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
@@ -189,6 +192,18 @@ def main():
     force_recalculate_srls = False
     force_recalculate_frameaxis = False
     sample_size = -1
+
+    seed = 42
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+
+    # Ensure reproducibility in CuDNN
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
     model = load_model(
         embedding_dim=embedding_dim,

@@ -105,12 +105,12 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 512 \
+    --hidden_dim 1024 \
     --num_classes 15 \
-    --dropout_prob 0.32774422394607194 \
-    --alpha 0.5034441604495093 \
-    --lambda_orthogonality 0.00964171989918276 \
-    --lr 0.00026578471506395236 \
+    --dropout_prob 0.2271605854207663 \
+    --alpha 0.4930465000957679 \
+    --lambda_orthogonality 0.00723135199714242 \
+    --lr 0.0003609313548310458 \
     --M 8 \
     --t 8 \
     --batch_size 32 \
@@ -120,26 +120,27 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --max_arg_length 10 \
     --muse_unsupervised_num_layers 1 \
     --muse_unsupervised_activation gelu \
-    --muse_unsupervised_use_batch_norm False \
-    --muse_unsupervised_matmul_input g \
-    --muse_unsupervised_gumbel_softmax_hard False \
-    --muse_unsupervised_gumbel_softmax_log False \
-    --muse_frameaxis_unsupervised_num_layers 2 \
-    --muse_frameaxis_unsupervised_activation leaky_relu \
-    --muse_frameaxis_unsupervised_use_batch_norm True \
+    --muse_unsupervised_use_batch_norm True \
+    --muse_unsupervised_matmul_input d \
+    --muse_unsupervised_gumbel_softmax_hard True \
+    --muse_unsupervised_gumbel_softmax_log True \
+    --muse_frameaxis_unsupervised_num_layers 1 \
+    --muse_frameaxis_unsupervised_activation gelu \
+    --muse_frameaxis_unsupervised_use_batch_norm False \
     --muse_frameaxis_unsupervised_matmul_input g \
-    --muse_frameaxis_unsupervised_concat_frameaxis True \
+    --muse_frameaxis_unsupervised_concat_frameaxis False \
     --muse_frameaxis_unsupervised_gumbel_softmax_hard False \
     --muse_frameaxis_unsupervised_gumbel_softmax_log True \
-    --supervised_concat_frameaxis False \
+    --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
     --supervised_activation relu \
-    --adamw_eps 0.00000009552917806829 \
-    --adamw_weight_decay 0.0454194460057666 \
-    --optimizer adamw \
-    --srl_embeddings_pooling mean \
-    --tau_decay 0.0004831628844801305 \
-    --tau_min 0.4456249116694878 \
+    --adamw_eps 1.6233770113068368e-08 \
+    --adamw_weight_decay 0.08566849240772259 \
+    --optimizer adam \
+    --srl_embeddings_pooling cls \
+    --tau_decay 0.0004264847302600135 \
+    --tau_min 0.7145360375000218 \
+    --seed 42 \
     $DEBUG
 
 # Cleanup and Closeout

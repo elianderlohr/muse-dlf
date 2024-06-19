@@ -1,4 +1,7 @@
 import argparse
+import random
+
+import numpy as np
 
 from model.slmuse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
@@ -427,6 +430,8 @@ def main():
     advanced_settings.add_argument(
         "--sample_size", type=int, default=-1, help="Sample size"
     )
+    # set random seed for reproducibility
+    advanced_settings.add_argument("--seed", type=int, default=42, help="Random seed")
 
     # debug
     parser.add_argument("--debug", type=str2bool, default=False, help="Debug mode")
@@ -470,13 +475,20 @@ def main():
         "Using logging in %s mode", LoggerManager._log_level, main_process_only=True
     )
 
-    # if debug mode is on, set the seed
-    if args.debug:
-        torch.manual_seed(42)
+    # if --seed is provided, set the random seed
+    if args.seed:
+        seed = args.seed
 
-        logger.debug("######## DEBUG MODE ########", main_process_only=True)
-        logger.debug("Setting seed to 42", main_process_only=True)
-        logger.debug("############################", main_process_only=True)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
+
+        # Ensure reproducibility in CuDNN
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
     # create config dictionary
     config = {
