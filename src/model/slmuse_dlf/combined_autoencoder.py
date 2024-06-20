@@ -133,6 +133,16 @@ class CombinedAutoencoder(nn.Module):
         return y
 
     def forward(self, v_p, v_a0, v_a1, v_sentence, tau):
+
+        # log error if any nan values are detected in v_p, v_a0, v_a1, v_sentence
+        if (
+            torch.isnan(v_p).any()
+            or torch.isnan(v_a0).any()
+            or torch.isnan(v_a1).any()
+            or torch.isnan(v_sentence).any()
+        ):
+            self.logger.error("0. NaN values detected v_p, v_a0, v_a1, v_sentence")
+
         h_p = self.process_through_shared(v_p, v_sentence)
         h_a0 = self.process_through_shared(v_a0, v_sentence)
         h_a1 = self.process_through_shared(v_a1, v_sentence)
