@@ -301,8 +301,8 @@ class Trainer:
                 logger.debug("NaN in span_logits")
             if torch.isnan(sentence_logits).any():
                 logger.debug("NaN in sentence_logits")
-            if torch.isnan(combined_pred).any():
-                logger.debug("NaN in combined_pred")
+            if torch.isnan(combined_logits).any():
+                logger.debug("NaN in combined_logits")
             if torch.isnan(other["predicate"]).any():
                 logger.debug("NaN in other['predicate']")
             if torch.isnan(other["arg0"]).any():
