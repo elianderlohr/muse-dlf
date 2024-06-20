@@ -257,6 +257,17 @@ class MUSEDLF(nn.Module):
                 if torch.isnan(unsupervised_results["loss"]).any():
                     self.logger.debug("loss is nan")
 
+                # check if [p][d] has nan values
+                if torch.isnan(unsupervised_results["p"]["d"]).any():
+                    self.logger.debug("p d has nan")
+                    self.logger.debug(unsupervised_results["p"]["d"])
+                if torch.isnan(unsupervised_results["a0"]["d"]).any():
+                    self.logger.debug("a0 d has nan")
+                    self.logger.debug(unsupervised_results["a0"]["d"])
+                if torch.isnan(unsupervised_results["a1"]["d"]).any():
+                    self.logger.debug("a1 d has nan")
+                    self.logger.debug(unsupervised_results["a1"]["d"])
+
                 # Use the vhat (reconstructed embeddings) for supervised predictions
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])
                 d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
@@ -289,6 +300,20 @@ class MUSEDLF(nn.Module):
         d_a0_aggregated = torch.stack(d_a0_list, dim=1)
         d_a1_aggregated = torch.stack(d_a1_list, dim=1)
         d_fx_aggregated = torch.stack(d_fx_list, dim=1)
+
+        # check if d_p_aggregated has nan values
+        if torch.isnan(d_p_aggregated).any():
+            self.logger.debug("d_p_aggregated has nan")
+            self.logger.debug(d_p_aggregated)
+        if torch.isnan(d_a0_aggregated).any():
+            self.logger.debug("d_a0_aggregated has nan")
+            self.logger.debug(d_a0_aggregated)
+        if torch.isnan(d_a1_aggregated).any():
+            self.logger.debug("d_a1_aggregated has nan")
+            self.logger.debug(d_a1_aggregated)
+        if torch.isnan(d_fx_aggregated).any():
+            self.logger.debug("d_fx_aggregated has nan")
+            self.logger.debug(d_fx_aggregated)
 
         # Supervised predictions
         span_pred, sentence_pred, combined_pred, other = self.supervised(
