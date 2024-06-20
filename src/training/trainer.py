@@ -296,21 +296,21 @@ class Trainer:
 
             # In the forward method of your model
             if torch.isnan(unsupervised_loss).any():
-                logger.debug("NaN in unsupervised_loss")
+                logger.error("NaN in unsupervised_loss")
             if torch.isnan(span_logits).any():
-                logger.debug("NaN in span_logits")
+                logger.error("NaN in span_logits")
             if torch.isnan(sentence_logits).any():
-                logger.debug("NaN in sentence_logits")
+                logger.error("NaN in sentence_logits")
             if torch.isnan(combined_logits).any():
-                logger.debug("NaN in combined_logits")
+                logger.error("NaN in combined_logits")
             if torch.isnan(other["predicate"]).any():
-                logger.debug("NaN in other['predicate']")
+                logger.error("NaN in other['predicate']")
             if torch.isnan(other["arg0"]).any():
-                logger.debug("NaN in other['arg0']")
+                logger.error("NaN in other['arg0']")
             if torch.isnan(other["arg1"]).any():
-                logger.debug("NaN in other['arg1']")
+                logger.error("NaN in other['arg1']")
             if torch.isnan(other["frameaxis"]).any():
-                logger.debug("NaN in other['frameaxis']")
+                logger.error("NaN in other['frameaxis']")
 
             # other loss (debug)
             predicate_loss = self.loss_function(other["predicate"], labels.float())
