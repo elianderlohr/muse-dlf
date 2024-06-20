@@ -137,6 +137,13 @@ class SRLEmbeddings(nn.Module):
                 sentence_ids, sentence_attention_masks
             )
 
+            # find if any nan values are detected in sentence_embeddings_avg or sentence_embeddings
+            if torch.isnan(sentence_embeddings_avg).any():
+                self.logger.error("0. NaN values detected in sentence_embeddings_avg")
+
+            if torch.isnan(sentence_embeddings).any():
+                self.logger.error("1. NaN values detected in sentence_embeddings")
+
             predicate_embeddings = self.get_arg_embedding(
                 predicate_ids, sentence_ids, sentence_embeddings
             )
