@@ -297,10 +297,10 @@ class Trainer:
             # In the forward method of your model
             if torch.isnan(unsupervised_loss).any():
                 logger.debug("NaN in unsupervised_loss")
-            if torch.isnan(span_pred).any():
-                logger.debug("NaN in span_pred")
-            if torch.isnan(sentence_pred).any():
-                logger.debug("NaN in sentence_pred")
+            if torch.isnan(span_logits).any():
+                logger.debug("NaN in span_logits")
+            if torch.isnan(sentence_logits).any():
+                logger.debug("NaN in sentence_logits")
             if torch.isnan(combined_pred).any():
                 logger.debug("NaN in combined_pred")
             if torch.isnan(other["predicate"]).any():
