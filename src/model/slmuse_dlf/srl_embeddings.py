@@ -82,9 +82,6 @@ class SRLEmbeddings(nn.Module):
                 input_ids=ids_flat, attention_mask=attention_masks_flat
             )[0]
 
-        # Check for NaNs in embeddings
-        self.check_for_nans(embeddings, "BERT embeddings")
-
         # if embeddings is NaN, log the input ids and attention_masks
         if torch.isnan(embeddings).any():
             self.logger.error(f"ERROR IN EMBEDDINGS FROM BERT")
