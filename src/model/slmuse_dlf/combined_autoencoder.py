@@ -162,6 +162,33 @@ class CombinedAutoencoder(nn.Module):
                 f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"
             )
 
+        # check if the output has nan values
+
+        if torch.isnan(h_p).any() or torch.isnan(h_a0).any() or torch.isnan(h_a1).any():
+            self.logger.error("1. NaN values detected h_p, h_a0, h_a1")
+        if (
+            torch.isnan(logits_p).any()
+            or torch.isnan(logits_a0).any()
+            or torch.isnan(logits_a1).any()
+        ):
+            self.logger.error("2. NaN values detected logits_p, logits_a0, logits_a1")
+        if torch.isnan(d_p).any() or torch.isnan(d_a0).any() or torch.isnan(d_a1).any():
+            self.logger.error("3. NaN values detected d_p, d_a0, d_a1")
+        if torch.isnan(g_p).any() or torch.isnan(g_a0).any() or torch.isnan(g_a1).any():
+            self.logger.error("4. NaN values detected g_p, g_a0, g_a1")
+        if (
+            torch.isnan(vhat_p).any()
+            or torch.isnan(vhat_a0).any()
+            or torch.isnan(vhat_a1).any()
+        ):
+            self.logger.error("5. NaN values detected vhat_p, vhat_a0, vhat_a1")
+        if (
+            torch.isnan(self.F_matrices["p"]).any()
+            or torch.isnan(self.F_matrices["a0"]).any()
+            or torch.isnan(self.F_matrices["a1"]).any()
+        ):
+            self.logger.error("6. NaN values detected F_matrices")
+
         return {
             "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
             "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},
