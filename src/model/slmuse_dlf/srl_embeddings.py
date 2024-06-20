@@ -59,6 +59,10 @@ class SRLEmbeddings(nn.Module):
                 input_ids=ids_flat, attention_mask=attention_masks_flat
             )[0]
 
+        # Check for NaN values in embeddings
+        if torch.isnan(embeddings).any():
+            self.logger.error("NaN values detected in BERT embeddings")
+
         # Reshape back to original batch and sentence dimensions
         embeddings_reshaped = embeddings.view(
             batch_size, num_sentences, max_sentence_length, -1
@@ -80,6 +84,12 @@ class SRLEmbeddings(nn.Module):
             # Use the [CLS] token representation for the sentence embedding
             embeddings_mean_reshaped = embeddings[:, 0, :].view(
                 batch_size, num_sentences, -1
+            )
+
+        # Check for NaN values in mean or CLS embeddings
+        if torch.isnan(embeddings_mean_reshaped).any():
+            self.logger.error(
+                "NaN values detected in sentence embeddings (mean or CLS)"
             )
 
         return embeddings_reshaped, embeddings_mean_reshaped
@@ -122,6 +132,12 @@ class SRLEmbeddings(nn.Module):
                         avg_embedding = selected_embeddings.mean(dim=0)
                         arg_embeddings[batch_idx, sent_idx, arg_idx] = avg_embedding
 
+                        # Check for NaN values in arg_embeddings
+                        if torch.isnan(avg_embedding).any():
+                            self.logger.error(
+                                f"NaN values detected in arg_embeddings at batch {batch_idx}, sentence {sent_idx}, arg {arg_idx}"
+                            )
+
         return arg_embeddings
 
     def forward(
@@ -137,12 +153,12 @@ class SRLEmbeddings(nn.Module):
                 sentence_ids, sentence_attention_masks
             )
 
-            # find if any nan values are detected in sentence_embeddings_avg or sentence_embeddings
+            # Check for NaN values in sentence_embeddings_avg or sentence_embeddings
             if torch.isnan(sentence_embeddings_avg).any():
-                self.logger.error("0. NaN values detected in sentence_embeddings_avg")
+                self.logger.error("NaN values detected in sentence_embeddings_avg")
 
             if torch.isnan(sentence_embeddings).any():
-                self.logger.error("1. NaN values detected in sentence_embeddings")
+                self.logger.error("NaN values detected in sentence_embeddings")
 
             predicate_embeddings = self.get_arg_embedding(
                 predicate_ids, sentence_ids, sentence_embeddings
@@ -153,6 +169,14 @@ class SRLEmbeddings(nn.Module):
             arg1_embeddings = self.get_arg_embedding(
                 arg1_ids, sentence_ids, sentence_embeddings
             )
+
+            # Final check for NaN values in output embeddings
+            if torch.isnan(predicate_embeddings).any():
+                self.logger.error("NaN values detected in predicate_embeddings")
+            if torch.isnan(arg0_embeddings).any():
+                self.logger.error("NaN values detected in arg0_embeddings")
+            if torch.isnan(arg1_embeddings).any():
+                self.logger.error("NaN values detected in arg1_embeddings")
 
         return (
             sentence_embeddings_avg,
