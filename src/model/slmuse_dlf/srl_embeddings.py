@@ -85,8 +85,19 @@ class SRLEmbeddings(nn.Module):
         # if embeddings is NaN, log the input ids and attention_masks
         if torch.isnan(embeddings).any():
             self.logger.error(f"ERROR IN EMBEDDINGS FROM BERT")
-            self.logger.error(f"ids_flat: {ids_flat}")
-            self.logger.error(f"attention_masks_flat: {attention_masks_flat}")
+
+            # check if the input ids and attention_masks have NaN values
+            if torch.isnan(ids_flat).any() or torch.isnan(attention_masks_flat).any():
+                self.logger.error(f"ERROR IN INPUT IDS AND ATTENTION MASKS")
+                # print the nan rows in ids_flat and attention_masks_flat which are causing the issue
+                nan_indices = torch.isnan(ids_flat).any(dim=1) | torch.isnan(
+                    attention_masks_flat
+                ).any(dim=1)
+                self.logger.error(f"nan_indices: {nan_indices}")
+                self.logger.error(f"ids_flat[nan_indices]: {ids_flat[nan_indices]}")
+                self.logger.error(
+                    f"attention_masks_flat[nan_indices]: {attention_masks_flat[nan_indices]}"
+                )
 
         # Reshape back to original batch and sentence dimensions
         embeddings_reshaped = embeddings.view(
