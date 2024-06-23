@@ -48,7 +48,6 @@ class SRLEmbeddings(nn.Module):
     def check_for_nans(self, tensor, tensor_name):
         if torch.isnan(tensor).any():
             self.logger.error(f"NaN values detected in {tensor_name}")
-            raise ValueError(f"NaN values detected in {tensor_name}")
 
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
