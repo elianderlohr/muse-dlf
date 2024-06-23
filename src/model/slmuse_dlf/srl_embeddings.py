@@ -1,3 +1,4 @@
+import pandas as pd
 from transformers import BertModel, RobertaModel
 import torch.nn as nn
 import torch
@@ -92,13 +93,29 @@ class SRLEmbeddings(nn.Module):
             f"sentence embeddings_mean_reshaped {self.pooling}",
         )
 
-        # count how many rows have nan values
-        nan_rows = torch.isnan(embeddings_mean_reshaped).any(dim=2).sum()
+        # Check for NaN values in the tensor
+        nan_mask = torch.isnan(embeddings_mean_reshaped)
 
-        if nan_rows > 0:
-            self.logger.error(
-                f"Found {nan_rows} rows with NaN values in sentence embeddings of shape {embeddings_mean_reshaped.shape}"
-            )
+        # Count total NaN values
+        total_nan_values = nan_mask.sum().item()
+
+        # Check if any sentences are completely NaN
+        nan_sentences_mask = nan_mask.all(dim=-1)
+        nan_sentences = nan_sentences_mask.sum(dim=-1).numpy()
+
+        # Prepare data for visualization
+        batch_size, num_sentences, _ = embeddings_mean_reshaped.shape
+
+        nan_details = {
+            "Batch Index": range(batch_size),
+            "Total NaN Sentences": nan_sentences,
+            "Total NaN Values": [nan_mask[i].sum().item() for i in range(batch_size)],
+        }
+
+        nan_df = pd.DataFrame(nan_details)
+
+        # Log NaN values
+        print(nan_df.head())
 
         return embeddings_reshaped, embeddings_mean_reshaped
 
