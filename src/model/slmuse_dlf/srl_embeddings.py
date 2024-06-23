@@ -54,50 +54,15 @@ class SRLEmbeddings(nn.Module):
         # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
         batch_size, num_sentences, max_sentence_length = ids.size()
 
-        # Check for NaNs in inputs
-        self.check_for_nans(ids, "input ids")
-        self.check_for_nans(attention_masks, "attention masks")
-
         # Flatten ids and attention_masks to 2D tensors
         ids_flat = ids.view(-1, max_sentence_length)
         attention_masks_flat = attention_masks.view(-1, max_sentence_length)
-
-        # Ensure ids_flat and attention_masks_flat contain valid values
-        assert not torch.isnan(
-            ids_flat
-        ).any(), "NaNs found in ids_flat before model input"
-        assert not torch.isinf(
-            ids_flat
-        ).any(), "Infs found in ids_flat before model input"
-        assert not torch.isnan(
-            attention_masks_flat
-        ).any(), "NaNs found in attention_masks_flat before model input"
-        assert not torch.isinf(
-            attention_masks_flat
-        ).any(), "Infs found in attention_masks_flat before model input"
 
         with torch.no_grad():
             # Obtain the embeddings from the BERT model
             embeddings = self.model(
                 input_ids=ids_flat, attention_mask=attention_masks_flat
             )[0]
-
-        # if embeddings is NaN, log the input ids and attention_masks
-        if torch.isnan(embeddings).any():
-            self.logger.error(f"ERROR IN EMBEDDINGS FROM BERT")
-
-            # check if the input ids and attention_masks have NaN values
-            if torch.isnan(ids_flat).any() or torch.isnan(attention_masks_flat).any():
-                self.logger.error(f"ERROR IN INPUT IDS AND ATTENTION MASKS")
-                # print the nan rows in ids_flat and attention_masks_flat which are causing the issue
-                nan_indices = torch.isnan(ids_flat).any(dim=1) | torch.isnan(
-                    attention_masks_flat
-                ).any(dim=1)
-                self.logger.error(f"nan_indices: {nan_indices}")
-                self.logger.error(f"ids_flat[nan_indices]: {ids_flat[nan_indices]}")
-                self.logger.error(
-                    f"attention_masks_flat[nan_indices]: {attention_masks_flat[nan_indices]}"
-                )
 
         # Reshape back to original batch and sentence dimensions
         embeddings_reshaped = embeddings.view(
@@ -124,8 +89,17 @@ class SRLEmbeddings(nn.Module):
 
         # Check for NaNs in mean or CLS embeddings
         self.check_for_nans(
-            embeddings_mean_reshaped, "sentence embeddings (mean or CLS)"
+            embeddings_mean_reshaped,
+            f"sentence embeddings_mean_reshaped {self.pooling}",
         )
+
+        # count how many rows have nan values
+        nan_rows = torch.isnan(embeddings_mean_reshaped).any(dim=2).sum()
+
+        if nan_rows > 0:
+            self.logger.error(
+                f"Found {nan_rows} rows with NaN values in sentence embeddings of shape {embeddings_mean_reshaped.shape}"
+            )
 
         return embeddings_reshaped, embeddings_mean_reshaped
 

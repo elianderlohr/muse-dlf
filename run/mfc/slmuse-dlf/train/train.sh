@@ -134,7 +134,6 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
     --supervised_activation relu \
-    --adamw_eps 1.6233770113068368e-08 \
     --adamw_weight_decay 0.08566849240772259 \
     --optimizer adam \
     --srl_embeddings_pooling cls \
