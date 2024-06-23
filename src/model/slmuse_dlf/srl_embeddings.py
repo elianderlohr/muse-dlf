@@ -90,7 +90,7 @@ class SRLEmbeddings(nn.Module):
         # Check for NaNs in mean or CLS embeddings
         self.check_for_nans(
             embeddings_mean_reshaped,
-            f"sentence embeddings_mean_reshaped {self.pooling}",
+            f"sentence embeddings_mean_reshaped - {self.pooling}",
         )
 
         # Moving tensor to CPU before performing operations
@@ -115,10 +115,14 @@ class SRLEmbeddings(nn.Module):
             ],
         }
 
+        self.logger.error(
+            f"Total NaN values in sentence embeddings_mean_reshaped: {total_nan_values_cpu}"
+        )
+
         nan_df_cpu = pd.DataFrame(nan_details_cpu)
 
         # Log NaN values
-        print(nan_df_cpu.head())
+        self.logger.error(nan_df_cpu.head())
 
         return embeddings_reshaped, embeddings_mean_reshaped
 
