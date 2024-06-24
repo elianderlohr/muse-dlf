@@ -93,36 +93,39 @@ class SRLEmbeddings(nn.Module):
             f"sentence embeddings_mean_reshaped - {self.pooling}",
         )
 
-        # Moving tensor to CPU before performing operations
-        embeddings_mean_reshaped_cpu = embeddings_mean_reshaped.cpu()
+        # if embeddings_mean_reshaped has nan values, log the details
+        if torch.isnan(embeddings_mean_reshaped).any():
 
-        # Check for NaN values in the tensor on CPU
-        nan_mask_cpu = torch.isnan(embeddings_mean_reshaped_cpu)
+            # Moving tensor to CPU before performing operations
+            embeddings_mean_reshaped_cpu = embeddings_mean_reshaped.cpu()
 
-        # Count total NaN values
-        total_nan_values_cpu = nan_mask_cpu.sum().item()
+            # Check for NaN values in the tensor on CPU
+            nan_mask_cpu = torch.isnan(embeddings_mean_reshaped_cpu)
 
-        # Check if any sentences are completely NaN
-        nan_sentences_mask_cpu = nan_mask_cpu.all(dim=-1)
-        nan_sentences_cpu = nan_sentences_mask_cpu.sum(dim=-1).numpy()
+            # Count total NaN values
+            total_nan_values_cpu = nan_mask_cpu.sum().item()
 
-        # Prepare data for visualization
-        nan_details_cpu = {
-            "Batch Index": range(batch_size),
-            "Total NaN Sentences": nan_sentences_cpu,
-            "Total NaN Values": [
-                nan_mask_cpu[i].sum().item() for i in range(batch_size)
-            ],
-        }
+            # Check if any sentences are completely NaN
+            nan_sentences_mask_cpu = nan_mask_cpu.all(dim=-1)
+            nan_sentences_cpu = nan_sentences_mask_cpu.sum(dim=-1).numpy()
 
-        self.logger.error(
-            f"Total NaN values in sentence embeddings_mean_reshaped: {total_nan_values_cpu}"
-        )
+            # Prepare data for visualization
+            nan_details_cpu = {
+                "Batch Index": range(batch_size),
+                "Total NaN Sentences": nan_sentences_cpu,
+                "Total NaN Values": [
+                    nan_mask_cpu[i].sum().item() for i in range(batch_size)
+                ],
+            }
 
-        nan_df_cpu = pd.DataFrame(nan_details_cpu)
+            self.logger.error(
+                f"Total NaN values in sentence embeddings_mean_reshaped: {total_nan_values_cpu}"
+            )
 
-        # Log NaN values
-        self.logger.error(nan_df_cpu.head())
+            nan_df_cpu = pd.DataFrame(nan_details_cpu)
+
+            # Log NaN values
+            self.logger.error(nan_df_cpu.head(32))
 
         return embeddings_reshaped, embeddings_mean_reshaped
 
