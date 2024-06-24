@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --job-name=mfc-slmuse-dlf-sweep-1-debug
 #SBATCH --mem=32G
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:4
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
@@ -61,7 +61,13 @@ export DEBUG="True"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/dnwoipcz
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/dnwoipcz &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/dnwoipcz &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/dnwoipcz &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/dnwoipcz &
+
+wait
+
 
 # Cleanup and Closeoutf
 echo "Deactivating virtual environment..."

@@ -316,7 +316,8 @@ class Trainer:
 
             if self.training_management == "accelerate":
                 self.accelerator.backward(combined_loss)
-                self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
+                if self.accelerator.sync_gradients:
+                    self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
             else:
                 combined_loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
