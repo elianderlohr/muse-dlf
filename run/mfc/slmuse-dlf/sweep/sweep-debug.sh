@@ -61,7 +61,7 @@ export DEBUG="True"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/dnwoipcz &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/dnwoipcz
 
 # Cleanup and Closeoutf
 echo "Deactivating virtual environment..."
