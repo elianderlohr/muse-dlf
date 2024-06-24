@@ -54,30 +54,32 @@ class SRLEmbeddings(nn.Module):
         # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
         batch_size, num_sentences, max_sentence_length = ids.shape
 
-        # Flatten ids and attention_masks to 2D tensors
-        ids = ids.view(batch_size * num_sentences, max_sentence_length)
-        attention_masks = attention_masks.view(
+        # Reshape the input tensors to combine batch_size and num_sentences dimensions
+        ids_flat = ids.view(batch_size * num_sentences, max_sentence_length)
+        attention_masks_flat = attention_masks.view(
             batch_size * num_sentences, max_sentence_length
         )
 
         with torch.no_grad():
             # Obtain the embeddings from the BERT model
-            outputs = self.model(input_ids=ids, attention_mask=attention_masks)
-            embeddings = outputs.last_hidden_state
+            outputs = self.model(
+                input_ids=ids_flat, attention_mask=attention_masks_flat
+            )
+            embeddings = (
+                outputs.last_hidden_state
+            )  # Assuming the embeddings are in the last_hidden_state
 
-        # Reshape back to original batch and sentence dimensions
-        embeddings_reshaped = embeddings.view(
-            batch_size, num_sentences, max_sentence_length, -1
-        )
+        # Reshape the embeddings to the desired output shape
+        embeddings = embeddings.view(batch_size, num_sentences, max_sentence_length, -1)
 
         # if embeddings_mean_reshaped has nan values, log the details
-        if torch.isnan(embeddings_reshaped).any():
+        if torch.isnan(embeddings).any():
 
             # Moving tensor to CPU before performing operations
-            embeddings_reshaped_cpu = embeddings_reshaped.cpu()
+            embeddings_cpu = embeddings.cpu()
 
             # Check for NaN values in the tensor on CPU
-            nan_mask_cpu = torch.isnan(embeddings_reshaped_cpu)
+            nan_mask_cpu = torch.isnan(embeddings_cpu)
 
             # Count total NaN values
             total_nan_values_cpu = nan_mask_cpu.sum().item()
@@ -113,25 +115,21 @@ class SRLEmbeddings(nn.Module):
                 embeddings.size()
             )
             embeddings_masked = embeddings * attention_masks_expanded
-            sum_embeddings = torch.sum(embeddings_masked, dim=1)
-            token_counts = attention_masks_flat.sum(dim=1, keepdim=True).clamp(min=1)
-            embeddings_mean = sum_embeddings / token_counts
-            embeddings_mean_reshaped = embeddings_mean.view(
-                batch_size, num_sentences, -1
+            sum_embeddings = torch.sum(embeddings_masked, dim=2)
+            token_counts = (
+                attention_masks_flat.sum(dim=1, keepdim=True)
+                .clamp(min=1)
+                .view(batch_size, num_sentences, 1)
             )
+            embeddings_mean = sum_embeddings / token_counts
         elif self.pooling == "cls":
             # Use the [CLS] token representation for the sentence embedding
-            embeddings_mean_reshaped = embeddings[:, 0, :].view(
-                batch_size, num_sentences, -1
-            )
+            embeddings_mean = embeddings[:, :, 0, :]
 
-        # Check for NaNs in mean or CLS embeddings
-        self.check_for_nans(
-            embeddings_mean_reshaped,
-            f"sentence embeddings_mean_reshaped - {self.pooling}",
-        )
+        # check for NaN values in embeddings_mean_reshaped
+        self.check_for_nans(embeddings_mean, "embeddings_mean")
 
-        return embeddings_reshaped, embeddings_mean_reshaped
+        return embeddings, embeddings_mean
 
     def get_arg_embedding(
         self,
