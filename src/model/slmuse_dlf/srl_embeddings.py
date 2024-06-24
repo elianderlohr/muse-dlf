@@ -52,17 +52,18 @@ class SRLEmbeddings(nn.Module):
 
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
-        batch_size, num_sentences, max_sentence_length = ids.size()
+        batch_size, num_sentences, max_sentence_length = ids.shape
 
         # Flatten ids and attention_masks to 2D tensors
-        ids_flat = ids.view(-1, max_sentence_length)
-        attention_masks_flat = attention_masks.view(-1, max_sentence_length)
+        ids = ids.view(batch_size * num_sentences, max_sentence_length)
+        attention_masks = attention_masks.view(
+            batch_size * num_sentences, max_sentence_length
+        )
 
         with torch.no_grad():
             # Obtain the embeddings from the BERT model
-            embeddings = self.model(
-                input_ids=ids_flat, attention_mask=attention_masks_flat
-            )[0]
+            outputs = self.model(input_ids=ids, attention_mask=attention_masks)
+            embeddings = outputs.last_hidden_state
 
         # Reshape back to original batch and sentence dimensions
         embeddings_reshaped = embeddings.view(
