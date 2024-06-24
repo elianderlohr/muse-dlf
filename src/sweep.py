@@ -6,7 +6,7 @@ from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
 import wandb
-from src.utils.logging_manager import LoggerManager
+from utils.logging_manager import LoggerManager
 from training.trainer import Trainer
 from transformers import (
     BertTokenizer,
