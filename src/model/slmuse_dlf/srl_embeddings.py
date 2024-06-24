@@ -100,6 +100,9 @@ class SRLEmbeddings(nn.Module):
 
             nan_df_cpu = pd.DataFrame(nan_details_cpu)
 
+            # save df to file as csv
+            nan_df_cpu.to_csv("nan_values.csv", index=False)
+
             # Log NaN values
             self.logger.error(nan_df_cpu.head(32))
 
