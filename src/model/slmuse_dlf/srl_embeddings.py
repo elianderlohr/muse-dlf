@@ -65,9 +65,7 @@ class SRLEmbeddings(nn.Module):
         model.eval()
 
         # Test with some random input
-        test_ids = torch.randint(
-            0, 100, (1, 1, 10)
-        )  # Adjust based on your vocab size and input shape
+        test_ids = torch.randint(0, 100, (1, 10))  # Corrected shape
         test_attention_masks = torch.ones_like(test_ids)
 
         with torch.no_grad():
