@@ -108,52 +108,23 @@ class SRLEmbeddings(nn.Module):
         if torch.isnan(embeddings).any():
             raise ValueError("NaNs found in embeddings after reshaping")
 
-        if torch.isnan(embeddings).any():
-            # Moving tensor to CPU before performing operations
-            embeddings_cpu = embeddings.cpu()
-
-            # Check for NaN values in the tensor on CPU
-            nan_mask_cpu = torch.isnan(embeddings_cpu)
-
-            # Count total NaN values
-            total_nan_values_cpu = nan_mask_cpu.sum().item()
-
-            # Check if any sentences are completely NaN
-            nan_sentences_mask_cpu = nan_mask_cpu.all(dim=-1)
-            nan_sentences_cpu = nan_sentences_mask_cpu.sum(dim=-1).numpy()
-
-            # Prepare data for visualization
-            nan_details_cpu = {
-                "Batch Index": list(range(batch_size)),
-                "Total NaN Sentences": nan_sentences_cpu.tolist(),
-                "Total NaN Values": [
-                    nan_mask_cpu[i].sum().item() for i in range(batch_size)
-                ],
-            }
-
-            self.logger.error(
-                f"Total NaN values in sentence embeddings_reshaped: {total_nan_values_cpu}"
-            )
-
-            nan_df_cpu = pd.DataFrame(nan_details_cpu)
-
-            # save df to file as csv
-            nan_df_cpu.to_csv("nan_values.csv", index=False)
-
-            # Log NaN values
-            self.logger.error(nan_df_cpu.head(32))
-
+        # Calculate mean embeddings across the token dimension while ignoring padded tokens
         if self.pooling == "mean":
-            # Calculate mean embeddings across the token dimension while ignoring padded tokens
-            attention_masks_expanded = attention_masks_flat.unsqueeze(-1).expand(
+            # Expand the attention mask to match the embeddings size
+            attention_masks_expanded = attention_masks_flat.view(
+                batch_size, num_sentences, max_sentence_length, 1
+            )
+            attention_masks_expanded = attention_masks_expanded.expand(
                 embeddings.size()
             )
             embeddings_masked = embeddings * attention_masks_expanded
             sum_embeddings = torch.sum(embeddings_masked, dim=2)
             token_counts = (
-                attention_masks_flat.sum(dim=1, keepdim=True)
+                attention_masks_flat.view(
+                    batch_size, num_sentences, max_sentence_length
+                )
+                .sum(dim=2, keepdim=True)
                 .clamp(min=1)
-                .view(batch_size, num_sentences, 1)
             )
             embeddings_mean = sum_embeddings / token_counts
         elif self.pooling == "cls":
