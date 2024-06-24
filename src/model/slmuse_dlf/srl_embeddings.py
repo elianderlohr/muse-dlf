@@ -19,6 +19,9 @@ class SRLEmbeddings(nn.Module):
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
+        self.model_name_or_path = model_name_or_path
+        self.model_type = model_type
+
         if model_type == "bert-base-uncased":
             self.model = BertModel.from_pretrained(model_name_or_path)
         elif model_type == "roberta-base":
@@ -46,12 +49,41 @@ class SRLEmbeddings(nn.Module):
         # Debugging:
         self.logger.info(f"✅ SRLEmbeddings successfully initialized")
 
+        if self._debug:
+            self.verify_model_loading()
+
+    def verify_model_loading(self):
+        if self.model_type == "bert-base-uncased":
+            model = BertModel.from_pretrained(self.model_name_or_path)
+        elif self.model_type == "roberta-base":
+            model = RobertaModel.from_pretrained(self.model_name_or_path)
+        else:
+            raise ValueError(
+                f"Unsupported model_type. Choose either 'bert-base-uncased' or 'roberta-base'. Found: {self.model_type}"
+            )
+
+        model.eval()
+
+        # Test with some random input
+        test_ids = torch.randint(
+            0, 100, (1, 1, 10)
+        )  # Adjust based on your vocab size and input shape
+        test_attention_masks = torch.ones_like(test_ids)
+
+        with torch.no_grad():
+            outputs = model(input_ids=test_ids, attention_mask=test_attention_masks)
+            embeddings = outputs.last_hidden_state
+
+        if torch.isnan(embeddings).any():
+            raise ValueError("NaNs found in test embeddings after loading the model")
+
+        self.logger.info("No NaNs found in test embeddings. Model loading seems fine.")
+
     def check_for_nans(self, tensor, tensor_name):
         if torch.isnan(tensor).any():
             self.logger.error(f"NaN values detected in {tensor_name}")
 
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
-        # Assume ids and attention_masks shapes are [batch_size, num_sentences, max_sentence_length]
         batch_size, num_sentences, max_sentence_length = ids.shape
 
         # Reshape the input tensors to combine batch_size and num_sentences dimensions
@@ -69,12 +101,16 @@ class SRLEmbeddings(nn.Module):
                 outputs.last_hidden_state
             )  # Assuming the embeddings are in the last_hidden_state
 
+        if torch.isnan(embeddings).any():
+            raise ValueError("NaNs found in embeddings after model forward pass")
+
         # Reshape the embeddings to the desired output shape
         embeddings = embeddings.view(batch_size, num_sentences, max_sentence_length, -1)
 
-        # if embeddings_mean_reshaped has nan values, log the details
         if torch.isnan(embeddings).any():
+            raise ValueError("NaNs found in embeddings after reshaping")
 
+        if torch.isnan(embeddings).any():
             # Moving tensor to CPU before performing operations
             embeddings_cpu = embeddings.cpu()
 
@@ -126,7 +162,7 @@ class SRLEmbeddings(nn.Module):
             # Use the [CLS] token representation for the sentence embedding
             embeddings_mean = embeddings[:, :, 0, :]
 
-        # check for NaN values in embeddings_mean_reshaped
+        # check for NaN values in embeddings_mean
         self.check_for_nans(embeddings_mean, "embeddings_mean")
 
         return embeddings, embeddings_mean

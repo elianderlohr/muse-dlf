@@ -26,6 +26,8 @@ warnings.filterwarnings(
 )
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
 
+wandb.require("core")
+
 
 def load_model(
     embedding_dim,

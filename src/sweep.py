@@ -22,6 +22,8 @@ warnings.filterwarnings(
 )
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
 
+wandb.require("core")
+
 
 # welcome console message
 def welcome_message():
