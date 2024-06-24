@@ -99,14 +99,8 @@ class SRLEmbeddings(nn.Module):
                 outputs.last_hidden_state
             )  # Assuming the embeddings are in the last_hidden_state
 
-        if torch.isnan(embeddings).any():
-            raise ValueError("NaNs found in embeddings after model forward pass")
-
         # Reshape the embeddings to the desired output shape
         embeddings = embeddings.view(batch_size, num_sentences, max_sentence_length, -1)
-
-        if torch.isnan(embeddings).any():
-            raise ValueError("NaNs found in embeddings after reshaping")
 
         # Calculate mean embeddings across the token dimension while ignoring padded tokens
         if self.pooling == "mean":

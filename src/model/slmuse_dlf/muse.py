@@ -304,20 +304,6 @@ class MUSEDLF(nn.Module):
         d_a1_aggregated = torch.stack(d_a1_list, dim=1)
         d_fx_aggregated = torch.stack(d_fx_list, dim=1)
 
-        # check if d_p_aggregated has nan values
-        if torch.isnan(d_p_aggregated).any():
-            self.logger.error("d_p_aggregated has nan")
-            self.logger.error(d_p_aggregated)
-        if torch.isnan(d_a0_aggregated).any():
-            self.logger.error("d_a0_aggregated has nan")
-            self.logger.error(d_a0_aggregated)
-        if torch.isnan(d_a1_aggregated).any():
-            self.logger.error("d_a1_aggregated has nan")
-            self.logger.error(d_a1_aggregated)
-        if torch.isnan(d_fx_aggregated).any():
-            self.logger.error("d_fx_aggregated has nan")
-            self.logger.error(d_fx_aggregated)
-
         # Supervised predictions
         span_pred, sentence_pred, combined_pred, other = self.supervised(
             d_p_aggregated,
