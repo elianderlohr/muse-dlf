@@ -1,14 +1,11 @@
 import os
 import time
 import torch
-
 import json
 from tqdm import tqdm
 import math
-
-from wandb import AlertLevel
 import evaluate
-
+from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 
 logger = LoggerManager.get_logger(__name__)
@@ -31,25 +28,6 @@ class Trainer:
         early_stop=20,
         **kwargs,
     ):
-        """
-        Initializes the Trainer.
-
-        Args:
-            model: The model to be trained.
-            train_dataloader: The DataLoader for the training data.
-            test_dataloader: The DataLoader for the testing data.
-            optimizer: The optimizer to be used for training.
-            loss_function: The loss function to be used for training.
-            scheduler: The learning rate scheduler to be used for training.
-            device: The device to be used for training.
-            save_path: The path to save the model and metrics.
-            training_management: The training management tool to be used. Options are 'accelerate', 'wandb', or None.
-            tau_min: The minimum value of tau.
-            tau_decay: The decay factor for tau.
-
-        Returns:
-            None
-        """
         self.model = model.to(device)
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
@@ -62,12 +40,9 @@ class Trainer:
         self.tau_decay = tau_decay
         self.early_stop = early_stop
 
-        # self.gradient_accumulation_steps = 4
-
         self.training_management = training_management
         if self.training_management == "accelerate":
             logger.info("Using Accelerate for training.")
-
             from accelerate import Accelerator
 
             if "accelerator_instance" in kwargs:
@@ -77,7 +52,6 @@ class Trainer:
                 raise ValueError(
                     "You must provide an accelerator instance if you want to use Accelerate for training."
                 )
-
             (
                 self.model,
                 self.optimizer,
@@ -91,7 +65,6 @@ class Trainer:
                 self.test_dataloader,
                 self.scheduler,
             )
-
         elif self.training_management == "wandb":
             logger.info("Using Weights and Biases for training.")
             import wandb
@@ -99,7 +72,6 @@ class Trainer:
             if "wandb_instance" in kwargs:
                 self.wandb: wandb = kwargs["wandb_instance"]
             else:
-                # raise error
                 raise ValueError(
                     "You must provide a wandb instance if you want to use wandb for training."
                 )
@@ -122,6 +94,12 @@ class Trainer:
             self.wandb.alert(title=title, text=text, level=AlertLevel.INFO)
         else:
             logger.info(f"{title} - {text}")
+
+    def check_for_nans(self, tensor, tensor_name):
+        if torch.isnan(tensor).any():
+            logger.error(f"NaNs found in {tensor_name}")
+            return True
+        return False
 
     def _train(
         self,
@@ -276,7 +254,19 @@ class Trainer:
                 )
             )
 
-            # LOSS
+            # Check for NaNs in model outputs
+            if (
+                self.check_for_nans(unsupervised_loss, "unsupervised_loss")
+                or self.check_for_nans(span_logits, "span_logits")
+                or self.check_for_nans(sentence_logits, "sentence_logits")
+                or self.check_for_nans(combined_logits, "combined_logits")
+                or self.check_for_nans(other["predicate"], "other['predicate']")
+                or self.check_for_nans(other["arg0"], "other['arg0']")
+                or self.check_for_nans(other["arg1"], "other['arg1']")
+                or self.check_for_nans(other["frameaxis"], "other['frameaxis']")
+            ):
+                logger.error("NaNs detected in model outputs, skipping this batch.")
+                continue
 
             span_loss = 0.0
             sentence_loss = 0.0
@@ -294,45 +284,16 @@ class Trainer:
                 alpha * supervised_loss + (1 - alpha) * unsupervised_loss
             ) + zero_sum
 
-            # In the forward method of your model
-            if torch.isnan(unsupervised_loss).any():
-                logger.error("NaN in unsupervised_loss")
-            if torch.isnan(span_logits).any():
-                logger.error("NaN in span_logits")
-            if torch.isnan(sentence_logits).any():
-                logger.error("NaN in sentence_logits")
-            if torch.isnan(combined_logits).any():
-                logger.error("NaN in combined_logits")
-            if torch.isnan(other["predicate"]).any():
-                logger.error("NaN in other['predicate']")
-            if torch.isnan(other["arg0"]).any():
-                logger.error("NaN in other['arg0']")
-            if torch.isnan(other["arg1"]).any():
-                logger.error("NaN in other['arg1']")
-            if torch.isnan(other["frameaxis"]).any():
-                logger.error("NaN in other['frameaxis']")
-
             # other loss (debug)
             predicate_loss = self.loss_function(other["predicate"], labels.float())
             arg0_loss = self.loss_function(other["arg0"], labels.float())
             arg1_loss = self.loss_function(other["arg1"], labels.float())
             frameaxis_loss = self.loss_function(other["frameaxis"], labels.float())
 
-            # if predicate_loss nan or inf log debug
-            if torch.isnan(predicate_loss) or torch.isinf(predicate_loss):
-                logger.error(f"predicate_loss: {predicate_loss}")
-                logger.error(f"other[predicate]: {other['predicate']}")
-                logger.error(f"labels: {labels}")
-
-            if torch.isnan(arg0_loss) or torch.isinf(arg0_loss):
-                logger.error(f"arg0_loss: {arg0_loss}")
-                logger.error(f"other[arg0]: {other['arg0']}")
-                logger.error(f"labels: {labels}")
-
-            if torch.isnan(arg1_loss) or torch.isinf(arg1_loss):
-                logger.error(f"arg1_loss: {arg1_loss}")
-                logger.error(f"other[arg1]: {other['arg1']}")
-                logger.error(f"labels: {labels}")
+            # Check for NaNs in combined loss
+            if self.check_for_nans(combined_loss, "combined_loss"):
+                logger.error("NaNs detected in combined_loss, skipping this batch.")
+                continue
 
             if self.training_management == "accelerate":
                 self.accelerator.backward(combined_loss)
@@ -383,23 +344,18 @@ class Trainer:
                     span_pred, span_labels = self.accelerator.gather_for_metrics(
                         (span_pred, labels)
                     )
-
                     sentence_pred, sentence_labels = (
                         self.accelerator.gather_for_metrics((sentence_pred, labels))
                     )
-
                     predicate_pred, predicate_labels = (
                         self.accelerator.gather_for_metrics((predicate_pred, labels))
                     )
-
                     arg0_pred, arg0_labels = self.accelerator.gather_for_metrics(
                         (arg0_pred, labels)
                     )
-
                     arg1_pred, arg1_labels = self.accelerator.gather_for_metrics(
                         (arg1_pred, labels)
                     )
-
                     frameaxis_pred, frameaxis_labels = (
                         self.accelerator.gather_for_metrics((frameaxis_pred, labels))
                     )
@@ -407,7 +363,6 @@ class Trainer:
                     combined_labels = labels
                     span_labels = labels
                     sentence_labels = labels
-
                     predicate_labels = labels
                     arg0_labels = labels
                     arg1_labels = labels
@@ -417,127 +372,103 @@ class Trainer:
                 combined_pred = combined_pred.argmax(dim=1)
                 span_pred = span_pred.argmax(dim=1)
                 sentence_pred = sentence_pred.argmax(dim=1)
-
                 predicate_pred = predicate_pred.argmax(dim=1)
                 arg0_pred = arg0_pred.argmax(dim=1)
                 arg1_pred = arg1_pred.argmax(dim=1)
                 frameaxis_pred = frameaxis_pred.argmax(dim=1)
-
                 combined_labels = combined_labels.argmax(dim=1)
                 span_labels = span_labels.argmax(dim=1)
                 sentence_labels = sentence_labels.argmax(dim=1)
-
                 predicate_labels = predicate_labels.argmax(dim=1)
                 arg0_labels = arg0_labels.argmax(dim=1)
                 arg1_labels = arg1_labels.argmax(dim=1)
                 frameaxis_labels = frameaxis_labels.argmax(dim=1)
 
                 # Macro F1
-
                 f1_metric_macro.add_batch(
                     predictions=combined_pred.cpu().numpy(),
                     references=combined_labels.cpu().numpy(),
                 )
-
                 f1_metric_macro_span.add_batch(
                     predictions=span_pred.cpu().numpy(),
                     references=span_labels.cpu().numpy(),
                 )
-
                 f1_metric_macro_sentence.add_batch(
                     predictions=sentence_pred.cpu().numpy(),
                     references=sentence_labels.cpu().numpy(),
                 )
-
                 f1_metric_macro_predicate.add_batch(
                     predictions=predicate_pred.cpu().numpy(),
                     references=predicate_labels.cpu().numpy(),
                 )
-
                 f1_metric_macro_arg0.add_batch(
                     predictions=arg0_pred.cpu().numpy(),
                     references=arg0_labels.cpu().numpy(),
                 )
-
                 f1_metric_macro_arg1.add_batch(
                     predictions=arg1_pred.cpu().numpy(),
                     references=arg1_labels.cpu().numpy(),
                 )
-
                 f1_metric_macro_frameaxis.add_batch(
                     predictions=frameaxis_pred.cpu().numpy(),
                     references=frameaxis_labels.cpu().numpy(),
                 )
 
                 # Micro F1
-
                 f1_metric_micro.add_batch(
                     predictions=combined_pred.cpu().numpy(),
                     references=combined_labels.cpu().numpy(),
                 )
-
                 f1_metric_micro_span.add_batch(
                     predictions=span_pred.cpu().numpy(),
                     references=span_labels.cpu().numpy(),
                 )
-
                 f1_metric_micro_sentence.add_batch(
                     predictions=sentence_pred.cpu().numpy(),
                     references=sentence_labels.cpu().numpy(),
                 )
-
                 f1_metric_micro_predicate.add_batch(
                     predictions=predicate_pred.cpu().numpy(),
                     references=predicate_labels.cpu().numpy(),
                 )
-
                 f1_metric_micro_arg0.add_batch(
                     predictions=arg0_pred.cpu().numpy(),
                     references=arg0_labels.cpu().numpy(),
                 )
-
                 f1_metric_micro_arg1.add_batch(
                     predictions=arg1_pred.cpu().numpy(),
                     references=arg1_labels.cpu().numpy(),
                 )
-
                 f1_metric_micro_frameaxis.add_batch(
                     predictions=frameaxis_pred.cpu().numpy(),
                     references=frameaxis_labels.cpu().numpy(),
                 )
 
                 # Accuracy
-
                 accuracy_metric.add_batch(
                     predictions=combined_pred.cpu().numpy(),
                     references=combined_labels.cpu().numpy(),
                 )
-
                 accuracy_metric_span.add_batch(
                     predictions=span_pred.cpu().numpy(),
                     references=span_labels.cpu().numpy(),
                 )
-
                 accuracy_metric_sentence.add_batch(
                     predictions=sentence_pred.cpu().numpy(),
                     references=sentence_labels.cpu().numpy(),
                 )
-
                 accuracy_metric_predicate.add_batch(
                     predictions=predicate_pred.cpu().numpy(),
                     references=predicate_labels.cpu().numpy(),
                 )
-
                 accuracy_metric_arg0.add_batch(
                     predictions=arg0_pred.cpu().numpy(),
                     references=arg0_labels.cpu().numpy(),
                 )
-
                 accuracy_metric_arg1.add_batch(
                     predictions=arg1_pred.cpu().numpy(),
                     references=arg1_labels.cpu().numpy(),
                 )
-
                 accuracy_metric_frameaxis.add_batch(
                     predictions=frameaxis_pred.cpu().numpy(),
                     references=frameaxis_labels.cpu().numpy(),
@@ -548,7 +479,6 @@ class Trainer:
                 eval_results_micro_sentence = f1_metric_micro_sentence.compute(
                     average="micro"
                 )
-
                 eval_results_micro_predicate = f1_metric_micro_predicate.compute(
                     average="micro"
                 )
@@ -563,7 +493,6 @@ class Trainer:
                 eval_results_macro_sentence = f1_metric_macro_sentence.compute(
                     average="macro"
                 )
-
                 eval_results_macro_predicate = f1_metric_macro_predicate.compute(
                     average="macro"
                 )
@@ -576,7 +505,6 @@ class Trainer:
                 eval_accuracy = accuracy_metric.compute()
                 eval_accuracy_span = accuracy_metric_span.compute()
                 eval_accuracy_sentence = accuracy_metric_sentence.compute()
-
                 eval_accuracy_predicate = accuracy_metric_predicate.compute()
                 eval_accuracy_arg0 = accuracy_metric_arg0.compute()
                 eval_accuracy_arg1 = accuracy_metric_arg1.compute()
@@ -628,9 +556,7 @@ class Trainer:
 
                     if early_stopping["early_stop"] >= self.early_stop:
                         logger.info("Early stopping triggered.")
-
                         early_stopping["early_stopped"] = True
-
                         return early_stopping
 
             del (
@@ -659,7 +585,7 @@ class Trainer:
                 "epoch_supervised_loss": avg_supervised_loss,
                 "epoch_unsupervised_loss": avg_unsupervised_loss,
                 "epoch": epoch,
-            },
+            }
         )
 
         return early_stopping
@@ -811,19 +737,15 @@ class Trainer:
                 sentence_pred, sentence_labels = self.accelerator.gather_for_metrics(
                     (sentence_pred, labels)
                 )
-
                 predicate_pred, predicate_labels = self.accelerator.gather_for_metrics(
                     (predicate_pred, labels)
                 )
-
                 arg0_pred, arg0_labels = self.accelerator.gather_for_metrics(
                     (arg0_pred, labels)
                 )
-
                 arg1_pred, arg1_labels = self.accelerator.gather_for_metrics(
                     (arg1_pred, labels)
                 )
-
                 frameaxis_pred, frameaxis_labels = self.accelerator.gather_for_metrics(
                     (frameaxis_pred, labels)
                 )
@@ -831,7 +753,6 @@ class Trainer:
                 combined_labels = labels
                 span_labels = labels
                 sentence_labels = labels
-
                 predicate_labels = labels
                 arg0_labels = labels
                 arg1_labels = labels
@@ -841,147 +762,115 @@ class Trainer:
             combined_pred = combined_pred.argmax(dim=1)
             span_pred = span_pred.argmax(dim=1)
             sentence_pred = sentence_pred.argmax(dim=1)
-
             predicate_pred = predicate_pred.argmax(dim=1)
             arg0_pred = arg0_pred.argmax(dim=1)
             arg1_pred = arg1_pred.argmax(dim=1)
             frameaxis_pred = frameaxis_pred.argmax(dim=1)
-
             combined_labels = combined_labels.argmax(dim=1)
             span_labels = span_labels.argmax(dim=1)
             sentence_labels = sentence_labels.argmax(dim=1)
-
             predicate_labels = predicate_labels.argmax(dim=1)
             arg0_labels = arg0_labels.argmax(dim=1)
             arg1_labels = arg1_labels.argmax(dim=1)
             frameaxis_labels = frameaxis_labels.argmax(dim=1)
 
             # Macro F1
-
             f1_metric_macro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
                 references=combined_labels.cpu().numpy(),
             )
-
             f1_metric_macro_span.add_batch(
                 predictions=span_pred.cpu().numpy(),
                 references=span_labels.cpu().numpy(),
             )
-
             f1_metric_macro_sentence.add_batch(
                 predictions=sentence_pred.cpu().numpy(),
                 references=sentence_labels.cpu().numpy(),
             )
-
             f1_metric_macro_predicate.add_batch(
                 predictions=predicate_pred.cpu().numpy(),
                 references=predicate_labels.cpu().numpy(),
             )
-
             f1_metric_macro_arg0.add_batch(
                 predictions=arg0_pred.cpu().numpy(),
                 references=arg0_labels.cpu().numpy(),
             )
-
             f1_metric_macro_arg1.add_batch(
                 predictions=arg1_pred.cpu().numpy(),
                 references=arg1_labels.cpu().numpy(),
             )
-
             f1_metric_macro_frameaxis.add_batch(
                 predictions=frameaxis_pred.cpu().numpy(),
                 references=frameaxis_labels.cpu().numpy(),
             )
 
             # Micro F1
-
             f1_metric_micro.add_batch(
                 predictions=combined_pred.cpu().numpy(),
                 references=combined_labels.cpu().numpy(),
             )
-
             f1_metric_micro_span.add_batch(
                 predictions=span_pred.cpu().numpy(),
                 references=span_labels.cpu().numpy(),
             )
-
             f1_metric_micro_sentence.add_batch(
                 predictions=sentence_pred.cpu().numpy(),
                 references=sentence_labels.cpu().numpy(),
             )
-
             f1_metric_micro_predicate.add_batch(
                 predictions=predicate_pred.cpu().numpy(),
                 references=predicate_labels.cpu().numpy(),
             )
-
             f1_metric_micro_arg0.add_batch(
                 predictions=arg0_pred.cpu().numpy(),
                 references=arg0_labels.cpu().numpy(),
             )
-
             f1_metric_micro_arg1.add_batch(
                 predictions=arg1_pred.cpu().numpy(),
                 references=arg1_labels.cpu().numpy(),
             )
-
             f1_metric_micro_frameaxis.add_batch(
                 predictions=frameaxis_pred.cpu().numpy(),
                 references=frameaxis_labels.cpu().numpy(),
             )
 
             # Accuracy
-
             accuracy_metric.add_batch(
                 predictions=combined_pred.cpu().numpy(),
                 references=combined_labels.cpu().numpy(),
             )
-
             accuracy_metric_span.add_batch(
                 predictions=span_pred.cpu().numpy(),
                 references=span_labels.cpu().numpy(),
             )
-
             accuracy_metric_sentence.add_batch(
                 predictions=sentence_pred.cpu().numpy(),
                 references=sentence_labels.cpu().numpy(),
             )
-
             accuracy_metric_predicate.add_batch(
                 predictions=predicate_pred.cpu().numpy(),
                 references=predicate_labels.cpu().numpy(),
             )
-
             accuracy_metric_arg0.add_batch(
                 predictions=arg0_pred.cpu().numpy(),
                 references=arg0_labels.cpu().numpy(),
             )
-
             accuracy_metric_arg1.add_batch(
                 predictions=arg1_pred.cpu().numpy(),
                 references=arg1_labels.cpu().numpy(),
             )
-
             accuracy_metric_frameaxis.add_batch(
                 predictions=frameaxis_pred.cpu().numpy(),
                 references=frameaxis_labels.cpu().numpy(),
             )
 
-            # Explicitly delete tensors to free up memory
-            del (
-                sentence_ids,
-                predicate_ids,
-                arg0_ids,
-                arg1_ids,
-                labels,
-            )
+            del sentence_ids, predicate_ids, arg0_ids, arg1_ids, labels
             torch.cuda.empty_cache()
 
         # Micro F1
         eval_results_micro = f1_metric_micro.compute(average="micro")
         eval_results_micro_span = f1_metric_micro_span.compute(average="micro")
         eval_results_micro_sentence = f1_metric_micro_sentence.compute(average="micro")
-
         eval_results_micro_predicate = f1_metric_micro_predicate.compute(
             average="micro"
         )
@@ -995,7 +884,6 @@ class Trainer:
         eval_results_macro = f1_metric_macro.compute(average="macro")
         eval_results_macro_span = f1_metric_macro_span.compute(average="macro")
         eval_results_macro_sentence = f1_metric_macro_sentence.compute(average="macro")
-
         eval_results_macro_predicate = f1_metric_macro_predicate.compute(
             average="macro"
         )
@@ -1009,7 +897,6 @@ class Trainer:
         eval_accuracy = accuracy_metric.compute()
         eval_accuracy_span = accuracy_metric_span.compute()
         eval_accuracy_sentence = accuracy_metric_sentence.compute()
-
         eval_accuracy_predicate = accuracy_metric_predicate.compute()
         eval_accuracy_arg0 = accuracy_metric_arg0.compute()
         eval_accuracy_arg1 = accuracy_metric_arg1.compute()
@@ -1079,7 +966,6 @@ class Trainer:
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
-
         if self.training_management != "accelerate":
             self.model = self.model.to(self.device)
 
@@ -1146,7 +1032,6 @@ class Trainer:
                 early_stopping["stopping_code"] = 104
                 break
 
-            # accuracy is below 0.5 after first 2 epochs then stop training
             if epoch > 2 and metrics["accuracy"] < 0.5:
                 logger.info("Accuracy is below 0.5. Stopping training.")
                 early_stopping["early_stopped"] = True
