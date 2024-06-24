@@ -197,10 +197,13 @@ def main():
 
     # parse debug flag from environment as bool
     debug = os.getenv("DEBUG")
+    print(f"DEBUG: {debug}")
     if debug == "True":
         debug = True
+        print("Debugging enabled")
     else:
         debug = False
+        print("Debugging disabled")
 
     seed = 42
     torch.manual_seed(seed)
