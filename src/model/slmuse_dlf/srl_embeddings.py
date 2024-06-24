@@ -168,12 +168,6 @@ class SRLEmbeddings(nn.Module):
                         avg_embedding = selected_embeddings.mean(dim=0)
                         arg_embeddings[batch_idx, sent_idx, arg_idx] = avg_embedding
 
-                        # Check for NaN values in arg_embeddings
-                        self.check_for_nans(
-                            avg_embedding,
-                            f"arg_embeddings at batch {batch_idx}, sentence {sent_idx}, arg {arg_idx}",
-                        )
-
         return arg_embeddings
 
     def forward(

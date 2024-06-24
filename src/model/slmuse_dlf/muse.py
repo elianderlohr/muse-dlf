@@ -263,13 +263,10 @@ class MUSEDLF(nn.Module):
                 # check if [p][d] has nan values
                 if torch.isnan(unsupervised_results["p"]["d"]).any():
                     self.logger.error("p d has nan")
-                    self.logger.error(unsupervised_results["p"]["d"])
                 if torch.isnan(unsupervised_results["a0"]["d"]).any():
                     self.logger.error("a0 d has nan")
-                    self.logger.error(unsupervised_results["a0"]["d"])
                 if torch.isnan(unsupervised_results["a1"]["d"]).any():
                     self.logger.error("a1 d has nan")
-                    self.logger.error(unsupervised_results["a1"]["d"])
 
                 # Use the vhat (reconstructed embeddings) for supervised predictions
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])
