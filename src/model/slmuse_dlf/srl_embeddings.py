@@ -64,6 +64,11 @@ class SRLEmbeddings(nn.Module):
                 input_ids=ids_flat, attention_mask=attention_masks_flat
             )[0]
 
+        # Reshape back to original batch and sentence dimensions
+        embeddings_reshaped = embeddings.view(
+            batch_size, num_sentences, max_sentence_length, -1
+        )
+
         # if embeddings_mean_reshaped has nan values, log the details
         if torch.isnan(embeddings).any():
 
@@ -97,11 +102,6 @@ class SRLEmbeddings(nn.Module):
 
             # Log NaN values
             self.logger.error(nan_df_cpu.head(32))
-
-        # Reshape back to original batch and sentence dimensions
-        embeddings_reshaped = embeddings.view(
-            batch_size, num_sentences, max_sentence_length, -1
-        )
 
         if self.pooling == "mean":
             # Calculate mean embeddings across the token dimension while ignoring padded tokens
