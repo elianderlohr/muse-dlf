@@ -87,8 +87,8 @@ class SRLEmbeddings(nn.Module):
 
             # Prepare data for visualization
             nan_details_cpu = {
-                "Batch Index": range(batch_size),
-                "Total NaN Sentences": nan_sentences_cpu,
+                "Batch Index": list(range(batch_size)),
+                "Total NaN Sentences": nan_sentences_cpu.tolist(),
                 "Total NaN Values": [
                     nan_mask_cpu[i].sum().item() for i in range(batch_size)
                 ],
