@@ -70,13 +70,13 @@ class SRLEmbeddings(nn.Module):
         )
 
         # if embeddings_mean_reshaped has nan values, log the details
-        if torch.isnan(embeddings).any():
+        if torch.isnan(embeddings_reshaped).any():
 
             # Moving tensor to CPU before performing operations
-            embeddings_cpu = embeddings.cpu()
+            embeddings_reshaped_cpu = embeddings_reshaped.cpu()
 
             # Check for NaN values in the tensor on CPU
-            nan_mask_cpu = torch.isnan(embeddings_cpu)
+            nan_mask_cpu = torch.isnan(embeddings_reshaped_cpu)
 
             # Count total NaN values
             total_nan_values_cpu = nan_mask_cpu.sum().item()
@@ -95,7 +95,7 @@ class SRLEmbeddings(nn.Module):
             }
 
             self.logger.error(
-                f"Total NaN values in sentence embeddings_mean_reshaped: {total_nan_values_cpu}"
+                f"Total NaN values in sentence embeddings_reshaped: {total_nan_values_cpu}"
             )
 
             nan_df_cpu = pd.DataFrame(nan_details_cpu)
