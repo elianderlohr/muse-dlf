@@ -6,6 +6,7 @@ from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
 import wandb
+from src.utils.logging_manager import LoggerManager
 from training.trainer import Trainer
 from transformers import (
     BertTokenizer,
@@ -200,10 +201,16 @@ def main():
     print(f"DEBUG: {debug}")
     if debug == "True":
         debug = True
+        LoggerManager.use_accelerate(accelerate_used=False, log_level="DEBUG")
         print("Debugging enabled")
     else:
         debug = False
+        LoggerManager.use_accelerate(accelerate_used=False, log_level="INFO")
         print("Debugging disabled")
+
+    logger = LoggerManager.get_logger(__name__)
+
+    logger.info("Starting sweep")
 
     seed = 42
     torch.manual_seed(seed)
