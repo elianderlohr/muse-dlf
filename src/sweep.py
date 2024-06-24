@@ -69,6 +69,7 @@ def load_model(
     supervised_num_layers,
     supervised_activation,
     device="cuda",
+    _debug=False,
 ):
     model = MUSEDLF(
         embedding_dim=embedding_dim,
@@ -99,6 +100,7 @@ def load_model(
         supervised_concat_frameaxis=supervised_concat_frameaxis,
         supervised_num_layers=supervised_num_layers,
         supervised_activation=supervised_activation,
+        _debug=_debug,
     )
 
     model = model.to(device)
@@ -193,6 +195,13 @@ def main():
     force_recalculate_frameaxis = False
     sample_size = -1
 
+    # parse debug flag from environment as bool
+    debug = os.getenv("DEBUG")
+    if debug == "True":
+        debug = True
+    else:
+        debug = False
+
     seed = 42
     torch.manual_seed(seed)
     if torch.cuda.is_available():
@@ -235,6 +244,7 @@ def main():
         supervised_num_layers=supervised_num_layers,
         supervised_activation=supervised_activation,
         device="cuda",
+        _debug=debug,
     )
 
     if name_tokenizer == "roberta-base":
