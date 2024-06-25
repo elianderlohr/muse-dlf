@@ -1,25 +1,16 @@
 # main script
 
 import argparse
-from multiprocessing import pool
 import random
 import numpy as np
 from model.slmuse_dlf.muse import SRLEmbeddings
 from preprocessing.pre_processor import PreProcessor
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from transformers import (
     BertTokenizer,
     RobertaTokenizerFast,
-    get_linear_schedule_with_warmup,
 )
-from torch.optim import Adam, AdamW
-from accelerate import Accelerator
 import warnings
-import wandb
-from training.debug_trainer import DEBUGTrainer
-from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
 # Suppress specific warnings from numpy
@@ -27,8 +18,6 @@ warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
 )
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
-
-wandb.require("core")
 
 
 def load_model(
@@ -62,18 +51,53 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
+def check_for_nans(tensor, tensor_name, logger):
+    if torch.isnan(tensor).any():
+        logger.error(f"NaN values detected in {tensor_name}")
+        return True
+    return False
+
+
+def process_dataloader(dataloader, model, device, logger):
+    nan_found = False
+    for batch in dataloader:
+        sentence_ids = batch["sentence_ids"].to(device)
+        sentence_attention_masks = batch["sentence_attention_masks"].to(device)
+        predicate_ids = batch["predicate_ids"].to(device)
+        arg0_ids = batch["arg0_ids"].to(device)
+        arg1_ids = batch["arg1_ids"].to(device)
+
+        with torch.no_grad():
+            (
+                sentence_embeddings_avg,
+                predicate_embeddings,
+                arg0_embeddings,
+                arg1_embeddings,
+            ) = model(
+                sentence_ids,
+                sentence_attention_masks,
+                predicate_ids,
+                arg0_ids,
+                arg1_ids,
+            )
+
+        if (
+            check_for_nans(sentence_embeddings_avg, "sentence_embeddings_avg", logger)
+            or check_for_nans(predicate_embeddings, "predicate_embeddings", logger)
+            or check_for_nans(arg0_embeddings, "arg0_embeddings", logger)
+            or check_for_nans(arg1_embeddings, "arg1_embeddings", logger)
+        ):
+            nan_found = True
+
+    return nan_found
+
+
 def main():
     parser = argparse.ArgumentParser(description="Debug MUSE model")
 
     required_args = parser.add_argument_group("Required Arguments")
     required_args.add_argument(
         "--path_data", type=str, required=True, help="Path to the data file"
-    )
-    required_args.add_argument(
-        "--wandb_api_key", type=str, required=True, help="Wandb API key"
-    )
-    required_args.add_argument(
-        "--project_name", type=str, required=True, help="Wandb project name"
     )
 
     parser.add_argument(
@@ -110,34 +134,7 @@ def main():
 
     training_params = parser.add_argument_group("Training Parameters")
     training_params.add_argument(
-        "--alpha", type=float, default=0.5, help="Alpha parameter for the loss function"
-    )
-    training_params.add_argument(
-        "--lr", type=float, default=5e-4, help="Learning rate for the optimizer"
-    )
-    training_params.add_argument(
-        "--adam_weight_decay",
-        type=float,
-        default=5e-7,
-        help="Adam weight decay parameter",
-    )
-    training_params.add_argument(
-        "--adamw_weight_decay",
-        type=float,
-        default=5e-7,
-        help="AdamW weight decay parameter",
-    )
-    training_params.add_argument(
-        "--optimizer", type=str, default="adamw", help="Optimizer to use for training"
-    )
-    training_params.add_argument(
         "--batch_size", type=int, default=24, help="Batch size"
-    )
-    training_params.add_argument(
-        "--epochs", type=int, default=10, help="Number of epochs"
-    )
-    training_params.add_argument(
-        "--test_size", type=float, default=0.1, help="Size of the test set"
     )
 
     data_processing = parser.add_argument_group("Data Processing")
@@ -200,16 +197,9 @@ def main():
     )
     io_paths.add_argument(
         "--dim_names",
-        type=str,
+        type.str,
         default="positive,negative",
         help="Dimension names for the FrameAxis",
-    )
-    io_paths.add_argument(
-        "--save_path",
-        type=str,
-        default="",
-        help="Path to save the model",
-        required=True,
     )
 
     advanced_settings = parser.add_argument_group("Advanced Settings")
@@ -226,16 +216,14 @@ def main():
         help="Force recalculate FrameAxis",
     )
     advanced_settings.add_argument(
-        "--sample_size", type=int, default=-1, help="Sample size"
+        "--sample_size", type.int, default=-1, help="Sample size"
     )
-    advanced_settings.add_argument("--seed", type=int, default=42, help="Random seed")
+    advanced_settings.add_argument("--seed", type.int, default=42, help="Random seed")
 
     parser.add_argument("--debug", type=str2bool, default=False, help="Debug mode")
 
     args = parser.parse_args()
 
-    wandb.login(key=args.wandb_api_key)
-    accelerator = Accelerator(log_with="wandb")
     logger = LoggerManager.get_logger(__name__)
     logger.info("Starting the MUSE-DLF training...")
 
@@ -257,21 +245,17 @@ def main():
         "max_args_per_sentence": args.max_args_per_sentence,
         "max_arg_length": args.max_arg_length,
         "batch_size": args.batch_size,
-        "epochs": args.epochs,
         "srl_embeddings_pooling": args.srl_embeddings_pooling,
-        "lr": args.lr,
-        "adamw_weight_decay": args.adamw_weight_decay,
-        "optimizer": args.optimizer,
-        "alpha": args.alpha,
-        "debug": args.debug,
     }
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = load_model(
         bert_model_name=args.name_tokenizer,
         bert_model_name_or_path=args.path_name_bert_model,
         srl_embeddings_pooling=args.srl_embeddings_pooling,
         mixed_precision=args.mixed_precision,
-        device="cuda",
+        device=device,
         logger=logger,
         _debug=args.debug,
     )
@@ -294,7 +278,7 @@ def main():
         max_sentence_length=args.max_sentence_length,
         max_args_per_sentence=args.max_args_per_sentence,
         max_arg_length=args.max_arg_length,
-        test_size=args.test_size,
+        test_size=0.1,
         frameaxis_dim=args.frameaxis_dim,
         bert_model_name=args.name_tokenizer,
         name_tokenizer=args.name_tokenizer,
@@ -319,51 +303,15 @@ def main():
         sample_size=args.sample_size,
     )
 
-    model, train_dataloader, test_dataloader = accelerator.prepare(
-        model, train_dataloader, test_dataloader
-    )
+    logger.info("Checking train dataloader for NaN values...")
+    train_nan_found = process_dataloader(train_dataloader, model, device, logger)
+    if not train_nan_found:
+        logger.info("No NaN values found in train dataloader.")
 
-    loss_function = nn.CrossEntropyLoss()
-
-    if args.optimizer == "adam":
-        optimizer = Adam(
-            model.parameters(), lr=args.lr, weight_decay=args.adam_weight_decay
-        )
-    elif args.optimizer == "adamw":
-        optimizer = AdamW(
-            model.parameters(), lr=args.lr, weight_decay=args.adamw_weight_decay
-        )
-
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=10,
-        num_training_steps=len(train_dataloader) * args.epochs,
-    )
-
-    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
-
-    project_name = args.project_name
-
-    accelerator.init_trackers(
-        project_name,
-        config,
-        init_kwargs={"wandb": {"tags": args.tags.split(",")}},
-    )
-
-    trainer = DEBUGTrainer(
-        model,
-        train_dataloader,
-        test_dataloader,
-        loss_function,
-        optimizer,
-        scheduler,
-        accelerator,
-        logger,
-    )
-
-    trainer.run_training(epochs=args.epochs, alpha=args.alpha)
-
-    accelerator.end_training()
+    logger.info("Checking test dataloader for NaN values...")
+    test_nan_found = process_dataloader(test_dataloader, model, device, logger)
+    if not test_nan_found:
+        logger.info("No NaN values found in test dataloader.")
 
 
 if __name__ == "__main__":
