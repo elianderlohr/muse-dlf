@@ -189,13 +189,13 @@ class ArticleDataset(Dataset):
                     == len(arg0_input_ids)
                     == len(arg1_input_ids)
                     == self.max_arg_length
-                )
+                ), f"Length mismatch in token IDs: {len(predicate_input_ids)}, {len(arg0_input_ids)}, {len(arg1_input_ids)}"
                 assert (
                     len(predicate_attention_mask)
                     == len(arg0_attention_mask)
                     == len(arg1_attention_mask)
                     == self.max_arg_length
-                )
+                ), f"Length mismatch in attention masks: {len(predicate_attention_mask)}, {len(arg0_attention_mask)}, {len(arg1_attention_mask)}"
 
                 sentence_predicates.append(predicate_input_ids)
                 sentence_arg0s.append(arg0_input_ids)
@@ -249,13 +249,13 @@ class ArticleDataset(Dataset):
                 == len(sentence_arg0s)
                 == len(sentence_arg1s)
                 == self.max_args_per_sentence
-            )
+            ), f"Length mismatch in SRL data: {len(sentence_predicates)}, {len(sentence_arg0s)}, {len(sentence_arg1s)}"
             assert (
                 len(sentence_predicate_masks)
                 == len(arg0_attention_masks)
                 == len(sentence_arg1_masks)
                 == self.max_args_per_sentence
-            )
+            ), f"Length mismatch in SRL attention masks: {len(sentence_predicate_masks)}, {len(arg0_attention_masks)}, {len(sentence_arg1_masks)}"
 
             predicates.append(sentence_predicates)
             arg0s.append(sentence_arg0s)
@@ -294,13 +294,13 @@ class ArticleDataset(Dataset):
             == len(arg0s)
             == len(arg1s)
             == self.max_sentences_per_article
-        )
+        ), f"Final length mismatch in SRL data: {len(predicates)}, {len(arg0s)}, {len(arg1s)}"
         assert (
             len(predicate_attention_masks)
             == len(arg0_attention_masks)
             == len(arg1_attention_masks)
             == self.max_sentences_per_article
-        )
+        ), f"Final length mismatch in SRL attention masks: {len(predicate_attention_masks)}, {len(arg0_attention_masks)}, {len(arg1_attention_masks)}"
 
         # Convert multi-hot encoded labels to class indices
         labels = torch.tensor([label.index(1) for label in labels], dtype=torch.long)
