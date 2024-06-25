@@ -54,14 +54,7 @@ class LossModule(nn.Module):
 
         g_tz = torch.stack([g[i, indices[i]] for i in range(g.size(0))])
 
-        g_tz_sum = g_tz.sum(dim=1, keepdim=True)
-        if torch.any(g_tz_sum == 0):
-            self.logger.warning("Division by zero detected in focal_triplet_loss")
-            g_tz_sum = (
-                g_tz_sum + 1e-10
-            )  # Add a small constant to avoid division by zero
-
-        g_t = g_tz / g_tz_sum
+        g_t = g_tz / g_tz.sum(dim=1, keepdim=True)
 
         # if division by zero set all nan values to 0
         g_t[torch.isnan(g_t)] = 0
