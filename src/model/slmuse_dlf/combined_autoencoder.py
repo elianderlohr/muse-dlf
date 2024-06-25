@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.functional import log_softmax, softmax
-
 from utils.logging_manager import LoggerManager
-
 from torch.cuda.amp import autocast
 
 
@@ -144,6 +142,15 @@ class CombinedAutoencoder(nn.Module):
             logits_a0 = self.feed_forward_unique["a0"](h_a0)
             logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
+            # Check for NaNs in logits
+            if (
+                torch.isnan(logits_p).any()
+                or torch.isnan(logits_a0).any()
+                or torch.isnan(logits_a1).any()
+            ):
+                self.logger.error("❌ NaNs detected in logits")
+                raise ValueError("NaNs detected in logits")
+
             d_p = torch.softmax(logits_p, dim=1)
             d_a0 = torch.softmax(logits_a0, dim=1)
             d_a1 = torch.softmax(logits_a1, dim=1)
@@ -168,6 +175,15 @@ class CombinedAutoencoder(nn.Module):
                 raise ValueError(
                     f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"
                 )
+
+        # Check for NaNs in vhat
+        if (
+            torch.isnan(vhat_p).any()
+            or torch.isnan(vhat_a0).any()
+            or torch.isnan(vhat_a1).any()
+        ):
+            self.logger.error("❌ NaNs detected in vhat")
+            raise ValueError("NaNs detected in vhat")
 
         return {
             "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
