@@ -286,13 +286,6 @@ def main():
         default="mean",
         help="Pooling method for SRL embeddings",
     )
-    # mixed_precision
-    model_config.add_argument(
-        "--mixed_precision",
-        type=str,
-        default="fp16",
-        help="Mixed precision for the model",
-    )
 
     # Training Parameters
     training_params = parser.add_argument_group("Training Parameters")

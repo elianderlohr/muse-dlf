@@ -53,7 +53,6 @@ def load_model(
     bert_model_name,
     bert_model_name_or_path,
     srl_embeddings_pooling,
-    mixed_precision,
     lambda_orthogonality,
     M,
     t,
@@ -86,7 +85,6 @@ def load_model(
         bert_model_name=bert_model_name,
         bert_model_name_or_path=bert_model_name_or_path,
         srl_embeddings_pooling=srl_embeddings_pooling,
-        mixed_precision=mixed_precision,
         lambda_orthogonality=lambda_orthogonality,
         M=M,
         t=t,
@@ -131,8 +129,6 @@ def main():
     max_arg_length = 16
     test_size = 0.1
     epochs = 1
-
-    mixed_precision = "fp16"
 
     # Parameters from wandb.config
     hidden_dim = wandb.config.hidden_dim
@@ -241,7 +237,6 @@ def main():
         bert_model_name=name_tokenizer,
         bert_model_name_or_path=path_name_bert_model,
         srl_embeddings_pooling=srl_embeddings_pooling,
-        mixed_precision=mixed_precision,
         lambda_orthogonality=lambda_orthogonality,
         M=M,
         t=t,

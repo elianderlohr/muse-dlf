@@ -105,7 +105,6 @@ python src/debug.py \
     --max_args_per_sentence 10 \
     --max_arg_length 10 \
     --srl_embeddings_pooling cls \
-    --mixed_precision fp16 \
     --seed 42 \
     $DEBUG
 

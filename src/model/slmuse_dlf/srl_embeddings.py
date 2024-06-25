@@ -11,7 +11,6 @@ class SRLEmbeddings(nn.Module):
         model_name_or_path: str,
         model_type: str = "bert-base-uncased",
         pooling: str = "mean",
-        mixed_precision: str = "fp16",
         _debug=False,
     ):
         super(SRLEmbeddings, self).__init__()
@@ -34,15 +33,9 @@ class SRLEmbeddings(nn.Module):
         # Set model to evaluation mode
         self.model.eval()
 
-        # Move model to CUDA if available and set precision
-        self.mixed_precision = mixed_precision
-        if torch.cuda.is_available():
-            self.device = torch.device("cuda")
-            self.model.to(self.device)
-            self.set_precision()
-        else:
-            self.device = torch.device("cpu")
-            self.model.to(self.device)
+        # Move model to CUDA if available
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
 
         if pooling not in ["mean", "cls"]:
             raise ValueError(
@@ -60,14 +53,6 @@ class SRLEmbeddings(nn.Module):
 
         if self._debug:
             self.verify_model_loading()
-
-    def set_precision(self):
-        if self.mixed_precision == "bf16" and self.device.type == "cuda":
-            self.model = self.model.to(torch.bfloat16)
-        elif self.mixed_precision == "fp16" and self.device.type == "cuda":
-            self.model = self.model.half()
-        else:
-            self.model = self.model.to(torch.float32)
 
     def verify_model_loading(self):
         if self.model_type == "bert-base-uncased":
@@ -168,6 +153,7 @@ class SRLEmbeddings(nn.Module):
             num_args,
             self.embedding_dim,
             device=sentence_embeddings.device,
+            dtype=sentence_embeddings.dtype,  # Ensure dtype consistency
         )
 
         for batch_idx in range(batch_size):
