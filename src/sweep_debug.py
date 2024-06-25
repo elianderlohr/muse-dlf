@@ -194,7 +194,7 @@ def main():
     # Advanced Settings
     force_recalculate_srls = False
     force_recalculate_frameaxis = False
-    sample_size = 15
+    sample_size = 20
 
     # parse debug flag from environment as bool
     debug = os.getenv("DEBUG")
@@ -296,6 +296,10 @@ def main():
         },
         sample_size=sample_size,
     )
+
+    # print size of train and test dataloader
+    logger.info(f"Train dataloader size: {len(train_dataloader)}")
+    logger.info(f"Test dataloader size: {len(test_dataloader)}")
 
     loss_function = nn.CrossEntropyLoss()
 

@@ -266,7 +266,7 @@ class PreProcessor:
         train_dataloader = DataLoader(
             train_dataset,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             collate_fn=custom_collate_fn,
             drop_last=True,
         )
@@ -274,7 +274,7 @@ class PreProcessor:
         test_dataloader = DataLoader(
             test_dataset,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             collate_fn=custom_collate_fn,
             drop_last=True,
         )
