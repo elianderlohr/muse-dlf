@@ -18,7 +18,7 @@ from torch.optim import Adam, AdamW
 from accelerate import Accelerator
 import warnings
 import wandb
-from src.training.debug_trainer import DEBUGTrainer
+from training.debug_trainer import DEBUGTrainer
 from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
