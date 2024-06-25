@@ -11,6 +11,9 @@ from utils.logging_manager import LoggerManager
 logger = LoggerManager.get_logger(__name__)
 
 
+torch.autograd.set_detect_anomaly(True)
+
+
 class Trainer:
     def __init__(
         self,
