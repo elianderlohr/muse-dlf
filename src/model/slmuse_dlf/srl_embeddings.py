@@ -83,75 +83,85 @@ class SRLEmbeddings(nn.Module):
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         batch_size, num_sentences, max_sentence_length = ids.shape
 
-        # Reshape the input tensors to combine batch_size and num_sentences dimensions
-        ids_flat = ids.view(batch_size * num_sentences, max_sentence_length)
-        attention_masks_flat = attention_masks.view(
-            batch_size * num_sentences, max_sentence_length
+        # Define a maximum chunk size to avoid exceeding model limits
+        max_chunk_size = 512  # Adjust based on your model's capabilities
+        all_embeddings = []
+        all_embeddings_mean = []
+
+        for start_idx in range(0, batch_size * num_sentences, max_chunk_size):
+            end_idx = min(start_idx + max_chunk_size, batch_size * num_sentences)
+            ids_chunk = ids.view(batch_size * num_sentences, max_sentence_length)[
+                start_idx:end_idx
+            ]
+            attention_masks_chunk = attention_masks.view(
+                batch_size * num_sentences, max_sentence_length
+            )[start_idx:end_idx]
+
+            with torch.no_grad():
+                # Obtain the embeddings from the BERT model
+                outputs = self.model(
+                    input_ids=ids_chunk,
+                    attention_mask=attention_masks_chunk,
+                    output_hidden_states=True,
+                )
+                embeddings_chunk = outputs.last_hidden_state
+
+                # Check for NaN values in embeddings_chunk
+                self.check_for_nans(
+                    embeddings_chunk, f"raw model output chunk {start_idx}-{end_idx}"
+                )
+
+                # Compute the weighted sum of the last 4 layers to get the new token embeddings
+                last_4_layers = outputs.hidden_states[-4:]  # Last 4 layers
+                stacked_layers = torch.stack(last_4_layers, dim=0)
+                weights = torch.softmax(self.weights, dim=0).view(4, 1, 1, 1)
+                weighted_sum_embeddings_chunk = (stacked_layers * weights).sum(0)
+
+                # Check for NaN values in weighted_sum_embeddings_chunk
+                self.check_for_nans(
+                    weighted_sum_embeddings_chunk,
+                    f"weighted sum chunk {start_idx}-{end_idx}",
+                )
+
+                # Reshape the embeddings to the desired output shape
+                weighted_sum_embeddings_chunk = weighted_sum_embeddings_chunk.view(
+                    -1, max_sentence_length, self.embedding_dim
+                )
+
+                # Calculate mean embeddings across the token dimension while ignoring padded tokens
+                if self.pooling == "mean":
+                    attention_masks_expanded = attention_masks_chunk.unsqueeze(
+                        -1
+                    ).expand(weighted_sum_embeddings_chunk.size())
+                    embeddings_masked = (
+                        weighted_sum_embeddings_chunk * attention_masks_expanded
+                    )
+                    sum_embeddings = torch.sum(embeddings_masked, dim=1)
+                    token_counts = attention_masks_chunk.sum(dim=1, keepdim=True).clamp(
+                        min=1
+                    )
+                    embeddings_mean_chunk = sum_embeddings / token_counts
+                elif self.pooling == "cls":
+                    embeddings_mean_chunk = weighted_sum_embeddings_chunk[:, 0, :]
+
+                # Append the processed chunks to the final embeddings lists
+                all_embeddings.append(weighted_sum_embeddings_chunk)
+                all_embeddings_mean.append(embeddings_mean_chunk)
+
+        # Concatenate all chunks to form the final embeddings tensors
+        embeddings = torch.cat(all_embeddings, dim=0)
+        embeddings_mean = torch.cat(all_embeddings_mean, dim=0)
+
+        # Reshape to match the original batch size and number of sentences
+        embeddings = embeddings.view(
+            batch_size, num_sentences, max_sentence_length, self.embedding_dim
+        )
+        embeddings_mean = embeddings_mean.view(
+            batch_size, num_sentences, self.embedding_dim
         )
 
-        with torch.no_grad():
-            # Obtain the embeddings from the BERT model
-            outputs = self.model(
-                input_ids=ids_flat,
-                attention_mask=attention_masks_flat,
-                output_hidden_states=True,
-            )
-            embeddings = (
-                outputs.last_hidden_state
-            )  # Assuming the embeddings are in the last_hidden_state
-
-            # Check for NaN values in embeddings
-            nan_indices = torch.isnan(embeddings).nonzero(as_tuple=True)
-            if len(nan_indices[0]) > 0:
-                self.logger.info("##############################################")
-                self.logger.info(f"NaN found in raw model output")
-                self.logger.info(f"Batch size: {batch_size}")
-                self.logger.info(f"Num sentences: {num_sentences}")
-                self.logger.info(
-                    f"Shape: {ids.shape}, {attention_masks.shape}, {embeddings.shape}"
-                )
-                self.logger.info(f"Embeddings: {embeddings}")
-                self.logger.info(f"Input IDs:\n{ids_flat}")
-                self.logger.info(f"Attention Masks:\n{attention_masks_flat}")
-
-                # Retrieve the last 4 layers
-                all_hidden_states = outputs.hidden_states[
-                    -4:
-                ]  # List of the last 4 layers
-
-                for i, layer in enumerate(all_hidden_states):
-                    if torch.isnan(layer).any():
-                        self.logger.info(
-                            f"NaN found in layer {i+1} of the last 4 layers"
-                        )
-
-                self.logger.info("##############################################")
-
-        # Reshape the embeddings to the desired output shape
-        embeddings = embeddings.view(batch_size, num_sentences, max_sentence_length, -1)
-
-        # Calculate mean embeddings across the token dimension while ignoring padded tokens
-        if self.pooling == "mean":
-            # Expand the attention mask to match the embeddings size
-            attention_masks_expanded = attention_masks_flat.view(
-                batch_size, num_sentences, max_sentence_length, 1
-            )
-            attention_masks_expanded = attention_masks_expanded.expand(
-                embeddings.size()
-            )
-            embeddings_masked = embeddings * attention_masks_expanded
-            sum_embeddings = torch.sum(embeddings_masked, dim=2)
-            token_counts = (
-                attention_masks_flat.view(
-                    batch_size, num_sentences, max_sentence_length
-                )
-                .sum(dim=2, keepdim=True)
-                .clamp(min=1)
-            )
-            embeddings_mean = sum_embeddings / token_counts
-        elif self.pooling == "cls":
-            # Use the [CLS] token representation for the sentence embedding
-            embeddings_mean = embeddings[:, :, 0, :]
+        # Check for NaN values in the final mean embeddings
+        self.check_for_nans(embeddings_mean, "embeddings_mean")
 
         return embeddings, embeddings_mean
 
