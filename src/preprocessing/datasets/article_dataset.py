@@ -252,7 +252,7 @@ class ArticleDataset(Dataset):
             )
             assert (
                 len(sentence_predicate_masks)
-                == len(sentence_arg0_masks)
+                == len(arg0_attention_masks)
                 == len(sentence_arg1_masks)
                 == self.max_args_per_sentence
             )
@@ -302,6 +302,9 @@ class ArticleDataset(Dataset):
             == self.max_sentences_per_article
         )
 
+        # Convert multi-hot encoded labels to class indices
+        labels = torch.tensor([label.index(1) for label in labels], dtype=torch.long)
+
         data = {
             "sentence_ids": torch.tensor(sentence_ids, dtype=torch.long),
             "sentence_attention_masks": torch.tensor(
@@ -320,7 +323,7 @@ class ArticleDataset(Dataset):
                 arg1_attention_masks, dtype=torch.long
             ),
             "frameaxis": torch.tensor(frameaxis_data, dtype=torch.float),
-            "labels": torch.tensor(labels, dtype=torch.long),
+            "labels": labels,
         }
 
         return data
