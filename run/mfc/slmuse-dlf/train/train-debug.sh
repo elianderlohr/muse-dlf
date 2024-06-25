@@ -3,7 +3,7 @@
 # SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --job-name=mfc-slmuse-dlf-train-4
+#SBATCH --job-name=train-debug-mfc-slmuse-dlf
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 
@@ -75,7 +75,7 @@ echo "GPU status:"
 nvidia-smi
 
 # CUDA configuration
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=0
 
 # Clear GPU memory function
 function clear_gpu_memory {

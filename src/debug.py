@@ -238,16 +238,6 @@ def main():
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    config = {
-        "num_sentences": args.num_sentences,
-        "frameaxis_dim": args.frameaxis_dim,
-        "max_sentence_length": args.max_sentence_length,
-        "max_args_per_sentence": args.max_args_per_sentence,
-        "max_arg_length": args.max_arg_length,
-        "batch_size": args.batch_size,
-        "srl_embeddings_pooling": args.srl_embeddings_pooling,
-    }
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = load_model(
