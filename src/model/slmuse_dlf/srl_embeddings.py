@@ -48,11 +48,11 @@ class SRLEmbeddings(nn.Module):
 
         self._debug = _debug
 
-        # Debugging:
-        self.logger.info(f"✅ SRLEmbeddings successfully initialized")
-
         if self._debug:
             self.verify_model_loading()
+
+            # Debugging:
+        self.logger.debug(f"✅ SRLEmbeddings successfully initialized")
 
     def verify_model_loading(self):
         if self.model_type == "bert-base-uncased":

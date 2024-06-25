@@ -20,7 +20,7 @@ class LossModule(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        self.logger.info(f"✅ LossModule successfully initialized")
+        self.logger.debug(f"✅ LossModule successfully initialized")
 
     def contrastive_loss(self, v, vhat, negatives):
         batch_size = vhat.size(0)
