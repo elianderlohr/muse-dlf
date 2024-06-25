@@ -92,7 +92,9 @@ class SRLEmbeddings(nn.Module):
         with torch.no_grad():
             # Obtain the embeddings from the BERT model
             outputs = self.model(
-                input_ids=ids_flat, attention_mask=attention_masks_flat
+                input_ids=ids_flat,
+                attention_mask=attention_masks_flat,
+                output_hidden_states=True,
             )
             embeddings = (
                 outputs.last_hidden_state
