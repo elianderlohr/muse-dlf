@@ -113,6 +113,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --adamw_weight_decay 0.08566849240772259 \
     --optimizer adam \
     --srl_embeddings_pooling cls \
+    --mixed_precision fp16 \
     --seed 42 \
     $DEBUG
 

@@ -35,6 +35,7 @@ def load_model(
     bert_model_name,
     bert_model_name_or_path,
     srl_embeddings_pooling,
+    mixed_precision="fp16",
     device="cuda",
     logger=LoggerManager.get_logger(__name__),
     _debug=False,
@@ -43,6 +44,7 @@ def load_model(
         model_name_or_path=bert_model_name_or_path,
         model_type=bert_model_name,
         pooling=srl_embeddings_pooling,
+        mixed_precision=mixed_precision,
         _debug=_debug,
     )
     model = model.to(device)
@@ -96,6 +98,14 @@ def main():
         type=int,
         default=2,
         help="Dimension of the FrameAxis",
+    )
+
+    # mixed_precision
+    model_config.add_argument(
+        "--mixed_precision",
+        type=str,
+        default="fp16",
+        help="Mixed precision for the model",
     )
 
     training_params = parser.add_argument_group("Training Parameters")
@@ -260,6 +270,7 @@ def main():
         bert_model_name=args.name_tokenizer,
         bert_model_name_or_path=args.path_name_bert_model,
         srl_embeddings_pooling=args.srl_embeddings_pooling,
+        mixed_precision=args.mixed_precision,
         device="cuda",
         logger=logger,
         _debug=args.debug,

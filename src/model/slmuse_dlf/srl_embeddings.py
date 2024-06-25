@@ -12,6 +12,7 @@ class SRLEmbeddings(nn.Module):
         model_name_or_path: str,
         model_type: str = "bert-base-uncased",
         pooling: str = "mean",
+        mixed_precision: str = "fp16",
         _debug=False,
     ):
         super(SRLEmbeddings, self).__init__()
@@ -34,9 +35,15 @@ class SRLEmbeddings(nn.Module):
         # Set model to evaluation mode
         self.model.eval()
 
-        # Move model to CUDA if available
+        # Move model to CUDA if available and set precision
+        self.mixed_precision = mixed_precision
         if torch.cuda.is_available():
-            self.model.cuda()
+            self.device = torch.device("cuda")
+            self.model.to(self.device)
+            self.set_precision()
+        else:
+            self.device = torch.device("cpu")
+            self.model.to(self.device)
 
         if pooling not in ["mean", "cls"]:
             raise ValueError(
@@ -54,6 +61,14 @@ class SRLEmbeddings(nn.Module):
 
         if self._debug:
             self.verify_model_loading()
+
+    def set_precision(self):
+        if self.mixed_precision == "bf16" and self.device.type == "cuda":
+            self.model = self.model.to(torch.bfloat16)
+        elif self.mixed_precision == "fp16" and self.device.type == "cuda":
+            self.model = self.model.half()
+        else:
+            self.model = self.model.to(torch.float32)
 
     def verify_model_loading(self):
         if self.model_type == "bert-base-uncased":
@@ -85,6 +100,7 @@ class SRLEmbeddings(nn.Module):
             self.logger.error(f"NaN values detected in {tensor_name}")
 
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
+        ids, attention_masks = ids.to(self.device), attention_masks.to(self.device)
         batch_size, num_sentences, max_sentence_length = ids.shape
 
         # Flatten the input tensors to combine batch_size and num_sentences dimensions
@@ -143,6 +159,12 @@ class SRLEmbeddings(nn.Module):
         sentence_ids: torch.Tensor,
         sentence_embeddings: torch.Tensor,
     ):
+        arg_ids, sentence_ids, sentence_embeddings = (
+            arg_ids.to(self.device),
+            sentence_ids.to(self.device),
+            sentence_embeddings.to(self.device),
+        )
+
         batch_size, num_sentences, max_sentence_length = sentence_ids.shape
         _, _, num_args, max_arg_length = arg_ids.shape
 
@@ -185,6 +207,14 @@ class SRLEmbeddings(nn.Module):
         arg0_ids: torch.Tensor,
         arg1_ids: torch.Tensor,
     ):
+        sentence_ids, sentence_attention_masks, predicate_ids, arg0_ids, arg1_ids = (
+            sentence_ids.to(self.device),
+            sentence_attention_masks.to(self.device),
+            predicate_ids.to(self.device),
+            arg0_ids.to(self.device),
+            arg1_ids.to(self.device),
+        )
+
         with torch.no_grad():
             sentence_embeddings, sentence_embeddings_avg = self.get_sentence_embedding(
                 sentence_ids, sentence_attention_masks

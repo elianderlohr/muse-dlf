@@ -22,6 +22,7 @@ class MUSEDLF(nn.Module):
         bert_model_name="roberta-base",  # Name of the pre-trained model to use from huggingface.co/models
         bert_model_name_or_path="roberta-base",  # Path to the pre-trained model or model identifier from huggingface.co/models
         srl_embeddings_pooling="mean",  # mean or cls
+        mixed_precision="fp16",  # fp16 or fp32
         # LossModule Parameters
         lambda_orthogonality=1e-3,  # lambda for orthogonality loss
         M=8,  # M for orthogonality loss
@@ -64,6 +65,7 @@ class MUSEDLF(nn.Module):
             model_name_or_path=bert_model_name_or_path,
             model_type=bert_model_name,
             pooling=srl_embeddings_pooling,
+            mixed_precision=mixed_precision,
             _debug=_debug,
         )
 
