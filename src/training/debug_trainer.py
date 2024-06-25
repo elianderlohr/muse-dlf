@@ -31,12 +31,23 @@ class DEBUGTrainer:
         self.model.train()
         total_loss = 0
         for batch in tqdm(self.train_loader, desc="Training"):
-            print(f"Batch structure: {batch}")
-            inputs = batch[0]
-            labels = batch[1]
+            print(f"Batch keys: {batch.keys()}")
+            # Update these keys based on the printed keys
+            sentence_ids = batch["sentence_ids"]
+            sentence_attention_masks = batch["sentence_attention_masks"]
+            predicate_ids = batch["predicate_ids"]
+            arg0_ids = batch["arg0_ids"]
+            arg1_ids = batch["arg1_ids"]
+            labels = batch["labels"]
             self.optimizer.zero_grad()
             with self.accelerator.autocast():
-                outputs = self.model(**inputs)
+                outputs = self.model(
+                    sentence_ids,
+                    sentence_attention_masks,
+                    predicate_ids,
+                    arg0_ids,
+                    arg1_ids,
+                )
                 loss = self.loss_fn(outputs, labels)
             self.accelerator.backward(loss)
             self.optimizer.step()
