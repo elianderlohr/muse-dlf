@@ -105,6 +105,11 @@ class SRLEmbeddings(nn.Module):
             if len(nan_indices[0]) > 0:
                 self.logger.info("##############################################")
                 self.logger.info(f"NaN found in raw model output")
+                self.logger.info(f"Batch size: {batch_size}")
+                self.logger.info(f"Num sentences: {num_sentences}")
+                self.logger.info(
+                    f"Shape: {ids.shape}, {attention_masks.shape}, {embeddings.shape}"
+                )
                 self.logger.info(f"Embeddings: {embeddings}")
                 self.logger.info(f"Input IDs:\n{ids_flat}")
                 self.logger.info(f"Attention Masks:\n{attention_masks_flat}")
