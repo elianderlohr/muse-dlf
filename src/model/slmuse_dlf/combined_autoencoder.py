@@ -5,6 +5,8 @@ from torch.nn.functional import log_softmax, softmax
 
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast
+
 
 class CombinedAutoencoder(nn.Module):
     def __init__(
@@ -133,34 +135,39 @@ class CombinedAutoencoder(nn.Module):
         return y
 
     def forward(self, v_p, v_a0, v_a1, v_sentence, tau):
-        h_p = self.process_through_shared(v_p, v_sentence)
-        h_a0 = self.process_through_shared(v_a0, v_sentence)
-        h_a1 = self.process_through_shared(v_a1, v_sentence)
+        with autocast():
+            h_p = self.process_through_shared(v_p, v_sentence)
+            h_a0 = self.process_through_shared(v_a0, v_sentence)
+            h_a1 = self.process_through_shared(v_a1, v_sentence)
 
-        logits_p = self.feed_forward_unique["p"](h_p)
-        logits_a0 = self.feed_forward_unique["a0"](h_a0)
-        logits_a1 = self.feed_forward_unique["a1"](h_a1)
+            logits_p = self.feed_forward_unique["p"](h_p)
+            logits_a0 = self.feed_forward_unique["a0"](h_a0)
+            logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
-        d_p = torch.softmax(logits_p, dim=1)
-        d_a0 = torch.softmax(logits_a0, dim=1)
-        d_a1 = torch.softmax(logits_a1, dim=1)
+            d_p = torch.softmax(logits_p, dim=1)
+            d_a0 = torch.softmax(logits_a0, dim=1)
+            d_a1 = torch.softmax(logits_a1, dim=1)
 
-        g_p = self.custom_gumbel_softmax(d_p, tau=tau, hard=self.hard, log=self.log)
-        g_a0 = self.custom_gumbel_softmax(d_a0, tau=tau, hard=self.hard, log=self.log)
-        g_a1 = self.custom_gumbel_softmax(d_a1, tau=tau, hard=self.hard, log=self.log)
-
-        if self.matmul_input == "d":
-            vhat_p = torch.matmul(d_p, self.F_matrices["p"])
-            vhat_a0 = torch.matmul(d_a0, self.F_matrices["a0"])
-            vhat_a1 = torch.matmul(d_a1, self.F_matrices["a1"])
-        elif self.matmul_input == "g":
-            vhat_p = torch.matmul(g_p, self.F_matrices["p"])
-            vhat_a0 = torch.matmul(g_a0, self.F_matrices["a0"])
-            vhat_a1 = torch.matmul(g_a1, self.F_matrices["a1"])
-        else:
-            raise ValueError(
-                f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"
+            g_p = self.custom_gumbel_softmax(d_p, tau=tau, hard=self.hard, log=self.log)
+            g_a0 = self.custom_gumbel_softmax(
+                d_a0, tau=tau, hard=self.hard, log=self.log
             )
+            g_a1 = self.custom_gumbel_softmax(
+                d_a1, tau=tau, hard=self.hard, log=self.log
+            )
+
+            if self.matmul_input == "d":
+                vhat_p = torch.matmul(d_p, self.F_matrices["p"])
+                vhat_a0 = torch.matmul(d_a0, self.F_matrices["a0"])
+                vhat_a1 = torch.matmul(d_a1, self.F_matrices["a1"])
+            elif self.matmul_input == "g":
+                vhat_p = torch.matmul(g_p, self.F_matrices["p"])
+                vhat_a0 = torch.matmul(g_a0, self.F_matrices["a0"])
+                vhat_a1 = torch.matmul(g_a1, self.F_matrices["a1"])
+            else:
+                raise ValueError(
+                    f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"
+                )
 
         return {
             "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},

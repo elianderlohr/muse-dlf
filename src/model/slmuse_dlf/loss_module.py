@@ -4,6 +4,8 @@ import torch.nn as nn
 
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast
+
 
 class LossModule(nn.Module):
     def __init__(self, lambda_orthogonality, M, t, _debug=False):
@@ -100,12 +102,13 @@ class LossModule(nn.Module):
         return ortho_loss
 
     def forward(self, c, negatives):
-        # Extract components from dictionary for predicate p
-        v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
+        with autocast():
+            # Extract components from dictionary for predicate p
+            v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
 
-        # Calculate losses for predicate
-        Ju = self.contrastive_loss(v, vhat, negatives)
-        Jt = self.focal_triplet_loss(v, vhat, g, F)
-        Jz = Ju + Jt + self.lambda_orthogonality * self.orthogonality_term(F) ** 2
+            # Calculate losses for predicate
+            Ju = self.contrastive_loss(v, vhat, negatives)
+            Jt = self.focal_triplet_loss(v, vhat, g, F)
+            Jz = Ju + Jt + self.lambda_orthogonality * self.orthogonality_term(F) ** 2
 
         return Jz

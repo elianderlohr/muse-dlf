@@ -6,6 +6,8 @@ from model.slmuse_dlf.loss_module import LossModule
 
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast
+
 
 class MUSEFrameAxisUnsupervised(nn.Module):
     def __init__(
@@ -64,18 +66,19 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         fx_negatives,
         tau,
     ):
-        outputs_fx = self.frameaxis_autoencoder(v_fx, v_sentence, tau)
+        with autocast():
+            outputs_fx = self.frameaxis_autoencoder(v_fx, v_sentence, tau)
 
-        outputs_fx["v"] = v_fx
+            outputs_fx["v"] = v_fx
 
-        loss = self.loss_fn(
-            outputs_fx,
-            fx_negatives,
-        )
+            loss = self.loss_fn(
+                outputs_fx,
+                fx_negatives,
+            )
 
-        results = {
-            "loss": loss,
-            "fx": outputs_fx,
-        }
+            results = {
+                "loss": loss,
+                "fx": outputs_fx,
+            }
 
         return results

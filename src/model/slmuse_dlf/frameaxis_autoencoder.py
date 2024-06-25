@@ -5,6 +5,8 @@ from torch.nn.functional import log_softmax, softmax
 
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast
+
 
 class FrameAxisAutoencoder(nn.Module):
     def __init__(
@@ -121,20 +123,21 @@ class FrameAxisAutoencoder(nn.Module):
         return y
 
     def forward(self, v_frameaxis, v_sentence, tau):
-        h = self.process_through_first(v_frameaxis, v_sentence)
+        with autocast():
+            h = self.process_through_first(v_frameaxis, v_sentence)
 
-        logits = self.feed_forward_2(h)
+            logits = self.feed_forward_2(h)
 
-        d = torch.softmax(logits, dim=1)
+            d = torch.softmax(logits, dim=1)
 
-        g = self.custom_gumbel_softmax(d, tau=tau, hard=self.hard, log=self.log)
+            g = self.custom_gumbel_softmax(d, tau=tau, hard=self.hard, log=self.log)
 
-        if self.matmul_input == "d":
-            vhat = torch.matmul(d, self.F)
-        elif self.matmul_input == "g":
-            vhat = torch.matmul(g, self.F)
-        else:
-            raise ValueError("matmul_input must be 'd' or 'g'.")
+            if self.matmul_input == "d":
+                vhat = torch.matmul(d, self.F)
+            elif self.matmul_input == "g":
+                vhat = torch.matmul(g, self.F)
+            else:
+                raise ValueError("matmul_input must be 'd' or 'g'.")
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
 

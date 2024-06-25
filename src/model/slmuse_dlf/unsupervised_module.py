@@ -6,6 +6,8 @@ from model.slmuse_dlf.loss_module import LossModule
 
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast
+
 
 class MUSEUnsupervised(nn.Module):
     def __init__(
@@ -64,39 +66,40 @@ class MUSEUnsupervised(nn.Module):
         a1_negatives,
         tau,
     ):
-        outputs = self.combined_autoencoder(v_p, v_a0, v_a1, v_sentence, tau)
+        with autocast():
+            outputs = self.combined_autoencoder(v_p, v_a0, v_a1, v_sentence, tau)
 
-        outputs_p = outputs["p"]
-        outputs_p["v"] = v_p
+            outputs_p = outputs["p"]
+            outputs_p["v"] = v_p
 
-        outputs_a0 = outputs["a0"]
-        outputs_a0["v"] = v_a0
+            outputs_a0 = outputs["a0"]
+            outputs_a0["v"] = v_a0
 
-        outputs_a1 = outputs["a1"]
-        outputs_a1["v"] = v_a1
+            outputs_a1 = outputs["a1"]
+            outputs_a1["v"] = v_a1
 
-        loss_p = self.loss_fn(
-            outputs_p,
-            p_negatives,
-        )
+            loss_p = self.loss_fn(
+                outputs_p,
+                p_negatives,
+            )
 
-        loss_a0 = self.loss_fn(
-            outputs_a0,
-            a0_negatives,
-        )
+            loss_a0 = self.loss_fn(
+                outputs_a0,
+                a0_negatives,
+            )
 
-        loss_a1 = self.loss_fn(
-            outputs_a1,
-            a1_negatives,
-        )
+            loss_a1 = self.loss_fn(
+                outputs_a1,
+                a1_negatives,
+            )
 
-        loss = loss_p + loss_a0 + loss_a1
+            loss = loss_p + loss_a0 + loss_a1
 
-        results = {
-            "loss": loss,
-            "p": outputs["p"],
-            "a0": outputs["a0"],
-            "a1": outputs["a1"],
-        }
+            results = {
+                "loss": loss,
+                "p": outputs["p"],
+                "a0": outputs["a0"],
+                "a1": outputs["a1"],
+            }
 
         return results

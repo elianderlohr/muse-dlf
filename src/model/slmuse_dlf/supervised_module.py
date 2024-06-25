@@ -3,6 +3,8 @@ import torch.nn as nn
 
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast
+
 
 class MUSESupervised(nn.Module):
     def __init__(
@@ -75,37 +77,42 @@ class MUSESupervised(nn.Module):
         vs,
         frameaxis_data,
     ):
-        batch_size, num_sentences, num_args, embedding_dim = d_p.shape
+        with autocast():
+            batch_size, num_sentences, num_args, embedding_dim = d_p.shape
 
-        d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
-        d_a0_flatten = d_a0.view(batch_size, num_sentences * num_args, embedding_dim)
-        d_a1_flatten = d_a1.view(batch_size, num_sentences * num_args, embedding_dim)
+            d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
+            d_a0_flatten = d_a0.view(
+                batch_size, num_sentences * num_args, embedding_dim
+            )
+            d_a1_flatten = d_a1.view(
+                batch_size, num_sentences * num_args, embedding_dim
+            )
 
-        d_p_mean = d_p_flatten.mean(dim=1)
-        d_a0_mean = d_a0_flatten.mean(dim=1)
-        d_a1_mean = d_a1_flatten.mean(dim=1)
+            d_p_mean = d_p_flatten.mean(dim=1)
+            d_a0_mean = d_a0_flatten.mean(dim=1)
+            d_a1_mean = d_a1_flatten.mean(dim=1)
 
-        d_fx_mean = d_fx.mean(dim=1)
+            d_fx_mean = d_fx.mean(dim=1)
 
-        # Combine and normalize the final descriptor
-        y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
+            # Combine and normalize the final descriptor
+            y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
-        if self.concat_frameaxis:
-            vs = torch.cat([vs, frameaxis_data], dim=-1)
+            if self.concat_frameaxis:
+                vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-        # reshape vs from [batch_size, num_sentences, embedding_dim] to [batch_size * num_sentences, embedding_dim]
-        ws_flattened = self.flatten(vs)
+            # reshape vs from [batch_size, num_sentences, embedding_dim] to [batch_size * num_sentences, embedding_dim]
+            ws_flattened = self.flatten(vs)
 
-        y_hat_s = self.feed_forward_sentence(ws_flattened)
+            y_hat_s = self.feed_forward_sentence(ws_flattened)
 
-        # Sum the two predictions
-        combined = y_hat_u + y_hat_s
+            # Sum the two predictions
+            combined = y_hat_u + y_hat_s
 
-        other = {
-            "predicate": d_p_mean,
-            "arg0": d_a0_mean,
-            "arg1": d_a1_mean,
-            "frameaxis": d_fx_mean,
-        }
+            other = {
+                "predicate": d_p_mean,
+                "arg0": d_a0_mean,
+                "arg1": d_a1_mean,
+                "frameaxis": d_fx_mean,
+            }
 
         return y_hat_u, y_hat_s, combined, other
