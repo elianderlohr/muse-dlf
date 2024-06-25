@@ -31,7 +31,9 @@ class DEBUGTrainer:
         self.model.train()
         total_loss = 0
         for batch in tqdm(self.train_loader, desc="Training"):
-            inputs, labels = batch  # Assuming inputs and labels are retrieved this way
+            print(f"Batch structure: {batch}")
+            inputs = batch[0]
+            labels = batch[1]
             self.optimizer.zero_grad()
             with self.accelerator.autocast():
                 outputs = self.model(**inputs)
@@ -49,9 +51,8 @@ class DEBUGTrainer:
         total_predictions = 0
         with torch.no_grad():
             for batch in tqdm(self.test_loader, desc="Evaluating"):
-                inputs, labels = (
-                    batch  # Assuming inputs and labels are retrieved this way
-                )
+                inputs = batch[0]
+                labels = batch[1]
                 outputs = self.model(**inputs)
                 loss = self.loss_fn(outputs, labels)
                 total_loss += loss.item()
