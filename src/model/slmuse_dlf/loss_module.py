@@ -103,17 +103,6 @@ class LossModule(nn.Module):
         # Extract components from dictionary for predicate p
         v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
 
-        # check for NaN values in the embeddings
-        if torch.isnan(v).any() or torch.isnan(vhat).any():
-            self.logger.error("NaN values detected in embeddings")
-
-        if torch.isnan(F).any():
-            self.logger.error("NaN values detected in F")
-        if torch.isnan(g).any():
-            self.logger.error("NaN values detected in g")
-        if torch.isnan(d).any():
-            self.logger.error("NaN values detected in d")
-
         # Calculate losses for predicate
         Ju = self.contrastive_loss(v, vhat, negatives)
         Jt = self.focal_triplet_loss(v, vhat, g, F)
