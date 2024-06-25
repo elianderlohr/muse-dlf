@@ -116,12 +116,9 @@ class SRLEmbeddings(nn.Module):
 
                 for i, layer in enumerate(all_hidden_states):
                     if torch.isnan(layer).any():
-                        nan_layer_indices = torch.isnan(layer).nonzero(as_tuple=True)
                         self.logger.info(
                             f"NaN found in layer {i+1} of the last 4 layers"
                         )
-                        for idx in nan_layer_indices[0]:
-                            self.logger.info(f"NaN found in layer {i+1} at index {idx}")
 
                 self.logger.info("##############################################")
 
