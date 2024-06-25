@@ -128,6 +128,10 @@ class FrameAxisAutoencoder(nn.Module):
 
             logits = self.feed_forward_2(h)
 
+            if torch.isnan(logits).any():
+                self.logger.error("❌ NaNs detected in logits")
+                raise ValueError("NaNs detected in logits")
+
             d = torch.softmax(logits, dim=1)
 
             g = self.custom_gumbel_softmax(d, tau=tau, hard=self.hard, log=self.log)
@@ -138,6 +142,10 @@ class FrameAxisAutoencoder(nn.Module):
                 vhat = torch.matmul(g, self.F)
             else:
                 raise ValueError("matmul_input must be 'd' or 'g'.")
+
+        if torch.isnan(vhat).any():
+            self.logger.error("❌ NaNs detected in vhat")
+            raise ValueError("NaNs detected in vhat")
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
 
