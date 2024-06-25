@@ -126,6 +126,10 @@ class FrameAxisAutoencoder(nn.Module):
         with autocast():
             h = self.process_through_first(v_frameaxis, v_sentence)
 
+            if torch.isnan(h).any():
+                self.logger.error("❌ NaNs detected in h")
+                raise ValueError("NaNs detected in h")
+
             logits = self.feed_forward_2(h)
 
             if torch.isnan(logits).any():

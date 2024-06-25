@@ -138,6 +138,14 @@ class CombinedAutoencoder(nn.Module):
             h_a0 = self.process_through_shared(v_a0, v_sentence)
             h_a1 = self.process_through_shared(v_a1, v_sentence)
 
+            if (
+                torch.isnan(h_p).any()
+                or torch.isnan(h_a0).any()
+                or torch.isnan(h_a1).any()
+            ):
+                self.logger.error("❌ NaNs detected in hidden states")
+                raise ValueError("NaNs detected in hidden states")
+
             logits_p = self.feed_forward_unique["p"](h_p)
             logits_a0 = self.feed_forward_unique["a0"](h_a0)
             logits_a1 = self.feed_forward_unique["a1"](h_a1)
