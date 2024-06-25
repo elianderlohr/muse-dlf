@@ -53,6 +53,11 @@ class MUSEDLF(nn.Module):
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
+        if _debug:
+            self.logger.warning("🚨 Debug mode is enabled")
+            self.logger.warning("🚨 PyTorch anomaly detection is enabled")
+            torch.autograd.set_detect_anomaly(True)
+
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
             model_name_or_path=bert_model_name_or_path,

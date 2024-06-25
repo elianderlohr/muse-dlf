@@ -80,6 +80,10 @@ class SRLEmbeddings(nn.Module):
 
         self.logger.info("No NaNs found in test embeddings. Model loading seems fine.")
 
+    def check_for_nans(self, tensor, tensor_name):
+        if torch.isnan(tensor).any():
+            self.logger.error(f"NaN values detected in {tensor_name}")
+
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         batch_size, num_sentences, max_sentence_length = ids.shape
 
