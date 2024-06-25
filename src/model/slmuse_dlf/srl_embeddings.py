@@ -31,6 +31,9 @@ class SRLEmbeddings(nn.Module):
                 f"Unsupported model_type. Choose either 'bert-base-uncased' or 'roberta-base'. Found: {model_type}"
             )
 
+        # Set model to evaluation mode
+        self.model.eval()
+
         # Move model to CUDA if available
         if torch.cuda.is_available():
             self.model.cuda()
