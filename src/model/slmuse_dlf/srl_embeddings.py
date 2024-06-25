@@ -102,23 +102,19 @@ class SRLEmbeddings(nn.Module):
                 outputs.last_hidden_state
             )  # Assuming the embeddings are in the last_hidden_state
 
+            # Check for NaN values in embeddings
+            nan_indices = torch.isnan(embeddings).nonzero(as_tuple=True)
+            if len(nan_indices[0]) > 0:
+                for idx in nan_indices[0]:
+                    self.logger.info("##############################################")
+                    self.logger.info(f"NaN found in raw model output at index {idx}")
+                    self.logger.info(f"Embeddings: {embeddings[idx]}")
+                    self.logger.info(f"Input IDs:\n{ids_flat[idx]}")
+                    self.logger.info(f"Attention Masks:\n{attention_masks_flat[idx]}")
+                    self.logger.info("##############################################")
+
         # Reshape the embeddings to the desired output shape
         embeddings = embeddings.view(batch_size, num_sentences, max_sentence_length, -1)
-
-        # Check for NaN values in embeddings
-        nan_indices = torch.isnan(embeddings).nonzero(as_tuple=True)
-        if len(nan_indices[0]) > 0:
-            for batch_idx, sentence_idx in zip(nan_indices[0], nan_indices[1]):
-                self.logger.info("##############################################")
-                self.logger.info(
-                    f"Batch {batch_idx}, Sentence {sentence_idx} contains NaN values."
-                )
-                self.logger.info(f"Embeddings: {embeddings[batch_idx, sentence_idx]}")
-                self.logger.info(f"Input IDs:\n{ids[batch_idx, sentence_idx]}")
-                self.logger.info(
-                    f"Attention Masks:\n{attention_masks[batch_idx, sentence_idx]}"
-                )
-                self.logger.info("##############################################")
 
         # Calculate mean embeddings across the token dimension while ignoring padded tokens
         if self.pooling == "mean":
