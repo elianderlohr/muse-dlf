@@ -100,6 +100,10 @@ class ArticleDataset(Dataset):
         # labels
         labels = self.labels.iloc[idx]
 
+        print(
+            f"labels: {labels}, type: {type(labels)}, shape: {getattr(labels, 'shape', 'N/A')}"
+        )
+
         # Tokenize sentences and get attention masks
         sentence_ids, sentence_attention_masks = [], []
         sentence_outputs = []
@@ -114,8 +118,12 @@ class ArticleDataset(Dataset):
                 return_tensors="pt",
             )
             sentence_outputs.append(encoded)
-            sentence_ids.append(encoded["input_ids"])
-            sentence_attention_masks.append(encoded["attention_mask"])
+            sentence_ids.append(
+                encoded["input_ids"].squeeze().tolist()
+            )  # Convert tensor to list
+            sentence_attention_masks.append(
+                encoded["attention_mask"].squeeze().tolist()
+            )  # Convert tensor to list
 
         # Padding for sentences if necessary
         while len(sentence_ids) < self.max_sentences_per_article:
@@ -126,6 +134,13 @@ class ArticleDataset(Dataset):
         sentence_attention_masks = sentence_attention_masks[
             : self.max_sentences_per_article
         ]
+
+        print(
+            f"sentence_ids: {sentence_ids}, type: {type(sentence_ids)}, len: {len(sentence_ids)}"
+        )
+        print(
+            f"sentence_attention_masks: {sentence_attention_masks}, type: {type(sentence_attention_masks)}, len: {len(sentence_attention_masks)}"
+        )
 
         # frameaxis
         while len(frameaxis_data) < self.max_sentences_per_article:
