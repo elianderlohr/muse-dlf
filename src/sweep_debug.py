@@ -194,7 +194,7 @@ def main():
     # Advanced Settings
     force_recalculate_srls = False
     force_recalculate_frameaxis = False
-    sample_size = 10
+    sample_size = 15
 
     # parse debug flag from environment as bool
     debug = os.getenv("DEBUG")
@@ -306,7 +306,7 @@ def main():
 
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
-        num_warmup_steps=10,
+        num_warmup_steps=1,
         num_training_steps=len(train_dataloader) * epochs,
     )
 
