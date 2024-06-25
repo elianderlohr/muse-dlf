@@ -98,6 +98,37 @@ class SRLEmbeddings(nn.Module):
                 outputs.last_hidden_state
             )  # Assuming the embeddings are in the last_hidden_state
 
+            # Check for NaN values in embeddings
+            nan_indices = torch.isnan(embeddings).nonzero(as_tuple=True)
+            if len(nan_indices[0]) > 0:
+                self.logger.info("##############################################")
+                self.logger.info(f"NaN found in raw model output")
+                self.logger.info(f"Embeddings: {embeddings}")
+                self.logger.info(f"Input IDs:\n{ids_flat}")
+                self.logger.info(f"Attention Masks:\n{attention_masks_flat}")
+
+                # Retrieve the last 4 layers
+                all_hidden_states = outputs.hidden_states[
+                    -4:
+                ]  # List of the last 4 layers
+
+                for i, layer in enumerate(all_hidden_states):
+                    if torch.isnan(layer).any():
+                        nan_layer_indices = torch.isnan(layer).nonzero(as_tuple=True)
+                        self.logger.info(
+                            f"NaN found in layer {i+1} of the last 4 layers"
+                        )
+                        for idx in nan_layer_indices[0]:
+                            self.logger.info(
+                                "##############################################"
+                            )
+                            self.logger.info(f"NaN found in layer {i+1} at index {idx}")
+                            self.logger.info(f"Layer Embeddings: {layer[idx]}")
+                            self.logger.info(
+                                "##############################################"
+                            )
+                self.logger.info("##############################################")
+
         # Reshape the embeddings to the desired output shape
         embeddings = embeddings.view(batch_size, num_sentences, max_sentence_length, -1)
 
