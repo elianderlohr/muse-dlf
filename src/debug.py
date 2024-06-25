@@ -216,9 +216,9 @@ def main():
         help="Force recalculate FrameAxis",
     )
     advanced_settings.add_argument(
-        "--sample_size", type.int, default=-1, help="Sample size"
+        "--sample_size", type=int, default=-1, help="Sample size"
     )
-    advanced_settings.add_argument("--seed", type.int, default=42, help="Random seed")
+    advanced_settings.add_argument("--seed", type=int, default=42, help="Random seed")
 
     parser.add_argument("--debug", type=str2bool, default=False, help="Debug mode")
 
