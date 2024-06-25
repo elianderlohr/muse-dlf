@@ -61,7 +61,7 @@ def str2bool(v):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train MUSE model")
+    parser = argparse.ArgumentParser(description="Debug MUSE model")
 
     required_args = parser.add_argument_group("Required Arguments")
     required_args.add_argument(
@@ -88,6 +88,14 @@ def main():
         type=str,
         default="mean",
         help="Pooling method for SRL embeddings",
+    )
+
+    # frameaxis_dim
+    model_config.add_argument(
+        "--frameaxis_dim",
+        type=int,
+        default=2,
+        help="Dimension of the FrameAxis",
     )
 
     training_params = parser.add_argument_group("Training Parameters")
@@ -120,15 +128,6 @@ def main():
     )
     training_params.add_argument(
         "--test_size", type=float, default=0.1, help="Size of the test set"
-    )
-    training_params.add_argument(
-        "--tau_min", type=float, default=0.5, help="Minimum temperature parameter"
-    )
-    training_params.add_argument(
-        "--tau_decay",
-        type=float,
-        default=5e-4,
-        help="Decay parameter for the temperature",
     )
 
     data_processing = parser.add_argument_group("Data Processing")
@@ -251,7 +250,6 @@ def main():
         "epochs": args.epochs,
         "srl_embeddings_pooling": args.srl_embeddings_pooling,
         "lr": args.lr,
-        "adam_weight_decay": args.adam_weight_decay,
         "adamw_weight_decay": args.adamw_weight_decay,
         "optimizer": args.optimizer,
         "alpha": args.alpha,
