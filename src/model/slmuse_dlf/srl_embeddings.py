@@ -121,14 +121,8 @@ class SRLEmbeddings(nn.Module):
                             f"NaN found in layer {i+1} of the last 4 layers"
                         )
                         for idx in nan_layer_indices[0]:
-                            self.logger.info(
-                                "##############################################"
-                            )
                             self.logger.info(f"NaN found in layer {i+1} at index {idx}")
-                            self.logger.info(f"Layer Embeddings: {layer[idx]}")
-                            self.logger.info(
-                                "##############################################"
-                            )
+
                 self.logger.info("##############################################")
 
         # Reshape the embeddings to the desired output shape
