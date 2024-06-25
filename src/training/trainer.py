@@ -8,6 +8,8 @@ import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast, GradScaler
+
 logger = LoggerManager.get_logger(__name__)
 
 
@@ -26,6 +28,7 @@ class Trainer:
         tau_min=1,
         tau_decay=0.95,
         early_stop=20,
+        scaler=None,
         **kwargs,
     ):
         self.model = model.to(device)
@@ -39,6 +42,8 @@ class Trainer:
         self.tau_min = tau_min
         self.tau_decay = tau_decay
         self.early_stop = early_stop
+
+        self.scaler = scaler if scaler else GradScaler()  # Initialize GradScaler
 
         self.training_management = training_management
         if self.training_management == "accelerate":
@@ -242,84 +247,87 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
-            unsupervised_loss, span_logits, sentence_logits, combined_logits, other = (
-                self.model(
-                    sentence_ids,
-                    sentence_attention_masks,
-                    predicate_ids,
-                    arg0_ids,
-                    arg1_ids,
-                    frameaxis_data,
-                    tau,
-                )
-            )
-
-            # Check for NaNs in model outputs
-            if (
-                self.check_for_nans(unsupervised_loss, "unsupervised_loss")
-                or self.check_for_nans(span_logits, "span_logits")
-                or self.check_for_nans(sentence_logits, "sentence_logits")
-                or self.check_for_nans(combined_logits, "combined_logits")
-                or self.check_for_nans(other["predicate"], "other['predicate']")
-                or self.check_for_nans(other["arg0"], "other['arg0']")
-                or self.check_for_nans(other["arg1"], "other['arg1']")
-                or self.check_for_nans(other["frameaxis"], "other['frameaxis']")
-            ):
-                logger.error(
-                    f"{experiment_id} - {batch_idx} - NaNs detected in model outputs, skipping this batch."
+            with autocast():
+                unsupervised_loss, span_logits, sentence_logits, combined_logits, other = (
+                    self.model(
+                        sentence_ids,
+                        sentence_attention_masks,
+                        predicate_ids,
+                        arg0_ids,
+                        arg1_ids,
+                        frameaxis_data,
+                        tau,
+                    )
                 )
 
-                # identify where NaNs are coming from
-                if torch.isnan(unsupervised_loss).any():
+                # Check for NaNs in model outputs
+                if (
+                    self.check_for_nans(unsupervised_loss, "unsupervised_loss")
+                    or self.check_for_nans(span_logits, "span_logits")
+                    or self.check_for_nans(sentence_logits, "sentence_logits")
+                    or self.check_for_nans(combined_logits, "combined_logits")
+                    or self.check_for_nans(other["predicate"], "other['predicate']")
+                    or self.check_for_nans(other["arg0"], "other['arg0']")
+                    or self.check_for_nans(other["arg1"], "other['arg1']")
+                    or self.check_for_nans(other["frameaxis"], "other['frameaxis']")
+                ):
                     logger.error(
-                        f"{experiment_id} - {batch_idx} - unsupervised_loss has NaNs"
-                    )
-                if torch.isnan(span_logits).any():
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - span_logits has NaNs"
-                    )
-                if torch.isnan(sentence_logits).any():
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - sentence_logits has NaNs"
-                    )
-                if torch.isnan(combined_logits).any():
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - combined_logits has NaNs"
-                    )
-                if torch.isnan(other["predicate"]).any():
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - other['predicate'] has NaNs"
-                    )
-                if torch.isnan(other["arg0"]).any():
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - other['arg0'] has NaNs"
-                    )
-                if torch.isnan(other["arg1"]).any():
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - other['arg1'] has NaNs"
-                    )
-                if torch.isnan(other["frameaxis"]).any():
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - other['frameaxis'] has NaNs"
+                        f"{experiment_id} - {batch_idx} - NaNs detected in model outputs, skipping this batch."
                     )
 
-                continue
+                    # identify where NaNs are coming from
+                    if torch.isnan(unsupervised_loss).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - unsupervised_loss has NaNs"
+                        )
+                    if torch.isnan(span_logits).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - span_logits has NaNs"
+                        )
+                    if torch.isnan(sentence_logits).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - sentence_logits has NaNs"
+                        )
+                    if torch.isnan(combined_logits).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - combined_logits has NaNs"
+                        )
+                    if torch.isnan(other["predicate"]).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - other['predicate'] has NaNs"
+                        )
+                    if torch.isnan(other["arg0"]).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - other['arg0'] has NaNs"
+                        )
+                    if torch.isnan(other["arg1"]).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - other['arg1'] has NaNs"
+                        )
+                    if torch.isnan(other["frameaxis"]).any():
+                        logger.error(
+                            f"{experiment_id} - {batch_idx} - other['frameaxis'] has NaNs"
+                        )
 
-            span_loss = 0.0
-            sentence_loss = 0.0
+                    continue
 
-            span_loss = self.loss_function(span_logits, labels.float())
-            sentence_loss = self.loss_function(sentence_logits, labels.float())
+                span_loss = 0.0
+                sentence_loss = 0.0
 
-            supervised_loss = span_loss + sentence_loss
+                span_loss = self.loss_function(span_logits, labels.float())
+                sentence_loss = self.loss_function(sentence_logits, labels.float())
 
-            sum_of_parameters = sum(p.sum() for p in self.model.parameters())
+                supervised_loss = span_loss + sentence_loss
 
-            zero_sum = sum_of_parameters * 0.0
+                sum_of_parameters = sum(p.sum() for p in self.model.parameters())
 
-            combined_loss = (
-                alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-            ) + zero_sum
+                zero_sum = sum_of_parameters * 0.0
+
+                combined_loss = (
+                    alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                ) + zero_sum
+
+
 
             # other loss (debug)
             predicate_loss = self.loss_function(other["predicate"], labels.float())
@@ -333,17 +341,19 @@ class Trainer:
                     f"{experiment_id} - {batch_idx} - NaNs detected in combined_loss, skipping this batch."
                 )
                 continue
+            
+            self.scaler.scale(combined_loss).backward()
 
             if self.training_management == "accelerate":
                 self.accelerator.backward(combined_loss)
                 if self.accelerator.sync_gradients:
                     self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
             else:
-                combined_loss.backward()
+                self.scaler.unscale_(self.optimizer)
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
 
-            self.optimizer.step()
-            self.scheduler.step()
+            self.scaler.step(self.optimizer)  # Use scaler to step optimizer
+            self.scaler.update()
 
             total_loss += combined_loss.item()
             supervised_total_loss += supervised_loss.item()

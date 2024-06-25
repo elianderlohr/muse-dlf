@@ -7,6 +7,8 @@ from model.slmuse_dlf.unsupervised_module import MUSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
+from torch.cuda.amp import autocast
+
 
 class MUSEDLF(nn.Module):
     def __init__(
@@ -209,133 +211,137 @@ class MUSEDLF(nn.Module):
         frameaxis_data,
         tau,
     ):
-        # Convert input IDs to embeddings
-        sentence_embeddings, predicate_embeddings, arg0_embeddings, arg1_embeddings = (
-            self.aggregation(
+        with autocast():
+            # Convert input IDs to embeddings
+            (
+                sentence_embeddings,
+                predicate_embeddings,
+                arg0_embeddings,
+                arg1_embeddings,
+            ) = self.aggregation(
                 sentence_ids,
                 sentence_attention_masks,
                 predicate_ids,
                 arg0_ids,
                 arg1_ids,
             )
-        )
 
-        # check if there are any nans in the embeddings
-        if torch.isnan(sentence_embeddings).any():
-            self.logger.error("🚨 NaNs detected in sentence embeddings")
-            self.logger.error(sentence_ids)
-            self.logger.error(sentence_attention_masks)
+            # check if there are any nans in the embeddings
+            if torch.isnan(sentence_embeddings).any():
+                self.logger.error("🚨 NaNs detected in sentence embeddings")
+                self.logger.error(sentence_ids)
+                self.logger.error(sentence_attention_masks)
 
-            raise ValueError("NaNs detected in sentence embeddings")
-        if torch.isnan(predicate_embeddings).any():
-            self.logger.error("🚨 NaNs detected in predicate embeddings")
-        if torch.isnan(arg0_embeddings).any():
-            self.logger.error("🚨 NaNs detected in arg0 embeddings")
-        if torch.isnan(arg1_embeddings).any():
-            self.logger.error("🚨 NaNs detected in arg1 embeddings")
+                raise ValueError("NaNs detected in sentence embeddings")
+            if torch.isnan(predicate_embeddings).any():
+                self.logger.error("🚨 NaNs detected in predicate embeddings")
+            if torch.isnan(arg0_embeddings).any():
+                self.logger.error("🚨 NaNs detected in arg0 embeddings")
+            if torch.isnan(arg1_embeddings).any():
+                self.logger.error("🚨 NaNs detected in arg1 embeddings")
 
-        # log if no nans are detected
-        if (
-            not torch.isnan(sentence_embeddings).any()
-            and not torch.isnan(predicate_embeddings).any()
-            and not torch.isnan(arg0_embeddings).any()
-            and not torch.isnan(arg1_embeddings).any()
-        ):
-            self.logger.debug("✅ No NaNs detected in embeddings")
+            # log if no nans are detected
+            if (
+                not torch.isnan(sentence_embeddings).any()
+                and not torch.isnan(predicate_embeddings).any()
+                and not torch.isnan(arg0_embeddings).any()
+                and not torch.isnan(arg1_embeddings).any()
+            ):
+                self.logger.debug("✅ No NaNs detected in embeddings")
 
-        # Handle multiple spans by averaging predictions
-        unsupervised_losses = torch.zeros(
-            (sentence_embeddings.size(0),), device=sentence_embeddings.device
-        )
-
-        # Creating storage for aggregated d tensors
-        d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
-
-        negatives_p = self.negative_sampling(predicate_embeddings)
-        negatives_a0 = self.negative_sampling(arg0_embeddings)
-        negatives_a1 = self.negative_sampling(arg1_embeddings)
-
-        negatives_fx = self.negative_fx_sampling(frameaxis_data)
-
-        # Process each sentence
-        for sentence_idx in range(sentence_embeddings.size(1)):
-            s_sentence_span = sentence_embeddings[:, sentence_idx, :]
-            v_fx = frameaxis_data[:, sentence_idx, :]
-
-            d_p_sentence_list = []
-            d_a0_sentence_list = []
-            d_a1_sentence_list = []
-
-            # Process each span
-            for span_idx in range(predicate_embeddings.size(2)):
-                v_p_span = predicate_embeddings[:, sentence_idx, span_idx, :]
-                v_a0_span = arg0_embeddings[:, sentence_idx, span_idx, :]
-                v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
-
-                # Feed the embeddings to the unsupervised module
-                unsupervised_results = self.unsupervised(
-                    v_p_span,
-                    v_a0_span,
-                    v_a1_span,
-                    s_sentence_span,
-                    negatives_p,
-                    negatives_a0,
-                    negatives_a1,
-                    tau,
-                )
-                unsupervised_losses += unsupervised_results["loss"]
-
-                # Use the vhat (reconstructed embeddings) for supervised predictions
-                d_p_sentence_list.append(unsupervised_results["p"]["d"])
-                d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
-                d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
-
-            # Aggregating across all spans
-            d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
-            d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
-            d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
-
-            d_p_list.append(d_p_sentence)
-            d_a0_list.append(d_a0_sentence)
-            d_a1_list.append(d_a1_sentence)
-
-            # As per sentence only one frameaxis data set is present calculate only once
-            unsupervised_fx_results = self.unsupervised_fx(
-                s_sentence_span,
-                v_fx,
-                negatives_fx,
-                tau,
+            # Handle multiple spans by averaging predictions
+            unsupervised_losses = torch.zeros(
+                (sentence_embeddings.size(0),), device=sentence_embeddings.device
             )
 
-            d_fx_list.append(unsupervised_fx_results["fx"]["d"])
+            # Creating storage for aggregated d tensors
+            d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
 
-            # add the loss to the unsupervised losses
-            unsupervised_losses += unsupervised_fx_results["loss"]
+            negatives_p = self.negative_sampling(predicate_embeddings)
+            negatives_a0 = self.negative_sampling(arg0_embeddings)
+            negatives_a1 = self.negative_sampling(arg1_embeddings)
 
-        # Aggregating across all spans
-        d_p_aggregated = torch.stack(d_p_list, dim=1)
-        d_a0_aggregated = torch.stack(d_a0_list, dim=1)
-        d_a1_aggregated = torch.stack(d_a1_list, dim=1)
-        d_fx_aggregated = torch.stack(d_fx_list, dim=1)
+            negatives_fx = self.negative_fx_sampling(frameaxis_data)
 
-        # Supervised predictions
-        span_pred, sentence_pred, combined_pred, other = self.supervised(
-            d_p_aggregated,
-            d_a0_aggregated,
-            d_a1_aggregated,
-            d_fx_aggregated,
-            sentence_embeddings,
-            frameaxis_data,
-        )
+            # Process each sentence
+            for sentence_idx in range(sentence_embeddings.size(1)):
+                s_sentence_span = sentence_embeddings[:, sentence_idx, :]
+                v_fx = frameaxis_data[:, sentence_idx, :]
 
-        # Identify valid (non-nan) losses
-        valid_losses = ~torch.isnan(unsupervised_losses)
+                d_p_sentence_list = []
+                d_a0_sentence_list = []
+                d_a1_sentence_list = []
 
-        # Take average by summing the valid losses and dividing by num sentences so that padded sentences are also taken in equation
-        unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
-            sentence_embeddings.shape[0]
-            * sentence_embeddings.shape[1]
-            * sentence_embeddings.shape[2]
-        )
+                # Process each span
+                for span_idx in range(predicate_embeddings.size(2)):
+                    v_p_span = predicate_embeddings[:, sentence_idx, span_idx, :]
+                    v_a0_span = arg0_embeddings[:, sentence_idx, span_idx, :]
+                    v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
+
+                    # Feed the embeddings to the unsupervised module
+                    unsupervised_results = self.unsupervised(
+                        v_p_span,
+                        v_a0_span,
+                        v_a1_span,
+                        s_sentence_span,
+                        negatives_p,
+                        negatives_a0,
+                        negatives_a1,
+                        tau,
+                    )
+                    unsupervised_losses += unsupervised_results["loss"]
+
+                    # Use the vhat (reconstructed embeddings) for supervised predictions
+                    d_p_sentence_list.append(unsupervised_results["p"]["d"])
+                    d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
+                    d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+
+                # Aggregating across all spans
+                d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
+                d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
+                d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
+
+                d_p_list.append(d_p_sentence)
+                d_a0_list.append(d_a0_sentence)
+                d_a1_list.append(d_a1_sentence)
+
+                # As per sentence only one frameaxis data set is present calculate only once
+                unsupervised_fx_results = self.unsupervised_fx(
+                    s_sentence_span,
+                    v_fx,
+                    negatives_fx,
+                    tau,
+                )
+
+                d_fx_list.append(unsupervised_fx_results["fx"]["d"])
+
+                # add the loss to the unsupervised losses
+                unsupervised_losses += unsupervised_fx_results["loss"]
+
+            # Aggregating across all spans
+            d_p_aggregated = torch.stack(d_p_list, dim=1)
+            d_a0_aggregated = torch.stack(d_a0_list, dim=1)
+            d_a1_aggregated = torch.stack(d_a1_list, dim=1)
+            d_fx_aggregated = torch.stack(d_fx_list, dim=1)
+
+            # Supervised predictions
+            span_pred, sentence_pred, combined_pred, other = self.supervised(
+                d_p_aggregated,
+                d_a0_aggregated,
+                d_a1_aggregated,
+                d_fx_aggregated,
+                sentence_embeddings,
+                frameaxis_data,
+            )
+
+            # Identify valid (non-nan) losses
+            valid_losses = ~torch.isnan(unsupervised_losses)
+
+            # Take average by summing the valid losses and dividing by num sentences so that padded sentences are also taken in equation
+            unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
+                sentence_embeddings.shape[0]
+                * sentence_embeddings.shape[1]
+                * sentence_embeddings.shape[2]
+            )
 
         return unsupervised_loss, span_pred, sentence_pred, combined_pred, other

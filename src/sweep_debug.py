@@ -17,6 +17,9 @@ from torch.optim import Adam, AdamW
 import warnings
 import os
 
+from torch.cuda.amp import GradScaler
+
+
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
@@ -50,6 +53,7 @@ def load_model(
     bert_model_name,
     bert_model_name_or_path,
     srl_embeddings_pooling,
+    mixed_precision,
     lambda_orthogonality,
     M,
     t,
@@ -82,6 +86,7 @@ def load_model(
         bert_model_name=bert_model_name,
         bert_model_name_or_path=bert_model_name_or_path,
         srl_embeddings_pooling=srl_embeddings_pooling,
+        mixed_precision=mixed_precision,
         lambda_orthogonality=lambda_orthogonality,
         M=M,
         t=t,
@@ -126,6 +131,8 @@ def main():
     max_arg_length = 16
     test_size = 0.1
     epochs = 1
+
+    mixed_precision = "fp16"
 
     # Parameters from wandb.config
     hidden_dim = wandb.config.hidden_dim
@@ -234,6 +241,7 @@ def main():
         bert_model_name=name_tokenizer,
         bert_model_name_or_path=path_name_bert_model,
         srl_embeddings_pooling=srl_embeddings_pooling,
+        mixed_precision=mixed_precision,
         lambda_orthogonality=lambda_orthogonality,
         M=M,
         t=t,
@@ -314,6 +322,8 @@ def main():
         num_training_steps=len(train_dataloader) * epochs,
     )
 
+    scaler = GradScaler()
+
     # Train the model
     trainer = Trainer(
         model=model,
@@ -327,6 +337,7 @@ def main():
         tau_decay=tau_decay,
         save_path=save_path,
         wandb_instance=wandb_instance,
+        scaler=scaler,
     )
 
     early_stopping = trainer.run_training(epochs=epochs, alpha=alpha)

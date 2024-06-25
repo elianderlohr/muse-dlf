@@ -1,8 +1,7 @@
-import pandas as pd
+import torch
+from torch.cuda.amp import autocast
 from transformers import BertModel, RobertaModel
 import torch.nn as nn
-import torch
-
 from utils.logging_manager import LoggerManager
 
 
@@ -87,8 +86,9 @@ class SRLEmbeddings(nn.Module):
         test_attention_masks = torch.ones_like(test_ids)
 
         with torch.no_grad():
-            outputs = model(input_ids=test_ids, attention_mask=test_attention_masks)
-            embeddings = outputs.last_hidden_state
+            with autocast():
+                outputs = model(input_ids=test_ids, attention_mask=test_attention_masks)
+                embeddings = outputs.last_hidden_state
 
         if torch.isnan(embeddings).any():
             raise ValueError("NaNs found in test embeddings after loading the model")
@@ -103,33 +103,28 @@ class SRLEmbeddings(nn.Module):
         ids, attention_masks = ids.to(self.device), attention_masks.to(self.device)
         batch_size, num_sentences, max_sentence_length = ids.shape
 
-        # Flatten the input tensors to combine batch_size and num_sentences dimensions
         ids_flat = ids.view(batch_size * num_sentences, max_sentence_length)
         attention_masks_flat = attention_masks.view(
             batch_size * num_sentences, max_sentence_length
         )
 
         with torch.no_grad():
-            # Obtain the embeddings from the BERT model
-            outputs = self.model(
-                input_ids=ids_flat,
-                attention_mask=attention_masks_flat,
-                output_hidden_states=True,
-            )
+            with autocast():  # Use autocast for mixed precision
+                outputs = self.model(
+                    input_ids=ids_flat,
+                    attention_mask=attention_masks_flat,
+                    output_hidden_states=True,
+                )
 
-            # Compute the sum of the last 4 layers to get the new token embeddings
-            last_4_layers = outputs.hidden_states[-4:]  # Last 4 layers
-            summed_embeddings = torch.stack(last_4_layers, dim=0).sum(0)
+                last_4_layers = outputs.hidden_states[-4:]
+                summed_embeddings = torch.stack(last_4_layers, dim=0).sum(0)
 
-            # Check for NaN values in summed_embeddings
             self.check_for_nans(summed_embeddings, "summed embeddings")
 
-            # Reshape the embeddings to the desired output shape
             summed_embeddings = summed_embeddings.view(
                 batch_size, num_sentences, max_sentence_length, self.embedding_dim
             )
 
-            # Calculate mean embeddings across the token dimension while ignoring padded tokens
             if self.pooling == "mean":
                 attention_masks_expanded = attention_masks.view(
                     batch_size, num_sentences, max_sentence_length, 1
@@ -148,7 +143,6 @@ class SRLEmbeddings(nn.Module):
             elif self.pooling == "cls":
                 embeddings_mean = summed_embeddings[:, :, 0, :]
 
-            # Check for NaN values in the final mean embeddings
             self.check_for_nans(embeddings_mean, "embeddings_mean")
 
         return summed_embeddings, embeddings_mean
@@ -216,19 +210,20 @@ class SRLEmbeddings(nn.Module):
         )
 
         with torch.no_grad():
-            sentence_embeddings, sentence_embeddings_avg = self.get_sentence_embedding(
-                sentence_ids, sentence_attention_masks
-            )
+            with autocast():  # Use autocast for mixed precision
+                sentence_embeddings, sentence_embeddings_avg = (
+                    self.get_sentence_embedding(sentence_ids, sentence_attention_masks)
+                )
 
-            predicate_embeddings = self.get_arg_embedding(
-                predicate_ids, sentence_ids, sentence_embeddings
-            )
-            arg0_embeddings = self.get_arg_embedding(
-                arg0_ids, sentence_ids, sentence_embeddings
-            )
-            arg1_embeddings = self.get_arg_embedding(
-                arg1_ids, sentence_ids, sentence_embeddings
-            )
+                predicate_embeddings = self.get_arg_embedding(
+                    predicate_ids, sentence_ids, sentence_embeddings
+                )
+                arg0_embeddings = self.get_arg_embedding(
+                    arg0_ids, sentence_ids, sentence_embeddings
+                )
+                arg1_embeddings = self.get_arg_embedding(
+                    arg1_ids, sentence_ids, sentence_embeddings
+                )
 
         return (
             sentence_embeddings_avg,
