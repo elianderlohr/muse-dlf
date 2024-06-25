@@ -53,9 +53,6 @@ class MUSEDLF(nn.Module):
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
-        if self._debug:
-            self.logger.debug("🐛🐛🐛 INIT MODEL IN DEBUG MODE")
-
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
             model_name_or_path=bert_model_name_or_path,
