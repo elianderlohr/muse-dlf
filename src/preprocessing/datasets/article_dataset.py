@@ -111,7 +111,6 @@ class ArticleDataset(Dataset):
                 truncation=True,
                 padding="max_length",
                 return_attention_mask=True,
-                return_tensors="pt",
             )
             sentence_outputs.append(encoded)
             sentence_ids.append(encoded["input_ids"])
