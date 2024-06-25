@@ -115,20 +115,18 @@ class SRLEmbeddings(nn.Module):
                     embeddings_chunk, f"raw model output chunk {start_idx}-{end_idx}"
                 )
 
-                # Compute the weighted sum of the last 4 layers to get the new token embeddings
+                # Compute the sum of the last 4 layers to get the new token embeddings
                 last_4_layers = outputs.hidden_states[-4:]  # Last 4 layers
-                stacked_layers = torch.stack(last_4_layers, dim=0)
-                weights = torch.softmax(self.weights, dim=0).view(4, 1, 1, 1)
-                weighted_sum_embeddings_chunk = (stacked_layers * weights).sum(0)
+                summed_embeddings_chunk = torch.stack(last_4_layers, dim=0).sum(0)
 
-                # Check for NaN values in weighted_sum_embeddings_chunk
+                # Check for NaN values in summed_embeddings_chunk
                 self.check_for_nans(
-                    weighted_sum_embeddings_chunk,
-                    f"weighted sum chunk {start_idx}-{end_idx}",
+                    summed_embeddings_chunk,
+                    f"summed embeddings chunk {start_idx}-{end_idx}",
                 )
 
                 # Reshape the embeddings to the desired output shape
-                weighted_sum_embeddings_chunk = weighted_sum_embeddings_chunk.view(
+                summed_embeddings_chunk = summed_embeddings_chunk.view(
                     -1, max_sentence_length, self.embedding_dim
                 )
 
@@ -136,9 +134,9 @@ class SRLEmbeddings(nn.Module):
                 if self.pooling == "mean":
                     attention_masks_expanded = attention_masks_chunk.unsqueeze(
                         -1
-                    ).expand(weighted_sum_embeddings_chunk.size())
+                    ).expand(summed_embeddings_chunk.size())
                     embeddings_masked = (
-                        weighted_sum_embeddings_chunk * attention_masks_expanded
+                        summed_embeddings_chunk * attention_masks_expanded
                     )
                     sum_embeddings = torch.sum(embeddings_masked, dim=1)
                     token_counts = attention_masks_chunk.sum(dim=1, keepdim=True).clamp(
@@ -146,10 +144,10 @@ class SRLEmbeddings(nn.Module):
                     )
                     embeddings_mean_chunk = sum_embeddings / token_counts
                 elif self.pooling == "cls":
-                    embeddings_mean_chunk = weighted_sum_embeddings_chunk[:, 0, :]
+                    embeddings_mean_chunk = summed_embeddings_chunk[:, 0, :]
 
                 # Append the processed chunks to the final embeddings lists
-                all_embeddings.append(weighted_sum_embeddings_chunk)
+                all_embeddings.append(summed_embeddings_chunk)
                 all_embeddings_mean.append(embeddings_mean_chunk)
 
         # Concatenate all chunks to form the final embeddings tensors
