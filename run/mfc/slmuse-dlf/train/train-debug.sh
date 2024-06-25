@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=mfc-slmuse-dlf-train-4
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 
 echo "===================== Job Details ====================="
@@ -89,7 +89,7 @@ clear_gpu_memory
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-echo "Launching training script with Accelerate..."
+echo "Launching debug script..."
 python src/debug.py \
     --project_name slmuse-dlf \
     --tags $TAGS \

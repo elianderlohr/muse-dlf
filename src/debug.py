@@ -197,7 +197,7 @@ def main():
     )
     io_paths.add_argument(
         "--dim_names",
-        type.str,
+        type=str,
         default="positive,negative",
         help="Dimension names for the FrameAxis",
     )
