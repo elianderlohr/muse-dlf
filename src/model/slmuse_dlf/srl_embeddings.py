@@ -106,13 +106,16 @@ class SRLEmbeddings(nn.Module):
         nan_indices = torch.isnan(embeddings).nonzero(as_tuple=True)
         if len(nan_indices[0]) > 0:
             for batch_idx, sentence_idx in zip(nan_indices[0], nan_indices[1]):
+                self.logger.info("##############################################")
                 self.logger.info(
                     f"Batch {batch_idx}, Sentence {sentence_idx} contains NaN values."
                 )
+                self.logger.info(f"Embeddings: {embeddings[batch_idx, sentence_idx]}")
                 self.logger.info(f"Input IDs:\n{ids[batch_idx, sentence_idx]}")
                 self.logger.info(
                     f"Attention Masks:\n{attention_masks[batch_idx, sentence_idx]}"
                 )
+                self.logger.info("##############################################")
 
         # Calculate mean embeddings across the token dimension while ignoring padded tokens
         if self.pooling == "mean":
