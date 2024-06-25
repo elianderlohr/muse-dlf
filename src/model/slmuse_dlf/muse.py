@@ -227,6 +227,15 @@ class MUSEDLF(nn.Module):
         if torch.isnan(arg1_embeddings).any():
             self.logger.error("🚨 NaNs detected in arg1 embeddings")
 
+        # log if no nans are detected
+        if (
+            not torch.isnan(sentence_embeddings).any()
+            and not torch.isnan(predicate_embeddings).any()
+            and not torch.isnan(arg0_embeddings).any()
+            and not torch.isnan(arg1_embeddings).any()
+        ):
+            self.logger.debug("✅ No NaNs detected in embeddings")
+
         # Handle multiple spans by averaging predictions
         unsupervised_losses = torch.zeros(
             (sentence_embeddings.size(0),), device=sentence_embeddings.device
