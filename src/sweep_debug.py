@@ -337,6 +337,8 @@ def main():
 
     early_stopping = trainer.run_training(epochs=epochs, alpha=alpha)
 
+    print("✅ Training finished.")
+
     if early_stopping["early_stopped"]:
         print("Early stopping triggered.")
         wandb_instance.finish(early_stopping["stopping_code"])
