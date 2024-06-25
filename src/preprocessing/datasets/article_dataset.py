@@ -305,7 +305,7 @@ class ArticleDataset(Dataset):
                 arg1_attention_masks, dtype=torch.long
             ),
             "frameaxis": torch.tensor(frameaxis_data, dtype=torch.float),
-            "labels": torch.tensor(labels[0], dtype=torch.long),
+            "labels": torch.tensor(labels, dtype=torch.long),
         }
 
         return data
