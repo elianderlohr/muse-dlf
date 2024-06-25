@@ -209,9 +209,6 @@ class MUSE(nn.Module):
                 )
                 unsupervised_losses += unsupervised_results["loss"]
 
-                if torch.isnan(unsupervised_results["loss"]).any():
-                    logger.debug("loss is nan")
-
                 # Use the vhat (reconstructed embeddings) for supervised predictions
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])
                 d_a0_sentence_list.append(unsupervised_results["a0"]["d"])

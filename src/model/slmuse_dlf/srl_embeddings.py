@@ -80,10 +80,6 @@ class SRLEmbeddings(nn.Module):
 
         self.logger.info("No NaNs found in test embeddings. Model loading seems fine.")
 
-    def check_for_nans(self, tensor, tensor_name):
-        if torch.isnan(tensor).any():
-            self.logger.error(f"NaN values detected in {tensor_name}")
-
     def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         batch_size, num_sentences, max_sentence_length = ids.shape
 
@@ -127,9 +123,6 @@ class SRLEmbeddings(nn.Module):
         elif self.pooling == "cls":
             # Use the [CLS] token representation for the sentence embedding
             embeddings_mean = embeddings[:, :, 0, :]
-
-        # check for NaN values in embeddings_mean
-        self.check_for_nans(embeddings_mean, "embeddings_mean")
 
         return embeddings, embeddings_mean
 
@@ -186,10 +179,6 @@ class SRLEmbeddings(nn.Module):
                 sentence_ids, sentence_attention_masks
             )
 
-            # Check for NaNs in sentence_embeddings_avg or sentence_embeddings
-            self.check_for_nans(sentence_embeddings_avg, "sentence_embeddings_avg")
-            self.check_for_nans(sentence_embeddings, "sentence_embeddings")
-
             predicate_embeddings = self.get_arg_embedding(
                 predicate_ids, sentence_ids, sentence_embeddings
             )
@@ -199,11 +188,6 @@ class SRLEmbeddings(nn.Module):
             arg1_embeddings = self.get_arg_embedding(
                 arg1_ids, sentence_ids, sentence_embeddings
             )
-
-            # Final check for NaN values in output embeddings
-            self.check_for_nans(predicate_embeddings, "predicate_embeddings")
-            self.check_for_nans(arg0_embeddings, "arg0_embeddings")
-            self.check_for_nans(arg1_embeddings, "arg1_embeddings")
 
         return (
             sentence_embeddings_avg,
