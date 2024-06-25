@@ -265,25 +265,27 @@ class Trainer:
                 or self.check_for_nans(other["arg1"], "other['arg1']")
                 or self.check_for_nans(other["frameaxis"], "other['frameaxis']")
             ):
-                logger.error("NaNs detected in model outputs, skipping this batch.")
+                logger.error(
+                    f"{experiment_id} - NaNs detected in model outputs, skipping this batch."
+                )
 
                 # identify where NaNs are coming from
                 if torch.isnan(unsupervised_loss).any():
-                    logger.error("unsupervised_loss has NaNs")
+                    logger.error(f"{experiment_id} - unsupervised_loss has NaNs")
                 if torch.isnan(span_logits).any():
-                    logger.error("span_logits has NaNs")
+                    logger.error(f"{experiment_id} - span_logits has NaNs")
                 if torch.isnan(sentence_logits).any():
-                    logger.error("sentence_logits has NaNs")
+                    logger.error(f"{experiment_id} - sentence_logits has NaNs")
                 if torch.isnan(combined_logits).any():
-                    logger.error("combined_logits has NaNs")
+                    logger.error(f"{experiment_id} - combined_logits has NaNs")
                 if torch.isnan(other["predicate"]).any():
-                    logger.error("other['predicate'] has NaNs")
+                    logger.error(f"{experiment_id} - other['predicate'] has NaNs")
                 if torch.isnan(other["arg0"]).any():
-                    logger.error("other['arg0'] has NaNs")
+                    logger.error(f"{experiment_id} - other['arg0'] has NaNs")
                 if torch.isnan(other["arg1"]).any():
-                    logger.error("other['arg1'] has NaNs")
+                    logger.error(f"{experiment_id} - other['arg1'] has NaNs")
                 if torch.isnan(other["frameaxis"]).any():
-                    logger.error("other['frameaxis'] has NaNs")
+                    logger.error(f"{experiment_id} - other['frameaxis'] has NaNs")
 
                 continue
 
@@ -311,7 +313,9 @@ class Trainer:
 
             # Check for NaNs in combined loss
             if self.check_for_nans(combined_loss, "combined_loss"):
-                logger.error("NaNs detected in combined_loss, skipping this batch.")
+                logger.error(
+                    f"{experiment_id} - NaNs detected in combined_loss, skipping this batch."
+                )
                 continue
 
             if self.training_management == "accelerate":

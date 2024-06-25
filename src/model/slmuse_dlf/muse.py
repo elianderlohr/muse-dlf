@@ -254,17 +254,6 @@ class MUSEDLF(nn.Module):
                 )
                 unsupervised_losses += unsupervised_results["loss"]
 
-                if torch.isnan(unsupervised_results["loss"]).any():
-                    self.logger.error("loss is nan")
-
-                # check if [p][d] has nan values
-                if torch.isnan(unsupervised_results["p"]["d"]).any():
-                    self.logger.error("p d has nan")
-                if torch.isnan(unsupervised_results["a0"]["d"]).any():
-                    self.logger.error("a0 d has nan")
-                if torch.isnan(unsupervised_results["a1"]["d"]).any():
-                    self.logger.error("a1 d has nan")
-
                 # Use the vhat (reconstructed embeddings) for supervised predictions
                 d_p_sentence_list.append(unsupervised_results["p"]["d"])
                 d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
