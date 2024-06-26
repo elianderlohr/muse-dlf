@@ -29,6 +29,7 @@ class Trainer:
         tau_decay=0.95,
         early_stop=20,
         mixed_precision="fp16",  # "fp16"
+        clip_value=1.0,
         **kwargs,
     ):
         self.model = model.to(device)
@@ -85,6 +86,7 @@ class Trainer:
             self.accelerator = None
 
         self.mixed_precision = mixed_precision
+        self.clip_value = clip_value
 
     def _log_metrics(self, metrics):
         if self.training_management == "wandb":
