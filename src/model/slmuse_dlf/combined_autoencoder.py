@@ -163,6 +163,17 @@ class CombinedAutoencoder(nn.Module):
             d_a0 = torch.softmax(logits_a0, dim=1)
             d_a1 = torch.softmax(logits_a1, dim=1)
 
+            # Check for NaNs or 0 in d
+            if (
+                torch.isnan(d_p).any()
+                or torch.isnan(d_a0).any()
+                or torch.isnan(d_a1).any()
+                or (d_p == 0).all()
+                or (d_a0 == 0).all()
+                or (d_a1 == 0).all()
+            ):
+                self.logger.error("❌ NaNs detected in d or d is all 0 AFTER softmax")
+
             g_p = self.custom_gumbel_softmax(d_p, tau=tau, hard=self.hard, log=self.log)
             g_a0 = self.custom_gumbel_softmax(
                 d_a0, tau=tau, hard=self.hard, log=self.log
@@ -170,6 +181,16 @@ class CombinedAutoencoder(nn.Module):
             g_a1 = self.custom_gumbel_softmax(
                 d_a1, tau=tau, hard=self.hard, log=self.log
             )
+
+            # Check for NaNs in g
+            if (
+                torch.isnan(g_p).any()
+                or torch.isnan(g_a0).any()
+                or torch.isnan(g_a1).any()
+            ):
+                self.logger.error(
+                    f"❌ NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {self.hard}, log: {self.log}"
+                )
 
             if self.matmul_input == "d":
                 vhat_p = torch.matmul(d_p, self.F_matrices["p"])
