@@ -745,7 +745,7 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
-            with torch.no_grad(self.mixed_precision):
+            with torch.no_grad():
                 with autocast(
                     enabled=self.mixed_precision in ["fp16", "bf16"],
                     dtype=precision_dtype,
