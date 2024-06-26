@@ -77,6 +77,15 @@ class LossModule(nn.Module):
 
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
+        # check if loss is nan or inf or 0
+        if (
+            torch.isnan(loss).any()
+            or torch.isinf(loss).any()
+            or torch.allclose(loss, torch.zeros_like(loss))
+        ):
+            self.logger.error("NaNs detected in focal_triplet_loss LOSS")
+            self.logger.error(f"loss: {loss}")
+
         # Normalizing
         loss = loss / self.t
 
