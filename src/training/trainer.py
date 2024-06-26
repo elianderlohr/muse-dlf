@@ -95,10 +95,8 @@ class Trainer:
     def _log_alert(self, title, text):
         if self.training_management == "wandb":
             self.wandb.alert(title=title, text=text, level=AlertLevel.INFO)
-        elif self.training_management == "accelerate":
-            self.wandb.alert(title=title, text=text, level=AlertLevel.INFO)
         else:
-            logger.info(f"{title} - {text}")
+            logger.warning(f"{title} - {text}")
 
     def check_for_nans(self, tensor, tensor_name):
         if torch.isnan(tensor).any():
@@ -248,16 +246,20 @@ class Trainer:
             )
 
             with autocast():
-                unsupervised_loss, span_logits, sentence_logits, combined_logits, other = (
-                    self.model(
-                        sentence_ids,
-                        sentence_attention_masks,
-                        predicate_ids,
-                        arg0_ids,
-                        arg1_ids,
-                        frameaxis_data,
-                        tau,
-                    )
+                (
+                    unsupervised_loss,
+                    span_logits,
+                    sentence_logits,
+                    combined_logits,
+                    other,
+                ) = self.model(
+                    sentence_ids,
+                    sentence_attention_masks,
+                    predicate_ids,
+                    arg0_ids,
+                    arg1_ids,
+                    frameaxis_data,
+                    tau,
                 )
 
                 # Check for NaNs in model outputs
@@ -327,8 +329,6 @@ class Trainer:
                     alpha * supervised_loss + (1 - alpha) * unsupervised_loss
                 ) + zero_sum
 
-
-
             # other loss (debug)
             predicate_loss = self.loss_function(other["predicate"], labels.float())
             arg0_loss = self.loss_function(other["arg0"], labels.float())
@@ -341,11 +341,11 @@ class Trainer:
                     f"{experiment_id} - {batch_idx} - NaNs detected in combined_loss, skipping this batch."
                 )
                 continue
-            
+
             self.scaler.scale(combined_loss).backward()
 
             if self.training_management == "accelerate":
-                self.accelerator.backward(combined_loss)
+                self.accelerator.backward(combined_loss, retain_graph=True)
                 if self.accelerator.sync_gradients:
                     self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
             else:
