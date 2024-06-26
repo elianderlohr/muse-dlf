@@ -342,16 +342,20 @@ class Trainer:
                 )
                 continue
 
+            # Scale the loss and call backward
+            scaled_loss = self.scaler.scale(combined_loss)
+            scaled_loss.backward()
+
             if self.training_management == "accelerate":
                 self.accelerator.backward(combined_loss, retain_graph=True)
                 if self.accelerator.sync_gradients:
                     self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
             else:
-                self.scaler.scale(combined_loss).backward(retain_graph=True)
                 self.scaler.unscale_(self.optimizer)
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
 
-            self.scaler.step(self.optimizer)  # Use scaler to step optimizer
+            # Use scaler to step optimizer
+            self.scaler.step(self.optimizer)
             self.scaler.update()
 
             total_loss += combined_loss.item()
