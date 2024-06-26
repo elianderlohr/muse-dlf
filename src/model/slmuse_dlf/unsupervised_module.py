@@ -25,7 +25,6 @@ class MUSEUnsupervised(nn.Module):
         activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
         use_batch_norm=True,  # whether to use batch normalization
         matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        gumbel_softmax_hard=False,  # whether to use hard gumbel softmax
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
@@ -43,7 +42,6 @@ class MUSEUnsupervised(nn.Module):
             activation=activation,
             use_batch_norm=use_batch_norm,
             matmul_input=matmul_input,
-            hard=gumbel_softmax_hard,
             log=gumbel_softmax_log,
             _debug=_debug,
         )
@@ -75,15 +73,15 @@ class MUSEUnsupervised(nn.Module):
             outputs = self.combined_autoencoder(v_p, v_a0, v_a1, v_sentence, tau)
 
             # check if p g has nan values or 0 values
-            if torch.isnan(outputs["p"]["g"]).any() or (outputs["p"]["g"] == 0).all():
+            if torch.isnan(outputs["p"]["g"]).any() or (outputs["p"]["g"] == 0).any():
                 self.logger.debug(f"🚨 p g has nan values or 0 values")
 
             # check if a0 g has nan values or 0 values
-            if torch.isnan(outputs["a0"]["g"]).any() or (outputs["a0"]["g"] == 0).all():
+            if torch.isnan(outputs["a0"]["g"]).any() or (outputs["a0"]["g"] == 0).any():
                 self.logger.debug(f"🚨 a0 g has nan values or 0 values")
 
             # check if a1 g has nan values or 0 values
-            if torch.isnan(outputs["a1"]["g"]).any() or (outputs["a1"]["g"] == 0).all():
+            if torch.isnan(outputs["a1"]["g"]).any() or (outputs["a1"]["g"] == 0).any():
                 self.logger.debug(f"🚨 a1 g has nan values or 0 values")
 
             outputs_p = outputs["p"]

@@ -61,10 +61,10 @@ export DEBUG="True"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/ucnwsbkl &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/ucnwsbkl &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/ucnwsbkl &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/ucnwsbkl &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/cenfanjg &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/cenfanjg &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/cenfanjg &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/cenfanjg &
 
 wait
 

@@ -33,7 +33,6 @@ class MUSEDLF(nn.Module):
         muse_unsupervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         muse_unsupervised_use_batch_norm=True,  # Whether to use batch normalization
         muse_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        muse_unsupervised_gumbel_softmax_hard=False,  # Whether to use hard gumbel softmax
         muse_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
         # MUSEFrameAxisUnsupervised Parameters
         muse_frameaxis_unsupervised_num_layers=2,  # Number of layers in the encoder
@@ -41,7 +40,6 @@ class MUSEDLF(nn.Module):
         muse_frameaxis_unsupervised_use_batch_norm=True,  # Whether to use batch normalization
         muse_frameaxis_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         muse_frameaxis_unsupervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
-        muse_frameaxis_unsupervised_gumbel_softmax_hard=False,  # Whether to use hard gumbel softmax
         muse_frameaxis_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
         # SupervisedModule Parameters
         supervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
@@ -82,7 +80,6 @@ class MUSEDLF(nn.Module):
             activation=muse_unsupervised_activation,
             use_batch_norm=muse_unsupervised_use_batch_norm,
             matmul_input=muse_unsupervised_matmul_input,
-            gumbel_softmax_hard=muse_unsupervised_gumbel_softmax_hard,
             gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
             _debug=_debug,
         )
@@ -101,7 +98,6 @@ class MUSEDLF(nn.Module):
             use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
             matmul_input=muse_frameaxis_unsupervised_matmul_input,
             concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
-            gumbel_softmax_hard=muse_frameaxis_unsupervised_gumbel_softmax_hard,
             gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
             _debug=_debug,
         )

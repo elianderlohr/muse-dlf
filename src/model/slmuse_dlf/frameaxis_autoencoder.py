@@ -21,7 +21,6 @@ class FrameAxisAutoencoder(nn.Module):
         use_batch_norm=True,  # whether to use batch normalization
         matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         concat_frameaxis=True,  # whether to concatenate frameaxis with sentence
-        hard=False,  # whether to use hard gumbel softmax
         log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
@@ -35,7 +34,6 @@ class FrameAxisAutoencoder(nn.Module):
         self.use_batch_norm = use_batch_norm
         self.matmul_input = matmul_input
         self.concat_frameaxis = concat_frameaxis
-        self.hard = hard
         self.log = log
 
         # Initialize activation function
@@ -138,7 +136,7 @@ class FrameAxisAutoencoder(nn.Module):
 
             d = torch.softmax(logits, dim=1)
 
-            g = self.custom_gumbel_softmax(d, tau=tau, hard=self.hard, log=self.log)
+            g = self.custom_gumbel_softmax(d, tau=tau, hard=False, log=self.log)
 
             if self.matmul_input == "d":
                 vhat = torch.matmul(d, self.F)

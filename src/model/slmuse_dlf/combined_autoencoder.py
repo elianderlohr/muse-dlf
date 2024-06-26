@@ -17,7 +17,6 @@ class CombinedAutoencoder(nn.Module):
         activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
         use_batch_norm=True,  # whether to use batch normalization
         matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        hard=False,  # whether to use hard gumbel softmax
         log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
@@ -31,7 +30,6 @@ class CombinedAutoencoder(nn.Module):
         self.num_layers = num_layers
         self.use_batch_norm = use_batch_norm
         self.matmul_input = matmul_input
-        self.hard = hard
         self.log = log
 
         # Initialize activation function
@@ -174,13 +172,9 @@ class CombinedAutoencoder(nn.Module):
             ):
                 self.logger.error("❌ NaNs detected in d or d is all 0 AFTER softmax")
 
-            g_p = self.custom_gumbel_softmax(d_p, tau=tau, hard=self.hard, log=self.log)
-            g_a0 = self.custom_gumbel_softmax(
-                d_a0, tau=tau, hard=self.hard, log=self.log
-            )
-            g_a1 = self.custom_gumbel_softmax(
-                d_a1, tau=tau, hard=self.hard, log=self.log
-            )
+            g_p = self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
+            g_a0 = self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
+            g_a1 = self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
 
             # Check for NaNs in g
             if (
@@ -189,7 +183,7 @@ class CombinedAutoencoder(nn.Module):
                 or torch.isnan(g_a1).any()
             ):
                 self.logger.error(
-                    f"❌ NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {self.hard}, log: {self.log}"
+                    f"❌ NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {False}, log: {self.log}"
                 )
 
             if self.matmul_input == "d":

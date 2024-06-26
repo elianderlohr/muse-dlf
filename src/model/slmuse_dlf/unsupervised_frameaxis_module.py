@@ -27,7 +27,6 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         use_batch_norm=True,  # whether to use batch normalization
         matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         concat_frameaxis=True,  # whether to concatenate frameaxis with sentence
-        gumbel_softmax_hard=False,  # whether to use hard gumbel softmax
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
@@ -49,7 +48,6 @@ class MUSEFrameAxisUnsupervised(nn.Module):
             use_batch_norm=use_batch_norm,
             matmul_input=matmul_input,
             concat_frameaxis=concat_frameaxis,
-            hard=gumbel_softmax_hard,
             log=gumbel_softmax_log,
             _debug=_debug,
         )
