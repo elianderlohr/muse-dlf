@@ -165,13 +165,15 @@ class CombinedAutoencoder(nn.Module):
             logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
             # Check for NaNs in logits
-            if (
-                torch.isnan(logits_p).any()
-                or torch.isnan(logits_a0).any()
-                or torch.isnan(logits_a1).any()
-            ):
-                self.logger.error("❌ NaNs detected in logits")
-                raise ValueError("NaNs detected in logits")
+            if torch.isnan(logits_p).any():
+                self.logger.error("❌ NaNs detected in logits_p")
+                raise ValueError("NaNs detected in logits_p")
+            if torch.isnan(logits_a0).any():
+                self.logger.error("❌ NaNs detected in logits_a0")
+                raise ValueError("NaNs detected in logits_a0")
+            if torch.isnan(logits_a1).any():
+                self.logger.error("❌ NaNs detected in logits_a1")
+                raise ValueError("NaNs detected in logits_a1")
 
             d_p = torch.softmax(logits_p, dim=1)
             d_a0 = torch.softmax(logits_a0, dim=1)
