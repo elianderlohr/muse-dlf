@@ -136,7 +136,7 @@ class CombinedAutoencoder(nn.Module):
         v_a0,
         v_a1,
         v_sentence,
-        taum,
+        tau,
         mixed_precision="fp16",  # mixed precision as a parameter
     ):
         precision_dtype = (
