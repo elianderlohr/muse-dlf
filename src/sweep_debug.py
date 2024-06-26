@@ -17,9 +17,6 @@ from torch.optim import Adam, AdamW
 import warnings
 import os
 
-from torch.cuda.amp import GradScaler
-
-
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
@@ -305,8 +302,6 @@ def main():
         num_training_steps=len(train_dataloader) * epochs,
     )
 
-    scaler = GradScaler()
-
     # Train the model
     trainer = Trainer(
         model=model,
@@ -320,7 +315,6 @@ def main():
         tau_decay=tau_decay,
         save_path=save_path,
         wandb_instance=wandb_instance,
-        scaler=scaler,
     )
 
     early_stopping = trainer.run_training(epochs=epochs, alpha=alpha)

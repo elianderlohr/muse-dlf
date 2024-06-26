@@ -76,8 +76,17 @@ class MUSESupervised(nn.Module):
         d_fx,
         vs,
         frameaxis_data,
+        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        with autocast():
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
+        with autocast(
+            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+        ):
             batch_size, num_sentences, num_args, embedding_dim = d_p.shape
 
             d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)

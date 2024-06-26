@@ -204,8 +204,17 @@ class MUSEDLF(nn.Module):
         arg1_ids,
         frameaxis_data,
         tau,
+        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        with autocast():
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
+        with autocast(
+            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+        ):
             # Convert input IDs to embeddings
             (
                 sentence_embeddings,
@@ -218,6 +227,7 @@ class MUSEDLF(nn.Module):
                 predicate_ids,
                 arg0_ids,
                 arg1_ids,
+                mixed_precision=mixed_precision,
             )
 
             # check if there are any nans in the embeddings
@@ -282,6 +292,7 @@ class MUSEDLF(nn.Module):
                         negatives_a0,
                         negatives_a1,
                         tau,
+                        mixed_precision=mixed_precision,
                     )
                     unsupervised_losses += unsupervised_results["loss"]
 
@@ -305,6 +316,7 @@ class MUSEDLF(nn.Module):
                     v_fx,
                     negatives_fx,
                     tau,
+                    mixed_precision=mixed_precision,
                 )
 
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
@@ -326,6 +338,7 @@ class MUSEDLF(nn.Module):
                 d_fx_aggregated,
                 sentence_embeddings,
                 frameaxis_data,
+                mixed_precision=mixed_precision,
             )
 
             # Identify valid (non-nan) losses

@@ -63,14 +63,25 @@ class MUSEUnsupervised(nn.Module):
         a0_negatives,
         a1_negatives,
         tau,
+        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        with autocast():
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
+        with autocast(
+            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+        ):
             # outputs = {
             # "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
             # "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},
             # "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
             # }
-            outputs = self.combined_autoencoder(v_p, v_a0, v_a1, v_sentence, tau)
+            outputs = self.combined_autoencoder(
+                v_p, v_a0, v_a1, v_sentence, tau, mixed_precision
+            )
 
             # check if p g has nan values or 0 values
             if torch.isnan(outputs["p"]["g"]).any() or (outputs["p"]["g"] == 0).any():
@@ -96,16 +107,19 @@ class MUSEUnsupervised(nn.Module):
             loss_p = self.loss_fn(
                 outputs_p,
                 p_negatives,
+                mixed_precision=mixed_precision,
             )
 
             loss_a0 = self.loss_fn(
                 outputs_a0,
                 a0_negatives,
+                mixed_precision=mixed_precision,
             )
 
             loss_a1 = self.loss_fn(
                 outputs_a1,
                 a1_negatives,
+                mixed_precision=mixed_precision,
             )
 
             loss = loss_p + loss_a0 + loss_a1

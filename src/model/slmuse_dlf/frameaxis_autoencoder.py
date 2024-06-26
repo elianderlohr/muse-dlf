@@ -120,8 +120,22 @@ class FrameAxisAutoencoder(nn.Module):
             return y_hard
         return y
 
-    def forward(self, v_frameaxis, v_sentence, tau):
-        with autocast():
+    def forward(
+        self,
+        v_frameaxis,
+        v_sentence,
+        tau,
+        mixed_precision="fp16",  # mixed precision as a parameter
+    ):
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
+        with autocast(
+            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+        ):
             h = self.process_through_first(v_frameaxis, v_sentence)
 
             if torch.isnan(h).any():

@@ -105,8 +105,21 @@ class LossModule(nn.Module):
         ortho_loss = (gram_matrix - identity_matrix).abs().sum()
         return ortho_loss
 
-    def forward(self, c, negatives):
-        with autocast():
+    def forward(
+        self,
+        c,
+        negatives,
+        mixed_precision="fp16",  # mixed precision as a parameter
+    ):
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
+        with autocast(
+            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+        ):
             # Extract components from dictionary for predicate p
             v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
 

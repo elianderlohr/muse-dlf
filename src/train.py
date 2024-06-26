@@ -26,8 +26,6 @@ warnings.filterwarnings(
 )
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars")
 
-from torch.cuda.amp import GradScaler, autocast
-
 wandb.require("core")
 
 
@@ -635,11 +633,6 @@ def main():
     logger.info("WANDB project name: %s", project_name, main_process_only=True)
     logger.info("WANDB tags: %s", args.tags, main_process_only=True)
 
-    # Initialize GradScaler
-    scaler = GradScaler()
-
-    scaler = accelerator.prepare(scaler)
-
     # Train the model
     trainer = Trainer(
         model=model,
@@ -653,7 +646,6 @@ def main():
         tau_decay=args.tau_decay,
         save_path=args.save_path,
         accelerator_instance=accelerator,
-        scaler=scaler,
     )
 
     trainer = accelerator.prepare(trainer)

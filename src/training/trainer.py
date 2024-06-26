@@ -28,7 +28,7 @@ class Trainer:
         tau_min=1,
         tau_decay=0.95,
         early_stop=20,
-        scaler=None,
+        mixed_precision="fp16",  # "fp16"
         **kwargs,
     ):
         self.model = model.to(device)
@@ -43,7 +43,7 @@ class Trainer:
         self.tau_decay = tau_decay
         self.early_stop = early_stop
 
-        self.scaler = scaler if scaler else GradScaler()  # Initialize GradScaler
+        self.scaler = GradScaler() if mixed_precision in ["fp16", "bf16"] else None
 
         self.training_management = training_management
         if self.training_management == "accelerate":
@@ -83,6 +83,8 @@ class Trainer:
         else:
             logger.info("Using standard PyTorch for training.")
             self.accelerator = None
+
+        self.mixed_precision = mixed_precision
 
     def _log_metrics(self, metrics):
         if self.training_management == "wandb":
@@ -245,7 +247,12 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
-            with autocast():
+            with autocast(
+                enabled=self.mixed_precision in ["fp16", "bf16"],
+                dtype=(
+                    torch.float16 if self.mixed_precision == "fp16" else torch.bfloat16
+                ),
+            ):
                 (
                     unsupervised_loss,
                     span_logits,
@@ -260,6 +267,7 @@ class Trainer:
                     arg1_ids,
                     frameaxis_data,
                     tau,
+                    mixed_precision=self.mixed_precision,
                 )
 
                 # Check for NaNs in model outputs
@@ -305,20 +313,28 @@ class Trainer:
                 continue
 
             # Scale the loss and perform the backward pass
-            scaled_loss = self.scaler.scale(combined_loss)
-            scaled_loss.backward()
-
             if self.training_management == "accelerate":
-                self.accelerator.backward(combined_loss, retain_graph=True)
+                self.accelerator.backward(combined_loss)
                 if self.accelerator.sync_gradients:
-                    self.accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
+                    self.accelerator.clip_grad_norm_(
+                        self.model.parameters(), self.clip_value
+                    )
+                self.optimizer.step()
             else:
-                self.scaler.unscale_(self.optimizer)
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-
-            # Use scaler to step optimizer
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
+                if self.scaler is not None:
+                    self.scaler.scale(combined_loss).backward()
+                    self.scaler.unscale_(self.optimizer)
+                    torch.nn.utils.clip_grad_norm_(
+                        self.model.parameters(), self.clip_value
+                    )
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    combined_loss.backward()
+                    torch.nn.utils.clip_grad_norm_(
+                        self.model.parameters(), self.clip_value
+                    )
+                    self.optimizer.step()
 
             total_loss += combined_loss.item()
             supervised_total_loss += supervised_loss.item()
@@ -605,7 +621,9 @@ class Trainer:
 
         return early_stopping
 
-    def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
+    def _evaluate(
+        self, epoch, test_dataloader, device, tau, experiment_id, mixed_precision="fp16"
+    ):
         self.model.eval()
 
         # Load the evaluate metrics
@@ -617,7 +635,7 @@ class Trainer:
         )
         accuracy_metric = evaluate.load("accuracy", experiment_id=experiment_id)
 
-        # metrics for span
+        # Metrics for span
         f1_metric_micro_span = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
         )
@@ -626,7 +644,7 @@ class Trainer:
         )
         accuracy_metric_span = evaluate.load("accuracy", experiment_id=experiment_id)
 
-        # metrics for sentence
+        # Metrics for sentence
         f1_metric_micro_sentence = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
         )
@@ -637,7 +655,7 @@ class Trainer:
             "accuracy", experiment_id=experiment_id
         )
 
-        # predicate
+        # Predicate
         f1_metric_micro_predicate = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
         )
@@ -648,7 +666,7 @@ class Trainer:
             "accuracy", experiment_id=experiment_id
         )
 
-        # arg0
+        # Arg0
         f1_metric_micro_arg0 = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
         )
@@ -657,7 +675,7 @@ class Trainer:
         )
         accuracy_metric_arg0 = evaluate.load("accuracy", experiment_id=experiment_id)
 
-        # arg1
+        # Arg1
         f1_metric_micro_arg1 = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
         )
@@ -666,7 +684,7 @@ class Trainer:
         )
         accuracy_metric_arg1 = evaluate.load("accuracy", experiment_id=experiment_id)
 
-        # frameaxis
+        # Frameaxis
         f1_metric_micro_frameaxis = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
         )
@@ -675,6 +693,12 @@ class Trainer:
         )
         accuracy_metric_frameaxis = evaluate.load(
             "accuracy", experiment_id=experiment_id
+        )
+
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
         )
 
         for batch_idx, batch in enumerate(
@@ -722,165 +746,170 @@ class Trainer:
             )
 
             with torch.no_grad():
-                _, span_logits, sentence_logits, combined_logits, other = self.model(
-                    sentence_ids,
-                    sentence_attention_masks,
-                    predicate_ids,
-                    arg0_ids,
-                    arg1_ids,
-                    frameaxis_data,
-                    tau,
+                with autocast(
+                    enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+                ):
+                    _, span_logits, sentence_logits, combined_logits, other = (
+                        self.model(
+                            sentence_ids,
+                            sentence_attention_masks,
+                            predicate_ids,
+                            arg0_ids,
+                            arg1_ids,
+                            frameaxis_data,
+                            tau,
+                        )
+                    )
+
+                combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
+                span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
+                sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
+
+                # predicate, arg0, arg1, frameaxis
+                predicate_pred = (torch.softmax(other["predicate"], dim=1) > 0.5).int()
+                arg0_pred = (torch.softmax(other["arg0"], dim=1) > 0.5).int()
+                arg1_pred = (torch.softmax(other["arg1"], dim=1) > 0.5).int()
+                frameaxis_pred = (torch.softmax(other["frameaxis"], dim=1) > 0.5).int()
+
+                if self.training_management == "accelerate":
+                    combined_pred, combined_labels = (
+                        self.accelerator.gather_for_metrics((combined_pred, labels))
+                    )
+                    span_pred, span_labels = self.accelerator.gather_for_metrics(
+                        (span_pred, labels)
+                    )
+                    sentence_pred, sentence_labels = (
+                        self.accelerator.gather_for_metrics((sentence_pred, labels))
+                    )
+                    predicate_pred, predicate_labels = (
+                        self.accelerator.gather_for_metrics((predicate_pred, labels))
+                    )
+                    arg0_pred, arg0_labels = self.accelerator.gather_for_metrics(
+                        (arg0_pred, labels)
+                    )
+                    arg1_pred, arg1_labels = self.accelerator.gather_for_metrics(
+                        (arg1_pred, labels)
+                    )
+                    frameaxis_pred, frameaxis_labels = (
+                        self.accelerator.gather_for_metrics((frameaxis_pred, labels))
+                    )
+                else:
+                    combined_labels = labels
+                    span_labels = labels
+                    sentence_labels = labels
+                    predicate_labels = labels
+                    arg0_labels = labels
+                    arg1_labels = labels
+                    frameaxis_labels = labels
+
+                # transform from one-hot to class index
+                combined_pred = combined_pred.argmax(dim=1)
+                span_pred = span_pred.argmax(dim=1)
+                sentence_pred = sentence_pred.argmax(dim=1)
+                predicate_pred = predicate_pred.argmax(dim=1)
+                arg0_pred = arg0_pred.argmax(dim=1)
+                arg1_pred = arg1_pred.argmax(dim=1)
+                frameaxis_pred = frameaxis_pred.argmax(dim=1)
+                combined_labels = combined_labels.argmax(dim=1)
+                span_labels = span_labels.argmax(dim=1)
+                sentence_labels = sentence_labels.argmax(dim=1)
+                predicate_labels = predicate_labels.argmax(dim=1)
+                arg0_labels = arg0_labels.argmax(dim=1)
+                arg1_labels = arg1_labels.argmax(dim=1)
+                frameaxis_labels = frameaxis_labels.argmax(dim=1)
+
+                # Macro F1
+                f1_metric_macro.add_batch(
+                    predictions=combined_pred.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
+                )
+                f1_metric_macro_span.add_batch(
+                    predictions=span_pred.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
+                )
+                f1_metric_macro_sentence.add_batch(
+                    predictions=sentence_pred.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
+                )
+                f1_metric_macro_predicate.add_batch(
+                    predictions=predicate_pred.cpu().numpy(),
+                    references=predicate_labels.cpu().numpy(),
+                )
+                f1_metric_macro_arg0.add_batch(
+                    predictions=arg0_pred.cpu().numpy(),
+                    references=arg0_labels.cpu().numpy(),
+                )
+                f1_metric_macro_arg1.add_batch(
+                    predictions=arg1_pred.cpu().numpy(),
+                    references=arg1_labels.cpu().numpy(),
+                )
+                f1_metric_macro_frameaxis.add_batch(
+                    predictions=frameaxis_pred.cpu().numpy(),
+                    references=frameaxis_labels.cpu().numpy(),
                 )
 
-            combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
-            span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
-            sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
-
-            # predicate, arg0, arg1, frameaxis
-            predicate_pred = (torch.softmax(other["predicate"], dim=1) > 0.5).int()
-            arg0_pred = (torch.softmax(other["arg0"], dim=1) > 0.5).int()
-            arg1_pred = (torch.softmax(other["arg1"], dim=1) > 0.5).int()
-            frameaxis_pred = (torch.softmax(other["frameaxis"], dim=1) > 0.5).int()
-
-            if self.training_management == "accelerate":
-                combined_pred, combined_labels = self.accelerator.gather_for_metrics(
-                    (combined_pred, labels)
+                # Micro F1
+                f1_metric_micro.add_batch(
+                    predictions=combined_pred.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
                 )
-                span_pred, span_labels = self.accelerator.gather_for_metrics(
-                    (span_pred, labels)
+                f1_metric_micro_span.add_batch(
+                    predictions=span_pred.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
                 )
-                sentence_pred, sentence_labels = self.accelerator.gather_for_metrics(
-                    (sentence_pred, labels)
+                f1_metric_micro_sentence.add_batch(
+                    predictions=sentence_pred.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
                 )
-                predicate_pred, predicate_labels = self.accelerator.gather_for_metrics(
-                    (predicate_pred, labels)
+                f1_metric_micro_predicate.add_batch(
+                    predictions=predicate_pred.cpu().numpy(),
+                    references=predicate_labels.cpu().numpy(),
                 )
-                arg0_pred, arg0_labels = self.accelerator.gather_for_metrics(
-                    (arg0_pred, labels)
+                f1_metric_micro_arg0.add_batch(
+                    predictions=arg0_pred.cpu().numpy(),
+                    references=arg0_labels.cpu().numpy(),
                 )
-                arg1_pred, arg1_labels = self.accelerator.gather_for_metrics(
-                    (arg1_pred, labels)
+                f1_metric_micro_arg1.add_batch(
+                    predictions=arg1_pred.cpu().numpy(),
+                    references=arg1_labels.cpu().numpy(),
                 )
-                frameaxis_pred, frameaxis_labels = self.accelerator.gather_for_metrics(
-                    (frameaxis_pred, labels)
+                f1_metric_micro_frameaxis.add_batch(
+                    predictions=frameaxis_pred.cpu().numpy(),
+                    references=frameaxis_labels.cpu().numpy(),
                 )
-            else:
-                combined_labels = labels
-                span_labels = labels
-                sentence_labels = labels
-                predicate_labels = labels
-                arg0_labels = labels
-                arg1_labels = labels
-                frameaxis_labels = labels
 
-            # transform from one-hot to class index
-            combined_pred = combined_pred.argmax(dim=1)
-            span_pred = span_pred.argmax(dim=1)
-            sentence_pred = sentence_pred.argmax(dim=1)
-            predicate_pred = predicate_pred.argmax(dim=1)
-            arg0_pred = arg0_pred.argmax(dim=1)
-            arg1_pred = arg1_pred.argmax(dim=1)
-            frameaxis_pred = frameaxis_pred.argmax(dim=1)
-            combined_labels = combined_labels.argmax(dim=1)
-            span_labels = span_labels.argmax(dim=1)
-            sentence_labels = sentence_labels.argmax(dim=1)
-            predicate_labels = predicate_labels.argmax(dim=1)
-            arg0_labels = arg0_labels.argmax(dim=1)
-            arg1_labels = arg1_labels.argmax(dim=1)
-            frameaxis_labels = frameaxis_labels.argmax(dim=1)
+                # Accuracy
+                accuracy_metric.add_batch(
+                    predictions=combined_pred.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
+                )
+                accuracy_metric_span.add_batch(
+                    predictions=span_pred.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
+                )
+                accuracy_metric_sentence.add_batch(
+                    predictions=sentence_pred.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
+                )
+                accuracy_metric_predicate.add_batch(
+                    predictions=predicate_pred.cpu().numpy(),
+                    references=predicate_labels.cpu().numpy(),
+                )
+                accuracy_metric_arg0.add_batch(
+                    predictions=arg0_pred.cpu().numpy(),
+                    references=arg0_labels.cpu().numpy(),
+                )
+                accuracy_metric_arg1.add_batch(
+                    predictions=arg1_pred.cpu().numpy(),
+                    references=arg1_labels.cpu().numpy(),
+                )
+                accuracy_metric_frameaxis.add_batch(
+                    predictions=frameaxis_pred.cpu().numpy(),
+                    references=frameaxis_labels.cpu().numpy(),
+                )
 
-            # Macro F1
-            f1_metric_macro.add_batch(
-                predictions=combined_pred.cpu().numpy(),
-                references=combined_labels.cpu().numpy(),
-            )
-            f1_metric_macro_span.add_batch(
-                predictions=span_pred.cpu().numpy(),
-                references=span_labels.cpu().numpy(),
-            )
-            f1_metric_macro_sentence.add_batch(
-                predictions=sentence_pred.cpu().numpy(),
-                references=sentence_labels.cpu().numpy(),
-            )
-            f1_metric_macro_predicate.add_batch(
-                predictions=predicate_pred.cpu().numpy(),
-                references=predicate_labels.cpu().numpy(),
-            )
-            f1_metric_macro_arg0.add_batch(
-                predictions=arg0_pred.cpu().numpy(),
-                references=arg0_labels.cpu().numpy(),
-            )
-            f1_metric_macro_arg1.add_batch(
-                predictions=arg1_pred.cpu().numpy(),
-                references=arg1_labels.cpu().numpy(),
-            )
-            f1_metric_macro_frameaxis.add_batch(
-                predictions=frameaxis_pred.cpu().numpy(),
-                references=frameaxis_labels.cpu().numpy(),
-            )
-
-            # Micro F1
-            f1_metric_micro.add_batch(
-                predictions=combined_pred.cpu().numpy(),
-                references=combined_labels.cpu().numpy(),
-            )
-            f1_metric_micro_span.add_batch(
-                predictions=span_pred.cpu().numpy(),
-                references=span_labels.cpu().numpy(),
-            )
-            f1_metric_micro_sentence.add_batch(
-                predictions=sentence_pred.cpu().numpy(),
-                references=sentence_labels.cpu().numpy(),
-            )
-            f1_metric_micro_predicate.add_batch(
-                predictions=predicate_pred.cpu().numpy(),
-                references=predicate_labels.cpu().numpy(),
-            )
-            f1_metric_micro_arg0.add_batch(
-                predictions=arg0_pred.cpu().numpy(),
-                references=arg0_labels.cpu().numpy(),
-            )
-            f1_metric_micro_arg1.add_batch(
-                predictions=arg1_pred.cpu().numpy(),
-                references=arg1_labels.cpu().numpy(),
-            )
-            f1_metric_micro_frameaxis.add_batch(
-                predictions=frameaxis_pred.cpu().numpy(),
-                references=frameaxis_labels.cpu().numpy(),
-            )
-
-            # Accuracy
-            accuracy_metric.add_batch(
-                predictions=combined_pred.cpu().numpy(),
-                references=combined_labels.cpu().numpy(),
-            )
-            accuracy_metric_span.add_batch(
-                predictions=span_pred.cpu().numpy(),
-                references=span_labels.cpu().numpy(),
-            )
-            accuracy_metric_sentence.add_batch(
-                predictions=sentence_pred.cpu().numpy(),
-                references=sentence_labels.cpu().numpy(),
-            )
-            accuracy_metric_predicate.add_batch(
-                predictions=predicate_pred.cpu().numpy(),
-                references=predicate_labels.cpu().numpy(),
-            )
-            accuracy_metric_arg0.add_batch(
-                predictions=arg0_pred.cpu().numpy(),
-                references=arg0_labels.cpu().numpy(),
-            )
-            accuracy_metric_arg1.add_batch(
-                predictions=arg1_pred.cpu().numpy(),
-                references=arg1_labels.cpu().numpy(),
-            )
-            accuracy_metric_frameaxis.add_batch(
-                predictions=frameaxis_pred.cpu().numpy(),
-                references=frameaxis_labels.cpu().numpy(),
-            )
-
-            del sentence_ids, predicate_ids, arg0_ids, arg1_ids, labels
-            torch.cuda.empty_cache()
+                del sentence_ids, predicate_ids, arg0_ids, arg1_ids, labels
+                torch.cuda.empty_cache()
 
         # Micro F1
         eval_results_micro = f1_metric_micro.compute(average="micro")

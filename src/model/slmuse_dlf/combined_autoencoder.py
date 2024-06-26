@@ -130,8 +130,24 @@ class CombinedAutoencoder(nn.Module):
             return y_hard
         return y
 
-    def forward(self, v_p, v_a0, v_a1, v_sentence, tau):
-        with autocast():
+    def forward(
+        self,
+        v_p,
+        v_a0,
+        v_a1,
+        v_sentence,
+        taum,
+        mixed_precision="fp16",  # mixed precision as a parameter
+    ):
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
+        with autocast(
+            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+        ):
             h_p = self.process_through_shared(v_p, v_sentence)
             h_a0 = self.process_through_shared(v_a0, v_sentence)
             h_a1 = self.process_through_shared(v_a1, v_sentence)

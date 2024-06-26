@@ -5,9 +5,6 @@ from model.slmuse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
-from torch.cuda.amp import GradScaler
-
-
 import wandb
 from utils.logging_manager import LoggerManager
 from training.trainer import Trainer
@@ -301,8 +298,6 @@ def main():
         num_training_steps=len(train_dataloader) * epochs,
     )
 
-    scaler = GradScaler()
-
     # Train the model
     trainer = Trainer(
         model=model,
@@ -316,7 +311,6 @@ def main():
         tau_decay=tau_decay,
         save_path=save_path,
         wandb_instance=wandb_instance,
-        scaler=scaler,
     )
 
     logger.info("🏋️ Starting training")

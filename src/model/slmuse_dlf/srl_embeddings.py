@@ -84,7 +84,9 @@ class SRLEmbeddings(nn.Module):
         if torch.isnan(tensor).any():
             self.logger.error(f"NaN values detected in {tensor_name}")
 
-    def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
+    def get_sentence_embedding(
+        self, ids: torch.Tensor, attention_masks: torch.Tensor, mixed_precision="fp16"
+    ):
         ids, attention_masks = ids.to(self.device), attention_masks.to(self.device)
         batch_size, num_sentences, max_sentence_length = ids.shape
 
@@ -93,8 +95,16 @@ class SRLEmbeddings(nn.Module):
             batch_size * num_sentences, max_sentence_length
         )
 
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
         with torch.no_grad():
-            with autocast():
+            with autocast(
+                enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+            ):
                 outputs = self.model(
                     input_ids=ids_flat,
                     attention_mask=attention_masks_flat,
@@ -198,6 +208,7 @@ class SRLEmbeddings(nn.Module):
         predicate_ids: torch.Tensor,
         arg0_ids: torch.Tensor,
         arg1_ids: torch.Tensor,
+        mixed_precision="fp16",
     ):
         sentence_ids, sentence_attention_masks, predicate_ids, arg0_ids, arg1_ids = (
             sentence_ids.to(self.device),
@@ -208,9 +219,22 @@ class SRLEmbeddings(nn.Module):
         )
 
         with torch.no_grad():
-            with autocast():  # Use autocast for mixed precision
+
+            precision_dtype = (
+                torch.float16
+                if mixed_precision == "fp16"
+                else torch.bfloat16 if mixed_precision == "bf16" else None
+            )
+
+            with autocast(
+                enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+            ):  # Use autocast for mixed precision
                 sentence_embeddings, sentence_embeddings_avg = (
-                    self.get_sentence_embedding(sentence_ids, sentence_attention_masks)
+                    self.get_sentence_embedding(
+                        sentence_ids,
+                        sentence_attention_masks,
+                        mixed_precision=mixed_precision,
+                    )
                 )
 
                 # check if sentence_embeddings_avg is not only zeros

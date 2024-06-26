@@ -63,15 +63,27 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         v_fx,
         fx_negatives,
         tau,
+        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        with autocast():
-            outputs_fx = self.frameaxis_autoencoder(v_fx, v_sentence, tau)
+        precision_dtype = (
+            torch.float16
+            if mixed_precision == "fp16"
+            else torch.bfloat16 if mixed_precision == "bf16" else None
+        )
+
+        with autocast(
+            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+        ):
+            outputs_fx = self.frameaxis_autoencoder(
+                v_fx, v_sentence, tau, mixed_precision
+            )
 
             outputs_fx["v"] = v_fx
 
             loss = self.loss_fn(
                 outputs_fx,
                 fx_negatives,
+                mixed_precision=mixed_precision,
             )
 
             results = {
