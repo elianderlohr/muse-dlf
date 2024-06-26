@@ -52,14 +52,9 @@ class LossModule(nn.Module):
 
         F_t = torch.stack([F[indices[i]] for i in range(g.size(0))])
 
-        self.logger.debug(f"F_t.shape: {F_t.shape}, F_t: {F_t}")
-        self.logger.debug(f"g.shape: {g.shape}, g: {g}")
-
         g_tz = torch.stack([g[i, indices[i]] for i in range(g.size(0))])
 
         g_tz_sum = g_tz.sum(dim=1, keepdim=True)
-
-        self.logger.debug(f"g_tz_sum.shape: {g_tz_sum.shape}, g_tz_sum: {g_tz_sum}")
 
         epsilon = 1e-10
         g_t = g_tz / (g_tz.sum(dim=1, keepdim=True) + epsilon)
