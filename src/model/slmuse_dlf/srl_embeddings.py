@@ -165,7 +165,7 @@ class SRLEmbeddings(nn.Module):
             num_args,
             self.embedding_dim,
             device=sentence_embeddings.device,
-            dtype=sentence_embeddings.dtype,  # Ensure dtype consistency
+            dtype=sentence_embeddings.dtype,
         )
 
         for batch_idx in range(batch_size):
@@ -175,7 +175,7 @@ class SRLEmbeddings(nn.Module):
                         arg_token_id = arg_ids[
                             batch_idx, sent_idx, arg_idx, token_idx
                         ].item()
-                        if arg_token_id == 0:  # Skip padding tokens
+                        if arg_token_id == 0:
                             continue
                         match_indices = (
                             sentence_ids[batch_idx, sent_idx] == arg_token_id
@@ -213,15 +213,41 @@ class SRLEmbeddings(nn.Module):
                     self.get_sentence_embedding(sentence_ids, sentence_attention_masks)
                 )
 
+                # check if sentence_embeddings_avg is not only zeros
+                if torch.all(sentence_embeddings_avg == 0):
+                    self.logger.debug(
+                        f"Sentence embeddings are all zeros for sentence_ids: {sentence_ids}"
+                    )
+
                 predicate_embeddings = self.get_arg_embedding(
                     predicate_ids, sentence_ids, sentence_embeddings
                 )
+
+                # check if predicate_embeddings is not only zeros
+                if torch.all(predicate_embeddings == 0):
+                    self.logger.debug(
+                        f"Predicate embeddings are all zeros for sentence_ids: {sentence_ids}"
+                    )
+
                 arg0_embeddings = self.get_arg_embedding(
                     arg0_ids, sentence_ids, sentence_embeddings
                 )
+
+                # check if arg0_embeddings is not only zeros
+                if torch.all(arg0_embeddings == 0):
+                    self.logger.debug(
+                        f"Arg0 embeddings are all zeros for sentence_ids: {sentence_ids}"
+                    )
+
                 arg1_embeddings = self.get_arg_embedding(
                     arg1_ids, sentence_ids, sentence_embeddings
                 )
+
+                # check if arg1_embeddings is not only zeros
+                if torch.all(arg1_embeddings == 0):
+                    self.logger.debug(
+                        f"Arg1 embeddings are all zeros for sentence_ids: {sentence_ids}"
+                    )
 
         return (
             sentence_embeddings_avg,
