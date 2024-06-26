@@ -276,41 +276,6 @@ class Trainer:
                     logger.error(
                         f"{experiment_id} - {batch_idx} - NaNs detected in model outputs, skipping this batch."
                     )
-
-                    # identify where NaNs are coming from
-                    if torch.isnan(unsupervised_loss).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - unsupervised_loss has NaNs"
-                        )
-                    if torch.isnan(span_logits).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - span_logits has NaNs"
-                        )
-                    if torch.isnan(sentence_logits).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - sentence_logits has NaNs"
-                        )
-                    if torch.isnan(combined_logits).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - combined_logits has NaNs"
-                        )
-                    if torch.isnan(other["predicate"]).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - other['predicate'] has NaNs"
-                        )
-                    if torch.isnan(other["arg0"]).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - other['arg0'] has NaNs"
-                        )
-                    if torch.isnan(other["arg1"]).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - other['arg1'] has NaNs"
-                        )
-                    if torch.isnan(other["frameaxis"]).any():
-                        logger.error(
-                            f"{experiment_id} - {batch_idx} - other['frameaxis'] has NaNs"
-                        )
-
                     continue
 
                 span_loss = 0.0
@@ -318,13 +283,10 @@ class Trainer:
 
                 span_loss = self.loss_function(span_logits, labels.float())
                 sentence_loss = self.loss_function(sentence_logits, labels.float())
-
                 supervised_loss = span_loss + sentence_loss
 
                 sum_of_parameters = sum(p.sum() for p in self.model.parameters())
-
                 zero_sum = sum_of_parameters * 0.0
-
                 combined_loss = (
                     alpha * supervised_loss + (1 - alpha) * unsupervised_loss
                 ) + zero_sum
@@ -342,7 +304,7 @@ class Trainer:
                 )
                 continue
 
-            # Scale the loss and call backward
+            # Scale the loss and perform the backward pass
             scaled_loss = self.scaler.scale(combined_loss)
             scaled_loss.backward()
 
