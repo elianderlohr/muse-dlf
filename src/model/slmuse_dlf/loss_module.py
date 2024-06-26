@@ -54,10 +54,12 @@ class LossModule(nn.Module):
 
         g_tz = torch.stack([g[i, indices[i]] for i in range(g.size(0))])
 
-        g_t = g_tz / g_tz.sum(dim=1, keepdim=True)
+        g_tz_sum = g_tz.sum(dim=1, keepdim=True)
 
-        # if division by zero set all nan values to 0
-        g_t[torch.isnan(g_t)] = 0
+        self.logger.debug(f"g_tz_sum.shape: {g_tz_sum.shape}, g_tz_sum: {g_tz_sum}")
+
+        epsilon = 1e-10
+        g_t = g_tz / (g_tz.sum(dim=1, keepdim=True) + epsilon)
 
         m_t = self.M * ((1 - g_t) ** 2)
 
