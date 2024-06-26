@@ -56,8 +56,8 @@ class MUSEDLF(nn.Module):
         if _debug:
             self.logger.warning("🚨 Debug mode is enabled")
             # activate torch.autograd.set_detect_anomaly(True)
-            torch.autograd.set_detect_anomaly(True)
-            self.logger.warning("🚨 torch.autograd.set_detect_anomaly(True) activated")
+            # torch.autograd.set_detect_anomaly(True)
+            # self.logger.warning("🚨 torch.autograd.set_detect_anomaly(True) activated")
 
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
