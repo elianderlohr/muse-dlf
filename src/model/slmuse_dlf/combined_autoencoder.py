@@ -70,12 +70,21 @@ class CombinedAutoencoder(nn.Module):
         for _, value in self.F_matrices.items():
             nn.init.xavier_uniform_(value.data, gain=nn.init.calculate_gain("relu"))
 
+        # Apply weight initialization to feed_forward_unique layers
+        self.feed_forward_unique.apply(self.initialize_weights)
+
         # Additional layers and parameters
         self.dropout = nn.Dropout(dropout_prob)
 
         self._debug = _debug
 
         self.logger.debug(f"✅ CombinedAutoencoder successfully initialized")
+
+    def initialize_weights(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain("relu"))
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
 
     def _get_activation(self, activation):
         if activation == "relu":
@@ -164,22 +173,29 @@ class CombinedAutoencoder(nn.Module):
             logits_a0 = self.feed_forward_unique["a0"](h_a0)
             logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
-            # Check for NaNs in logits
             if torch.isnan(logits_p).any():
                 self.logger.error("❌ NaNs detected in logits_p")
+                self.logger.debug(
+                    f"logits_p stats - min: {logits_p.min().item()}, max: {logits_p.max().item()}, mean: {logits_p.mean().item()}, std: {logits_p.std().item()}"
+                )
                 raise ValueError("NaNs detected in logits_p")
             if torch.isnan(logits_a0).any():
                 self.logger.error("❌ NaNs detected in logits_a0")
+                self.logger.debug(
+                    f"logits_a0 stats - min: {logits_a0.min().item()}, max: {logits_a0.max().item()}, mean: {logits_a0.mean().item()}, std: {logits_a0.std().item()}"
+                )
                 raise ValueError("NaNs detected in logits_a0")
             if torch.isnan(logits_a1).any():
                 self.logger.error("❌ NaNs detected in logits_a1")
+                self.logger.debug(
+                    f"logits_a1 stats - min: {logits_a1.min().item()}, max: {logits_a1.max().item()}, mean: {logits_a1.mean().item()}, std: {logits_a1.std().item()}"
+                )
                 raise ValueError("NaNs detected in logits_a1")
 
             d_p = torch.softmax(logits_p, dim=1)
             d_a0 = torch.softmax(logits_a0, dim=1)
             d_a1 = torch.softmax(logits_a1, dim=1)
 
-            # Check for NaNs or 0 in d
             if (
                 torch.isnan(d_p).any()
                 or torch.isnan(d_a0).any()
@@ -194,7 +210,6 @@ class CombinedAutoencoder(nn.Module):
             g_a0 = self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
             g_a1 = self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
 
-            # Check for NaNs in g
             if (
                 torch.isnan(g_p).any()
                 or torch.isnan(g_a0).any()
@@ -217,7 +232,6 @@ class CombinedAutoencoder(nn.Module):
                     f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"
                 )
 
-        # Check for NaNs in vhat
         if (
             torch.isnan(vhat_p).any()
             or torch.isnan(vhat_a0).any()
@@ -235,12 +249,22 @@ class CombinedAutoencoder(nn.Module):
     def process_through_shared(self, v_z, v_sentence):
         x = torch.cat((v_z, v_sentence), dim=-1)
 
-        # Passing through the shared encoder layers
         for i in range(self.num_layers):
             x = self.encoder_shared[i](x)
             x = self.activation_func(x)
             if self.use_batch_norm:
+                if torch.isnan(x).any():
+                    self.logger.error("❌ NaNs detected in batch normalization input")
+                    raise ValueError("NaNs detected in batch normalization input")
                 x = self.batch_norms_shared[i](x)
             x = self.dropout(x)
+
+        if torch.isnan(x).any():
+            self.logger.error("❌ NaNs detected after processing through shared layers")
+            raise ValueError("NaNs detected after processing through shared layers")
+
+        self.logger.debug(
+            f"x stats after shared processing - min: {x.min().item()}, max: {x.max().item()}, mean: {x.mean().item()}, std: {x.std().item()}"
+        )
 
         return x
