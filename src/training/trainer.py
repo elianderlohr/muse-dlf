@@ -623,9 +623,7 @@ class Trainer:
 
         return early_stopping
 
-    def _evaluate(
-        self, epoch, test_dataloader, device, tau, experiment_id, mixed_precision="fp16"
-    ):
+    def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
         self.model.eval()
 
         # Load the evaluate metrics
@@ -699,8 +697,8 @@ class Trainer:
 
         precision_dtype = (
             torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else None
+            if self.mixed_precision == "fp16"
+            else torch.bfloat16 if self.mixed_precision == "bf16" else None
         )
 
         for batch_idx, batch in enumerate(
@@ -747,9 +745,10 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
-            with torch.no_grad():
+            with torch.no_grad(self.mixed_precision):
                 with autocast(
-                    enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+                    enabled=self.mixed_precision in ["fp16", "bf16"],
+                    dtype=precision_dtype,
                 ):
                     _, span_logits, sentence_logits, combined_logits, other = (
                         self.model(
