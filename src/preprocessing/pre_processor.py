@@ -199,18 +199,29 @@ class PreProcessor:
             df, dataframe_path, force_recalculate
         )
 
-        # Splitting the data into train and test sets
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=self.test_size, random_state=42
+        merged_df = (
+            X.merge(X_srl, on="article_id")
+            .merge(X_frameaxis, on="article_id")
+            .merge(y, on="article_id")
         )
 
-        X_srl_train, X_srl_test, _, _ = train_test_split(
-            X_srl, y, test_size=self.test_size, random_state=42
-        )
+        # Split the merged DataFrame into train and test sets
+        train_df, test_df = train_test_split(merged_df, test_size=0.2, random_state=42)
 
-        X_frameaxis_train, X_frameaxis_test, _, _ = train_test_split(
-            X_frameaxis, y, test_size=self.test_size, random_state=42
-        )
+        # Reset indices for train and test DataFrames
+        train_df = train_df.reset_index(drop=True)
+        test_df = test_df.reset_index(drop=True)
+
+        # Extract relevant columns for training and testing
+        X_train = train_df["text"]
+        X_srl_train = train_df["srl_values"]
+        X_frameaxis_train = train_df["frameaxis_values"]
+        y_train = train_df["encoded_values"]
+
+        X_test = test_df["text"]
+        X_srl_test = test_df["srl_values"]
+        X_frameaxis_test = test_df["frameaxis_values"]
+        y_test = test_df["encoded_values"]
 
         # assert lenth
         assert len(X_train) == len(y_train)
