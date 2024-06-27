@@ -90,13 +90,6 @@ class ArticleDataset(Dataset):
         token_ids = token_ids[:max_length]
         attention_masks = attention_masks[:max_length]
 
-        print("##################")
-        print(f"Find word: {words}")
-        print(f"Input IDs: {sentence_output.input_ids}")
-        print(f"Token IDs: {token_ids}")
-        print(f"Attention Masks: {attention_masks}")
-        print("##################")
-
         return token_ids, attention_masks
 
     def __getitem__(self, idx):
