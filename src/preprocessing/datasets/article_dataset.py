@@ -90,15 +90,22 @@ class ArticleDataset(Dataset):
         token_ids = token_ids[:max_length]
         attention_masks = attention_masks[:max_length]
 
+        print("##################")
+        print(f"Find word: {words}")
+        print(f"Input IDs: {sentence_output.input_ids}")
+        print(f"Token IDs: {token_ids}")
+        print(f"Attention Masks: {attention_masks}")
+        print("##################")
+
         return token_ids, attention_masks
 
     def __getitem__(self, idx):
-        sentences = self.X.iloc[idx]
-        srl_data = self.X_srl.iloc[idx]
-        frameaxis_data = self.X_frameaxis.iloc[idx]
+        sentences = self.X.loc[idx]
+        srl_data = self.X_srl.loc[idx]
+        frameaxis_data = self.X_frameaxis.loc[idx]
 
         # labels
-        labels = self.labels.iloc[idx]
+        labels = self.labels.loc[idx]
 
         # Tokenize sentences and get attention masks
         sentence_ids, sentence_attention_masks = [], []
