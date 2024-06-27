@@ -145,11 +145,9 @@ class PreProcessor:
             .apply(lambda x: x.values.tolist())
             .reset_index(name="encoded_values")
         )
-        y_subset = y_subset["encoded_values"]
 
         # Aggregating 'text' column in df into a list of strings for each article_id
         X_subset = df.groupby("article_id")["text"].apply(list).reset_index(name="text")
-        X_subset = X_subset["text"]
 
         # Assuming X_srl follows the same index order as df
         X_srl_subset = (
@@ -157,9 +155,8 @@ class PreProcessor:
             .apply(lambda x: x.values.tolist())
             .reset_index(name="srl_values")
         )
-        X_srl_subset = X_srl_subset["srl_values"]
 
-        # aggregate frameaxis columns into a list of lists for row
+        # Aggregate frameaxis columns into a list of lists for each row
         frameaxis_cols = frameaxis_df.columns.tolist()
         if "article_id" in frameaxis_cols:
             frameaxis_cols.remove("article_id")
@@ -176,8 +173,6 @@ class PreProcessor:
             .apply(lambda x: x.values.tolist())
             .reset_index(name="frameaxis_values")
         )
-
-        frameaxis_df_subset = frameaxis_df_subset["frameaxis_values"]
 
         return X_subset, X_srl_subset, frameaxis_df_subset, y_subset
 

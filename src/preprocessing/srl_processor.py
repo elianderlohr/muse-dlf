@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import pickle
 from tqdm import tqdm
-
 from utils.logging_manager import LoggerManager
 
 logger = LoggerManager.get_logger(__name__)
@@ -85,15 +84,15 @@ class SRLProcessor:
             srl_series = pickle.load(f)
         return srl_series
 
-    def _extract_srl_batch(self, batched_sentences, predictor):
+    def _extract_srl_batch(self, batch_records, predictor):
         """
-        Extracts SRL components for a batch of sentences.
+        Extracts SRL components for a batch of records.
         """
-        batched_sentences = [{"sentence": sentence} for sentence in batched_sentences]
+        batched_sentences = [{"sentence": record["text"]} for record in batch_records]
         batched_srl = predictor.predict_batch_json(batched_sentences)
 
         results = []
-        for srl in batched_srl:
+        for record, srl in zip(batch_records, batched_srl):
             sentence_results = []
 
             for verb_entry in srl["verbs"]:
@@ -122,7 +121,13 @@ class SRLProcessor:
                     }
                 )
 
-            results.append(sentence_results)
+            results.append(
+                {
+                    "article_id": record["article_id"],
+                    "text": record["text"],
+                    "srls": sentence_results,
+                }
+            )
         return results
 
     def _batch_process_srl_with_ids(self, df, predictor, batch_size=32):
@@ -137,18 +142,11 @@ class SRLProcessor:
             total=len(df) // batch_size + (len(df) % batch_size > 0),
         ):
             # Slice the DataFrame to get the current batch
-            batch_df = df.loc[i : i + batch_size]
-            # Convert the text column of the batch into a list for processing
-            batched_texts = batch_df["text"].tolist()
-            # Extract SRLs for the batch of texts
-            batch_results = self._extract_srl_batch(batched_texts, predictor)
-            # Associate each SRL result with the corresponding article_id and text
-            for j, row in enumerate(batch_df.itertuples()):
-                srl_data.append(
-                    {
-                        "article_id": row.article_id,
-                        "text": row.text,
-                        "srls": batch_results[j],
-                    }
-                )
+            batch_df = df.iloc[i : i + batch_size]
+            # Convert the batch into a list of records for processing
+            batch_records = batch_df.to_dict("records")
+            # Extract SRLs for the batch of records
+            batch_results = self._extract_srl_batch(batch_records, predictor)
+            # Add the batch results to the main list
+            srl_data.extend(batch_results)
         return pd.DataFrame(srl_data)
