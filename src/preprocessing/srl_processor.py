@@ -137,7 +137,7 @@ class SRLProcessor:
             total=len(df) // batch_size + (len(df) % batch_size > 0),
         ):
             # Slice the DataFrame to get the current batch
-            batch_df = df.iloc[i : i + batch_size]
+            batch_df = df.loc[i : i + batch_size]
             # Convert the text column of the batch into a list for processing
             batched_texts = batch_df["text"].tolist()
             # Extract SRLs for the batch of texts
