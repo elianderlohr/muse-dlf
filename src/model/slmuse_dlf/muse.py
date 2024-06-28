@@ -41,6 +41,8 @@ class MUSEDLF(nn.Module):
         muse_frameaxis_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         muse_frameaxis_unsupervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
         muse_frameaxis_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
+        # MUSEUnsupervised & MUSEFrameAxisUnsupervised Parameters
+        num_negatives=-1,  # Number of negative samples to use for triplet loss
         # SupervisedModule Parameters
         supervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
         supervised_num_layers=2,  # Number of layers in the encoder
@@ -117,12 +119,14 @@ class MUSEDLF(nn.Module):
             _debug=_debug,
         )
 
+        self.num_negatives = num_negatives
+
         self._debug = _debug
 
         # Debugging:
         self.logger.debug(f"✅ MUSEDLF successfully initialized")
 
-    def negative_sampling(self, embeddings, num_negatives=-1):
+    def negative_sampling(embeddings, num_negatives=-1):
         if num_negatives == -1:
             num_negatives = embeddings.size(0)
 
@@ -141,33 +145,36 @@ class MUSEDLF(nn.Module):
 
                 # Randomly sample negative indices from non-padded embeddings
                 if len(non_padded_indices) > 0:
+                    num_samples = min(num_negatives, len(non_padded_indices))
                     negative_indices = non_padded_indices[
-                        torch.randint(0, len(non_padded_indices), (num_negatives,))
+                        torch.randperm(len(non_padded_indices))[:num_samples]
                     ]
-                else:
-                    # If no non-padded embeddings, use zeros
-                    negative_indices = torch.zeros(num_negatives, dtype=torch.long)
+                    negative_samples = flattened_embeddings[negative_indices, :]
+                    all_negatives.append(negative_samples)
 
-                negative_samples = flattened_embeddings[negative_indices, :]
-                all_negatives.append(negative_samples)
+        if len(all_negatives) == 0:
+            return torch.zeros((num_negatives, embedding_dim), device=embeddings.device)
 
         # Concatenate all negative samples into a single tensor
         all_negatives = torch.cat(all_negatives, dim=0)
 
-        # If more samples than required, randomly select 'num_negatives' samples
+        # Ensure we have the right number of negatives
         if all_negatives.size(0) > num_negatives:
             indices = torch.randperm(all_negatives.size(0))[:num_negatives]
             all_negatives = all_negatives[indices]
 
         return all_negatives
 
-    def negative_fx_sampling(self, fxs, num_negatives=8):
+    def negative_fx_sampling(self, fxs, num_negatives=-1):
+        if num_negatives == -1:
+            num_negatives = fxs.size(0)
+
         batch_size, num_sentences, frameaxis_dim = fxs.size()
         all_negatives = []
 
         for i in range(batch_size):
             for j in range(num_sentences):
-                # Flatten the arguments dimension to sample across all arguments in the sentence
+                # Flatten the frameaxis dimension to sample across all elements in the sentence
                 flattened_fxs = fxs[i, j].view(-1, frameaxis_dim)
 
                 # Get indices of non-padded embeddings (assuming padding is represented by all-zero vectors)
@@ -177,20 +184,20 @@ class MUSEDLF(nn.Module):
 
                 # Randomly sample negative indices from non-padded embeddings
                 if len(non_padded_indices) > 0:
+                    num_samples = min(num_negatives, len(non_padded_indices))
                     negative_indices = non_padded_indices[
-                        torch.randint(0, len(non_padded_indices), (num_negatives,))
+                        torch.randperm(len(non_padded_indices))[:num_samples]
                     ]
-                else:
-                    # If no non-padded embeddings, use zeros
-                    negative_indices = torch.zeros(num_negatives, dtype=torch.long)
+                    negative_samples = flattened_fxs[negative_indices, :]
+                    all_negatives.append(negative_samples)
 
-                negative_samples = flattened_fxs[negative_indices, :]
-                all_negatives.append(negative_samples)
+        if len(all_negatives) == 0:
+            return torch.zeros((num_negatives, frameaxis_dim), device=fxs.device)
 
         # Concatenate all negative samples into a single tensor
         all_negatives = torch.cat(all_negatives, dim=0)
 
-        # If more samples than required, randomly select 'num_negatives' samples
+        # Ensure we have the right number of negatives
         if all_negatives.size(0) > num_negatives:
             indices = torch.randperm(all_negatives.size(0))[:num_negatives]
             all_negatives = all_negatives[indices]
@@ -263,11 +270,19 @@ class MUSEDLF(nn.Module):
             # Creating storage for aggregated d tensors
             d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
 
-            negatives_p = self.negative_sampling(predicate_embeddings)
-            negatives_a0 = self.negative_sampling(arg0_embeddings)
-            negatives_a1 = self.negative_sampling(arg1_embeddings)
+            negatives_p = self.negative_sampling(
+                predicate_embeddings, num_negatives=self.num_negatives
+            )
+            negatives_a0 = self.negative_sampling(
+                arg0_embeddings, num_negatives=self.num_negatives
+            )
+            negatives_a1 = self.negative_sampling(
+                arg1_embeddings, num_negatives=self.num_negatives
+            )
 
-            negatives_fx = self.negative_fx_sampling(frameaxis_data)
+            negatives_fx = self.negative_fx_sampling(
+                frameaxis_data, num_negatives=self.num_negatives
+            )
 
             # Process each sentence
             for sentence_idx in range(sentence_embeddings.size(1)):
