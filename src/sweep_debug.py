@@ -184,7 +184,7 @@ def main():
     # Advanced Settings
     force_recalculate_srls = False
     force_recalculate_frameaxis = False
-    sample_size = 40
+    sample_size = 120
 
     # parse debug flag from environment as bool
     debug = os.getenv("DEBUG")
