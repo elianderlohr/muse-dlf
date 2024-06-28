@@ -263,8 +263,8 @@ class MUSEDLF(nn.Module):
             # Creating storage for aggregated d tensors
             d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
 
-            negatives_p = self.negative_sampling(predicate_embeddings, self.t)
-            negatives_a0 = self.negative_sampling(arg0_embeddings, self.T)
+            negatives_p = self.negative_sampling(predicate_embeddings)
+            negatives_a0 = self.negative_sampling(arg0_embeddings)
             negatives_a1 = self.negative_sampling(arg1_embeddings)
 
             negatives_fx = self.negative_fx_sampling(frameaxis_data)
