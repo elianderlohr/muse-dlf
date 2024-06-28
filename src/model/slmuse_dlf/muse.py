@@ -126,7 +126,7 @@ class MUSEDLF(nn.Module):
         # Debugging:
         self.logger.debug(f"✅ MUSEDLF successfully initialized")
 
-    def negative_sampling(embeddings, num_negatives=-1):
+    def negative_sampling(self, embeddings, num_negatives=-1):
         if num_negatives == -1:
             num_negatives = embeddings.size(0)
 
