@@ -183,6 +183,7 @@ class SRLEmbeddings(nn.Module):
         for batch_idx in range(batch_size):
             for sent_idx in range(num_sentences):
                 for arg_idx in range(num_args):
+                    selected_embeddings = []
                     for token_idx in range(max_arg_length):
                         arg_token_id = arg_ids[
                             batch_idx, sent_idx, arg_idx, token_idx
@@ -195,9 +196,11 @@ class SRLEmbeddings(nn.Module):
                         if match_indices.nelement() == 0:
                             continue
                         flat_indices = match_indices[:, 0]
-                        selected_embeddings = sentence_embeddings[
-                            batch_idx, sent_idx, flat_indices
-                        ]
+                        selected_embeddings.append(
+                            sentence_embeddings[batch_idx, sent_idx, flat_indices]
+                        )
+                    if selected_embeddings:
+                        selected_embeddings = torch.cat(selected_embeddings, dim=0)
                         avg_embedding = selected_embeddings.mean(dim=0)
                         arg_embeddings[batch_idx, sent_idx, arg_idx] = avg_embedding
 
