@@ -111,8 +111,10 @@ class SRLEmbeddings(nn.Module):
                     output_hidden_states=True,
                 )
 
-                last_4_layers = outputs.hidden_states[-4:]
-                summed_embeddings = torch.stack(last_4_layers, dim=0).sum(0)
+                # last_4_layers = outputs.hidden_states[-4:]
+                # summed_embeddings = torch.stack(last_4_layers, dim=0).sum(0)
+
+                summed_embeddings = outputs.last_hidden_state
 
             self.check_for_nans(summed_embeddings, "summed embeddings")
 

@@ -11,3 +11,4 @@ data/srls/
 .pyc
 .env
 data/srls/mfc/mfc_labeled.pkl
+**.pyc
