@@ -142,7 +142,17 @@ class FrameAxisAutoencoder(nn.Module):
                 self.logger.error("❌ NaNs detected in h")
                 raise ValueError("NaNs detected in h")
 
+            if (h == 0).all() or (h.std() == 0):
+                self.logger.debug(
+                    f"❌ h has mean {h.mean().item()} or std {h.std().item()}"
+                )
+
             logits = self.feed_forward_2(h)
+
+            if (logits == 0).all() or (logits.std() == 0):
+                self.logger.debug(
+                    f"❌ logits has mean {logits.mean().item()} or std {logits.std().item()}"
+                )
 
             if torch.isnan(logits).any():
                 self.logger.error("❌ NaNs detected in logits")
@@ -150,7 +160,17 @@ class FrameAxisAutoencoder(nn.Module):
 
             d = torch.softmax(logits, dim=1)
 
+            if (d == 0).all() or (d.std() == 0):
+                self.logger.debug(
+                    f"❌ d has mean {d.mean().item()} or std {d.std().item()}"
+                )
+
             g = self.custom_gumbel_softmax(d, tau=tau, hard=False, log=self.log)
+
+            if (g == 0).all() or (g.std() == 0):
+                self.logger.debug(
+                    f"❌ g has mean {g.mean().item()} or std {g.std().item()}"
+                )
 
             if self.matmul_input == "d":
                 vhat = torch.matmul(d, self.F)
@@ -158,6 +178,11 @@ class FrameAxisAutoencoder(nn.Module):
                 vhat = torch.matmul(g, self.F)
             else:
                 raise ValueError("matmul_input must be 'd' or 'g'.")
+
+        if (vhat == 0).all() or (vhat.std() == 0):
+            self.logger.debug(
+                f"❌ vhat has mean {vhat.mean().item()} or std {vhat.std().item()}"
+            )
 
         if torch.isnan(vhat).any():
             self.logger.error("❌ NaNs detected in vhat")

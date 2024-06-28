@@ -269,6 +269,14 @@ def main():
         help="Pooling method for SRL embeddings",
     )
 
+    # mixed_precision bool
+    model_config.add_argument(
+        "--mixed_precision",
+        type=str2bool,
+        default=True,
+        help="Mixed precision training",
+    )
+
     # Training Parameters
     training_params = parser.add_argument_group("Training Parameters")
     training_params.add_argument(
@@ -646,6 +654,7 @@ def main():
         tau_decay=args.tau_decay,
         save_path=args.save_path,
         accelerator_instance=accelerator,
+        mixed_precision=None if not args.mixed_precision else "fp16",
     )
 
     trainer = accelerator.prepare(trainer)

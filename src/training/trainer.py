@@ -85,6 +85,8 @@ class Trainer:
             logger.info("Using standard PyTorch for training.")
             self.accelerator = None
 
+        logger.info(f"Using {mixed_precision} mixed precision for training.")
+
         self.mixed_precision = mixed_precision
         self.clip_value = clip_value
 

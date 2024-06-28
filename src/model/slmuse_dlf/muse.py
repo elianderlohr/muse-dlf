@@ -26,8 +26,8 @@ class MUSEDLF(nn.Module):
         srl_embeddings_pooling="mean",  # mean or cls
         # LossModule Parameters
         lambda_orthogonality=1e-3,  # lambda for orthogonality loss
-        M=8,  # M for orthogonality loss
-        t=8,  # t for orthogonality loss
+        M=8,  # M total margin budget for triplet loss
+        t=8,  # t number of negatives for triplet loss (select t descriptors in Fz with smallest weights in gz)
         # MUSEUnsupervised Parameters
         muse_unsupervised_num_layers=2,  # Number of layers in the encoder
         muse_unsupervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
@@ -58,6 +58,8 @@ class MUSEDLF(nn.Module):
             # activate torch.autograd.set_detect_anomaly(True)
             # torch.autograd.set_detect_anomaly(True)
             # self.logger.warning("🚨 torch.autograd.set_detect_anomaly(True) activated")
+
+        self.t = t
 
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
@@ -261,8 +263,8 @@ class MUSEDLF(nn.Module):
             # Creating storage for aggregated d tensors
             d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
 
-            negatives_p = self.negative_sampling(predicate_embeddings)
-            negatives_a0 = self.negative_sampling(arg0_embeddings)
+            negatives_p = self.negative_sampling(predicate_embeddings, self.t)
+            negatives_a0 = self.negative_sampling(arg0_embeddings, self.T)
             negatives_a1 = self.negative_sampling(arg1_embeddings)
 
             negatives_fx = self.negative_fx_sampling(frameaxis_data)

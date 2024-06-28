@@ -35,7 +35,6 @@ class CombinedAutoencoder(nn.Module):
         # Initialize activation function
         self.activation_func = self._get_activation(activation)
 
-        # Determine input dimension based on whether to concatenate frameaxis with sentence
         input_dim = 2 * embedding_dim
 
         # Initialize the layers for the shared encoder
@@ -196,6 +195,20 @@ class CombinedAutoencoder(nn.Module):
             d_a0 = torch.softmax(logits_a0, dim=1)
             d_a1 = torch.softmax(logits_a1, dim=1)
 
+            # check if d_p has mean 0 or std 0
+            if (d_p == 0).all() or d_p.std() == 0:
+                self.logger.debug(
+                    f"❌ d_p has mean {d_p.mean().item()} or std {d_p.std().item()}"
+                )
+            if (d_a0 == 0).all() or d_a0.std() == 0:
+                self.logger.debug(
+                    f"❌ d_a0 has mean {d_a0.mean().item()} or std {d_a0.std().item()}"
+                )
+            if (d_a1 == 0).all() or d_a1.std() == 0:
+                self.logger.debug(
+                    f"❌ d_a1 has mean {d_a1.mean().item()} or std {d_a1.std().item()}"
+                )
+
             if (
                 torch.isnan(d_p).any()
                 or torch.isnan(d_a0).any()
@@ -209,6 +222,19 @@ class CombinedAutoencoder(nn.Module):
             g_p = self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
             g_a0 = self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
             g_a1 = self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
+
+            if (g_p == 0).all() or g_p.std() == 0:
+                self.logger.debug(
+                    f"❌ g_p has mean {g_p.mean().item()} or std {g_p.std().item()}"
+                )
+            if (g_a0 == 0).all() or g_a0.std() == 0:
+                self.logger.debug(
+                    f"❌ g_a0 has mean {g_a0.mean().item()} or std {g_a0.std().item()}"
+                )
+            if (g_a1 == 0).all() or g_a1.std() == 0:
+                self.logger.debug(
+                    f"❌ g_a1 has mean {g_a1.mean().item()} or std {g_a1.std().item()}"
+                )
 
             if (
                 torch.isnan(g_p).any()
@@ -239,6 +265,19 @@ class CombinedAutoencoder(nn.Module):
         ):
             self.logger.error("❌ NaNs detected in vhat")
             raise ValueError("NaNs detected in vhat")
+
+        if (vhat_p == 0).all() or vhat_p.std() == 0:
+            self.logger.debug(
+                f"❌ vhat_p has mean {vhat_p.mean().item()} or std {vhat_p.std().item()}"
+            )
+        if (vhat_a0 == 0).all() or vhat_a0.std() == 0:
+            self.logger.debug(
+                f"❌ vhat_a0 has mean {vhat_a0.mean().item()} or std {vhat_a0.std().item()}"
+            )
+        if (vhat_a1 == 0).all() or vhat_a1.std() == 0:
+            self.logger.debug(
+                f"❌ vhat_a1 has mean {vhat_a1.mean().item()} or std {vhat_a1.std().item()}"
+            )
 
         return {
             "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
