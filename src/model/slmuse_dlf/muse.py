@@ -215,6 +215,10 @@ class MUSEDLF(nn.Module):
         tau,
         mixed_precision="fp16",  # mixed precision as a parameter
     ):
+        self.logger.debug(
+            f"🚦 Mixed precision enabled: {mixed_precision in ['fp16', 'bf16']}"
+        )
+
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
