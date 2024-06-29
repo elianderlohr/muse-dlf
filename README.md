@@ -2,6 +2,14 @@
 
 Master thesis on advanced frame detection in media narratives, using a novel approach combining unsupervised and supervised learning.
 
+## Tests
+
+To run the tests, use the following command:
+
+```bash
+python -m unittest tests/slmuse/
+```
+
 ## Motivation
 
 The concept of framing, deeply entrenched in psychology and sociology, significantly influences public opinion and decision-making. Framing involves presenting information in a specific manner, often through the use of narratives, symbols, or stereotypes, to subtly guide perceptions. This method is particularly evident in media, where different outlets may portray the same issue in distinct ways, leading audiences to varying conclusions. The impact of framing on public discourse and international relations is notable in events like the differing narratives presented by President Biden and President Putin regarding the Russo-Ukrainian war. Understanding and quantifying the effects of framing is crucial for a more informed and critical public discourse.
