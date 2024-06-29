@@ -105,16 +105,16 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 1048 \
+    --hidden_dim 768 \
     --num_classes 15 \
-    --dropout_prob 0.35 \
+    --dropout_prob 0.3 \
     --alpha 0.5 \
-    --lambda_orthogonality 0.0016 \
-    --lr 0.0001 \
+    --lambda_orthogonality 0.001 \
+    --lr 0.0005 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
-    --num_sentences 32 \
+    --num_sentences 64 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
     --max_arg_length 10 \
@@ -132,11 +132,11 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_concat_frameaxis False \
     --supervised_num_layers 2 \
     --supervised_activation relu \
-    --adamw_weight_decay 0.097 \
-    --optimizer adamw \
+    --adamw_weight_decay 0.001 \
+    --optimizer adam \
     --srl_embeddings_pooling mean \
     --tau_decay 0.00045 \
-    --tau_min 0.95 \
+    --tau_min 0.5 \
     --seed 42 \
     --mixed_precision True \
     $DEBUG
