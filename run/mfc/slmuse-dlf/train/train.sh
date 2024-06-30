@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --job-name=mfc-slmuse-dlf-train-4
 #SBATCH --gres=gpu:4
-#SBATCH --mem=32G
+#SBATCH --mem=48G
 
 echo "===================== Job Details ====================="
 # Display job settings
@@ -128,7 +128,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-    --num_negatives 64 \
+    --num_negatives 128 \
     --supervised_concat_frameaxis False \
     --supervised_num_layers 1 \
     --supervised_activation gelu \
