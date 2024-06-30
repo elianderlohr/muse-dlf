@@ -79,6 +79,9 @@ class CombinedAutoencoder(nn.Module):
 
         self.logger.debug(f"✅ CombinedAutoencoder successfully initialized")
 
+    def create_mask(self, embeddings):
+        return (embeddings != 0).any(dim=-1)
+
     def initialize_weights(self, m):
         if isinstance(m, nn.Linear):
             nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain("relu"))
@@ -153,6 +156,10 @@ class CombinedAutoencoder(nn.Module):
             else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
+        mask_p = self.create_mask(v_p)
+        mask_a0 = self.create_mask(v_a0)
+        mask_a1 = self.create_mask(v_a1)
+
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
@@ -173,9 +180,9 @@ class CombinedAutoencoder(nn.Module):
                     f"❌ v_sentence has mean {v_sentence.mean().item()} or std {v_sentence.std().item()}, {v_sentence[:, :5]}"
                 )
 
-            h_p = self.process_through_shared(v_p, v_sentence)
-            h_a0 = self.process_through_shared(v_a0, v_sentence)
-            h_a1 = self.process_through_shared(v_a1, v_sentence)
+            h_p = self.process_through_shared(v_p, v_sentence, mask_p)
+            h_a0 = self.process_through_shared(v_a0, v_sentence, mask_a0)
+            h_a1 = self.process_through_shared(v_a1, v_sentence, mask_a1)
 
             if (h_p == 0).all() or h_p.std() == 0:
                 self.logger.debug(
@@ -309,7 +316,7 @@ class CombinedAutoencoder(nn.Module):
             "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
         }
 
-    def process_through_shared(self, v_z, v_sentence):
+    def process_through_shared(self, v_z, v_sentence, mask):
         x = torch.cat((v_z, v_sentence), dim=-1)
 
         for i in range(self.num_layers):
@@ -321,6 +328,8 @@ class CombinedAutoencoder(nn.Module):
                     raise ValueError("NaNs detected in batch normalization input")
                 x = self.batch_norms_shared[i](x)
             x = self.dropout(x)
+
+        x = x * mask.unsqueeze(-1).float()  # Apply mask here
 
         if torch.isnan(x).any():
             self.logger.error("❌ NaNs detected after processing through shared layers")

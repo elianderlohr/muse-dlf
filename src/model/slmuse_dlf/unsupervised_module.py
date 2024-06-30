@@ -53,6 +53,9 @@ class MUSEUnsupervised(nn.Module):
         # Debugging:
         self.logger.debug(f"✅ MUSEUnsupervised successfully initialized")
 
+    def create_mask(self, embeddings):
+        return (embeddings != 0).any(dim=-1)
+
     def forward(
         self,
         v_p,
@@ -70,6 +73,10 @@ class MUSEUnsupervised(nn.Module):
             if mixed_precision == "fp16"
             else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
+
+        mask_p = self.create_mask(v_p)
+        mask_a0 = self.create_mask(v_a0)
+        mask_a1 = self.create_mask(v_a1)
 
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
@@ -107,18 +114,21 @@ class MUSEUnsupervised(nn.Module):
             loss_p = self.loss_fn(
                 outputs_p,
                 p_negatives,
+                mask_p,
                 mixed_precision=mixed_precision,
             )
 
             loss_a0 = self.loss_fn(
                 outputs_a0,
                 a0_negatives,
+                mask_a0,
                 mixed_precision=mixed_precision,
             )
 
             loss_a1 = self.loss_fn(
                 outputs_a1,
                 a1_negatives,
+                mask_a1,
                 mixed_precision=mixed_precision,
             )
 

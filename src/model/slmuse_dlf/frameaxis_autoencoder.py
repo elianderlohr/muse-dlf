@@ -64,6 +64,9 @@ class FrameAxisAutoencoder(nn.Module):
         # Debugging
         self.logger.debug(f"✅ FrameAxisAutoencoder successfully initialized")
 
+    def create_mask(self, embeddings):
+        return (embeddings != 0).any(dim=-1)
+
     def _get_activation(self, activation):
         if activation == "relu":
             return nn.ReLU()
@@ -131,10 +134,12 @@ class FrameAxisAutoencoder(nn.Module):
             else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
+        mask = self.create_mask(v_frameaxis)
+
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
-            h = self.process_through_first(v_frameaxis, v_sentence)
+            h = self.process_through_first(v_frameaxis, v_sentence, mask)
 
             if torch.isnan(h).any():
                 self.logger.error("❌ NaNs detected in h")
@@ -188,7 +193,7 @@ class FrameAxisAutoencoder(nn.Module):
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
 
-    def process_through_first(self, v_z, v_sentence):
+    def process_through_first(self, v_z, v_sentence, mask):
         x = torch.cat((v_z, v_sentence), dim=-1)
 
         # Passing through the encoder layers
@@ -198,5 +203,7 @@ class FrameAxisAutoencoder(nn.Module):
             if self.use_batch_norm:
                 x = self.batch_norms_encoder[i](x)
             x = self.dropout(x)
+
+        x = x * mask.unsqueeze(-1).float()
 
         return x

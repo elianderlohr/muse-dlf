@@ -22,80 +22,45 @@ class LossModule(nn.Module):
         # Debugging:
         self.logger.debug(f"✅ LossModule successfully initialized")
 
-    def contrastive_loss(self, v, vhat, negatives):
+    def contrastive_loss(self, v, vhat, negatives, mask):
         batch_size = vhat.size(0)
         N = negatives.size(0)
         loss = torch.zeros(batch_size, device=v.device)
-
-        # Calculate true distance between reconstructed and real embeddings
         true_distance = self.l2(vhat, v)
 
-        for i in range(N):  # loop over each element in "negatives"
-            # Transform negative from [embedding dim] to [batch size, embedding_dim]
+        for i in range(N):
             negative = negatives[i, :].expand(v.size(0), -1)
-
-            # Calculate negative distance for current negative embedding
             negative_distance = self.l2(vhat, negative)
-
-            # Compute loss based on the provided logic: l2(vhat, v) + 1 + l2(vhat, negative) and clamp to 0 if below 0
             current_loss = 1 + true_distance - negative_distance
             loss += torch.clamp(current_loss, min=0.0)
 
-        # Normalize the total loss by N
-        return loss / N
+        loss = loss / N
+        loss = loss * mask.float()
+        return loss.sum() / mask.sum()
 
     def l2(self, u, v):
         return torch.sqrt(torch.sum((u - v) ** 2, dim=1))
 
-    def focal_triplet_loss(self, v, vhat_z, g, F):
+    def focal_triplet_loss(self, v, vhat_z, g, F, mask):
         _, indices = torch.topk(g, self.t, largest=False, dim=1)
-
         F_t = torch.stack([F[indices[i]] for i in range(g.size(0))])
-
         g_tz = torch.stack([g[i, indices[i]] for i in range(g.size(0))])
-
         g_tz_sum = g_tz.sum(dim=1, keepdim=True)
-
         epsilon = 1e-10
         g_t = g_tz / (g_tz.sum(dim=1, keepdim=True) + epsilon)
-
         m_t = self.M * ((1 - g_t) ** 2)
-
-        # Initializing loss
         loss = torch.zeros_like(v[:, 0])
 
-        # Iteratively adding to the loss for each negative embedding
         for i in range(self.t):
             current_v_t = F_t[:, i]
             current_m_t = m_t[:, i]
-
             current_loss = (
                 current_m_t + self.l2(vhat_z, v) - self.l2(vhat_z, current_v_t)
             )
-
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
-        # check if loss is nan or inf or 0
-        if (
-            torch.isnan(loss).any()
-            or torch.isinf(loss).any()
-            or torch.allclose(loss, torch.zeros_like(loss))
-        ):
-            self.logger.error("NaNs detected in focal_triplet_loss LOSS")
-            self.logger.error(f"loss: {loss}")
-
-        # Normalizing
-        loss = loss / self.t
-
-        if torch.isnan(loss).any():
-            self.logger.error("NaNs detected in focal_triplet_loss")
-            self.logger.error(f"v: {v}")
-            self.logger.error(f"vhat_z: {vhat_z}")
-            self.logger.error(f"g: {g}")
-            self.logger.error(f"F: {F}")
-            self.logger.error(f"loss: {loss}")
-
-        return loss
+        loss = loss * mask.float()
+        return loss.sum() / mask.sum()
 
     def orthogonality_term(self, F, reg=1e-4):
         gram_matrix = torch.mm(F, F.T)  # Compute the Gram matrix F * F^T
@@ -109,7 +74,8 @@ class LossModule(nn.Module):
         self,
         c,
         negatives,
-        mixed_precision="fp16",  # mixed precision as a parameter
+        mask,
+        mixed_precision="fp16",
     ):
         precision_dtype = (
             torch.float16
@@ -120,12 +86,9 @@ class LossModule(nn.Module):
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
-            # Extract components from dictionary for predicate p
             v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
-
-            # Calculate losses for predicate
-            Ju = self.contrastive_loss(v, vhat, negatives)
-            Jt = self.focal_triplet_loss(v, vhat, g, F)
+            Ju = self.contrastive_loss(v, vhat, negatives, mask)
+            Jt = self.focal_triplet_loss(v, vhat, g, F, mask)
             Jz = Ju + Jt + self.lambda_orthogonality * self.orthogonality_term(F) ** 2
 
         return Jz
