@@ -53,6 +53,7 @@ def load_model(
     muse_frameaxis_unsupervised_matmul_input,
     muse_frameaxis_unsupervised_concat_frameaxis,
     muse_frameaxis_unsupervised_gumbel_softmax_log,
+    num_negatives,
     supervised_concat_frameaxis,
     supervised_num_layers,
     supervised_activation,
@@ -86,6 +87,7 @@ def load_model(
         muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
         muse_frameaxis_unsupervised_concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
         muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+        num_negatives=num_negatives,
         supervised_concat_frameaxis=supervised_concat_frameaxis,
         supervised_num_layers=supervised_num_layers,
         supervised_activation=supervised_activation,
@@ -242,6 +244,13 @@ def main():
         type=str2bool,
         default=False,
         help="Use log gumbel softmax in the MUSE frameaxis unsupervised encoder",
+    )
+    # num_negatives
+    model_config.add_argument(
+        "--num_negatives",
+        type=int,
+        default=5,
+        help="Number of negative samples used for loss function",
     )
     model_config.add_argument(
         "--supervised_concat_frameaxis",
@@ -542,6 +551,7 @@ def main():
         muse_frameaxis_unsupervised_matmul_input=args.muse_frameaxis_unsupervised_matmul_input,
         muse_frameaxis_unsupervised_concat_frameaxis=args.muse_frameaxis_unsupervised_concat_frameaxis,
         muse_frameaxis_unsupervised_gumbel_softmax_log=args.muse_frameaxis_unsupervised_gumbel_softmax_log,
+        num_negatives=args.num_negatives,
         supervised_concat_frameaxis=args.supervised_concat_frameaxis,
         supervised_num_layers=args.supervised_num_layers,
         supervised_activation=args.supervised_activation,
