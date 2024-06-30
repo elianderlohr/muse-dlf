@@ -175,13 +175,17 @@ class CombinedAutoencoder(nn.Module):
                 self.logger.error("❌ NaNs detected in hidden states")
                 raise ValueError("NaNs detected in hidden states")
 
-            logits_p = self.feed_forward_unique["p"](h_p)
-            logits_a0 = self.feed_forward_unique["a0"](h_a0)
-            logits_a1 = self.feed_forward_unique["a1"](h_a1)
+            logits_p = self.feed_forward_unique["p"](h_p) * mask_p.unsqueeze(-1).float()
+            logits_a0 = (
+                self.feed_forward_unique["a0"](h_a0) * mask_a0.unsqueeze(-1).float()
+            )
+            logits_a1 = (
+                self.feed_forward_unique["a1"](h_a1) * mask_a1.unsqueeze(-1).float()
+            )
 
-            d_p = torch.softmax(logits_p, dim=1)
-            d_a0 = torch.softmax(logits_a0, dim=1)
-            d_a1 = torch.softmax(logits_a1, dim=1)
+            d_p = torch.softmax(logits_p, dim=1) * mask_p.unsqueeze(-1).float()
+            d_a0 = torch.softmax(logits_a0, dim=1) * mask_a0.unsqueeze(-1).float()
+            d_a1 = torch.softmax(logits_a1, dim=1) * mask_a1.unsqueeze(-1).float()
 
             if (
                 torch.isnan(d_p).any()
@@ -193,9 +197,18 @@ class CombinedAutoencoder(nn.Module):
             ):
                 self.logger.error("❌ NaNs detected in d or d is all 0 AFTER softmax")
 
-            g_p = self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
-            g_a0 = self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
-            g_a1 = self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
+            g_p = (
+                self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
+                * mask_p.unsqueeze(-1).float()
+            )
+            g_a0 = (
+                self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
+                * mask_a0.unsqueeze(-1).float()
+            )
+            g_a1 = (
+                self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
+                * mask_a1.unsqueeze(-1).float()
+            )
 
             if (
                 torch.isnan(g_p).any()
@@ -207,13 +220,31 @@ class CombinedAutoencoder(nn.Module):
                 )
 
             if self.matmul_input == "d":
-                vhat_p = torch.matmul(d_p, self.F_matrices["p"])
-                vhat_a0 = torch.matmul(d_a0, self.F_matrices["a0"])
-                vhat_a1 = torch.matmul(d_a1, self.F_matrices["a1"])
+                vhat_p = (
+                    torch.matmul(d_p, self.F_matrices["p"])
+                    * mask_p.unsqueeze(-1).float()
+                )
+                vhat_a0 = (
+                    torch.matmul(d_a0, self.F_matrices["a0"])
+                    * mask_a0.unsqueeze(-1).float()
+                )
+                vhat_a1 = (
+                    torch.matmul(d_a1, self.F_matrices["a1"])
+                    * mask_a1.unsqueeze(-1).float()
+                )
             elif self.matmul_input == "g":
-                vhat_p = torch.matmul(g_p, self.F_matrices["p"])
-                vhat_a0 = torch.matmul(g_a0, self.F_matrices["a0"])
-                vhat_a1 = torch.matmul(g_a1, self.F_matrices["a1"])
+                vhat_p = (
+                    torch.matmul(g_p, self.F_matrices["p"])
+                    * mask_p.unsqueeze(-1).float()
+                )
+                vhat_a0 = (
+                    torch.matmul(g_a0, self.F_matrices["a0"])
+                    * mask_a0.unsqueeze(-1).float()
+                )
+                vhat_a1 = (
+                    torch.matmul(g_a1, self.F_matrices["a1"])
+                    * mask_a1.unsqueeze(-1).float()
+                )
             else:
                 raise ValueError(
                     f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"

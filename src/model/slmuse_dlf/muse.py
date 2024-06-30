@@ -315,24 +315,45 @@ class MUSEDLF(nn.Module):
                     v_a0_span = arg0_embeddings[:, sentence_idx, span_idx, :]
                     v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
 
-                    # Feed the embeddings to the unsupervised module
-                    unsupervised_results = self.unsupervised(
-                        v_p_span,
-                        v_a0_span,
-                        v_a1_span,
-                        s_sentence_span,
-                        negatives_p,
-                        negatives_a0,
-                        negatives_a1,
-                        tau,
-                        mixed_precision=mixed_precision,
-                    )
-                    unsupervised_losses += unsupervised_results["loss"]
+                    # Mask to ignore padded sentences for each span individually
+                    mask_p = v_p_span.abs().sum(dim=-1) != 0
+                    mask_a0 = v_a0_span.abs().sum(dim=-1) != 0
+                    mask_a1 = v_a1_span.abs().sum(dim=-1) != 0
 
-                    # Use the vhat (reconstructed embeddings) for supervised predictions
-                    d_p_sentence_list.append(unsupervised_results["p"]["d"])
-                    d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
-                    d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+                    if not mask_p.any():
+                        self.logger.debug(
+                            f"Found predicate embedding with all zeros, masked it, and ignored loss. First 5 values: {v_p_span[0, :5].cpu().numpy()}"
+                        )
+                    if not mask_a0.any():
+                        self.logger.debug(
+                            f"Found arg0 embedding with all zeros, masked it, and ignored loss. First 5 values: {v_a0_span[0, :5].cpu().numpy()}"
+                        )
+                    if not mask_a1.any():
+                        self.logger.debug(
+                            f"Found arg1 embedding with all zeros, masked it, and ignored loss. First 5 values: {v_a1_span[0, :5].cpu().numpy()}"
+                        )
+
+                    if mask_p.any() and mask_a0.any() and mask_a1.any():
+                        # Feed the embeddings to the unsupervised module
+                        unsupervised_results = self.unsupervised(
+                            v_p_span[mask_p],
+                            v_a0_span[mask_a0],
+                            v_a1_span[mask_a1],
+                            s_sentence_span,
+                            negatives_p,
+                            negatives_a0,
+                            negatives_a1,
+                            tau,
+                            mixed_precision=mixed_precision,
+                        )
+                        unsupervised_losses[
+                            mask_p & mask_a0 & mask_a1
+                        ] += unsupervised_results["loss"]
+
+                        # Use the vhat (reconstructed embeddings) for supervised predictions
+                        d_p_sentence_list.append(unsupervised_results["p"]["d"])
+                        d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
+                        d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
 
                 # Aggregating across all spans
                 d_p_sentence = torch.stack(d_p_sentence_list, dim=1)

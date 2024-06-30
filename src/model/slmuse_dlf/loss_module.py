@@ -45,7 +45,7 @@ class LossModule(nn.Module):
         _, indices = torch.topk(g, self.t, largest=False, dim=1)
         F_t = torch.stack([F[indices[i]] for i in range(g.size(0))])
         g_tz = torch.stack([g[i, indices[i]] for i in range(g.size(0))])
-        g_tz_sum = g_tz.sum(dim=1, keepdim=True)
+
         epsilon = 1e-10
         g_t = g_tz / (g_tz.sum(dim=1, keepdim=True) + epsilon)
         m_t = self.M * ((1 - g_t) ** 2)
