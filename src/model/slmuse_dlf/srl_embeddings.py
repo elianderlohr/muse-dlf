@@ -119,13 +119,9 @@ class SRLEmbeddings(nn.Module):
 
             self.check_for_nans(summed_embeddings, "summed embeddings")
 
-            self.logger.debug(f"Summed embeddings shape: {summed_embeddings.shape}")
-
             summed_embeddings = summed_embeddings.view(
                 batch_size, num_sentences, max_sentence_length, self.embedding_dim
             )
-
-            self.logger.debug(f"Summed embeddings reshaped: {summed_embeddings.shape}")
 
             if self.pooling == "mean":
                 attention_masks_expanded = attention_masks.view(
@@ -146,14 +142,6 @@ class SRLEmbeddings(nn.Module):
                 embeddings_mean = summed_embeddings[:, :, 0, :]
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")
-
-            self.logger.debug(f"Embeddings mean shape: {embeddings_mean.shape}")
-
-        # print for debugging the first few tokens of embeddings_mean
-        if self._debug:
-            self.logger.debug(
-                f"First few tokens of embeddings_mean: {embeddings_mean[0, 0, :5]}"
-            )
 
         return summed_embeddings, embeddings_mean
 
@@ -279,6 +267,33 @@ class SRLEmbeddings(nn.Module):
                     self.logger.debug(
                         f"Arg1 embeddings are all zeros for sentence_ids: {sentence_ids}"
                     )
+
+        # check if sentence_embeddings_avg is not only zeros and std is not zero
+        if (
+            torch.all(sentence_embeddings_avg == 0)
+            and sentence_embeddings_avg.std() == 0
+        ):
+            self.logger.debug(
+                f"🚨 Sentence embeddings are all zeros for sentence_ids: {sentence_ids}"
+            )
+
+        # check if predicate_embeddings is not only zeros and std is not zero
+        if torch.all(predicate_embeddings == 0) and predicate_embeddings.std() == 0:
+            self.logger.debug(
+                f"🚨 Predicate embeddings are all zeros for sentence_ids: {sentence_ids}"
+            )
+
+        # check if arg0_embeddings is not only zeros and std is not zero
+        if torch.all(arg0_embeddings == 0) and arg0_embeddings.std() == 0:
+            self.logger.debug(
+                f"🚨 Arg0 embeddings are all zeros for sentence_ids: {sentence_ids}"
+            )
+
+        # check if arg1_embeddings is not only zeros and std is not zero
+        if torch.all(arg1_embeddings == 0) and arg1_embeddings.std() == 0:
+            self.logger.debug(
+                f"🚨 Arg1 embeddings are all zeros for sentence_ids: {sentence_ids}"
+            )
 
         return (
             sentence_embeddings_avg,
