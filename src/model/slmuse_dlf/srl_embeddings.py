@@ -87,9 +87,12 @@ class SRLEmbeddings(nn.Module):
     def count_all_zero_or_std_zero(self, tensor, tensor_name):
         all_zero_count = torch.sum(torch.all(tensor == 0, dim=-1)).item()
         std_zero_count = torch.sum(torch.std(tensor, dim=-1) == 0).item()
+        total_count = (
+            tensor.shape[0] * tensor.shape[1] if tensor.dim() > 2 else tensor.shape[0]
+        )
 
         self.logger.debug(
-            f"{tensor_name}: {all_zero_count} embeddings are all zero, {std_zero_count} embeddings have zero std"
+            f"{tensor_name}: {all_zero_count} of {total_count} embeddings are all zero, {std_zero_count} of {total_count} embeddings have zero std"
         )
 
     def get_sentence_embedding(
