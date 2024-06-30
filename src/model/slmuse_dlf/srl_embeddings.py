@@ -51,7 +51,7 @@ class SRLEmbeddings(nn.Module):
         if self._debug:
             self.verify_model_loading()
 
-            # Debugging:
+        # Debugging:
         self.logger.debug(f"✅ SRLEmbeddings successfully initialized")
 
     def verify_model_loading(self):
@@ -84,6 +84,14 @@ class SRLEmbeddings(nn.Module):
         if torch.isnan(tensor).any():
             self.logger.error(f"NaN values detected in {tensor_name}")
 
+    def count_all_zero_or_std_zero(self, tensor, tensor_name):
+        all_zero_count = torch.sum(torch.all(tensor == 0, dim=-1)).item()
+        std_zero_count = torch.sum(torch.std(tensor, dim=-1) == 0).item()
+
+        self.logger.debug(
+            f"{tensor_name}: {all_zero_count} embeddings are all zero, {std_zero_count} embeddings have zero std"
+        )
+
     def get_sentence_embedding(
         self, ids: torch.Tensor, attention_masks: torch.Tensor, mixed_precision="fp16"
     ):
@@ -111,9 +119,6 @@ class SRLEmbeddings(nn.Module):
                     attention_mask=attention_masks_flat,
                     output_hidden_states=True,
                 )
-
-                # last_4_layers = outputs.hidden_states[-4:]
-                # summed_embeddings = torch.stack(last_4_layers, dim=0).sum(0)
 
                 summed_embeddings = outputs.last_hidden_state
 
@@ -244,25 +249,12 @@ class SRLEmbeddings(nn.Module):
                     arg1_ids, sentence_ids, sentence_embeddings
                 )
 
-        if (torch.all(sentence_embeddings_avg == 0, dim=-1)).any() or (
-            (torch.std(sentence_embeddings_avg, dim=-1) == 0).any()
-        ):
-            self.logger.debug("🚨 Zero embeddings detected in sentence embeddings")
-
-        if (torch.all(predicate_embeddings == 0, dim=-1)).any() or (
-            (torch.std(predicate_embeddings, dim=-1) == 0).any()
-        ):
-            self.logger.debug("🚨 Zero embeddings detected in predicate embeddings")
-
-        if (torch.all(arg0_embeddings == 0, dim=-1)).any() or (
-            (torch.std(arg0_embeddings, dim=-1) == 0).any()
-        ):
-            self.logger.debug("🚨 Zero embeddings detected in arg0 embeddings")
-
-        if (torch.all(arg1_embeddings == 0, dim=-1)).any() or (
-            (torch.std(arg1_embeddings, dim=-1) == 0).any()
-        ):
-            self.logger.debug("🚨 Zero embeddings detected in arg1 embeddings")
+        self.count_all_zero_or_std_zero(
+            sentence_embeddings_avg, "sentence_embeddings_avg"
+        )
+        self.count_all_zero_or_std_zero(predicate_embeddings, "predicate_embeddings")
+        self.count_all_zero_or_std_zero(arg0_embeddings, "arg0_embeddings")
+        self.count_all_zero_or_std_zero(arg1_embeddings, "arg1_embeddings")
 
         return (
             sentence_embeddings_avg,
