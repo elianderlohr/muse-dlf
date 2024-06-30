@@ -242,10 +242,6 @@ class MUSEDLF(nn.Module):
             # check if there are any nans in the embeddings
             if torch.isnan(sentence_embeddings).any():
                 self.logger.error("🚨 NaNs detected in sentence embeddings")
-                self.logger.error(sentence_ids)
-                self.logger.error(sentence_attention_masks)
-
-                raise ValueError("NaNs detected in sentence embeddings")
             if torch.isnan(predicate_embeddings).any():
                 self.logger.error("🚨 NaNs detected in predicate embeddings")
             if torch.isnan(arg0_embeddings).any():

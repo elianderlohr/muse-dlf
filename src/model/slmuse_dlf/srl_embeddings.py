@@ -270,27 +270,36 @@ class SRLEmbeddings(nn.Module):
 
         # check if sentence_embeddings_avg is not only zeros and std is not zero
         if (
-            torch.all(sentence_embeddings_avg == 0)
-            and sentence_embeddings_avg.std() == 0
+            torch.all(sentence_embeddings_avg == 0, dim=-1)
+            and torch.std(sentence_embeddings_avg, dim=-1) == 0
         ):
             self.logger.debug(
                 f"🚨 Sentence embeddings are all zeros for sentence_ids: {sentence_ids}"
             )
 
         # check if predicate_embeddings is not only zeros and std is not zero
-        if torch.all(predicate_embeddings == 0) and predicate_embeddings.std() == 0:
+        if (
+            torch.all(predicate_embeddings == 0, dim=-1)
+            and torch.std(predicate_embeddings, dim=-1) == 0
+        ):
             self.logger.debug(
                 f"🚨 Predicate embeddings are all zeros for sentence_ids: {sentence_ids}"
             )
 
         # check if arg0_embeddings is not only zeros and std is not zero
-        if torch.all(arg0_embeddings == 0) and arg0_embeddings.std() == 0:
+        if (
+            torch.all(arg0_embeddings == 0, dim=-1)
+            and torch.std(arg0_embeddings, dim=-1) == 0
+        ):
             self.logger.debug(
                 f"🚨 Arg0 embeddings are all zeros for sentence_ids: {sentence_ids}"
             )
 
         # check if arg1_embeddings is not only zeros and std is not zero
-        if torch.all(arg1_embeddings == 0) and arg1_embeddings.std() == 0:
+        if (
+            torch.all(arg1_embeddings == 0, dim=-1)
+            and torch.std(arg1_embeddings, dim=-1) == 0
+        ):
             self.logger.debug(
                 f"🚨 Arg1 embeddings are all zeros for sentence_ids: {sentence_ids}"
             )
