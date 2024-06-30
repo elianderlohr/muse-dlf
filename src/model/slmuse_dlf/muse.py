@@ -264,6 +264,12 @@ class MUSEDLF(nn.Module):
             arg0_mask = ~torch.all(arg0_embeddings == 0, dim=-1)
             arg1_mask = ~torch.all(arg1_embeddings == 0, dim=-1)
 
+            # Check if sentence mask is the same as the attention mask
+            attention_masks_flat = sentence_attention_masks.view(sentence_mask.shape)
+            if not torch.equal(sentence_mask, attention_masks_flat.bool()):
+                self.logger.error("🚨 Sentence mask and attention mask do not match")
+                raise ValueError("Sentence mask and attention mask do not match")
+
             # Handle multiple spans by averaging predictions
             unsupervised_losses = torch.zeros(
                 (sentence_embeddings.size(0),), device=sentence_embeddings.device
