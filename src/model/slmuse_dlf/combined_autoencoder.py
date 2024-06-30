@@ -156,9 +156,39 @@ class CombinedAutoencoder(nn.Module):
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
+            if (v_p == 0).all() or v_p.std() == 0:
+                self.logger.debug(
+                    f"❌ v_p has mean {v_p.mean().item()} or std {v_p.std().item()}, {v_p[:, :, :5]}"
+                )
+            if (v_a0 == 0).all() or v_a0.std() == 0:
+                self.logger.debug(
+                    f"❌ v_a0 has mean {v_a0.mean().item()} or std {v_a0.std().item()}, {v_a0[:, :, :5]}"
+                )
+            if (v_a1 == 0).all() or v_a1.std() == 0:
+                self.logger.debug(
+                    f"❌ v_a1 has mean {v_a1.mean().item()} or std {v_a1.std().item()}, {v_a1[:, :, :5]}"
+                )
+            if (v_sentence == 0).all() or v_sentence.std() == 0:
+                self.logger.debug(
+                    f"❌ v_sentence has mean {v_sentence.mean().item()} or std {v_sentence.std().item()}, {v_sentence[:, :, :5]}"
+                )
+
             h_p = self.process_through_shared(v_p, v_sentence)
             h_a0 = self.process_through_shared(v_a0, v_sentence)
             h_a1 = self.process_through_shared(v_a1, v_sentence)
+
+            if (h_p == 0).all() or h_p.std() == 0:
+                self.logger.debug(
+                    f"❌ h_p has mean {h_p.mean().item()} or std {h_p.std().item()}, {h_p[:, :, :5]}"
+                )
+            if (h_a0 == 0).all() or h_a0.std() == 0:
+                self.logger.debug(
+                    f"❌ h_a0 has mean {h_a0.mean().item()} or std {h_a0.std().item()}, {h_a0[:, :, :5]}"
+                )
+            if (h_a1 == 0).all() or h_a1.std() == 0:
+                self.logger.debug(
+                    f"❌ h_a1 has mean {h_a1.mean().item()} or std {h_a1.std().item()}, {h_a1[:, :, :5]}"
+                )
 
             if (
                 torch.isnan(h_p).any()
@@ -172,21 +202,18 @@ class CombinedAutoencoder(nn.Module):
             logits_a0 = self.feed_forward_unique["a0"](h_a0)
             logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
-            if torch.isnan(logits_p).any():
+            if (logits_p == 0).all() or logits_p.std() == 0:
                 self.logger.debug(
-                    f"❌ NaNs detected in logits_p - stats - min: {logits_p.min().item()}, max: {logits_p.max().item()}, mean: {logits_p.mean().item()}, std: {logits_p.std().item()}"
+                    f"❌ logits_p has mean {logits_p.mean().item()} or std {logits_p.std().item()}, {logits_p}"
                 )
-                raise ValueError("NaNs detected in logits_p")
-            if torch.isnan(logits_a0).any():
+            if (logits_a0 == 0).all() or logits_a0.std() == 0:
                 self.logger.debug(
-                    f"❌ NaNs detected in logits_p - stats - min: {logits_a0.min().item()}, max: {logits_a0.max().item()}, mean: {logits_a0.mean().item()}, std: {logits_a0.std().item()}"
+                    f"❌ logits_a0 has mean {logits_a0.mean().item()} or std {logits_a0.std().item()}, {logits_a0}"
                 )
-                raise ValueError("NaNs detected in logits_a0")
-            if torch.isnan(logits_a1).any():
+            if (logits_a1 == 0).all() or logits_a1.std() == 0:
                 self.logger.debug(
-                    f"❌ NaNs detected in logits_p - stats - min: {logits_a1.min().item()}, max: {logits_a1.max().item()}, mean: {logits_a1.mean().item()}, std: {logits_a1.std().item()}"
+                    f"❌ logits_a1 has mean {logits_a1.mean().item()} or std {logits_a1.std().item()}, {logits_a1}"
                 )
-                raise ValueError("NaNs detected in logits_a1")
 
             d_p = torch.softmax(logits_p, dim=1)
             d_a0 = torch.softmax(logits_a0, dim=1)
