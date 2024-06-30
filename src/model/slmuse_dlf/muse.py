@@ -239,7 +239,7 @@ class MUSEDLF(nn.Module):
                 mixed_precision=mixed_precision,
             )
 
-            # check if there are any nans in the embeddings
+            # Check if there are any NaNs in the embeddings
             if torch.isnan(sentence_embeddings).any():
                 self.logger.error("🚨 NaNs detected in sentence embeddings")
             if torch.isnan(predicate_embeddings).any():
@@ -249,7 +249,7 @@ class MUSEDLF(nn.Module):
             if torch.isnan(arg1_embeddings).any():
                 self.logger.error("🚨 NaNs detected in arg1 embeddings")
 
-            # log if no nans are detected
+            # Log if no NaNs are detected
             if (
                 not torch.isnan(sentence_embeddings).any()
                 and not torch.isnan(predicate_embeddings).any()
@@ -264,9 +264,9 @@ class MUSEDLF(nn.Module):
             arg0_mask = ~torch.all(arg0_embeddings == 0, dim=-1)
             arg1_mask = ~torch.all(arg1_embeddings == 0, dim=-1)
 
-            # Check if sentence mask is the same as the attention mask
-            attention_masks_flat = sentence_attention_masks.view(sentence_mask.shape)
-            if not torch.equal(sentence_mask, attention_masks_flat.bool()):
+            # Check if sentence mask is the same as the attention mask (reshaped appropriately)
+            attention_masks_flat = sentence_attention_masks.sum(dim=-1) > 0
+            if not torch.equal(sentence_mask, attention_masks_flat):
                 self.logger.error("🚨 Sentence mask and attention mask do not match")
                 raise ValueError("Sentence mask and attention mask do not match")
 
@@ -360,7 +360,7 @@ class MUSEDLF(nn.Module):
 
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
 
-                # add the loss to the unsupervised losses
+                # Add the loss to the unsupervised losses
                 unsupervised_losses += unsupervised_fx_results["loss"]
 
             if d_p_list and d_a0_list and d_a1_list and d_fx_list:
