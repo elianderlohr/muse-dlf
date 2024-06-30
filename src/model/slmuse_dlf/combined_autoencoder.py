@@ -158,19 +158,19 @@ class CombinedAutoencoder(nn.Module):
         ):
             if (v_p == 0).all() or v_p.std() == 0:
                 self.logger.debug(
-                    f"❌ v_p has mean {v_p.mean().item()} or std {v_p.std().item()}, {v_p[:, :, :5]}"
+                    f"❌ v_p has mean {v_p.mean().item()} or std {v_p.std().item()}, {v_p[:, :5]}"
                 )
             if (v_a0 == 0).all() or v_a0.std() == 0:
                 self.logger.debug(
-                    f"❌ v_a0 has mean {v_a0.mean().item()} or std {v_a0.std().item()}, {v_a0[:, :, :5]}"
+                    f"❌ v_a0 has mean {v_a0.mean().item()} or std {v_a0.std().item()}, {v_a0[:, :5]}"
                 )
             if (v_a1 == 0).all() or v_a1.std() == 0:
                 self.logger.debug(
-                    f"❌ v_a1 has mean {v_a1.mean().item()} or std {v_a1.std().item()}, {v_a1[:, :, :5]}"
+                    f"❌ v_a1 has mean {v_a1.mean().item()} or std {v_a1.std().item()}, {v_a1[:, :5]}"
                 )
             if (v_sentence == 0).all() or v_sentence.std() == 0:
                 self.logger.debug(
-                    f"❌ v_sentence has mean {v_sentence.mean().item()} or std {v_sentence.std().item()}, {v_sentence[:, :, :5]}"
+                    f"❌ v_sentence has mean {v_sentence.mean().item()} or std {v_sentence.std().item()}, {v_sentence[:, :5]}"
                 )
 
             h_p = self.process_through_shared(v_p, v_sentence)
@@ -179,15 +179,15 @@ class CombinedAutoencoder(nn.Module):
 
             if (h_p == 0).all() or h_p.std() == 0:
                 self.logger.debug(
-                    f"❌ h_p has mean {h_p.mean().item()} or std {h_p.std().item()}, {h_p[:, :, :5]}"
+                    f"❌ h_p has mean {h_p.mean().item()} or std {h_p.std().item()}, {h_p[:, :5]}"
                 )
             if (h_a0 == 0).all() or h_a0.std() == 0:
                 self.logger.debug(
-                    f"❌ h_a0 has mean {h_a0.mean().item()} or std {h_a0.std().item()}, {h_a0[:, :, :5]}"
+                    f"❌ h_a0 has mean {h_a0.mean().item()} or std {h_a0.std().item()}, {h_a0[:, :5]}"
                 )
             if (h_a1 == 0).all() or h_a1.std() == 0:
                 self.logger.debug(
-                    f"❌ h_a1 has mean {h_a1.mean().item()} or std {h_a1.std().item()}, {h_a1[:, :, :5]}"
+                    f"❌ h_a1 has mean {h_a1.mean().item()} or std {h_a1.std().item()}, {h_a1[:, :5]}"
                 )
 
             if (
@@ -292,15 +292,15 @@ class CombinedAutoencoder(nn.Module):
 
         if (vhat_p == 0).all() or vhat_p.std() == 0:
             self.logger.debug(
-                f"❌ vhat_p has mean {vhat_p.mean().item()} or std {vhat_p.std().item()}, {vhat_p[0, 0, :5]}"
+                f"❌ vhat_p has mean {vhat_p.mean().item()} or std {vhat_p.std().item()}, {vhat_p[0, :5]}"
             )
         if (vhat_a0 == 0).all() or vhat_a0.std() == 0:
             self.logger.debug(
-                f"❌ vhat_a0 has mean {vhat_a0.mean().item()} or std {vhat_a0.std().item()}, {vhat_a0[0, 0, :5]}"
+                f"❌ vhat_a0 has mean {vhat_a0.mean().item()} or std {vhat_a0.std().item()}, {vhat_a0[0, :5]}"
             )
         if (vhat_a1 == 0).all() or vhat_a1.std() == 0:
             self.logger.debug(
-                f"❌ vhat_a1 has mean {vhat_a1.mean().item()} or std {vhat_a1.std().item()}, {vhat_a1[0, 0, :5]}"
+                f"❌ vhat_a1 has mean {vhat_a1.mean().item()} or std {vhat_a1.std().item()}, {vhat_a1[0,:5]}"
             )
 
         return {
