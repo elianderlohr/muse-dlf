@@ -105,7 +105,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 768 \
+    --hidden_dim 2056 \
     --num_classes 15 \
     --dropout_prob 0.3 \
     --alpha 0.5 \
@@ -118,23 +118,22 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
     --max_arg_length 10 \
-    --muse_unsupervised_num_layers 2 \
+    --muse_unsupervised_num_layers 4 \
     --muse_unsupervised_activation relu \
-    --muse_unsupervised_use_batch_norm False \
+    --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
-    --muse_unsupervised_gumbel_softmax_log False \
-    --muse_frameaxis_unsupervised_num_layers 2 \
-    --muse_frameaxis_unsupervised_activation relu \
-    --muse_frameaxis_unsupervised_use_batch_norm False \
+    --muse_unsupervised_gumbel_softmax_log True \
+    --muse_frameaxis_unsupervised_num_layers 4 \
+    --muse_frameaxis_unsupervised_activation elu \
+    --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
-    --muse_frameaxis_unsupervised_concat_frameaxis True \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --num_negatives 256 \
     --supervised_concat_frameaxis False \
-    --supervised_num_layers 2 \
-    --supervised_activation relu \
+    --supervised_num_layers 1 \
+    --supervised_activation gelu \
     --adamw_weight_decay 0.001 \
-    --optimizer adam \
+    --optimizer adamw \
     --srl_embeddings_pooling mean \
     --tau_decay 0.00045 \
     --tau_min 0.5 \

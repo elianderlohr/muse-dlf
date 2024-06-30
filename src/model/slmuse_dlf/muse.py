@@ -39,7 +39,6 @@ class MUSEDLF(nn.Module):
         muse_frameaxis_unsupervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         muse_frameaxis_unsupervised_use_batch_norm=True,  # Whether to use batch normalization
         muse_frameaxis_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        muse_frameaxis_unsupervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
         muse_frameaxis_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
         # MUSEUnsupervised & MUSEFrameAxisUnsupervised Parameters
         num_negatives=-1,  # Number of negative samples to use for triplet loss
@@ -99,7 +98,6 @@ class MUSEDLF(nn.Module):
             activation=muse_frameaxis_unsupervised_activation,
             use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
             matmul_input=muse_frameaxis_unsupervised_matmul_input,
-            concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
             gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
             _debug=_debug,
         )

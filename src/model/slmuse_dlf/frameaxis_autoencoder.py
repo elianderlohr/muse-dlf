@@ -20,7 +20,6 @@ class FrameAxisAutoencoder(nn.Module):
         activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
         use_batch_norm=True,  # whether to use batch normalization
         matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        concat_frameaxis=True,  # whether to concatenate frameaxis with sentence
         log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
@@ -33,14 +32,13 @@ class FrameAxisAutoencoder(nn.Module):
         self.num_layers = num_layers
         self.use_batch_norm = use_batch_norm
         self.matmul_input = matmul_input
-        self.concat_frameaxis = concat_frameaxis
         self.log = log
 
         # Initialize activation function
         self.activation_func = self._get_activation(activation)
 
         # Determine input dimension based on whether to concatenate frameaxis with sentence
-        input_dim = embedding_dim + frameaxis_dim if concat_frameaxis else embedding_dim
+        input_dim = embedding_dim + frameaxis_dim
 
         # Initialize the layers for the encoder
         self.encoder = nn.ModuleList()
@@ -191,11 +189,7 @@ class FrameAxisAutoencoder(nn.Module):
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
 
     def process_through_first(self, v_z, v_sentence):
-        # Concatenating v_z with the sentence embedding if concat_frameaxis is True
-        if self.concat_frameaxis:
-            x = torch.cat((v_z, v_sentence), dim=-1)
-        else:
-            x = v_sentence
+        x = torch.cat((v_z, v_sentence), dim=-1)
 
         # Passing through the encoder layers
         for i in range(self.num_layers):

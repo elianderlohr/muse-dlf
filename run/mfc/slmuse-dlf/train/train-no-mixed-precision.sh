@@ -127,7 +127,6 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm False \
     --muse_frameaxis_unsupervised_matmul_input g \
-    --muse_frameaxis_unsupervised_concat_frameaxis True \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --supervised_concat_frameaxis False \
     --supervised_num_layers 2 \

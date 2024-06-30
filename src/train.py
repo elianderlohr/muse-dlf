@@ -51,7 +51,6 @@ def load_model(
     muse_frameaxis_unsupervised_activation,
     muse_frameaxis_unsupervised_use_batch_norm,
     muse_frameaxis_unsupervised_matmul_input,
-    muse_frameaxis_unsupervised_concat_frameaxis,
     muse_frameaxis_unsupervised_gumbel_softmax_log,
     num_negatives,
     supervised_concat_frameaxis,
@@ -85,7 +84,6 @@ def load_model(
         muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
         muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
         muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-        muse_frameaxis_unsupervised_concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
         muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
         num_negatives=num_negatives,
         supervised_concat_frameaxis=supervised_concat_frameaxis,
@@ -232,12 +230,6 @@ def main():
         type=str,
         default="g",
         help="Input type for matmul in the MUSE frameaxis unsupervised encoder",
-    )
-    model_config.add_argument(
-        "--muse_frameaxis_unsupervised_concat_frameaxis",
-        type=str2bool,
-        default=True,
-        help="Concatenate frameaxis with sentence in the MUSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_gumbel_softmax_log",
@@ -513,7 +505,6 @@ def main():
         "muse_frameaxis_unsupervised_activation": args.muse_frameaxis_unsupervised_activation,
         "muse_frameaxis_unsupervised_use_batch_norm": args.muse_frameaxis_unsupervised_use_batch_norm,
         "muse_frameaxis_unsupervised_matmul_input": args.muse_frameaxis_unsupervised_matmul_input,
-        "muse_frameaxis_unsupervised_concat_frameaxis": args.muse_frameaxis_unsupervised_concat_frameaxis,
         "muse_frameaxis_unsupervised_gumbel_softmax_log": args.muse_frameaxis_unsupervised_gumbel_softmax_log,
         "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
         "supervised_num_layers": args.supervised_num_layers,
@@ -549,7 +540,6 @@ def main():
         muse_frameaxis_unsupervised_activation=args.muse_frameaxis_unsupervised_activation,
         muse_frameaxis_unsupervised_use_batch_norm=args.muse_frameaxis_unsupervised_use_batch_norm,
         muse_frameaxis_unsupervised_matmul_input=args.muse_frameaxis_unsupervised_matmul_input,
-        muse_frameaxis_unsupervised_concat_frameaxis=args.muse_frameaxis_unsupervised_concat_frameaxis,
         muse_frameaxis_unsupervised_gumbel_softmax_log=args.muse_frameaxis_unsupervised_gumbel_softmax_log,
         num_negatives=args.num_negatives,
         supervised_concat_frameaxis=args.supervised_concat_frameaxis,

@@ -62,7 +62,6 @@ def load_model(
     muse_frameaxis_unsupervised_activation,
     muse_frameaxis_unsupervised_use_batch_norm,
     muse_frameaxis_unsupervised_matmul_input,
-    muse_frameaxis_unsupervised_concat_frameaxis,
     muse_frameaxis_unsupervised_gumbel_softmax_log,
     supervised_concat_frameaxis,
     supervised_num_layers,
@@ -92,7 +91,6 @@ def load_model(
         muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
         muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
         muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-        muse_frameaxis_unsupervised_concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
         muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
         supervised_concat_frameaxis=supervised_concat_frameaxis,
         supervised_num_layers=supervised_num_layers,
@@ -145,9 +143,6 @@ def main():
     )
     muse_frameaxis_unsupervised_matmul_input = (
         wandb.config.muse_frameaxis_unsupervised_matmul_input
-    )
-    muse_frameaxis_unsupervised_concat_frameaxis = (
-        wandb.config.muse_frameaxis_unsupervised_concat_frameaxis
     )
     muse_frameaxis_unsupervised_gumbel_softmax_log = (
         wandb.config.muse_frameaxis_unsupervised_gumbel_softmax_log
@@ -236,7 +231,6 @@ def main():
         muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
         muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
         muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-        muse_frameaxis_unsupervised_concat_frameaxis=muse_frameaxis_unsupervised_concat_frameaxis,
         muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
         supervised_concat_frameaxis=supervised_concat_frameaxis,
         supervised_num_layers=supervised_num_layers,

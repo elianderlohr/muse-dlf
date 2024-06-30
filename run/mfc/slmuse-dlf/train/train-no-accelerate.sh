@@ -115,7 +115,6 @@ python src/train.py \
     --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
-    --muse_frameaxis_unsupervised_concat_frameaxis True \
     --muse_frameaxis_unsupervised_gumbel_softmax_hard False \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --supervised_concat_frameaxis True \
