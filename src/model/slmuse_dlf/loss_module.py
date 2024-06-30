@@ -20,6 +20,9 @@ class LossModule(nn.Module):
         return torch.sqrt(torch.sum((u - v) ** 2, dim=1))
 
     def contrastive_loss(self, v, vhat, negatives, mask):
+        if mask.sum() == 0:
+            return torch.tensor(0.0, device=v.device)
+
         batch_size = vhat.size(0)
         N = negatives.size(0)
         loss = torch.zeros(batch_size, device=v.device)
@@ -33,11 +36,12 @@ class LossModule(nn.Module):
 
         loss = loss / N
         loss = loss * mask.float()
-        if mask.sum() == 0:
-            return torch.tensor(0.0, device=loss.device)
         return loss.sum() / mask.sum()
 
     def focal_triplet_loss(self, v, vhat_z, g, F, mask):
+        if mask.sum() == 0:
+            return torch.tensor(0.0, device=v.device)
+
         _, indices = torch.topk(g, self.t, largest=False, dim=1)
         F_t = torch.stack([F[indices[i]] for i in range(g.size(0))])
         g_tz = torch.stack([g[i, indices[i]] for i in range(g.size(0))])
@@ -56,9 +60,13 @@ class LossModule(nn.Module):
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
         loss = loss * mask.float()
-        if mask.sum() == 0:
-            return torch.tensor(0.0, device=loss.device)
         return loss.sum() / mask.sum()
+
+    def orthogonality_term(self, F, reg=1e-4):
+        gram_matrix = torch.mm(F, F.T)
+        identity_matrix = torch.eye(gram_matrix.size(0), device=gram_matrix.device)
+        ortho_loss = (gram_matrix - identity_matrix).abs().sum()
+        return ortho_loss
 
     def forward(
         self,
@@ -67,6 +75,9 @@ class LossModule(nn.Module):
         mask,
         mixed_precision="fp16",
     ):
+        if mask.sum() == 0:
+            return torch.tensor(0.0, device=mask.device)
+
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
