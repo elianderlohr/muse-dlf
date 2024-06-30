@@ -262,6 +262,26 @@ class MUSEDLF(nn.Module):
             ):
                 self.logger.debug("✅ No NaNs detected in embeddings")
 
+            if (torch.all(sentence_embeddings == 0, dim=-1)).any() or (
+                (torch.std(sentence_embeddings, dim=-1) == 0).any()
+            ):
+                self.logger.debug("🚨 Zero embeddings detected in sentence embeddings")
+
+            if (torch.all(predicate_embeddings == 0, dim=-1)).any() or (
+                (torch.std(predicate_embeddings, dim=-1) == 0).any()
+            ):
+                self.logger.debug("🚨 Zero embeddings detected in predicate embeddings")
+
+            if (torch.all(arg0_embeddings == 0, dim=-1)).any() or (
+                (torch.std(arg0_embeddings, dim=-1) == 0).any()
+            ):
+                self.logger.debug("🚨 Zero embeddings detected in arg0 embeddings")
+
+            if (torch.all(arg1_embeddings == 0, dim=-1)).any() or (
+                (torch.std(arg1_embeddings, dim=-1) == 0).any()
+            ):
+                self.logger.debug("🚨 Zero embeddings detected in arg1 embeddings")
+
             # Handle multiple spans by averaging predictions
             unsupervised_losses = torch.zeros(
                 (sentence_embeddings.size(0),), device=sentence_embeddings.device
