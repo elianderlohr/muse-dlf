@@ -333,27 +333,24 @@ class MUSEDLF(nn.Module):
                             f"Found arg1 embedding with all zeros, masked it, and ignored loss. First 5 values: {v_a1_span[0, :5].cpu().numpy()}"
                         )
 
-                    if mask_p.any() and mask_a0.any() and mask_a1.any():
-                        # Feed the embeddings to the unsupervised module
-                        unsupervised_results = self.unsupervised(
-                            v_p_span[mask_p],
-                            v_a0_span[mask_a0],
-                            v_a1_span[mask_a1],
-                            s_sentence_span,
-                            negatives_p,
-                            negatives_a0,
-                            negatives_a1,
-                            tau,
-                            mixed_precision=mixed_precision,
-                        )
-                        unsupervised_losses[
-                            mask_p & mask_a0 & mask_a1
-                        ] += unsupervised_results["loss"]
+                    # Feed the embeddings to the unsupervised module
+                    unsupervised_results = self.unsupervised(
+                        v_p_span,
+                        v_a0_span,
+                        v_a1_span,
+                        s_sentence_span,
+                        negatives_p,
+                        negatives_a0,
+                        negatives_a1,
+                        tau,
+                        mixed_precision=mixed_precision,
+                    )
+                    sentence_loss += unsupervised_results["loss"]
 
-                        # Use the vhat (reconstructed embeddings) for supervised predictions
-                        d_p_sentence_list.append(unsupervised_results["p"]["d"])
-                        d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
-                        d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+                    # Use the vhat (reconstructed embeddings) for supervised predictions
+                    d_p_sentence_list.append(unsupervised_results["p"]["d"])
+                    d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
+                    d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
 
                 # Aggregating across all spans
                 d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
@@ -375,14 +372,34 @@ class MUSEDLF(nn.Module):
 
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
 
-                # add the loss to the unsupervised losses
-                unsupervised_losses += unsupervised_fx_results["loss"]
+                # Add the loss to the unsupervised losses
+                sentence_loss += unsupervised_fx_results["loss"]
+
+                # Apply mask to sentence loss
+                valid_mask = mask_p & mask_a0 & mask_a1
+                unsupervised_losses += sentence_loss * valid_mask.float()
 
             # Aggregating across all spans
-            d_p_aggregated = torch.stack(d_p_list, dim=1)
-            d_a0_aggregated = torch.stack(d_a0_list, dim=1)
-            d_a1_aggregated = torch.stack(d_a1_list, dim=1)
-            d_fx_aggregated = torch.stack(d_fx_list, dim=1)
+            d_p_aggregated = (
+                torch.stack(d_p_list, dim=1)
+                if d_p_list
+                else torch.tensor([], device=sentence_embeddings.device)
+            )
+            d_a0_aggregated = (
+                torch.stack(d_a0_list, dim=1)
+                if d_a0_list
+                else torch.tensor([], device=sentence_embeddings.device)
+            )
+            d_a1_aggregated = (
+                torch.stack(d_a1_list, dim=1)
+                if d_a1_list
+                else torch.tensor([], device=sentence_embeddings.device)
+            )
+            d_fx_aggregated = (
+                torch.stack(d_fx_list, dim=1)
+                if d_fx_list
+                else torch.tensor([], device=sentence_embeddings.device)
+            )
 
             # Supervised predictions
             span_pred, sentence_pred, combined_pred, other = self.supervised(
