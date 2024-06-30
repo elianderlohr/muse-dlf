@@ -173,21 +173,18 @@ class CombinedAutoencoder(nn.Module):
             logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
             if torch.isnan(logits_p).any():
-                self.logger.error("❌ NaNs detected in logits_p")
                 self.logger.debug(
-                    f"logits_p stats - min: {logits_p.min().item()}, max: {logits_p.max().item()}, mean: {logits_p.mean().item()}, std: {logits_p.std().item()}"
+                    f"❌ NaNs detected in logits_p - stats - min: {logits_p.min().item()}, max: {logits_p.max().item()}, mean: {logits_p.mean().item()}, std: {logits_p.std().item()}"
                 )
                 raise ValueError("NaNs detected in logits_p")
             if torch.isnan(logits_a0).any():
-                self.logger.error("❌ NaNs detected in logits_a0")
                 self.logger.debug(
-                    f"logits_a0 stats - min: {logits_a0.min().item()}, max: {logits_a0.max().item()}, mean: {logits_a0.mean().item()}, std: {logits_a0.std().item()}"
+                    f"❌ NaNs detected in logits_p - stats - min: {logits_a0.min().item()}, max: {logits_a0.max().item()}, mean: {logits_a0.mean().item()}, std: {logits_a0.std().item()}"
                 )
                 raise ValueError("NaNs detected in logits_a0")
             if torch.isnan(logits_a1).any():
-                self.logger.error("❌ NaNs detected in logits_a1")
                 self.logger.debug(
-                    f"logits_a1 stats - min: {logits_a1.min().item()}, max: {logits_a1.max().item()}, mean: {logits_a1.mean().item()}, std: {logits_a1.std().item()}"
+                    f"❌ NaNs detected in logits_p - stats - min: {logits_a1.min().item()}, max: {logits_a1.max().item()}, mean: {logits_a1.mean().item()}, std: {logits_a1.std().item()}"
                 )
                 raise ValueError("NaNs detected in logits_a1")
 
@@ -198,15 +195,15 @@ class CombinedAutoencoder(nn.Module):
             # check if d_p has mean 0 or std 0
             if (d_p == 0).all() or d_p.std() == 0:
                 self.logger.debug(
-                    f"❌ d_p has mean {d_p.mean().item()} or std {d_p.std().item()}"
+                    f"❌ d_p has mean {d_p.mean().item()} or std {d_p.std().item()}, {d_p}"
                 )
             if (d_a0 == 0).all() or d_a0.std() == 0:
                 self.logger.debug(
-                    f"❌ d_a0 has mean {d_a0.mean().item()} or std {d_a0.std().item()}"
+                    f"❌ d_a0 has mean {d_a0.mean().item()} or std {d_a0.std().item()}, {d_a0}"
                 )
             if (d_a1 == 0).all() or d_a1.std() == 0:
                 self.logger.debug(
-                    f"❌ d_a1 has mean {d_a1.mean().item()} or std {d_a1.std().item()}"
+                    f"❌ d_a1 has mean {d_a1.mean().item()} or std {d_a1.std().item()}, {d_a1}"
                 )
 
             if (
@@ -225,15 +222,15 @@ class CombinedAutoencoder(nn.Module):
 
             if (g_p == 0).all() or g_p.std() == 0:
                 self.logger.debug(
-                    f"❌ g_p has mean {g_p.mean().item()} or std {g_p.std().item()}"
+                    f"❌ g_p has mean {g_p.mean().item()} or std {g_p.std().item()}, {g_p}"
                 )
             if (g_a0 == 0).all() or g_a0.std() == 0:
                 self.logger.debug(
-                    f"❌ g_a0 has mean {g_a0.mean().item()} or std {g_a0.std().item()}"
+                    f"❌ g_a0 has mean {g_a0.mean().item()} or std {g_a0.std().item()}, {g_a0}"
                 )
             if (g_a1 == 0).all() or g_a1.std() == 0:
                 self.logger.debug(
-                    f"❌ g_a1 has mean {g_a1.mean().item()} or std {g_a1.std().item()}"
+                    f"❌ g_a1 has mean {g_a1.mean().item()} or std {g_a1.std().item()}, {g_a1}"
                 )
 
             if (
@@ -268,15 +265,15 @@ class CombinedAutoencoder(nn.Module):
 
         if (vhat_p == 0).all() or vhat_p.std() == 0:
             self.logger.debug(
-                f"❌ vhat_p has mean {vhat_p.mean().item()} or std {vhat_p.std().item()}"
+                f"❌ vhat_p has mean {vhat_p.mean().item()} or std {vhat_p.std().item()}, {vhat_p[0, 0, :5]}"
             )
         if (vhat_a0 == 0).all() or vhat_a0.std() == 0:
             self.logger.debug(
-                f"❌ vhat_a0 has mean {vhat_a0.mean().item()} or std {vhat_a0.std().item()}"
+                f"❌ vhat_a0 has mean {vhat_a0.mean().item()} or std {vhat_a0.std().item()}, {vhat_a0[0, 0, :5]}"
             )
         if (vhat_a1 == 0).all() or vhat_a1.std() == 0:
             self.logger.debug(
-                f"❌ vhat_a1 has mean {vhat_a1.mean().item()} or std {vhat_a1.std().item()}"
+                f"❌ vhat_a1 has mean {vhat_a1.mean().item()} or std {vhat_a1.std().item()}, {vhat_a1[0, 0, :5]}"
             )
 
         return {
@@ -301,9 +298,5 @@ class CombinedAutoencoder(nn.Module):
         if torch.isnan(x).any():
             self.logger.error("❌ NaNs detected after processing through shared layers")
             raise ValueError("NaNs detected after processing through shared layers")
-
-        self.logger.debug(
-            f"x stats after shared processing - min: {x.min().item()}, max: {x.max().item()}, mean: {x.mean().item()}, std: {x.std().item()}"
-        )
 
         return x
