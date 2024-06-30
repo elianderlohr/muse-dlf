@@ -44,7 +44,14 @@ class Trainer:
         self.tau_decay = tau_decay
         self.early_stop = early_stop
 
-        self.scaler = GradScaler() if mixed_precision in ["fp16", "bf16"] else None
+        # Initialize the mixed precision
+        logger.info(
+            f"Mixed precision is enabled: {mixed_precision in ['fp16', 'bf16', 'fp32']}, therefore set mixed precision to: {mixed_precision}"
+        )
+
+        self.scaler = (
+            GradScaler() if mixed_precision in ["fp16", "bf16", "fp32"] else None
+        )
 
         self.training_management = training_management
         if self.training_management == "accelerate":
@@ -199,6 +206,12 @@ class Trainer:
             "accuracy", experiment_id=experiment_id
         )
 
+        precision_dtype = (
+            torch.float16
+            if self.mixed_precision == "fp16"
+            else torch.bfloat16 if self.mixed_precision == "bf16" else torch.float32
+        )
+
         local_steps = 0
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
@@ -252,10 +265,8 @@ class Trainer:
             )
 
             with autocast(
-                enabled=self.mixed_precision in ["fp16", "bf16"],
-                dtype=(
-                    torch.float16 if self.mixed_precision == "fp16" else torch.bfloat16
-                ),
+                enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
+                dtype=precision_dtype,
             ):
                 (
                     unsupervised_loss,
@@ -700,7 +711,7 @@ class Trainer:
         precision_dtype = (
             torch.float16
             if self.mixed_precision == "fp16"
-            else torch.bfloat16 if self.mixed_precision == "bf16" else None
+            else torch.bfloat16 if self.mixed_precision == "bf16" else torch.float32
         )
 
         for batch_idx, batch in enumerate(
@@ -749,7 +760,7 @@ class Trainer:
 
             with torch.no_grad():
                 with autocast(
-                    enabled=self.mixed_precision in ["fp16", "bf16"],
+                    enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
                     dtype=precision_dtype,
                 ):
                     _, span_logits, sentence_logits, combined_logits, other = (

@@ -98,12 +98,13 @@ class SRLEmbeddings(nn.Module):
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else None
+            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
         with torch.no_grad():
             with autocast(
-                enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+                enabled=mixed_precision in ["fp16", "bf16", "fp32"],
+                dtype=precision_dtype,
             ):
                 outputs = self.model(
                     input_ids=ids_flat,
@@ -232,7 +233,8 @@ class SRLEmbeddings(nn.Module):
             )
 
             with autocast(
-                enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+                enabled=mixed_precision in ["fp16", "bf16", "fp32"],
+                dtype=precision_dtype,
             ):  # Use autocast for mixed precision
                 sentence_embeddings, sentence_embeddings_avg = (
                     self.get_sentence_embedding(

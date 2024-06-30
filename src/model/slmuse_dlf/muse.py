@@ -61,8 +61,6 @@ class MUSEDLF(nn.Module):
             torch.autograd.set_detect_anomaly(True)
             self.logger.warning("🚨 torch.autograd.set_detect_anomaly(True) activated")
 
-        self.t = t
-
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
             model_name_or_path=bert_model_name_or_path,
@@ -216,17 +214,17 @@ class MUSEDLF(nn.Module):
         mixed_precision="fp16",  # mixed precision as a parameter
     ):
         self.logger.debug(
-            f"🚦 Mixed precision enabled: {mixed_precision in ['fp16', 'bf16']}"
+            f"🚦 Mixed precision enabled: {mixed_precision in ['fp16', 'bf16', 'fp32']}"
         )
 
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else None
+            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
         with autocast(
-            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
             # Convert input IDs to embeddings
             (

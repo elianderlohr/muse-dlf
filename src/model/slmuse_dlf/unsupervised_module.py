@@ -68,11 +68,11 @@ class MUSEUnsupervised(nn.Module):
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else None
+            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
         with autocast(
-            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
             # outputs = {
             # "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},

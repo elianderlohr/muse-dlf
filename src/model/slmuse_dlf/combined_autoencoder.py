@@ -150,11 +150,11 @@ class CombinedAutoencoder(nn.Module):
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else None
+            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
         with autocast(
-            enabled=mixed_precision in ["fp16", "bf16"], dtype=precision_dtype
+            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
             h_p = self.process_through_shared(v_p, v_sentence)
             h_a0 = self.process_through_shared(v_a0, v_sentence)
