@@ -258,25 +258,11 @@ class MUSEDLF(nn.Module):
             ):
                 self.logger.debug("✅ No NaNs detected in embeddings")
 
-            if (torch.all(sentence_embeddings == 0, dim=-1)).any() or (
-                (torch.std(sentence_embeddings, dim=-1) == 0).any()
-            ):
-                self.logger.debug("🚨 Zero embeddings detected in sentence embeddings")
-
-            if (torch.all(predicate_embeddings == 0, dim=-1)).any() or (
-                (torch.std(predicate_embeddings, dim=-1) == 0).any()
-            ):
-                self.logger.debug("🚨 Zero embeddings detected in predicate embeddings")
-
-            if (torch.all(arg0_embeddings == 0, dim=-1)).any() or (
-                (torch.std(arg0_embeddings, dim=-1) == 0).any()
-            ):
-                self.logger.debug("🚨 Zero embeddings detected in arg0 embeddings")
-
-            if (torch.all(arg1_embeddings == 0, dim=-1)).any() or (
-                (torch.std(arg1_embeddings, dim=-1) == 0).any()
-            ):
-                self.logger.debug("🚨 Zero embeddings detected in arg1 embeddings")
+            # Create masks to identify non-zero embeddings
+            sentence_mask = ~torch.all(sentence_embeddings == 0, dim=-1)
+            predicate_mask = ~torch.all(predicate_embeddings == 0, dim=-1)
+            arg0_mask = ~torch.all(arg0_embeddings == 0, dim=-1)
+            arg1_mask = ~torch.all(arg1_embeddings == 0, dim=-1)
 
             # Handle multiple spans by averaging predictions
             unsupervised_losses = torch.zeros(
@@ -303,6 +289,11 @@ class MUSEDLF(nn.Module):
             # Process each sentence
             for sentence_idx in range(sentence_embeddings.size(1)):
                 s_sentence_span = sentence_embeddings[:, sentence_idx, :]
+
+                # Check if the sentence span is valid (non-zero)
+                if not sentence_mask[:, sentence_idx].any():
+                    continue
+
                 v_fx = frameaxis_data[:, sentence_idx, :]
 
                 d_p_sentence_list = []
@@ -314,6 +305,14 @@ class MUSEDLF(nn.Module):
                     v_p_span = predicate_embeddings[:, sentence_idx, span_idx, :]
                     v_a0_span = arg0_embeddings[:, sentence_idx, span_idx, :]
                     v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
+
+                    # Check if the spans are valid (non-zero)
+                    if (
+                        not predicate_mask[:, sentence_idx, span_idx].any()
+                        or not arg0_mask[:, sentence_idx, span_idx].any()
+                        or not arg1_mask[:, sentence_idx, span_idx].any()
+                    ):
+                        continue
 
                     # Feed the embeddings to the unsupervised module
                     unsupervised_results = self.unsupervised(
@@ -334,14 +333,15 @@ class MUSEDLF(nn.Module):
                     d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
                     d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
 
-                # Aggregating across all spans
-                d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
-                d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
-                d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
+                if d_p_sentence_list and d_a0_sentence_list and d_a1_sentence_list:
+                    # Aggregating across all spans
+                    d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
+                    d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
+                    d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
 
-                d_p_list.append(d_p_sentence)
-                d_a0_list.append(d_a0_sentence)
-                d_a1_list.append(d_a1_sentence)
+                    d_p_list.append(d_p_sentence)
+                    d_a0_list.append(d_a0_sentence)
+                    d_a1_list.append(d_a1_sentence)
 
                 # As per sentence only one frameaxis data set is present calculate only once
                 unsupervised_fx_results = self.unsupervised_fx(
@@ -357,22 +357,25 @@ class MUSEDLF(nn.Module):
                 # add the loss to the unsupervised losses
                 unsupervised_losses += unsupervised_fx_results["loss"]
 
-            # Aggregating across all spans
-            d_p_aggregated = torch.stack(d_p_list, dim=1)
-            d_a0_aggregated = torch.stack(d_a0_list, dim=1)
-            d_a1_aggregated = torch.stack(d_a1_list, dim=1)
-            d_fx_aggregated = torch.stack(d_fx_list, dim=1)
+            if d_p_list and d_a0_list and d_a1_list and d_fx_list:
+                # Aggregating across all spans
+                d_p_aggregated = torch.stack(d_p_list, dim=1)
+                d_a0_aggregated = torch.stack(d_a0_list, dim=1)
+                d_a1_aggregated = torch.stack(d_a1_list, dim=1)
+                d_fx_aggregated = torch.stack(d_fx_list, dim=1)
 
-            # Supervised predictions
-            span_pred, sentence_pred, combined_pred, other = self.supervised(
-                d_p_aggregated,
-                d_a0_aggregated,
-                d_a1_aggregated,
-                d_fx_aggregated,
-                sentence_embeddings,
-                frameaxis_data,
-                mixed_precision=mixed_precision,
-            )
+                # Supervised predictions
+                span_pred, sentence_pred, combined_pred, other = self.supervised(
+                    d_p_aggregated,
+                    d_a0_aggregated,
+                    d_a1_aggregated,
+                    d_fx_aggregated,
+                    sentence_embeddings,
+                    frameaxis_data,
+                    mixed_precision=mixed_precision,
+                )
+            else:
+                span_pred, sentence_pred, combined_pred, other = None, None, None, None
 
             # Identify valid (non-nan) losses
             valid_losses = ~torch.isnan(unsupervised_losses)
