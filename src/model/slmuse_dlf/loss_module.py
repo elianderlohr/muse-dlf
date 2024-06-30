@@ -16,6 +16,9 @@ class LossModule(nn.Module):
         self._debug = _debug
         self.logger.debug(f"✅ LossModule successfully initialized")
 
+    def l2(self, u, v):
+        return torch.sqrt(torch.sum((u - v) ** 2, dim=1))
+
     def contrastive_loss(self, v, vhat, negatives, mask):
         batch_size = vhat.size(0)
         N = negatives.size(0)
