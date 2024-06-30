@@ -30,6 +30,7 @@ class Trainer:
         early_stop=20,
         mixed_precision="fp16",  # "fp16"
         clip_value=1.0,
+        accumulation_steps=1,
         **kwargs,
     ):
         self.model = model.to(device)
@@ -96,6 +97,7 @@ class Trainer:
 
         self.mixed_precision = mixed_precision
         self.clip_value = clip_value
+        self.accumulation_steps = accumulation_steps
 
     def _log_metrics(self, metrics):
         if self.training_management == "wandb":
@@ -222,8 +224,6 @@ class Trainer:
 
             local_steps += 1
 
-            self.optimizer.zero_grad()
-
             sentence_ids = (
                 batch["sentence_ids"]
                 if self.training_management == "accelerate"
@@ -329,27 +329,43 @@ class Trainer:
 
             # Scale the loss and perform the backward pass
             if self.training_management == "accelerate":
-                self.accelerator.backward(combined_loss)
-                if self.accelerator.sync_gradients:
-                    self.accelerator.clip_grad_norm_(
-                        self.model.parameters(), self.clip_value
-                    )
-                self.optimizer.step()
+                self.accelerator.backward(combined_loss / self.accumulation_steps)
+                if (batch_idx + 1) % self.accumulation_steps == 0 or (
+                    batch_idx + 1
+                ) == len(train_dataloader):
+                    if self.accelerator.sync_gradients:
+                        self.accelerator.clip_grad_norm_(
+                            self.model.parameters(), self.clip_value
+                        )
+                    self.optimizer.step()
+                    self.scheduler.step()
+                    self.optimizer.zero_grad()
             else:
                 if self.scaler is not None:
-                    self.scaler.scale(combined_loss).backward()
-                    self.scaler.unscale_(self.optimizer)
-                    torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(), self.clip_value
-                    )
-                    self.scaler.step(self.optimizer)
-                    self.scaler.update()
+                    self.scaler.scale(
+                        combined_loss / self.accumulation_steps
+                    ).backward()
+                    if (batch_idx + 1) % self.accumulation_steps == 0 or (
+                        batch_idx + 1
+                    ) == len(train_dataloader):
+                        self.scaler.unscale_(self.optimizer)
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(), self.clip_value
+                        )
+                        self.scaler.step(self.optimizer)
+                        self.scaler.update()
+                        self.optimizer.zero_grad()
                 else:
-                    combined_loss.backward()
-                    torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(), self.clip_value
-                    )
-                    self.optimizer.step()
+                    (combined_loss / self.accumulation_steps).backward()
+                    if (batch_idx + 1) % self.accumulation_steps == 0 or (
+                        batch_idx + 1
+                    ) == len(train_dataloader):
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(), self.clip_value
+                        )
+                        self.optimizer.step()
+                        self.scheduler.step()
+                        self.optimizer.zero_grad()
 
             total_loss += combined_loss.item()
             supervised_total_loss += supervised_loss.item()

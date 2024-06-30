@@ -273,8 +273,8 @@ def main():
     # mixed_precision bool
     model_config.add_argument(
         "--mixed_precision",
-        type=str2bool,
-        default=True,
+        type=str,
+        default="fp16",
         help="Mixed precision training",
     )
 
@@ -324,6 +324,9 @@ def main():
         type=float,
         default=5e-4,
         help="Decay parameter for the temperature",
+    )
+    training_params.add_argument(
+        "--accumulation_steps", type=int, default=2, help="Gradient accumulation steps"
     )
 
     # Data Processing
@@ -431,7 +434,7 @@ def main():
     wandb.login(key=args.wandb_api_key)
 
     # initialize accelerator
-    accelerator = Accelerator(log_with="wandb")
+    accelerator = Accelerator(log_with="wandb", mixed_precision=args.mixed_precision)
     if args.debug:
         LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
     else:
@@ -516,6 +519,9 @@ def main():
         "optimizer": args.optimizer,
         "alpha": args.alpha,
         "debug": args.debug,
+        "mixed_precision": args.mixed_precision,
+        "num_negatives": args.num_negatives,
+        "accumulation_steps": args.accumulation_steps,
     }
 
     model = load_model(
@@ -654,7 +660,8 @@ def main():
         tau_decay=args.tau_decay,
         save_path=args.save_path,
         accelerator_instance=accelerator,
-        mixed_precision=None if not args.mixed_precision else "fp16",
+        mixed_precision=args.mixed_precision,
+        accumulation_steps=args.accumulation_steps,
     )
 
     trainer = accelerator.prepare(trainer)
