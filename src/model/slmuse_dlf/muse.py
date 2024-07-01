@@ -274,54 +274,79 @@ class MUSEDLF(nn.Module):
                     (sentence_embeddings.size(0),), device=sentence_embeddings.device
                 )
 
-                # Process each span
-                for span_idx in range(predicate_embeddings.size(2)):
-                    v_p_span = predicate_embeddings[:, sentence_idx, span_idx, :]
-                    v_a0_span = arg0_embeddings[:, sentence_idx, span_idx, :]
-                    v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
+                # run if sentence embedding is not all zeros
+                if not torch.all(s_sentence_span == 0):
 
-                    # Mask to ignore padded sentences for each span individually
-                    mask_p = (v_p_span.abs().sum(dim=-1) != 0).float().bool()
-                    mask_a0 = (v_a0_span.abs().sum(dim=-1) != 0).float().bool()
-                    mask_a1 = (v_a1_span.abs().sum(dim=-1) != 0).float().bool()
+                    # Process each span
+                    for span_idx in range(predicate_embeddings.size(2)):
+                        v_p_span = predicate_embeddings[:, sentence_idx, span_idx, :]
+                        v_a0_span = arg0_embeddings[:, sentence_idx, span_idx, :]
+                        v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
 
-                    if not mask_p.any():
-                        # log no of zeros in mask_p
-                        self.logger.debug(
-                            f"Found {(mask_p.size(0) - mask_p.sum()).item()} of {mask_p.size(0)} zeros in mask_p"
-                        )
-                    if not mask_a0.any():
-                        self.logger.debug(
-                            f"Found {(mask_a0.size(0) - mask_a0.sum()).item()} of {mask_a0.size(0)} arg0 embedding with all zeros, masked it, and ignored loss."
-                        )
-                    if not mask_a1.any():
-                        self.logger.debug(
-                            f"Found {(mask_a1.size(0) - mask_a1.sum()).item()} of {mask_a1.size(0)} arg1 embedding with all zeros, masked it, and ignored loss."
-                        )
+                        # Mask to ignore padded sentences for each span individually
+                        mask_p = (v_p_span.abs().sum(dim=-1) != 0).float().bool()
+                        mask_a0 = (v_a0_span.abs().sum(dim=-1) != 0).float().bool()
+                        mask_a1 = (v_a1_span.abs().sum(dim=-1) != 0).float().bool()
 
-                    # Feed the embeddings to the unsupervised module
-                    unsupervised_results = self.unsupervised(
-                        v_p_span,
-                        v_a0_span,
-                        v_a1_span,
-                        mask_p.float(),
-                        mask_a0.float(),
-                        mask_a1.float(),
-                        s_sentence_span,
-                        negatives_p,
-                        negatives_a0,
-                        negatives_a1,
-                        tau,
-                        mixed_precision=mixed_precision,
+                        if not mask_p.any():
+                            self.logger.debug(
+                                f"Idx: [{sentence_idx}, {span_idx}] Found {(mask_p.size(0) - mask_p.sum()).item()} of {mask_p.size(0)} zeros in mask_p"
+                            )
+                        if not mask_a0.any():
+                            self.logger.debug(
+                                f"Idx: [{sentence_idx}, {span_idx}] Found {(mask_a0.size(0) - mask_a0.sum()).item()} of {mask_a0.size(0)} zeros in mask_a0"
+                            )
+                        if not mask_a1.any():
+                            self.logger.debug(
+                                f"Idx: [{sentence_idx}, {span_idx}] Found {(mask_a1.size(0) - mask_a1.sum()).item()} of {mask_a1.size(0)} zeros in mask_a1"
+                            )
+
+                        # Feed the embeddings to the unsupervised module
+                        unsupervised_results = self.unsupervised(
+                            v_p_span,
+                            v_a0_span,
+                            v_a1_span,
+                            mask_p.float(),
+                            mask_a0.float(),
+                            mask_a1.float(),
+                            s_sentence_span,
+                            negatives_p,
+                            negatives_a0,
+                            negatives_a1,
+                            tau,
+                            mixed_precision=mixed_precision,
+                        )
+                        sentence_loss += (
+                            unsupervised_results["loss"]
+                            * (mask_p & mask_a0 & mask_a1).float()
+                        )
+                        # Use the vhat (reconstructed embeddings) for supervised predictions
+                        d_p_sentence_list.append(unsupervised_results["p"]["d"])
+                        d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
+                        d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+                else:
+                    self.logger.debug(
+                        f"Idx: [{sentence_idx}] Found all zeros in sentence embeddings: {s_sentence_span[:, :5]}"
                     )
-                    sentence_loss += (
-                        unsupervised_results["loss"]
-                        * (mask_p & mask_a0 & mask_a1).float()
+
+                    d_p_sentence_list.append(
+                        torch.zeros(
+                            (sentence_embeddings.size(0), sentence_embeddings.size(2)),
+                            device=sentence_embeddings.device,
+                        )
                     )
-                    # Use the vhat (reconstructed embeddings) for supervised predictions
-                    d_p_sentence_list.append(unsupervised_results["p"]["d"])
-                    d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
-                    d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+                    d_a0_sentence_list.append(
+                        torch.zeros(
+                            (sentence_embeddings.size(0), sentence_embeddings.size(2)),
+                            device=sentence_embeddings.device,
+                        )
+                    )
+                    d_a1_sentence_list.append(
+                        torch.zeros(
+                            (sentence_embeddings.size(0), sentence_embeddings.size(2)),
+                            device=sentence_embeddings.device,
+                        )
+                    )
 
                 # Aggregating across all spans
                 d_p_sentence = torch.stack(d_p_sentence_list, dim=1)

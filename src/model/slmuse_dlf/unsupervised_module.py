@@ -94,18 +94,6 @@ class MUSEUnsupervised(nn.Module):
                 mixed_precision,
             )
 
-            # check if p g has nan values or 0 values
-            if torch.isnan(outputs["p"]["g"]).any() or (outputs["p"]["g"] == 0).any():
-                self.logger.debug(f"🚨 p g has nan values or 0 values")
-
-            # check if a0 g has nan values or 0 values
-            if torch.isnan(outputs["a0"]["g"]).any() or (outputs["a0"]["g"] == 0).any():
-                self.logger.debug(f"🚨 a0 g has nan values or 0 values")
-
-            # check if a1 g has nan values or 0 values
-            if torch.isnan(outputs["a1"]["g"]).any() or (outputs["a1"]["g"] == 0).any():
-                self.logger.debug(f"🚨 a1 g has nan values or 0 values")
-
             outputs_p = outputs["p"]
             outputs_p["v"] = v_p
 
