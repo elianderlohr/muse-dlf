@@ -261,6 +261,11 @@ class MUSEDLF(nn.Module):
                 frameaxis_data, num_negatives=self.num_negatives
             )
 
+            # Initialize unsupervised_losses tensor
+            unsupervised_losses = torch.zeros(
+                (sentence_embeddings.size(0),), device=sentence_embeddings.device
+            )
+
             # Process each sentence
             for sentence_idx in range(sentence_embeddings.size(1)):
                 s_sentence_span = sentence_embeddings[:, sentence_idx, :]
@@ -281,21 +286,21 @@ class MUSEDLF(nn.Module):
                     v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
 
                     # Mask to ignore padded sentences for each span individually
-                    mask_p = v_p_span.abs().sum(dim=-1) != 0
-                    mask_a0 = v_a0_span.abs().sum(dim=-1) != 0
-                    mask_a1 = v_a1_span.abs().sum(dim=-1) != 0
+                    mask_p = (v_p_span.abs().sum(dim=-1) != 0).float()
+                    mask_a0 = (v_a0_span.abs().sum(dim=-1) != 0).float()
+                    mask_a1 = (v_a1_span.abs().sum(dim=-1) != 0).float()
 
                     if not mask_p.any():
                         self.logger.debug(
-                            f"Found predicate embedding with all zeros, masked it, and ignored loss. First 5 values: {v_p_span[0, :5].cpu().numpy()}"
+                            f"Found predicate embedding with all zeros, masked it, and ignored loss."
                         )
                     if not mask_a0.any():
                         self.logger.debug(
-                            f"Found arg0 embedding with all zeros, masked it, and ignored loss. First 5 values: {v_a0_span[0, :5].cpu().numpy()}"
+                            f"Found arg0 embedding with all zeros, masked it, and ignored loss."
                         )
                     if not mask_a1.any():
                         self.logger.debug(
-                            f"Found arg1 embedding with all zeros, masked it, and ignored loss. First 5 values: {v_a1_span[0, :5].cpu().numpy()}"
+                            f"Found arg1 embedding with all zeros, masked it, and ignored loss."
                         )
 
                     # Feed the embeddings to the unsupervised module
@@ -303,6 +308,9 @@ class MUSEDLF(nn.Module):
                         v_p_span,
                         v_a0_span,
                         v_a1_span,
+                        mask_p,
+                        mask_a0,
+                        mask_a1,
                         s_sentence_span,
                         negatives_p,
                         negatives_a0,
@@ -310,7 +318,10 @@ class MUSEDLF(nn.Module):
                         tau,
                         mixed_precision=mixed_precision,
                     )
-                    sentence_loss += unsupervised_results["loss"]
+                    sentence_loss += (
+                        unsupervised_results["loss"]
+                        * (mask_p & mask_a0 & mask_a1).float()
+                    )
 
                     # Use the vhat (reconstructed embeddings) for supervised predictions
                     d_p_sentence_list.append(unsupervised_results["p"]["d"])
@@ -326,10 +337,13 @@ class MUSEDLF(nn.Module):
                 d_a0_list.append(d_a0_sentence)
                 d_a1_list.append(d_a1_sentence)
 
+                mask_fx = (v_fx.abs().sum(dim=-1) != 0).float()
+
                 # As per sentence only one frameaxis data set is present calculate only once
                 unsupervised_fx_results = self.unsupervised_fx(
-                    s_sentence_span,
                     v_fx,
+                    mask_fx,
+                    s_sentence_span,
                     negatives_fx,
                     tau,
                     mixed_precision=mixed_precision,
@@ -338,11 +352,13 @@ class MUSEDLF(nn.Module):
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
 
                 # Add the loss to the unsupervised losses
-                sentence_loss += unsupervised_fx_results["loss"]
+                sentence_loss += (
+                    unsupervised_fx_results["loss"]
+                    * (mask_p & mask_a0 & mask_a1).float()
+                )
 
                 # Apply mask to sentence loss
-                valid_mask = mask_p & mask_a0 & mask_a1
-                unsupervised_losses += sentence_loss * valid_mask.float()
+                unsupervised_losses += sentence_loss
 
             # Aggregating across all spans
             d_p_aggregated = (
@@ -381,6 +397,8 @@ class MUSEDLF(nn.Module):
             valid_losses = ~torch.isnan(unsupervised_losses)
 
             # Take average by summing the valid losses and dividing by num sentences so that padded sentences are also taken in equation
-            unsupervised_loss = unsupervised_losses[valid_losses].mean()
+            unsupervised_loss = unsupervised_losses[
+                valid_losses
+            ].sum() / sentence_embeddings.size(1)
 
-        return unsupervised_loss, span_pred, sentence_pred, combined_pred, other
+            return unsupervised_loss, span_pred, sentence_pred, combined_pred, other

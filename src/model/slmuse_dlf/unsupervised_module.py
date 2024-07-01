@@ -53,14 +53,14 @@ class MUSEUnsupervised(nn.Module):
         # Debugging:
         self.logger.debug(f"✅ MUSEUnsupervised successfully initialized")
 
-    def create_mask(self, embeddings):
-        return (embeddings != 0).any(dim=-1)
-
     def forward(
         self,
         v_p,
         v_a0,
         v_a1,
+        mask_p,
+        mask_a0,
+        mask_a1,
         v_sentence,
         p_negatives,
         a0_negatives,
@@ -74,10 +74,6 @@ class MUSEUnsupervised(nn.Module):
             else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
-        mask_p = self.create_mask(v_p)
-        mask_a0 = self.create_mask(v_a0)
-        mask_a1 = self.create_mask(v_a1)
-
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
@@ -87,7 +83,15 @@ class MUSEUnsupervised(nn.Module):
             # "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
             # }
             outputs = self.combined_autoencoder(
-                v_p, v_a0, v_a1, v_sentence, tau, mixed_precision
+                v_p,
+                v_a0,
+                v_a1,
+                mask_p,
+                mask_a0,
+                mask_a1,
+                v_sentence,
+                tau,
+                mixed_precision,
             )
 
             # check if p g has nan values or 0 values

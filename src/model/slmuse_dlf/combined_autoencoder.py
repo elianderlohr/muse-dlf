@@ -79,9 +79,6 @@ class CombinedAutoencoder(nn.Module):
 
         self.logger.debug(f"✅ CombinedAutoencoder successfully initialized")
 
-    def create_mask(self, embeddings):
-        return (embeddings != 0).any(dim=-1)
-
     def initialize_weights(self, m):
         if isinstance(m, nn.Linear):
             nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain("relu"))
@@ -146,6 +143,9 @@ class CombinedAutoencoder(nn.Module):
         v_p,
         v_a0,
         v_a1,
+        mask_p,
+        mask_a0,
+        mask_a1,
         v_sentence,
         tau,
         mixed_precision="fp16",  # mixed precision as a parameter
@@ -155,10 +155,6 @@ class CombinedAutoencoder(nn.Module):
             if mixed_precision == "fp16"
             else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
-
-        mask_p = self.create_mask(v_p)
-        mask_a0 = self.create_mask(v_a0)
-        mask_a1 = self.create_mask(v_a1)
 
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
@@ -191,11 +187,11 @@ class CombinedAutoencoder(nn.Module):
                 torch.isnan(d_p).any()
                 or torch.isnan(d_a0).any()
                 or torch.isnan(d_a1).any()
-                or (d_p == 0).all()
-                or (d_a0 == 0).all()
-                or (d_a1 == 0).all()
             ):
-                self.logger.error("❌ NaNs detected in d or d is all 0 AFTER softmax")
+                self.logger.error("❌ NaNs detected in d AFTER softmax")
+
+            if (d_p == 0).all() or (d_a0 == 0).all() or (d_a1 == 0).all():
+                self.logger.error("❌ All 0 AFTER softmax")
 
             g_p = (
                 self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)

@@ -55,13 +55,11 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         # Debugging:
         self.logger.debug(f"✅ MUSEFrameAxisUnsupervised successfully initialized")
 
-    def create_mask(self, embeddings):
-        return (embeddings != 0).any(dim=-1)
-
     def forward(
         self,
-        v_sentence,
         v_fx,
+        mask,
+        v_sentence,
         fx_negatives,
         tau,
         mixed_precision="fp16",  # mixed precision as a parameter
@@ -72,13 +70,11 @@ class MUSEFrameAxisUnsupervised(nn.Module):
             else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
-        mask = self.create_mask(v_fx)
-
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
             outputs_fx = self.frameaxis_autoencoder(
-                v_fx, v_sentence, tau, mixed_precision
+                v_fx, mask, v_sentence, tau, mixed_precision
             )
 
             outputs_fx["v"] = v_fx
