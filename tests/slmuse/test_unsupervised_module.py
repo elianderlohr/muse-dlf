@@ -63,6 +63,9 @@ class TestMUSEUnsupervised(unittest.TestCase):
         )  # Example: 10 negatives
         a0_negatives = torch.randn(10, self.embedding_dim).to(self.device)
         a1_negatives = torch.randn(10, self.embedding_dim).to(self.device)
+        mask_p = torch.ones(batch_size, dtype=torch.float32).to(self.device)
+        mask_a0 = torch.ones(batch_size, dtype=torch.float32).to(self.device)
+        mask_a1 = torch.ones(batch_size, dtype=torch.float32).to(self.device)
         tau = 0.5
 
         # Run the forward pass
@@ -70,6 +73,9 @@ class TestMUSEUnsupervised(unittest.TestCase):
             v_p,
             v_a0,
             v_a1,
+            mask_p,
+            mask_a0,
+            mask_a1,
             v_sentence,
             p_negatives,
             a0_negatives,
@@ -99,6 +105,9 @@ class TestMUSEUnsupervised(unittest.TestCase):
         p_negatives = torch.randn(10, self.embedding_dim)  # Example: 10 negatives
         a0_negatives = torch.randn(10, self.embedding_dim)
         a1_negatives = torch.randn(10, self.embedding_dim)
+        mask_p = torch.ones(batch_size, dtype=torch.float32)
+        mask_a0 = torch.ones(batch_size, dtype=torch.float32)
+        mask_a1 = torch.ones(batch_size, dtype=torch.float32)
         tau = 0.5
 
         # Move model to CPU
@@ -109,6 +118,9 @@ class TestMUSEUnsupervised(unittest.TestCase):
             v_p,
             v_a0,
             v_a1,
+            mask_p,
+            mask_a0,
+            mask_a1,
             v_sentence,
             p_negatives,
             a0_negatives,
@@ -128,6 +140,122 @@ class TestMUSEUnsupervised(unittest.TestCase):
         self.assertFalse(torch.isnan(loss).any())
         self.assertFalse(torch.isinf(loss).any())
         self.assertTrue((loss >= 0).all())
+
+    def test_half_empty_batch(self):
+        # Example inputs with half of the embeddings being zero
+        batch_size = 32
+        v_p = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        v_a0 = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        v_a1 = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        v_sentence = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        p_negatives = torch.randn(10, self.embedding_dim).to(self.device)
+        a0_negatives = torch.randn(10, self.embedding_dim).to(self.device)
+        a1_negatives = torch.randn(10, self.embedding_dim).to(self.device)
+        mask_p = torch.cat(
+            [torch.ones(batch_size // 2), torch.zeros(batch_size // 2)]
+        ).to(self.device)
+        mask_a0 = torch.cat(
+            [torch.ones(batch_size // 2), torch.zeros(batch_size // 2)]
+        ).to(self.device)
+        mask_a1 = torch.cat(
+            [torch.ones(batch_size // 2), torch.zeros(batch_size // 2)]
+        ).to(self.device)
+        tau = 0.5
+
+        # Run the forward pass
+        results = self.model(
+            v_p,
+            v_a0,
+            v_a1,
+            mask_p,
+            mask_a0,
+            mask_a1,
+            v_sentence,
+            p_negatives,
+            a0_negatives,
+            a1_negatives,
+            tau,
+            mixed_precision="fp32",
+        )
+
+        # Check if results contain expected keys
+        self.assertIn("loss", results)
+        self.assertIn("p", results)
+        self.assertIn("a0", results)
+        self.assertIn("a1", results)
+
+        # Ensure loss tensor shape and values are as expected
+        loss = results["loss"]
+        self.assertFalse(torch.isnan(loss).any())
+        self.assertFalse(torch.isinf(loss).any())
+        self.assertTrue((loss >= 0).all())
+
+    def test_full_empty_batch(self):
+        # Example inputs with all embeddings being zero
+        batch_size = 32
+        v_p = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        v_a0 = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        v_a1 = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        v_sentence = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        p_negatives = torch.randn(10, self.embedding_dim).to(self.device)
+        a0_negatives = torch.randn(10, self.embedding_dim).to(self.device)
+        a1_negatives = torch.randn(10, self.embedding_dim).to(self.device)
+        mask_p = torch.zeros(batch_size, dtype=torch.float32).to(self.device)
+        mask_a0 = torch.zeros(batch_size, dtype=torch.float32).to(self.device)
+        mask_a1 = torch.zeros(batch_size, dtype=torch.float32).to(self.device)
+        tau = 0.5
+
+        # Run the forward pass
+        results = self.model(
+            v_p,
+            v_a0,
+            v_a1,
+            mask_p,
+            mask_a0,
+            mask_a1,
+            v_sentence,
+            p_negatives,
+            a0_negatives,
+            a1_negatives,
+            tau,
+            mixed_precision="fp32",
+        )
+
+        # Check if results contain expected keys
+        self.assertIn("loss", results)
+        self.assertIn("p", results)
+        self.assertIn("a0", results)
+        self.assertIn("a1", results)
+
+        # Ensure loss tensor shape and values are as expected
+        loss = results["loss"]
+        self.assertEqual(loss.item(), 0.0)
+        self.assertFalse(torch.isnan(loss).any())
+        self.assertFalse(torch.isinf(loss).any())
 
 
 if __name__ == "__main__":

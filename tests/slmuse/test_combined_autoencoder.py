@@ -52,11 +52,17 @@ class TestCombinedAutoencoder(unittest.TestCase):
         v_a1 = torch.randn(batch_size, self.embedding_dim).to(self.device)
         v_sentence = torch.randn(batch_size, self.embedding_dim).to(self.device)
         tau = 0.5
+        mask_p = torch.ones(batch_size, dtype=torch.float32).to(self.device)
+        mask_a0 = torch.ones(batch_size, dtype=torch.float32).to(self.device)
+        mask_a1 = torch.ones(batch_size, dtype=torch.float32).to(self.device)
 
         output = self.model(
             v_p=v_p,
             v_a0=v_a0,
             v_a1=v_a1,
+            mask_p=mask_p,
+            mask_a0=mask_a0,
+            mask_a1=mask_a1,
             v_sentence=v_sentence,
             tau=tau,
             mixed_precision="fp32",
@@ -94,11 +100,17 @@ class TestCombinedAutoencoder(unittest.TestCase):
         v_a1 = torch.randn(batch_size, self.embedding_dim).to(self.device)
         v_sentence = torch.randn(batch_size, self.embedding_dim).to(self.device)
         tau = 0.5
+        mask_p = torch.ones(batch_size, dtype=torch.float32).to(self.device)
+        mask_a0 = torch.ones(batch_size, dtype=torch.float32).to(self.device)
+        mask_a1 = torch.ones(batch_size, dtype=torch.float32).to(self.device)
 
         output = self.model(
             v_p=v_p,
             v_a0=v_a0,
             v_a1=v_a1,
+            mask_p=mask_p,
+            mask_a0=mask_a0,
+            mask_a1=mask_a1,
             v_sentence=v_sentence,
             tau=tau,
             mixed_precision="fp32",
@@ -143,6 +155,124 @@ class TestCombinedAutoencoder(unittest.TestCase):
 
             # Ensure the activation function in the model matches the expected class
             self.assertIsInstance(model.activation_func, activation_class)
+
+    def test_half_empty_batch(self):
+        # Example inputs with half of the embeddings being zero
+        batch_size = 32
+        v_p = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        v_a0 = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        v_a1 = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        v_sentence = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        tau = 0.5
+        mask_p = torch.cat(
+            [
+                torch.ones(batch_size // 2, dtype=torch.float32),
+                torch.zeros(batch_size // 2, dtype=torch.float32),
+            ],
+            dim=0,
+        ).to(self.device)
+        mask_a0 = torch.cat(
+            [
+                torch.ones(batch_size // 2, dtype=torch.float32),
+                torch.zeros(batch_size // 2, dtype=torch.float32),
+            ],
+            dim=0,
+        ).to(self.device)
+        mask_a1 = torch.cat(
+            [
+                torch.ones(batch_size // 2, dtype=torch.float32),
+                torch.zeros(batch_size // 2, dtype=torch.float32),
+            ],
+            dim=0,
+        ).to(self.device)
+
+        output = self.model(
+            v_p=v_p,
+            v_a0=v_a0,
+            v_a1=v_a1,
+            mask_p=mask_p,
+            mask_a0=mask_a0,
+            mask_a1=mask_a1,
+            v_sentence=v_sentence,
+            tau=tau,
+            mixed_precision="fp32",
+        )
+
+        # Check for NaNs in each output tensor
+        for view in ["p", "a0", "a1"]:
+            for tensor_name, tensor_data in output[view].items():
+                self.assertFalse(
+                    torch.isnan(tensor_data).any(),
+                    f"NaNs found in {view}/{tensor_name}",
+                )
+
+                if tensor_data.numel() > 0:
+                    self.assertFalse(
+                        (tensor_data == 0).all(),
+                        f"All zeros found in {view}/{tensor_name}",
+                    )
+
+    def test_full_empty_batch(self):
+        # Example inputs with all embeddings being zero
+        batch_size = 32
+        v_p = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        v_a0 = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        v_a1 = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        v_sentence = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        tau = 0.5
+        mask_p = torch.zeros(batch_size, dtype=torch.float32).to(self.device)
+        mask_a0 = torch.zeros(batch_size, dtype=torch.float32).to(self.device)
+        mask_a1 = torch.zeros(batch_size, dtype=torch.float32).to(self.device)
+
+        output = self.model(
+            v_p=v_p,
+            v_a0=v_a0,
+            v_a1=v_a1,
+            mask_p=mask_p,
+            mask_a0=mask_a0,
+            mask_a1=mask_a1,
+            v_sentence=v_sentence,
+            tau=tau,
+            mixed_precision="fp32",
+        )
+
+        # Check for NaNs in each output tensor
+        for view in ["p", "a0", "a1"]:
+            for tensor_name, tensor_data in output[view].items():
+                self.assertFalse(
+                    torch.isnan(tensor_data).any(),
+                    f"NaNs found in {view}/{tensor_name}",
+                )
+
+                if tensor_data.numel() > 0:
+                    self.assertTrue(
+                        (tensor_data == 0).all(),
+                        f"Not all zeros found in {view}/{tensor_name}",
+                    )
 
 
 if __name__ == "__main__":

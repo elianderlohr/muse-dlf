@@ -30,7 +30,6 @@ class TestMUSEFrameAxisUnsupervised(unittest.TestCase):
         self.activation = "relu"
         self.use_batch_norm = True
         self.matmul_input = "g"
-        self.concat_frameaxis = True
         self.gumbel_softmax_log = False
         self._debug = False
 
@@ -48,7 +47,6 @@ class TestMUSEFrameAxisUnsupervised(unittest.TestCase):
             activation=self.activation,
             use_batch_norm=self.use_batch_norm,
             matmul_input=self.matmul_input,
-            concat_frameaxis=self.concat_frameaxis,
             gumbel_softmax_log=self.gumbel_softmax_log,
             _debug=self._debug,
         )
@@ -64,10 +62,11 @@ class TestMUSEFrameAxisUnsupervised(unittest.TestCase):
             self.device
         )  # Example: 10 negatives
         tau = 0.5
+        mask = torch.ones(batch_size, dtype=torch.float32).to(self.device)
 
         # Run the forward pass
         results = self.model(
-            v_sentence, v_fx, fx_negatives, tau, mixed_precision="fp16"
+            v_fx, mask, v_sentence, fx_negatives, tau, mixed_precision="fp16"
         )
 
         # Check if results contain expected keys
@@ -86,13 +85,14 @@ class TestMUSEFrameAxisUnsupervised(unittest.TestCase):
         v_fx = torch.randn(batch_size, self.frameaxis_dim)
         fx_negatives = torch.randn(10, self.frameaxis_dim)  # Example: 10 negatives
         tau = 0.5
+        mask = torch.ones(batch_size, dtype=torch.float32)
 
         # Move model to CPU
         self.model.to("cpu")
 
         # Run the forward pass
         results = self.model(
-            v_sentence, v_fx, fx_negatives, tau, mixed_precision="fp32"
+            v_fx, mask, v_sentence, fx_negatives, tau, mixed_precision="fp32"
         )
 
         # Check if results contain expected keys
@@ -131,6 +131,68 @@ class TestMUSEFrameAxisUnsupervised(unittest.TestCase):
                 self.assertFalse(torch.isnan(loss).any())
                 self.assertFalse(torch.isinf(loss).any())
                 self.assertTrue((loss > 0).all())
+
+    def test_half_empty_batch(self):
+        # Example inputs with half of the embeddings being zero
+        batch_size = 32
+        v_sentence = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.embedding_dim),
+                torch.zeros(batch_size // 2, self.embedding_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        v_fx = torch.cat(
+            [
+                torch.randn(batch_size // 2, self.frameaxis_dim),
+                torch.zeros(batch_size // 2, self.frameaxis_dim),
+            ],
+            dim=0,
+        ).to(self.device)
+        fx_negatives = torch.randn(10, self.frameaxis_dim).to(self.device)
+        tau = 0.5
+        mask = torch.cat(
+            [torch.ones(batch_size // 2), torch.zeros(batch_size // 2)]
+        ).to(self.device)
+
+        # Run the forward pass
+        results = self.model(
+            v_fx, mask, v_sentence, fx_negatives, tau, mixed_precision="fp16"
+        )
+
+        # Check if results contain expected keys
+        self.assertIn("loss", results)
+        self.assertIn("fx", results)
+
+        # Ensure loss tensor shape and values are as expected
+        loss = results["loss"]
+        self.assertFalse(torch.isnan(loss).any())
+        self.assertFalse(torch.isinf(loss).any())
+        self.assertTrue((loss >= 0).all())
+
+    def test_full_empty_batch(self):
+        # Example inputs with all embeddings being zero
+        batch_size = 32
+        v_sentence = torch.zeros(batch_size, self.embedding_dim).to(self.device)
+        v_fx = torch.zeros(batch_size, self.frameaxis_dim).to(self.device)
+        fx_negatives = torch.randn(10, self.frameaxis_dim).to(self.device)
+        tau = 0.5
+        mask = torch.zeros(batch_size).to(self.device)
+
+        # Run the forward pass
+        results = self.model(
+            v_fx, mask, v_sentence, fx_negatives, tau, mixed_precision="fp16"
+        )
+
+        # Check if results contain expected keys
+        self.assertIn("loss", results)
+        self.assertIn("fx", results)
+
+        # Ensure loss tensor shape and values are as expected
+        loss = results["loss"]
+        self.assertEqual(loss.item(), 0.0)
+        self.assertFalse(torch.isnan(loss).any())
+        self.assertFalse(torch.isinf(loss).any())
 
 
 if __name__ == "__main__":

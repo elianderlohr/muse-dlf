@@ -53,10 +53,12 @@ class TestFrameAxisAutoencoder(unittest.TestCase):
         # Example input tensors
         v_frameaxis = torch.randn(batch_size, self.frameaxis_dim).to(self.device)
         v_sentence = torch.randn(batch_size, self.embedding_dim).to(self.device)
+        mask = torch.ones(batch_size, dtype=torch.float32).to(self.device)
         tau = 0.5
 
         output = self.model(
             v_frameaxis=v_frameaxis,
+            mask=mask,
             v_sentence=v_sentence,
             tau=tau,
             mixed_precision="fp32",
@@ -81,10 +83,12 @@ class TestFrameAxisAutoencoder(unittest.TestCase):
         # Example input tensors
         v_frameaxis = torch.randn(batch_size, self.frameaxis_dim).to(self.device)
         v_sentence = torch.randn(batch_size, self.embedding_dim).to(self.device)
+        mask = torch.ones(batch_size, dtype=torch.float32).to(self.device)
 
         # Forward pass
         output = self.model(
             v_frameaxis=v_frameaxis,
+            mask=mask,
             v_sentence=v_sentence,
             tau=0.5,
             mixed_precision="fp32",
