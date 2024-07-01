@@ -301,29 +301,59 @@ class MUSEDLF(nn.Module):
                                 f"Idx: [{sentence_idx}, {span_idx}] Found {(mask_a1.size(0) - mask_a1.sum()).item()} of {mask_a1.size(0)} zeros in mask_a1"
                             )
 
-                        # Feed the embeddings to the unsupervised module
-                        unsupervised_results = self.unsupervised(
-                            v_p_span,
-                            v_a0_span,
-                            v_a1_span,
-                            mask_p.float(),
-                            mask_a0.float(),
-                            mask_a1.float(),
-                            s_sentence_span,
-                            negatives_p,
-                            negatives_a0,
-                            negatives_a1,
-                            tau,
-                            mixed_precision=mixed_precision,
-                        )
-                        sentence_loss += (
-                            unsupervised_results["loss"]
-                            * (mask_p & mask_a0 & mask_a1).float()
-                        )
-                        # Use the vhat (reconstructed embeddings) for supervised predictions
-                        d_p_sentence_list.append(unsupervised_results["p"]["d"])
-                        d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
-                        d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+                        # Skip the unsupervised module call if all masks are zero
+                        if mask_p.any() and mask_a0.any() and mask_a1.any():
+                            # Feed the embeddings to the unsupervised module
+                            unsupervised_results = self.unsupervised(
+                                v_p_span,
+                                v_a0_span,
+                                v_a1_span,
+                                mask_p.float(),
+                                mask_a0.float(),
+                                mask_a1.float(),
+                                s_sentence_span,
+                                negatives_p,
+                                negatives_a0,
+                                negatives_a1,
+                                tau,
+                                mixed_precision=mixed_precision,
+                            )
+                            sentence_loss += (
+                                unsupervised_results["loss"]
+                                * (mask_p & mask_a0 & mask_a1).float()
+                            )
+                            # Use the vhat (reconstructed embeddings) for supervised predictions
+                            d_p_sentence_list.append(unsupervised_results["p"]["d"])
+                            d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
+                            d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+                        else:
+                            d_p_sentence_list.append(
+                                torch.zeros(
+                                    (
+                                        predicate_embeddings.size(0),
+                                        predicate_embeddings.size(3),
+                                    ),
+                                    device=predicate_embeddings.device,
+                                )
+                            )
+                            d_a0_sentence_list.append(
+                                torch.zeros(
+                                    (
+                                        predicate_embeddings.size(0),
+                                        predicate_embeddings.size(3),
+                                    ),
+                                    device=predicate_embeddings.device,
+                                )
+                            )
+                            d_a1_sentence_list.append(
+                                torch.zeros(
+                                    (
+                                        predicate_embeddings.size(0),
+                                        predicate_embeddings.size(3),
+                                    ),
+                                    device=predicate_embeddings.device,
+                                )
+                            )
 
                     mask_fx = (v_fx.abs().sum(dim=-1) != 0).float()
 
@@ -384,6 +414,10 @@ class MUSEDLF(nn.Module):
                 d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
                 d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
 
+                self.logger.debug(f"Shape of d_p_sentence: {d_p_sentence.shape}")
+                self.logger.debug(f"Shape of d_a0_sentence: {d_a0_sentence.shape}")
+                self.logger.debug(f"Shape of d_a1_sentence: {d_a1_sentence.shape}")
+
                 d_p_list.append(d_p_sentence)
                 d_a0_list.append(d_a0_sentence)
                 d_a1_list.append(d_a1_sentence)
@@ -409,6 +443,11 @@ class MUSEDLF(nn.Module):
                 if d_fx_list
                 else torch.tensor([], device=sentence_embeddings.device)
             )
+
+            self.logger.debug(f"Shape of d_p_aggregated: {d_p_aggregated.shape}")
+            self.logger.debug(f"Shape of d_a0_aggregated: {d_a0_aggregated.shape}")
+            self.logger.debug(f"Shape of d_a1_aggregated: {d_a1_aggregated.shape}")
+            self.logger.debug(f"Shape of d_fx_aggregated: {d_fx_aggregated.shape}")
 
             # Supervised predictions
             span_pred, sentence_pred, combined_pred, other = self.supervised(
