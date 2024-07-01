@@ -286,9 +286,9 @@ class MUSEDLF(nn.Module):
                     v_a1_span = arg1_embeddings[:, sentence_idx, span_idx, :]
 
                     # Mask to ignore padded sentences for each span individually
-                    mask_p = (v_p_span.abs().sum(dim=-1) != 0).float()
-                    mask_a0 = (v_a0_span.abs().sum(dim=-1) != 0).float()
-                    mask_a1 = (v_a1_span.abs().sum(dim=-1) != 0).float()
+                    mask_p = (v_p_span.abs().sum(dim=-1) != 0).float().bool()
+                    mask_a0 = (v_a0_span.abs().sum(dim=-1) != 0).float().bool()
+                    mask_a1 = (v_a1_span.abs().sum(dim=-1) != 0).float().bool()
 
                     if not mask_p.any():
                         self.logger.debug(
@@ -308,9 +308,9 @@ class MUSEDLF(nn.Module):
                         v_p_span,
                         v_a0_span,
                         v_a1_span,
-                        mask_p,
-                        mask_a0,
-                        mask_a1,
+                        mask_p.float(),
+                        mask_a0.float(),
+                        mask_a1.float(),
                         s_sentence_span,
                         negatives_p,
                         negatives_a0,
@@ -322,7 +322,6 @@ class MUSEDLF(nn.Module):
                         unsupervised_results["loss"]
                         * (mask_p & mask_a0 & mask_a1).float()
                     )
-
                     # Use the vhat (reconstructed embeddings) for supervised predictions
                     d_p_sentence_list.append(unsupervised_results["p"]["d"])
                     d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
