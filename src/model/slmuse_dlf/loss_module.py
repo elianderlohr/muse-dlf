@@ -63,7 +63,7 @@ class LossModule(nn.Module):
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
         loss = loss * mask.float()
-        return loss.sum() / mask.sum()
+        return loss.sum() / torch.clamp(mask.sum(), min=1)
 
     def orthogonality_term(self, F, reg=1e-4):
         gram_matrix = torch.mm(F, F.T)

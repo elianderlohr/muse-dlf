@@ -104,17 +104,17 @@ class MUSESupervised(nn.Module):
             mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
 
             # Calculate the mean ignoring padded elements
-            d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / mask_p.sum(
-                dim=1, keepdim=True
+            d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+                mask_p.sum(dim=1, keepdim=True), min=1
             )
-            d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / mask_a0.sum(
-                dim=1, keepdim=True
+            d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+                mask_a0.sum(dim=1, keepdim=True), min=1
             )
-            d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / mask_a1.sum(
-                dim=1, keepdim=True
+            d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+                mask_a1.sum(dim=1, keepdim=True), min=1
             )
-            d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / mask_fx.sum(
-                dim=1, keepdim=True
+            d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+                mask_fx.sum(dim=1, keepdim=True), min=1
             )
 
             # Combine and normalize the final descriptor
