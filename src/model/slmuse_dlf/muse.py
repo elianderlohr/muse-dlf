@@ -346,40 +346,38 @@ class MUSEDLF(nn.Module):
                     unsupervised_losses += sentence_loss
                 else:
                     self.logger.debug(
-                        f"Idx: [{sentence_idx}] Found all zeros in sentence embeddings: {s_sentence_span[:, :5]}"
+                        f"Idx: [{sentence_idx}] Found all zeros in sentence embeddings"
                     )
 
-                    d_p_sentence_list.append(
-                        torch.zeros(
-                            (
-                                predicate_embeddings.size(0),
-                                predicate_embeddings.size(3),
-                            ),
-                            device=predicate_embeddings.device,
-                        )
-                    )
-                    d_a0_sentence_list.append(
-                        torch.zeros(
-                            (
-                                predicate_embeddings.size(0),
-                                predicate_embeddings.size(3),
-                            ),
-                            device=predicate_embeddings.device,
-                        )
-                    )
-                    d_a1_sentence_list.append(
-                        torch.zeros(
-                            (
-                                predicate_embeddings.size(0),
-                                predicate_embeddings.size(3),
-                            ),
-                            device=predicate_embeddings.device,
-                        )
-                    )
+                    for span_idx in range(predicate_embeddings.size(2)):
 
-                    self.logger.debug(
-                        f"Add zeros to d_p_sentence_list, d_a0_sentence_list, d_a1_sentence_list of shape {d_p_sentence_list[-1].shape}"
-                    )
+                        d_p_sentence_list.append(
+                            torch.zeros(
+                                (
+                                    predicate_embeddings.size(0),
+                                    predicate_embeddings.size(3),
+                                ),
+                                device=predicate_embeddings.device,
+                            )
+                        )
+                        d_a0_sentence_list.append(
+                            torch.zeros(
+                                (
+                                    predicate_embeddings.size(0),
+                                    predicate_embeddings.size(3),
+                                ),
+                                device=predicate_embeddings.device,
+                            )
+                        )
+                        d_a1_sentence_list.append(
+                            torch.zeros(
+                                (
+                                    predicate_embeddings.size(0),
+                                    predicate_embeddings.size(3),
+                                ),
+                                device=predicate_embeddings.device,
+                            )
+                        )
 
                 # Aggregating across all spans
                 d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
