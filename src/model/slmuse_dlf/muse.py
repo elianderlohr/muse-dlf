@@ -528,8 +528,10 @@ class MUSEDLF(nn.Module):
             valid_losses = ~torch.isnan(unsupervised_losses)
 
             # Take average by summing the valid losses and dividing by num sentences so that padded sentences are also taken in equation
-            unsupervised_loss = unsupervised_losses[
-                valid_losses
-            ].sum() / sentence_embeddings.size(1)
+            unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
+                predicate_embeddings.size(0)
+                * predicate_embeddings.size(1)
+                * predicate_embeddings.size(2)
+            )
 
             return unsupervised_loss, span_pred, sentence_pred, combined_pred, other
