@@ -266,6 +266,14 @@ class CombinedAutoencoder(nn.Module):
         }
 
     def process_through_shared(self, v_z, v_sentence, mask):
+        if torch.isnan(v_z).any():
+            self.logger.error("❌ NaNs detected in input v_z")
+            raise ValueError("NaNs detected in input v_z")
+
+        if torch.isnan(v_sentence).any():
+            self.logger.error("❌ NaNs detected in input v_sentence")
+            raise ValueError("NaNs detected in input v_sentence")
+
         x = torch.cat((v_z, v_sentence), dim=-1)
 
         for i in range(self.num_layers):
