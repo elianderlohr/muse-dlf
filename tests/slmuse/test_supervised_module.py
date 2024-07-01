@@ -18,7 +18,7 @@ class TestMUSESupervised(unittest.TestCase):
         self.embedding_dim = 768
         self.num_classes = 10
         self.frameaxis_dim = 64
-        self.num_sentences = 5
+        self.num_sentences = 16
         self.dropout_prob = 0.3
         self.concat_frameaxis = True
         self.num_layers = 3
@@ -120,6 +120,46 @@ class TestMUSESupervised(unittest.TestCase):
         self.assertFalse(torch.isinf(y_hat_s).any())
         self.assertFalse(torch.isnan(combined).any())
         self.assertFalse(torch.isinf(combined).any())
+
+    def test_padded_sentence(self):
+        batch_size = 8
+        num_args = 3
+        d_p = torch.randn(batch_size, self.num_sentences, num_args, self.num_classes)
+        d_a0 = torch.randn(batch_size, self.num_sentences, num_args, self.num_classes)
+        d_a1 = torch.randn(batch_size, self.num_sentences, num_args, self.num_classes)
+        d_fx = torch.randn(batch_size, self.num_sentences, self.num_classes)
+        frameaxis_data = torch.randn(batch_size, self.num_sentences, self.frameaxis_dim)
+        vs = torch.randn(batch_size, self.num_sentences, self.embedding_dim)
+
+        # Set the last 5 sentences to be padded
+        d_p[:, -5:, :, :] = 0
+        d_a0[:, -5:, :, :] = 0
+        d_a1[:, -5:, :, :] = 0
+        d_fx[:, -5:, :] = 0
+        vs[:, -5:, :] = 0
+        frameaxis_data[:, -5:, :] = 0
+
+        # Set for the 2 batch the last -7 sentences to be padded
+        d_p[2, -7:, :, :] = 0
+        d_a0[2, -7:, :, :] = 0
+        d_a1[2, -7:, :, :] = 0
+        d_fx[2, -7:, :] = 0
+        vs[2, -7:, :] = 0
+        frameaxis_data[2, -7:, :] = 0
+
+        # Run the forward pass
+        y_hat_u, y_hat_s, combined, other = self.model(
+            d_p, d_a0, d_a1, d_fx, vs, frameaxis_data, mixed_precision="fp32"
+        )
+
+        # Ensure outputs have the correct shape and values are as expected
+        self.assertEqual(y_hat_u.shape, (batch_size, self.num_classes))
+        self.assertEqual(y_hat_s.shape, (batch_size, self.num_classes))
+        self.assertEqual(combined.shape, (batch_size, self.num_classes))
+
+        for key in ["predicate", "arg0", "arg1", "frameaxis"]:
+            self.assertIn(key, other)
+            self.assertEqual(other[key].shape, (batch_size, self.num_classes))
 
 
 if __name__ == "__main__":
