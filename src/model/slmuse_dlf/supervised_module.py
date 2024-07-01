@@ -97,11 +97,25 @@ class MUSESupervised(nn.Module):
                 batch_size, num_sentences * num_args, embedding_dim
             )
 
-            d_p_mean = d_p_flatten.mean(dim=1)
-            d_a0_mean = d_a0_flatten.mean(dim=1)
-            d_a1_mean = d_a1_flatten.mean(dim=1)
+            # Create masks for non-padded elements
+            mask_p = (d_p_flatten.abs().sum(dim=-1) != 0).float()
+            mask_a0 = (d_a0_flatten.abs().sum(dim=-1) != 0).float()
+            mask_a1 = (d_a1_flatten.abs().sum(dim=-1) != 0).float()
+            mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
 
-            d_fx_mean = d_fx.mean(dim=1)
+            # Calculate the mean ignoring padded elements
+            d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / mask_p.sum(
+                dim=1, keepdim=True
+            )
+            d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / mask_a0.sum(
+                dim=1, keepdim=True
+            )
+            d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / mask_a1.sum(
+                dim=1, keepdim=True
+            )
+            d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / mask_fx.sum(
+                dim=1, keepdim=True
+            )
 
             # Combine and normalize the final descriptor
             y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4

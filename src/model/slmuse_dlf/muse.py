@@ -116,6 +116,7 @@ class MUSEDLF(nn.Module):
         )
 
         self.num_negatives = num_negatives
+        self.num_classes = num_classes
 
         self._debug = _debug
 
@@ -322,6 +323,7 @@ class MUSEDLF(nn.Module):
                                 unsupervised_results["loss"]
                                 * (mask_p & mask_a0 & mask_a1).float()
                             )
+
                             # Use the vhat (reconstructed embeddings) for supervised predictions
                             d_p_sentence_list.append(unsupervised_results["p"]["d"])
                             d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
@@ -331,7 +333,7 @@ class MUSEDLF(nn.Module):
                                 torch.zeros(
                                     (
                                         predicate_embeddings.size(0),
-                                        predicate_embeddings.size(3),
+                                        self.num_classes,
                                     ),
                                     device=predicate_embeddings.device,
                                 )
@@ -340,7 +342,7 @@ class MUSEDLF(nn.Module):
                                 torch.zeros(
                                     (
                                         predicate_embeddings.size(0),
-                                        predicate_embeddings.size(3),
+                                        self.num_classes,
                                     ),
                                     device=predicate_embeddings.device,
                                 )
@@ -349,7 +351,7 @@ class MUSEDLF(nn.Module):
                                 torch.zeros(
                                     (
                                         predicate_embeddings.size(0),
-                                        predicate_embeddings.size(3),
+                                        self.num_classes,
                                     ),
                                     device=predicate_embeddings.device,
                                 )
@@ -385,7 +387,7 @@ class MUSEDLF(nn.Module):
                             torch.zeros(
                                 (
                                     predicate_embeddings.size(0),
-                                    predicate_embeddings.size(3),
+                                    self.num_classes,
                                 ),
                                 device=predicate_embeddings.device,
                             )
@@ -394,7 +396,7 @@ class MUSEDLF(nn.Module):
                             torch.zeros(
                                 (
                                     predicate_embeddings.size(0),
-                                    predicate_embeddings.size(3),
+                                    self.num_classes,
                                 ),
                                 device=predicate_embeddings.device,
                             )
@@ -403,13 +405,32 @@ class MUSEDLF(nn.Module):
                             torch.zeros(
                                 (
                                     predicate_embeddings.size(0),
-                                    predicate_embeddings.size(3),
+                                    self.num_classes,
                                 ),
                                 device=predicate_embeddings.device,
                             )
                         )
 
                 # Aggregating across all spans
+                if len(d_p_sentence_list) > 0:
+                    max_dim = max(d.shape[-1] for d in d_p_sentence_list)
+                    d_p_sentence_list = [
+                        torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                        for d in d_p_sentence_list
+                    ]
+                if len(d_a0_sentence_list) > 0:
+                    max_dim = max(d.shape[-1] for d in d_a0_sentence_list)
+                    d_a0_sentence_list = [
+                        torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                        for d in d_a0_sentence_list
+                    ]
+                if len(d_a1_sentence_list) > 0:
+                    max_dim = max(d.shape[-1] for d in d_a1_sentence_list)
+                    d_a1_sentence_list = [
+                        torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                        for d in d_a1_sentence_list
+                    ]
+
                 d_p_sentence = torch.stack(d_p_sentence_list, dim=1)
                 d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
                 d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
@@ -423,6 +444,31 @@ class MUSEDLF(nn.Module):
                 d_a1_list.append(d_a1_sentence)
 
             # Aggregating across all spans
+            if len(d_p_list) > 0:
+                max_dim = max(d.shape[-1] for d in d_p_list)
+                d_p_list = [
+                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                    for d in d_p_list
+                ]
+            if len(d_a0_list) > 0:
+                max_dim = max(d.shape[-1] for d in d_a0_list)
+                d_a0_list = [
+                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                    for d in d_a0_list
+                ]
+            if len(d_a1_list) > 0:
+                max_dim = max(d.shape[-1] for d in d_a1_list)
+                d_a1_list = [
+                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                    for d in d_a1_list
+                ]
+            if len(d_fx_list) > 0:
+                max_dim = max(d.shape[-1] for d in d_fx_list)
+                d_fx_list = [
+                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                    for d in d_fx_list
+                ]
+
             d_p_aggregated = (
                 torch.stack(d_p_list, dim=1)
                 if d_p_list
