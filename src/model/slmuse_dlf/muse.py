@@ -264,6 +264,10 @@ class MUSEDLF(nn.Module):
 
             # Process each sentence
             for sentence_idx in range(sentence_embeddings.size(1)):
+
+                self.logger.debug(f"###################################")
+                self.logger.debug(f"Processing sentence: {sentence_idx}")
+
                 s_sentence_span = sentence_embeddings[:, sentence_idx, :]
                 v_fx = frameaxis_data[:, sentence_idx, :]
 
@@ -402,6 +406,15 @@ class MUSEDLF(nn.Module):
                             )
                         )
                         d_a1_sentence_list.append(
+                            torch.zeros(
+                                (
+                                    predicate_embeddings.size(0),
+                                    self.num_classes,
+                                ),
+                                device=predicate_embeddings.device,
+                            )
+                        )
+                        d_fx_list.append(
                             torch.zeros(
                                 (
                                     predicate_embeddings.size(0),
