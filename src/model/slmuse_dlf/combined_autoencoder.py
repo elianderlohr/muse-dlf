@@ -175,6 +175,15 @@ class CombinedAutoencoder(nn.Module):
             logits_a0 = self.feed_forward_unique["a0"](h_a0)
             logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
+            # Check for NaNs in logits
+            if (
+                torch.isnan(logits_p).any()
+                or torch.isnan(logits_a0).any()
+                or torch.isnan(logits_a1).any()
+            ):
+                self.logger.error("❌ NaNs detected in logits")
+                raise ValueError("NaNs detected in logits")
+
             # Apply masks before softmax to avoid NaNs
             logits_p = logits_p * mask_p.unsqueeze(-1).float()
             logits_a0 = logits_a0 * mask_a0.unsqueeze(-1).float()
@@ -191,12 +200,14 @@ class CombinedAutoencoder(nn.Module):
             d_a0 = torch.softmax(logits_a0, dim=1) * mask_a0.unsqueeze(-1).float()
             d_a1 = torch.softmax(logits_a1, dim=1) * mask_a1.unsqueeze(-1).float()
 
+            # Check for NaNs after softmax
             if (
                 torch.isnan(d_p).any()
                 or torch.isnan(d_a0).any()
                 or torch.isnan(d_a1).any()
             ):
                 self.logger.error("❌ NaNs detected in d AFTER softmax")
+                raise ValueError("NaNs detected in d AFTER softmax")
 
             g_p = (
                 self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
@@ -211,6 +222,7 @@ class CombinedAutoencoder(nn.Module):
                 * mask_a1.unsqueeze(-1).float()
             )
 
+            # Check for NaNs after gumbel softmax
             if (
                 torch.isnan(g_p).any()
                 or torch.isnan(g_a0).any()
@@ -218,6 +230,9 @@ class CombinedAutoencoder(nn.Module):
             ):
                 self.logger.error(
                     f"❌ NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {False}, log: {self.log}"
+                )
+                raise ValueError(
+                    f"NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {False}, log: {self.log}"
                 )
 
             if self.matmul_input == "d":
@@ -277,21 +292,26 @@ class CombinedAutoencoder(nn.Module):
         x = torch.cat((v_z, v_sentence), dim=-1)
 
         for i in range(self.num_layers):
+            if torch.isnan(x).any():
+                self.logger.error(f"❌ NaNs detected in input to layer {i}")
+                raise ValueError(f"NaNs detected in input to layer {i}")
             x = self.encoder_shared[i](x)
             if torch.isnan(x).any():
                 self.logger.error(
-                    f"❌ NaNs detected in encoder layer {i} before activation"
+                    f"❌ NaNs detected in output of layer {i} before activation"
                 )
                 raise ValueError(
-                    f"NaNs detected in encoder layer {i} before activation"
+                    f"NaNs detected in output of layer {i} before activation"
                 )
 
             x = self.activation_func(x)
             if torch.isnan(x).any():
                 self.logger.error(
-                    f"❌ NaNs detected in encoder layer {i} after activation"
+                    f"❌ NaNs detected in output of layer {i} after activation"
                 )
-                raise ValueError(f"NaNs detected in encoder layer {i} after activation")
+                raise ValueError(
+                    f"NaNs detected in output of layer {i} after activation"
+                )
 
             if self.use_batch_norm:
                 if torch.isnan(x).any():
@@ -306,9 +326,9 @@ class CombinedAutoencoder(nn.Module):
             x = self.dropout(x)
             if torch.isnan(x).any():
                 self.logger.error(
-                    f"❌ NaNs detected in encoder layer {i} after dropout"
+                    f"❌ NaNs detected in output of layer {i} after dropout"
                 )
-                raise ValueError(f"NaNs detected in encoder layer {i} after dropout")
+                raise ValueError(f"NaNs detected in output of layer {i} after dropout")
 
         x = x * mask.unsqueeze(-1).float()
 
