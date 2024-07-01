@@ -17,7 +17,10 @@ class LossModule(nn.Module):
         self.logger.debug(f"✅ LossModule successfully initialized")
 
     def l2(self, u, v):
-        return torch.sqrt(torch.sum((u - v) ** 2, dim=1))
+        # Calculate L2 distance and ensure no negative values are passed to sqrt
+        dist_squared = torch.sum((u - v) ** 2, dim=1)
+        dist_squared = torch.clamp(dist_squared, min=0)  # Ensure non-negative values
+        return torch.sqrt(dist_squared + 1e-8)  # Add epsilon to avoid sqrt(0)
 
     def contrastive_loss(self, v, vhat, negatives, mask):
         if mask.sum() == 0:
