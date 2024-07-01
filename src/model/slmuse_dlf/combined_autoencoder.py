@@ -278,13 +278,37 @@ class CombinedAutoencoder(nn.Module):
 
         for i in range(self.num_layers):
             x = self.encoder_shared[i](x)
+            if torch.isnan(x).any():
+                self.logger.error(
+                    f"❌ NaNs detected in encoder layer {i} before activation"
+                )
+                raise ValueError(
+                    f"NaNs detected in encoder layer {i} before activation"
+                )
+
             x = self.activation_func(x)
+            if torch.isnan(x).any():
+                self.logger.error(
+                    f"❌ NaNs detected in encoder layer {i} after activation"
+                )
+                raise ValueError(f"NaNs detected in encoder layer {i} after activation")
+
             if self.use_batch_norm:
                 if torch.isnan(x).any():
-                    self.logger.error("❌ NaNs detected in batch normalization input")
-                    raise ValueError("NaNs detected in batch normalization input")
+                    self.logger.error(
+                        f"❌ NaNs detected in batch normalization input at layer {i}"
+                    )
+                    raise ValueError(
+                        f"NaNs detected in batch normalization input at layer {i}"
+                    )
                 x = self.batch_norms_shared[i](x)
+
             x = self.dropout(x)
+            if torch.isnan(x).any():
+                self.logger.error(
+                    f"❌ NaNs detected in encoder layer {i} after dropout"
+                )
+                raise ValueError(f"NaNs detected in encoder layer {i} after dropout")
 
         x = x * mask.unsqueeze(-1).float()
 

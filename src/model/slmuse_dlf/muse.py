@@ -443,7 +443,7 @@ class MUSEDLF(nn.Module):
                 d_a0_list.append(d_a0_sentence)
                 d_a1_list.append(d_a1_sentence)
 
-            # Aggregating across all spans
+            # Aggregating across all sentences
             if len(d_p_list) > 0:
                 max_dim = max(d.shape[-1] for d in d_p_list)
                 d_p_list = [
