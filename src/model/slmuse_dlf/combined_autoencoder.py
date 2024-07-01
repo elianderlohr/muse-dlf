@@ -198,9 +198,6 @@ class CombinedAutoencoder(nn.Module):
             ):
                 self.logger.error("❌ NaNs detected in d AFTER softmax")
 
-            if (d_p == 0).all() or (d_a0 == 0).all() or (d_a1 == 0).all():
-                self.logger.error("❌ All 0 AFTER softmax")
-
             g_p = (
                 self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
                 * mask_p.unsqueeze(-1).float()

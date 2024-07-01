@@ -324,6 +324,26 @@ class MUSEDLF(nn.Module):
                         d_p_sentence_list.append(unsupervised_results["p"]["d"])
                         d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
                         d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+
+                    mask_fx = (v_fx.abs().sum(dim=-1) != 0).float()
+
+                    # As per sentence only one frameaxis data set is present calculate only once
+                    unsupervised_fx_results = self.unsupervised_fx(
+                        v_fx,
+                        mask_fx,
+                        s_sentence_span,
+                        negatives_fx,
+                        tau,
+                        mixed_precision=mixed_precision,
+                    )
+
+                    d_fx_list.append(unsupervised_fx_results["fx"]["d"])
+
+                    # Add the loss to the unsupervised losses
+                    sentence_loss += unsupervised_fx_results["loss"] * (mask_fx).float()
+
+                    # Apply mask to sentence loss
+                    unsupervised_losses += sentence_loss
                 else:
                     self.logger.debug(
                         f"Idx: [{sentence_idx}] Found all zeros in sentence embeddings: {s_sentence_span[:, :5]}"
@@ -331,21 +351,34 @@ class MUSEDLF(nn.Module):
 
                     d_p_sentence_list.append(
                         torch.zeros(
-                            (sentence_embeddings.size(0), sentence_embeddings.size(2)),
-                            device=sentence_embeddings.device,
+                            (
+                                predicate_embeddings.size(0),
+                                predicate_embeddings.size(3),
+                            ),
+                            device=predicate_embeddings.device,
                         )
                     )
                     d_a0_sentence_list.append(
                         torch.zeros(
-                            (sentence_embeddings.size(0), sentence_embeddings.size(2)),
-                            device=sentence_embeddings.device,
+                            (
+                                predicate_embeddings.size(0),
+                                predicate_embeddings.size(3),
+                            ),
+                            device=predicate_embeddings.device,
                         )
                     )
                     d_a1_sentence_list.append(
                         torch.zeros(
-                            (sentence_embeddings.size(0), sentence_embeddings.size(2)),
-                            device=sentence_embeddings.device,
+                            (
+                                predicate_embeddings.size(0),
+                                predicate_embeddings.size(3),
+                            ),
+                            device=predicate_embeddings.device,
                         )
+                    )
+
+                    self.logger.debug(
+                        f"Add zeros to d_p_sentence_list, d_a0_sentence_list, d_a1_sentence_list of shape {d_p_sentence_list[-1].shape}"
                     )
 
                 # Aggregating across all spans
@@ -356,26 +389,6 @@ class MUSEDLF(nn.Module):
                 d_p_list.append(d_p_sentence)
                 d_a0_list.append(d_a0_sentence)
                 d_a1_list.append(d_a1_sentence)
-
-                mask_fx = (v_fx.abs().sum(dim=-1) != 0).float()
-
-                # As per sentence only one frameaxis data set is present calculate only once
-                unsupervised_fx_results = self.unsupervised_fx(
-                    v_fx,
-                    mask_fx,
-                    s_sentence_span,
-                    negatives_fx,
-                    tau,
-                    mixed_precision=mixed_precision,
-                )
-
-                d_fx_list.append(unsupervised_fx_results["fx"]["d"])
-
-                # Add the loss to the unsupervised losses
-                sentence_loss += unsupervised_fx_results["loss"] * (mask_fx).float()
-
-                # Apply mask to sentence loss
-                unsupervised_losses += sentence_loss
 
             # Aggregating across all spans
             d_p_aggregated = (
