@@ -295,6 +295,7 @@ class CombinedAutoencoder(nn.Module):
             if torch.isnan(x).any():
                 self.logger.error(f"❌ NaNs detected in input to layer {i}")
                 raise ValueError(f"NaNs detected in input to layer {i}")
+
             x = self.encoder_shared[i](x)
             if torch.isnan(x).any():
                 self.logger.error(

@@ -333,10 +333,10 @@ class Trainer:
                 if (batch_idx + 1) % self.accumulation_steps == 0 or (
                     batch_idx + 1
                 ) == len(train_dataloader):
-                    if self.accelerator.sync_gradients:
-                        self.accelerator.clip_grad_norm_(
-                            self.model.parameters(), self.clip_value
-                        )
+                    # if self.accelerator.sync_gradients:
+                    self.accelerator.clip_grad_norm_(
+                        self.model.parameters(), self.clip_value
+                    )
                     self.optimizer.step()
                     self.scheduler.step()
                     self.optimizer.zero_grad()

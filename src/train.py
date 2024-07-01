@@ -60,6 +60,7 @@ def load_model(
     device="cuda",
     logger=LoggerManager.get_logger(__name__),
     _debug=False,
+    _detect_anomaly=False,
 ):
     # Model instantiation
     model = MUSEDLF(
@@ -90,6 +91,7 @@ def load_model(
         supervised_num_layers=supervised_num_layers,
         supervised_activation=supervised_activation,
         _debug=_debug,
+        _detect_anomaly=_detect_anomaly,
     )
 
     model = model.to(device)
@@ -426,6 +428,14 @@ def main():
     # debug
     parser.add_argument("--debug", type=str2bool, default=False, help="Debug mode")
 
+    # detect_anomaly
+    parser.add_argument(
+        "--detect_anomaly",
+        type=str2bool,
+        default=False,
+        help="Detect anomaly in the model",
+    )
+
     args = parser.parse_args()
 
     # start with setting up wandb and accelerator
@@ -555,6 +565,7 @@ def main():
         device="cuda",
         logger=logger,
         _debug=args.debug,
+        _detect_anomaly=args.detect_anomaly,
     )
 
     logger.info("Model loaded successfully")

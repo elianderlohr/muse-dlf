@@ -48,6 +48,7 @@ class MUSEDLF(nn.Module):
         supervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         # Debugging
         _debug=False,
+        _detect_anomaly=False,
     ):
         super(MUSEDLF, self).__init__()
 
@@ -56,9 +57,12 @@ class MUSEDLF(nn.Module):
 
         if _debug:
             self.logger.warning("🚨 Debug mode is enabled")
-            # activate torch.autograd.set_detect_anomaly(True)
-            torch.autograd.set_detect_anomaly(True)
-            self.logger.warning("🚨 torch.autograd.set_detect_anomaly(True) activated")
+            if _detect_anomaly:
+                #    activate torch.autograd.set_detect_anomaly(True)
+                torch.autograd.set_detect_anomaly(_detect_anomaly)
+                self.logger.warning(
+                    f"🚨 torch.autograd.set_detect_anomaly({_detect_anomaly}) activated"
+                )
 
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(
