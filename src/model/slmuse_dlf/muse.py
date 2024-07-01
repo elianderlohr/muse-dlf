@@ -261,8 +261,11 @@ class MUSEDLF(nn.Module):
                 frameaxis_data, num_negatives=self.num_negatives
             )
 
-            # Initialize unsupervised_losses tensor
+            # Initialize unsupervised_losses tensor and count tensor
             unsupervised_losses = torch.zeros(
+                (sentence_embeddings.size(0),), device=sentence_embeddings.device
+            )
+            valid_counts = torch.zeros(
                 (sentence_embeddings.size(0),), device=sentence_embeddings.device
             )
 
@@ -327,10 +330,12 @@ class MUSEDLF(nn.Module):
                                 tau,
                                 mixed_precision=mixed_precision,
                             )
+
                             sentence_loss += (
                                 unsupervised_results["loss"]
                                 * (mask_p & mask_a0 & mask_a1).float()
                             )
+                            valid_counts += (mask_p & mask_a0 & mask_a1).float()
 
                             # Use the vhat (reconstructed embeddings) for supervised predictions
                             d_p_sentence_list.append(unsupervised_results["p"]["d"])
@@ -381,6 +386,7 @@ class MUSEDLF(nn.Module):
 
                     # Add the loss to the unsupervised losses
                     sentence_loss += unsupervised_fx_results["loss"] * (mask_fx).float()
+                    valid_counts += mask_fx
 
                     # Apply mask to sentence loss
                     unsupervised_losses += sentence_loss
@@ -524,14 +530,7 @@ class MUSEDLF(nn.Module):
                 mixed_precision=mixed_precision,
             )
 
-            # Identify valid (non-nan) losses
-            valid_losses = ~torch.isnan(unsupervised_losses)
-
-            # Take average by summing the valid losses and dividing by num sentences so that padded sentences are also taken in equation
-            unsupervised_loss = unsupervised_losses[valid_losses].sum() / (
-                predicate_embeddings.size(0)
-                * predicate_embeddings.size(1)
-                * predicate_embeddings.size(2)
-            )
+            # Normalize the unsupervised losses by valid counts for each batch
+            unsupervised_loss = (unsupervised_losses / valid_counts).mean()
 
             return unsupervised_loss, span_pred, sentence_pred, combined_pred, other
