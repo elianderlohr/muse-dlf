@@ -171,14 +171,22 @@ class CombinedAutoencoder(nn.Module):
                 self.logger.error("❌ NaNs detected in hidden states")
                 raise ValueError("NaNs detected in hidden states")
 
-            logits_p = self.feed_forward_unique["p"](h_p) * mask_p.unsqueeze(-1).float()
-            logits_a0 = (
-                self.feed_forward_unique["a0"](h_a0) * mask_a0.unsqueeze(-1).float()
-            )
-            logits_a1 = (
-                self.feed_forward_unique["a1"](h_a1) * mask_a1.unsqueeze(-1).float()
-            )
+            logits_p = self.feed_forward_unique["p"](h_p)
+            logits_a0 = self.feed_forward_unique["a0"](h_a0)
+            logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
+            # Apply masks before softmax to avoid NaNs
+            logits_p = logits_p * mask_p.unsqueeze(-1).float()
+            logits_a0 = logits_a0 * mask_a0.unsqueeze(-1).float()
+            logits_a1 = logits_a1 * mask_a1.unsqueeze(-1).float()
+
+            # Ensure logits are not all zero by adding a small epsilon where mask is zero
+            epsilon = 1e-10
+            logits_p = logits_p + (1 - mask_p.unsqueeze(-1).float()) * epsilon
+            logits_a0 = logits_a0 + (1 - mask_a0.unsqueeze(-1).float()) * epsilon
+            logits_a1 = logits_a1 + (1 - mask_a1.unsqueeze(-1).float()) * epsilon
+
+            # Apply softmax
             d_p = torch.softmax(logits_p, dim=1) * mask_p.unsqueeze(-1).float()
             d_a0 = torch.softmax(logits_a0, dim=1) * mask_a0.unsqueeze(-1).float()
             d_a1 = torch.softmax(logits_a1, dim=1) * mask_a1.unsqueeze(-1).float()

@@ -239,11 +239,6 @@ class MUSEDLF(nn.Module):
                 mixed_precision=mixed_precision,
             )
 
-            # Handle multiple spans by averaging predictions
-            unsupervised_losses = torch.zeros(
-                (sentence_embeddings.size(0),), device=sentence_embeddings.device
-            )
-
             # Creating storage for aggregated d tensors
             d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
 
@@ -291,16 +286,17 @@ class MUSEDLF(nn.Module):
                     mask_a1 = (v_a1_span.abs().sum(dim=-1) != 0).float().bool()
 
                     if not mask_p.any():
+                        # log no of zeros in mask_p
                         self.logger.debug(
-                            f"Found predicate embedding with all zeros, masked it, and ignored loss."
+                            f"Found {(mask_p.size(0) - mask_p.sum()).item()} of {mask_p.size(0)} zeros in mask_p"
                         )
                     if not mask_a0.any():
                         self.logger.debug(
-                            f"Found arg0 embedding with all zeros, masked it, and ignored loss."
+                            f"Found {(mask_a0.size(0) - mask_a0.sum()).item()} of {mask_a0.size(0)} arg0 embedding with all zeros, masked it, and ignored loss."
                         )
                     if not mask_a1.any():
                         self.logger.debug(
-                            f"Found arg1 embedding with all zeros, masked it, and ignored loss."
+                            f"Found {(mask_a1.size(0) - mask_a1.sum()).item()} of {mask_a1.size(0)} arg1 embedding with all zeros, masked it, and ignored loss."
                         )
 
                     # Feed the embeddings to the unsupervised module
@@ -351,10 +347,7 @@ class MUSEDLF(nn.Module):
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
 
                 # Add the loss to the unsupervised losses
-                sentence_loss += (
-                    unsupervised_fx_results["loss"]
-                    * (mask_p & mask_a0 & mask_a1).float()
-                )
+                sentence_loss += unsupervised_fx_results["loss"] * (mask_fx).float()
 
                 # Apply mask to sentence loss
                 unsupervised_losses += sentence_loss
