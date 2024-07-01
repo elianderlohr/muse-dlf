@@ -414,15 +414,16 @@ class MUSEDLF(nn.Module):
                                 device=predicate_embeddings.device,
                             )
                         )
-                        d_fx_list.append(
-                            torch.zeros(
-                                (
-                                    predicate_embeddings.size(0),
-                                    self.num_classes,
-                                ),
-                                device=predicate_embeddings.device,
-                            )
+
+                    d_fx_list.append(
+                        torch.zeros(
+                            (
+                                predicate_embeddings.size(0),
+                                self.num_classes,
+                            ),
+                            device=predicate_embeddings.device,
                         )
+                    )
 
                 # Aggregating across all spans
                 if len(d_p_sentence_list) > 0:
