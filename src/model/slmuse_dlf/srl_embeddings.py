@@ -112,11 +112,13 @@ class SRLEmbeddings(nn.Module):
                     output_hidden_states=True,
                 )
 
-                summed_embeddings = outputs.last_hidden_state
+                second_to_last_hidden_state = outputs.hidden_states[-2]
 
-            self.check_for_nans(summed_embeddings, "summed embeddings")
+            self.check_for_nans(
+                second_to_last_hidden_state, "second to last hidden state"
+            )
 
-            summed_embeddings = summed_embeddings.view(
+            second_to_last_hidden_state = second_to_last_hidden_state.view(
                 batch_size, num_sentences, max_sentence_length, self.embedding_dim
             )
 
@@ -125,9 +127,11 @@ class SRLEmbeddings(nn.Module):
                     batch_size, num_sentences, max_sentence_length, 1
                 )
                 attention_masks_expanded = attention_masks_expanded.expand(
-                    summed_embeddings.size()
+                    second_to_last_hidden_state.size()
                 )
-                embeddings_masked = summed_embeddings * attention_masks_expanded
+                embeddings_masked = (
+                    second_to_last_hidden_state * attention_masks_expanded
+                )
                 sum_embeddings = torch.sum(embeddings_masked, dim=2)
                 token_counts = (
                     attention_masks.view(batch_size, num_sentences, max_sentence_length)
@@ -136,7 +140,7 @@ class SRLEmbeddings(nn.Module):
                 )
                 embeddings_mean = sum_embeddings / token_counts
             elif self.pooling == "cls":
-                embeddings_mean = summed_embeddings[:, :, 0, :]
+                embeddings_mean = second_to_last_hidden_state[:, :, 0, :]
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")
 
