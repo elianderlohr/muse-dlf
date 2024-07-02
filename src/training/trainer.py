@@ -1106,13 +1106,13 @@ class Trainer:
                 early_stopping["stopping_code"] = 104
                 break
 
-            if epoch > 2 and metrics["accuracy"] < 0.5:
-                logger.info("Accuracy is below 0.5. Stopping training.")
+            if epoch > 2 and metrics["accuracy"] < 0.4:
+                logger.info("Accuracy is below 0.4. Stopping training.")
                 early_stopping["early_stopped"] = True
                 early_stopping["stopping_code"] = 102
                 self._log_alert(
-                    title="Accuracy is below 0.5.",
-                    text="The model never surpassed 0.5 accuracy.",
+                    title="Accuracy is below 0.4.",
+                    text="The model never surpassed 0.4 accuracy.",
                 )
                 break
 
