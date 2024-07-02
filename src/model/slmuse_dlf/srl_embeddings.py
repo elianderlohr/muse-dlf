@@ -144,7 +144,7 @@ class SRLEmbeddings(nn.Module):
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")
 
-        return summed_embeddings, embeddings_mean
+        return second_to_last_hidden_state, embeddings_mean
 
     def get_arg_embedding(
         self,
