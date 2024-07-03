@@ -4,7 +4,7 @@ from torch.cuda.amp import autocast
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSESupervisedAlternative(nn.Module):
+class MUSESupervisedAlternative(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -17,7 +17,7 @@ class SLMUSESupervisedAlternative(nn.Module):
         activation_function="relu",
         _debug=False,
     ):
-        super(SLMUSESupervisedAlternative, self).__init__()
+        super(MUSESupervisedAlternative, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)

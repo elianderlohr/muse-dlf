@@ -7,7 +7,7 @@ from transformers import RobertaTokenizerFast
 src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 sys.path.insert(0, src_dir)
 
-from src.model.slmuse_dlf.srl_embeddings import (
+from src.model.slmuse_dlf.embeddings import (
     SRLEmbeddings,
 )  # Replace with correct import path
 

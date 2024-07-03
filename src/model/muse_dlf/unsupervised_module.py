@@ -1,15 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.slmuse_dlf.combined_autoencoder import SLMUSECombinedAutoencoder
-from model.slmuse_dlf.loss_module import SLMUSELossModule
+from model.muse_dlf.combined_autoencoder import MUSECombinedAutoencoder
+from model.muse_dlf.loss_module import MUSELossModule
 
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast
 
 
-class SLMUSEUnsupervised(nn.Module):
+class MUSEUnsupervised(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -28,12 +28,12 @@ class SLMUSEUnsupervised(nn.Module):
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(SLMUSEUnsupervised, self).__init__()
+        super(MUSEUnsupervised, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.combined_autoencoder = SLMUSECombinedAutoencoder(
+        self.combined_autoencoder = MUSECombinedAutoencoder(
             embedding_dim=embedding_dim,
             hidden_dim=hidden_dim,
             num_classes=num_classes,
@@ -46,7 +46,7 @@ class SLMUSEUnsupervised(nn.Module):
             _debug=_debug,
         )
 
-        self.loss_fn = SLMUSELossModule(lambda_orthogonality, M, t, _debug=_debug)
+        self.loss_fn = MUSELossModule(lambda_orthogonality, M, t, _debug=_debug)
 
         self._debug = _debug
 

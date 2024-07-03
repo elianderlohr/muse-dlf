@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
 
-from src.model.slmuse_dlf.embeddings import SLMUSEEmbeddings
-from model.slmuse_dlf.supervised_module import SLMUSESupervised
-from model.slmuse_dlf.unsupervised_module import SLMUSEUnsupervised
-from model.slmuse_dlf.unsupervised_frameaxis_module import SLMUSEFrameAxisUnsupervised
+from model.muse_dlf.embeddings import MUSEEmbeddings
+from model.muse_dlf.supervised_module import MUSESupervised
+from model.muse_dlf.unsupervised_module import MUSEUnsupervised
+from model.muse_dlf.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast
 
 
-class SLMUSEDLF(nn.Module):
+class MUSEDLF(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -50,9 +50,9 @@ class SLMUSEDLF(nn.Module):
         _debug=False,
         _detect_anomaly=False,
     ):
-        super(SLMUSEDLF, self).__init__()
+        super(MUSEDLF, self).__init__()
 
-        self.model_type = "slmuse-dlf"
+        self.model_type = "muse-dlf"
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
@@ -60,14 +60,13 @@ class SLMUSEDLF(nn.Module):
         if _debug:
             self.logger.warning("🚨 Debug mode is enabled")
             if _detect_anomaly:
-                #    activate torch.autograd.set_detect_anomaly(True)
                 torch.autograd.set_detect_anomaly(_detect_anomaly)
                 self.logger.warning(
                     f"🚨 torch.autograd.set_detect_anomaly({_detect_anomaly}) activated"
                 )
 
         # Aggregation layer replaced with SRL_Embeddings
-        self.aggregation = SLMUSEEmbeddings(
+        self.aggregation = MUSEEmbeddings(
             model_name_or_path=bert_model_name_or_path,
             model_type=bert_model_name,
             pooling=srl_embeddings_pooling,
@@ -75,7 +74,7 @@ class SLMUSEDLF(nn.Module):
         )
 
         # Unsupervised training module
-        self.unsupervised = SLMUSEUnsupervised(
+        self.unsupervised = MUSEUnsupervised(
             embedding_dim=embedding_dim,
             hidden_dim=hidden_dim,
             num_classes=num_classes,
@@ -91,7 +90,7 @@ class SLMUSEDLF(nn.Module):
             _debug=_debug,
         )
 
-        self.unsupervised_fx = SLMUSEFrameAxisUnsupervised(
+        self.unsupervised_fx = MUSEFrameAxisUnsupervised(
             embedding_dim=embedding_dim,
             frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,
@@ -109,7 +108,7 @@ class SLMUSEDLF(nn.Module):
         )
 
         # Supervised training module
-        self.supervised = SLMUSESupervised(
+        self.supervised = MUSESupervised(
             embedding_dim,
             num_classes=num_classes,
             frameaxis_dim=frameaxis_dim,

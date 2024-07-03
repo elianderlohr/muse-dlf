@@ -54,7 +54,7 @@ nvidia-smi
 echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
 echo "Launching training script with Accelerate..."
-CUDA_VISIBLE_DEVICES=0 python src/mlm-sweep.py \
+CUDA_VISIBLE_DEVICES=0 python src/start_mlm_sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
@@ -63,7 +63,7 @@ CUDA_VISIBLE_DEVICES=0 python src/mlm-sweep.py \
     --batch_size 8 \
     --epochs 40 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=1 python src/mlm-sweep.py \
+CUDA_VISIBLE_DEVICES=1 python src/start_mlm_sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
@@ -72,7 +72,7 @@ CUDA_VISIBLE_DEVICES=1 python src/mlm-sweep.py \
     --batch_size 16 \
     --epochs 40 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=2 python src/mlm-sweep.py \
+CUDA_VISIBLE_DEVICES=2 python src/start_mlm_sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \
@@ -81,7 +81,7 @@ CUDA_VISIBLE_DEVICES=2 python src/mlm-sweep.py \
     --batch_size 24 \
     --epochs 40 \
     --patience 15 &
-CUDA_VISIBLE_DEVICES=3 python src/mlm-sweep.py \
+CUDA_VISIBLE_DEVICES=3 python src/start_mlm_sweep.py \
     --wb_api_key $WANDB_API_KEY \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH \

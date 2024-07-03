@@ -22,6 +22,7 @@ class Trainer:
         optimizer,
         loss_function,
         scheduler,
+        model_type="muse",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
         training_management=None,  # 'accelerate', 'wandb', or None
@@ -93,7 +94,10 @@ class Trainer:
             logger.info("Using standard PyTorch for training.")
             self.accelerator = None
 
-        logger.info(f"Using {mixed_precision} mixed precision for training.")
+        # Get the model type
+        self.model_type = self.model.model_type
+
+        logger.info(f"Model type: {self.model_type}")
 
         self.mixed_precision = mixed_precision
         self.clip_value = clip_value
@@ -118,6 +122,14 @@ class Trainer:
             logger.error(f"NaNs found in {tensor_name}")
             return True
         return False
+
+    def get_activation_function(self, logits):
+        if self.model_type == "muse":
+            return torch.sigmoid(logits) > 0.5
+        elif self.model_type == "slmuse":
+            return torch.softmax(logits, dim=1) > 0.5
+        else:
+            raise ValueError(f"Model type {self.model_type} not supported.")
 
     def _train(
         self,
@@ -389,15 +401,15 @@ class Trainer:
 
             # Check train metrics every 50 steps
             if local_steps % 50 == 0:
-                combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
-                span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
-                sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
+                combined_pred = self.get_activation_function(combined_logits).int()
+                span_pred = self.get_activation_function(span_logits).int()
+                sentence_pred = self.get_activation_function(sentence_logits).int()
 
                 # predicate, arg0, arg1, frameaxis
-                predicate_pred = (torch.softmax(other["predicate"], dim=1) > 0.5).int()
-                arg0_pred = (torch.softmax(other["arg0"], dim=1) > 0.5).int()
-                arg1_pred = (torch.softmax(other["arg1"], dim=1) > 0.5).int()
-                frameaxis_pred = (torch.softmax(other["frameaxis"], dim=1) > 0.5).int()
+                predicate_pred = self.get_activation_function(other["predicate"]).int()
+                arg0_pred = self.get_activation_function(other["arg0"]).int()
+                arg1_pred = self.get_activation_function(other["arg1"]).int()
+                frameaxis_pred = self.get_activation_function(other["frameaxis"]).int()
 
                 if self.training_management == "accelerate":
                     combined_pred, combined_labels = (
@@ -791,15 +803,15 @@ class Trainer:
                         )
                     )
 
-                combined_pred = (torch.softmax(combined_logits, dim=1) > 0.5).int()
-                span_pred = (torch.softmax(span_logits, dim=1) > 0.5).int()
-                sentence_pred = (torch.softmax(sentence_logits, dim=1) > 0.5).int()
+                combined_pred = self.get_activation_function(combined_logits).int()
+                span_pred = self.get_activation_function(span_logits).int()
+                sentence_pred = self.get_activation_function(sentence_logits).int()
 
                 # predicate, arg0, arg1, frameaxis
-                predicate_pred = (torch.softmax(other["predicate"], dim=1) > 0.5).int()
-                arg0_pred = (torch.softmax(other["arg0"], dim=1) > 0.5).int()
-                arg1_pred = (torch.softmax(other["arg1"], dim=1) > 0.5).int()
-                frameaxis_pred = (torch.softmax(other["frameaxis"], dim=1) > 0.5).int()
+                predicate_pred = self.get_activation_function(other["predicate"]).int()
+                arg0_pred = self.get_activation_function(other["arg0"]).int()
+                arg1_pred = self.get_activation_function(other["arg1"]).int()
+                frameaxis_pred = self.get_activation_function(other["frameaxis"]).int()
 
                 if self.training_management == "accelerate":
                     combined_pred, combined_labels = (

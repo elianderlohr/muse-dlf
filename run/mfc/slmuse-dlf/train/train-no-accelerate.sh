@@ -62,7 +62,7 @@ done
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
-SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
+SAVE_PATH="models/slmuse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $SAVE_PATH"
 
@@ -78,7 +78,9 @@ export CUDA_VISIBLE_DEVICES=0
 echo "=================== Training Start ==================="
 
 echo "Launching training script..."
-python src/train.py \
+python src/start_train.py \
+    --model_type slmuse-dlf \
+    --project_name slmuse-dlf \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \

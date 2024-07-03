@@ -5,7 +5,7 @@ import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
 
-class SRLEmbeddings(nn.Module):
+class SLMUSEEmbeddings(nn.Module):
     def __init__(
         self,
         model_name_or_path: str,
@@ -13,7 +13,7 @@ class SRLEmbeddings(nn.Module):
         pooling: str = "mean",
         _debug=False,
     ):
-        super(SRLEmbeddings, self).__init__()
+        super(SLMUSEEmbeddings, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)

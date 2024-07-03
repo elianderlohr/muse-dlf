@@ -1,18 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.slmuse_dlf.combined_autoencoder import SLMUSECombinedAutoencoder
-from model.slmuse_dlf.loss_module import SLMUSELossModule
+from model.muse_dlf.frameaxis_autoencoder import MUSEFrameAxisAutoencoder
+from model.muse_dlf.loss_module import MUSELossModule
 
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast
 
 
-class SLMUSEUnsupervised(nn.Module):
+class MUSEFrameAxisUnsupervised(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
+        frameaxis_dim,  # frameaxis dimension
         hidden_dim,  # hidden dimension
         num_classes,  # number of classes to predict
         # LossModule Parameters
@@ -28,13 +29,16 @@ class SLMUSEUnsupervised(nn.Module):
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(SLMUSEUnsupervised, self).__init__()
+        super(MUSEFrameAxisUnsupervised, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.combined_autoencoder = SLMUSECombinedAutoencoder(
+        self.loss_fn = MUSELossModule(lambda_orthogonality, M, t, _debug=_debug)
+
+        self.frameaxis_autoencoder = MUSEFrameAxisAutoencoder(
             embedding_dim=embedding_dim,
+            frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,
             num_classes=num_classes,
             num_layers=num_layers,
@@ -46,25 +50,17 @@ class SLMUSEUnsupervised(nn.Module):
             _debug=_debug,
         )
 
-        self.loss_fn = SLMUSELossModule(lambda_orthogonality, M, t, _debug=_debug)
-
         self._debug = _debug
 
         # Debugging:
-        self.logger.debug(f"✅ MUSEUnsupervised successfully initialized")
+        self.logger.debug(f"✅ MUSEFrameAxisUnsupervised successfully initialized")
 
     def forward(
         self,
-        v_p,
-        v_a0,
-        v_a1,
-        mask_p,
-        mask_a0,
-        mask_a1,
+        v_fx,
+        mask,
         v_sentence,
-        p_negatives,
-        a0_negatives,
-        a1_negatives,
+        fx_negatives,
         tau,
         mixed_precision="fp16",  # mixed precision as a parameter
     ):
@@ -77,60 +73,22 @@ class SLMUSEUnsupervised(nn.Module):
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
-            # outputs = {
-            # "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
-            # "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},
-            # "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
-            # }
-            outputs = self.combined_autoencoder(
-                v_p,
-                v_a0,
-                v_a1,
-                mask_p,
-                mask_a0,
-                mask_a1,
-                v_sentence,
-                tau,
-                mixed_precision,
+            outputs_fx = self.frameaxis_autoencoder(
+                v_fx, mask, v_sentence, tau, mixed_precision
             )
 
-            outputs_p = outputs["p"]
-            outputs_p["v"] = v_p
+            outputs_fx["v"] = v_fx
 
-            outputs_a0 = outputs["a0"]
-            outputs_a0["v"] = v_a0
-
-            outputs_a1 = outputs["a1"]
-            outputs_a1["v"] = v_a1
-
-            loss_p = self.loss_fn(
-                outputs_p,
-                p_negatives,
-                mask_p,
+            loss = self.loss_fn(
+                outputs_fx,
+                fx_negatives,
+                mask,
                 mixed_precision=mixed_precision,
             )
-
-            loss_a0 = self.loss_fn(
-                outputs_a0,
-                a0_negatives,
-                mask_a0,
-                mixed_precision=mixed_precision,
-            )
-
-            loss_a1 = self.loss_fn(
-                outputs_a1,
-                a1_negatives,
-                mask_a1,
-                mixed_precision=mixed_precision,
-            )
-
-            loss = loss_p + loss_a0 + loss_a1
 
             results = {
                 "loss": loss,
-                "p": outputs["p"],
-                "a0": outputs["a0"],
-                "a1": outputs["a1"],
+                "fx": outputs_fx,
             }
 
         return results

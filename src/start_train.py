@@ -3,11 +3,11 @@ import random
 
 import numpy as np
 
-from model.slmuse_dlf.muse import MUSEDLF
+from model.slmuse_dlf.muse import SLMUSEDLF
+from model.muse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from transformers import (
     BertTokenizer,
     RobertaTokenizerFast,
@@ -17,6 +17,7 @@ from torch.optim import Adam, AdamW
 from accelerate import Accelerator
 import warnings
 import wandb
+
 from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
@@ -30,6 +31,7 @@ wandb.require("core")
 
 
 def load_model(
+    model_type,
     embedding_dim,
     frameaxis_dim,
     hidden_dim,
@@ -62,47 +64,78 @@ def load_model(
     _debug=False,
     _detect_anomaly=False,
 ):
-    # Model instantiation
-    model = MUSEDLF(
-        embedding_dim=embedding_dim,
-        frameaxis_dim=frameaxis_dim,
-        hidden_dim=hidden_dim,
-        num_classes=num_classes,
-        num_sentences=num_sentences,
-        dropout_prob=dropout_prob,
-        bert_model_name=bert_model_name,
-        bert_model_name_or_path=bert_model_name_or_path,
-        srl_embeddings_pooling=srl_embeddings_pooling,
-        lambda_orthogonality=lambda_orthogonality,
-        M=M,
-        t=t,
-        muse_unsupervised_num_layers=muse_unsupervised_num_layers,
-        muse_unsupervised_activation=muse_unsupervised_activation,
-        muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
-        muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
-        muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
-        muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
-        muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
-        muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
-        muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-        muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
-        num_negatives=num_negatives,
-        supervised_concat_frameaxis=supervised_concat_frameaxis,
-        supervised_num_layers=supervised_num_layers,
-        supervised_activation=supervised_activation,
-        _debug=_debug,
-        _detect_anomaly=_detect_anomaly,
-    )
+    logger.info("Loading model of type: %s", model_type)
+
+    if model_type == "slmuse-dlf":
+        model = SLMUSEDLF(
+            embedding_dim=embedding_dim,
+            frameaxis_dim=frameaxis_dim,
+            hidden_dim=hidden_dim,
+            num_classes=num_classes,
+            num_sentences=num_sentences,
+            dropout_prob=dropout_prob,
+            bert_model_name=bert_model_name,
+            bert_model_name_or_path=bert_model_name_or_path,
+            srl_embeddings_pooling=srl_embeddings_pooling,
+            lambda_orthogonality=lambda_orthogonality,
+            M=M,
+            t=t,
+            muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+            muse_unsupervised_activation=muse_unsupervised_activation,
+            muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+            muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+            muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+            muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+            muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+            muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+            muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+            muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+            num_negatives=num_negatives,
+            supervised_concat_frameaxis=supervised_concat_frameaxis,
+            supervised_num_layers=supervised_num_layers,
+            supervised_activation=supervised_activation,
+            _debug=_debug,
+            _detect_anomaly=_detect_anomaly,
+        )
+    else:
+        model = MUSEDLF(
+            embedding_dim=embedding_dim,
+            frameaxis_dim=frameaxis_dim,
+            hidden_dim=hidden_dim,
+            num_classes=num_classes,
+            num_sentences=num_sentences,
+            dropout_prob=dropout_prob,
+            bert_model_name=bert_model_name,
+            bert_model_name_or_path=bert_model_name_or_path,
+            srl_embeddings_pooling=srl_embeddings_pooling,
+            lambda_orthogonality=lambda_orthogonality,
+            M=M,
+            t=t,
+            muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+            muse_unsupervised_activation=muse_unsupervised_activation,
+            muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+            muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+            muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+            muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+            muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+            muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+            muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+            muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+            num_negatives=num_negatives,
+            supervised_concat_frameaxis=supervised_concat_frameaxis,
+            supervised_num_layers=supervised_num_layers,
+            supervised_activation=supervised_activation,
+            _debug=_debug,
+            _detect_anomaly=_detect_anomaly,
+        )
 
     model = model.to(device)
 
     if path_pretrained_model:
-        logger.info(
-            "Loading model from path_pretrained_model: %s", path_pretrained_model
-        )
-        assert path_pretrained_model != ""
+        logger.info("Loading model from pretrained path: %s", path_pretrained_model)
         model.load_state_dict(torch.load(path_pretrained_model, map_location=device))
 
+    logger.info("Model loaded successfully")
     return model
 
 
@@ -117,6 +150,37 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
+def setup_logging(debug):
+    if debug:
+        LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
+    else:
+        LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
+    logger = LoggerManager.get_logger(__name__)
+    return logger
+
+
+def initialize_wandb(wandb_api_key, project_name, tags, config, mixed_precision):
+    wandb.login(key=wandb_api_key)
+    accelerator = Accelerator(log_with="wandb", mixed_precision=mixed_precision)
+    accelerator.init_trackers(
+        project_name,
+        config,
+        init_kwargs={"wandb": {"tags": tags.split(",")}},
+    )
+    return accelerator
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
 def main():
     parser = argparse.ArgumentParser(description="Train MUSE model")
 
@@ -128,10 +192,15 @@ def main():
     required_args.add_argument(
         "--wandb_api_key", type=str, required=True, help="Wandb API key"
     )
-
-    # project_name = "muse-dlf"
     required_args.add_argument(
         "--project_name", type=str, required=True, help="Wandb project name"
+    )
+    required_args.add_argument(
+        "--model_type",
+        type=str,
+        default="muse-dlf",
+        help="Type of model to train (muse-dlf, slmuse-dlf)",
+        choices=["muse-dlf", "slmuse-dlf"],
     )
 
     parser.add_argument(
@@ -239,7 +308,6 @@ def main():
         default=False,
         help="Use log gumbel softmax in the MUSE frameaxis unsupervised encoder",
     )
-    # num_negatives
     model_config.add_argument(
         "--num_negatives",
         type=int,
@@ -264,20 +332,14 @@ def main():
         default="relu",
         help="Activation function in the supervised module",
     )
-    # srl_embedding_pooling
     model_config.add_argument(
         "--srl_embeddings_pooling",
         type=str,
         default="mean",
         help="Pooling method for SRL embeddings",
     )
-
-    # mixed_precision bool
     model_config.add_argument(
-        "--mixed_precision",
-        type=str,
-        default="fp16",
-        help="Mixed precision training",
+        "--mixed_precision", type=str, default="fp16", help="Mixed precision training"
     )
 
     # Training Parameters
@@ -288,26 +350,20 @@ def main():
     training_params.add_argument(
         "--lr", type=float, default=5e-4, help="Learning rate for the optimizer"
     )
-    # adam_weight_decay
     training_params.add_argument(
         "--adam_weight_decay",
         type=float,
         default=5e-7,
         help="Adam weight decay parameter",
     )
-    # adamw_weight_decay
     training_params.add_argument(
         "--adamw_weight_decay",
         type=float,
         default=5e-7,
         help="AdamW weight decay parameter",
     )
-    # optimizer
     training_params.add_argument(
-        "--optimizer",
-        type=str,
-        default="adamw",
-        help="Optimizer to use for training",
+        "--optimizer", type=str, default="adamw", help="Optimizer to use for training"
     )
     training_params.add_argument(
         "--batch_size", type=int, default=24, help="Batch size"
@@ -422,13 +478,8 @@ def main():
     advanced_settings.add_argument(
         "--sample_size", type=int, default=-1, help="Sample size"
     )
-    # set random seed for reproducibility
     advanced_settings.add_argument("--seed", type=int, default=42, help="Random seed")
-
-    # debug
     parser.add_argument("--debug", type=str2bool, default=False, help="Debug mode")
-
-    # detect_anomaly
     parser.add_argument(
         "--detect_anomaly",
         type=str2bool,
@@ -438,19 +489,8 @@ def main():
 
     args = parser.parse_args()
 
-    # start with setting up wandb and accelerator
-
-    # login to wandb
-    wandb.login(key=args.wandb_api_key)
-
-    # initialize accelerator
-    accelerator = Accelerator(log_with="wandb", mixed_precision=args.mixed_precision)
-    if args.debug:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
-    else:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
-
-    logger = LoggerManager.get_logger(__name__)
+    # Setup logging
+    logger = setup_logging(args.debug)
 
     logger.info(
         """#####################################################
@@ -463,34 +503,14 @@ def main():
 #####################################################"""
     )
 
-    # running the model with the given arguments
-    logger.info(
-        "Running the model with the following arguments: %s",
-        args,
-        main_process_only=True,
-    )
+    logger.info(f"Running {args.model_type} model...")
 
-    # use logging in following mode
-    logger.info(
-        "Using logging in %s mode", LoggerManager._log_level, main_process_only=True
-    )
+    logger.info("Running the model with the following arguments: %s", args)
 
-    # if --seed is provided, set the random seed
     if args.seed:
-        seed = args.seed
+        set_seed(args.seed)
+        logger.info("Random seed set to: %d", args.seed)
 
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed(seed)
-            torch.cuda.manual_seed_all(seed)
-        np.random.seed(seed)
-        random.seed(seed)
-
-        # Ensure reproducibility in CuDNN
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-
-    # create config dictionary
     config = {
         "embedding_dim": args.embedding_dim,
         "hidden_dim": args.hidden_dim,
@@ -534,7 +554,13 @@ def main():
         "accumulation_steps": args.accumulation_steps,
     }
 
+    # Initialize wandb and accelerator
+    accelerator = initialize_wandb(
+        args.wandb_api_key, args.project_name, args.tags, config, args.mixed_precision
+    )
+
     model = load_model(
+        model_type=args.model_type,
         embedding_dim=args.embedding_dim,
         frameaxis_dim=args.frameaxis_dim,
         hidden_dim=args.hidden_dim,
@@ -567,8 +593,6 @@ def main():
         _debug=args.debug,
         _detect_anomaly=args.detect_anomaly,
     )
-
-    logger.info("Model loaded successfully")
 
     if args.name_tokenizer == "roberta-base":
         tokenizer = RobertaTokenizerFast.from_pretrained(args.name_tokenizer)
@@ -620,19 +644,21 @@ def main():
     )
 
     # Loss function and optimizer
-    loss_function = nn.CrossEntropyLoss()
+    if args.model_type == "slmuse-dlf":
+        loss_function = nn.CrossEntropyLoss()
+        logger.info("Loss function set to CrossEntropyLoss")
+    else:
+        loss_function = nn.BCEWithLogitsLoss()
+        logger.info("Loss function set to BCEWithLogitsLoss")
 
     lr = args.lr
 
     optimizer_type = args.optimizer
     if optimizer_type == "adam":
         weight_decay = args.adam_weight_decay
-
         optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     elif optimizer_type == "adamw":
-
         weight_decay = args.adamw_weight_decay
-
         optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     scheduler = get_linear_schedule_with_warmup(
@@ -646,16 +672,8 @@ def main():
     # prepare optimizer and scheduler
     optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
-    project_name = args.project_name
-
-    accelerator.init_trackers(
-        project_name,
-        config,
-        init_kwargs={"wandb": {"tags": args.tags.split(",")}},
-    )
-
     logger.info("Log model using WANDB", main_process_only=True)
-    logger.info("WANDB project name: %s", project_name, main_process_only=True)
+    logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
     logger.info("WANDB tags: %s", args.tags, main_process_only=True)
 
     # Train the model
@@ -683,5 +701,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # execute only if run as a script
     main()

@@ -1,13 +1,12 @@
-from math import isnan
 import torch
 import torch.nn as nn
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast
 
 
-class SLMUSELossModule(nn.Module):
+class MUSELossModule(nn.Module):
     def __init__(self, lambda_orthogonality, M, t, _debug=False):
-        super(SLMUSELossModule, self).__init__()
+        super(MUSELossModule, self).__init__()
         self.logger = LoggerManager.get_logger(__name__)
         self.lambda_orthogonality = lambda_orthogonality
         self.M = M

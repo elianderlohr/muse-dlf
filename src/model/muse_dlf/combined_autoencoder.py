@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.nn.functional import log_softmax, softmax
+from src.model.muse_dlf.helper import custom_gumbel_sigmoid
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast
 
 
-class SLMUSECombinedAutoencoder(nn.Module):
+class MUSECombinedAutoencoder(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -20,7 +19,7 @@ class SLMUSECombinedAutoencoder(nn.Module):
         log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(SLMUSECombinedAutoencoder, self).__init__()
+        super(MUSECombinedAutoencoder, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
@@ -97,47 +96,6 @@ class SLMUSECombinedAutoencoder(nn.Module):
         else:
             raise ValueError(f"Unsupported activation function: {activation}")
 
-    def sample_gumbel(self, shape, eps=1e-20, device="cpu"):
-        """Sample from Gumbel(0, 1)"""
-        U = torch.rand(shape, device=device)
-        return -torch.log(-torch.log(U + eps) + eps)
-
-    def gumbel_softmax_sample(self, logits, t):
-        """Draw a sample from the Gumbel-Softmax distribution"""
-        y = logits + self.sample_gumbel(logits.size(), device=logits.device)
-        return softmax(y / t, dim=-1)
-
-    def gumbel_logsoftmax_sample(self, logits, t):
-        """Draw a sample from the Gumbel-Softmax distribution"""
-        y = logits + self.sample_gumbel(logits.size(), device=logits.device)
-        return log_softmax(y / t, dim=-1)
-
-    def custom_gumbel_softmax(self, logits, tau, hard=False, log=False):
-        """Sample from the Gumbel-Softmax distribution and optionally discretize.
-        Args:
-        logits: [batch_size, n_class] unnormalized log-probs
-        tau: non-negative scalar
-        hard: if True, take argmax, but differentiate w.r.t. soft sample y
-        Returns:
-        [batch_size, n_class] sample from the Gumbel-Softmax distribution.
-        If hard=True, then the returned sample will be one-hot, otherwise it will
-        be a probabilitiy distribution that sums to 1 across classes
-        """
-        if log:
-            y = self.gumbel_logsoftmax_sample(logits, tau)
-        else:
-            y = self.gumbel_softmax_sample(logits, tau)
-        if hard:
-            shape = y.size()
-            _, ind = y.max(dim=-1)
-            y_hard = torch.zeros_like(y).view(-1, shape[-1])
-            y_hard.scatter_(1, ind.view(-1, 1), 1)
-            y_hard = y_hard.view(*shape)
-            # Set gradients w.r.t. y_hard gradients w.r.t. y
-            y_hard = (y_hard - y).detach() + y
-            return y_hard
-        return y
-
     def forward(
         self,
         v_p,
@@ -195,30 +153,30 @@ class SLMUSECombinedAutoencoder(nn.Module):
             logits_a0 = logits_a0 + (1 - mask_a0.unsqueeze(-1).float()) * epsilon
             logits_a1 = logits_a1 + (1 - mask_a1.unsqueeze(-1).float()) * epsilon
 
-            # Apply softmax
-            d_p = torch.softmax(logits_p, dim=1) * mask_p.unsqueeze(-1).float()
-            d_a0 = torch.softmax(logits_a0, dim=1) * mask_a0.unsqueeze(-1).float()
-            d_a1 = torch.softmax(logits_a1, dim=1) * mask_a1.unsqueeze(-1).float()
+            # Apply sigmoid
+            d_p = torch.sigmoid(logits_p) * mask_p.unsqueeze(-1).float()
+            d_a0 = torch.sigmoid(logits_a0) * mask_a0.unsqueeze(-1).float()
+            d_a1 = torch.sigmoid(logits_a1) * mask_a1.unsqueeze(-1).float()
 
-            # Check for NaNs after softmax
+            # Check for NaNs after sigmoid
             if (
                 torch.isnan(d_p).any()
                 or torch.isnan(d_a0).any()
                 or torch.isnan(d_a1).any()
             ):
-                self.logger.error("❌ NaNs detected in d AFTER softmax")
-                raise ValueError("NaNs detected in d AFTER softmax")
+                self.logger.error("❌ NaNs detected in d AFTER sigmoid")
+                raise ValueError("NaNs detected in d AFTER sigmoid")
 
             g_p = (
-                self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
+                custom_gumbel_sigmoid(d_p, tau=tau, hard=False, log=self.log)
                 * mask_p.unsqueeze(-1).float()
             )
             g_a0 = (
-                self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
+                custom_gumbel_sigmoid(d_a0, tau=tau, hard=False, log=self.log)
                 * mask_a0.unsqueeze(-1).float()
             )
             g_a1 = (
-                self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
+                custom_gumbel_sigmoid(d_a1, tau=tau, hard=False, log=self.log)
                 * mask_a1.unsqueeze(-1).float()
             )
 

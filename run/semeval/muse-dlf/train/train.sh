@@ -67,7 +67,7 @@ done
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
+DATA_PATH="data/semeval/muse-dlf/semeval_train.json"
 SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $SAVE_PATH"
@@ -84,16 +84,18 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 echo "=================== Training Start ==================="
 
 echo "Launching training script with Accelerate..."
-accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/semeval/muse-dlf/train/accelerate_config.yaml src/train.py \
+accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/semeval/muse-dlf/train/accelerate_config.yaml src/start_train.py \
+    --model_type muse-dlf \
+    --project_name muse-dlf \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
     --epochs 10 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
-    --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
-    --path_srls data/srls/mfc/mfc_labeled.pkl \
-    --path_frameaxis data/frameaxis/mfc/frameaxis_mft.pkl \
+    --path_name_bert_model models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3710 \
+    --path_srls data/srls/semeval/semeval_train.pkl \
+    --path_frameaxis data/frameaxis/semeval/frameaxis_semeval_mft.pkl \
     --path_antonym_pairs data/axis/mft.json \
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \

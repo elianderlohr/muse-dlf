@@ -1,13 +1,13 @@
 import random
 import numpy as np
 import torch
-from model.slmuse_dlf.muse import MUSEDLF
+from model.slmuse_dlf.muse import SLMUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
 import wandb
 from utils.logging_manager import LoggerManager
-from training.trainer import Trainer
+from src.training.slmuse_trainer import Trainer
 from transformers import (
     BertTokenizer,
     RobertaTokenizerFast,
@@ -69,7 +69,7 @@ def load_model(
     device="cuda",
     _debug=False,
 ):
-    model = MUSEDLF(
+    model = SLMUSEDLF(
         embedding_dim=embedding_dim,
         frameaxis_dim=frameaxis_dim,
         hidden_dim=hidden_dim,

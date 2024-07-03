@@ -1,15 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.slmuse_dlf.frameaxis_autoencoder import FrameAxisAutoencoder
-from model.slmuse_dlf.loss_module import LossModule
+from model.slmuse_dlf.frameaxis_autoencoder import SLMUSEFrameAxisAutoencoder
+from model.slmuse_dlf.loss_module import SLMUSELossModule
 
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast
 
 
-class MUSEFrameAxisUnsupervised(nn.Module):
+class SLMUSEFrameAxisUnsupervised(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -29,14 +29,14 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(MUSEFrameAxisUnsupervised, self).__init__()
+        super(SLMUSEFrameAxisUnsupervised, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.loss_fn = LossModule(lambda_orthogonality, M, t, _debug=_debug)
+        self.loss_fn = SLMUSELossModule(lambda_orthogonality, M, t, _debug=_debug)
 
-        self.frameaxis_autoencoder = FrameAxisAutoencoder(
+        self.frameaxis_autoencoder = SLMUSEFrameAxisAutoencoder(
             embedding_dim=embedding_dim,
             frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,

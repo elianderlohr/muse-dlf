@@ -50,7 +50,7 @@ echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
 
 echo "Running frameaxis.py..."
-python src/frameaxis.py \
+python src/start_frameaxis.py \
     --data_path $DATA_PATH \
     --path_antonym_pairs $PATH_ANTONYM_PAIRS \
     --model_path $MODEL_PATH \

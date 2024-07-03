@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.nn.functional import log_softmax, softmax
-
+from src.model.muse_dlf.helper import custom_gumbel_sigmoid
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast
 
 
-class SLMUSEFrameAxisAutoencoder(nn.Module):
+class MUSEFrameAxisAutoencoder(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -23,7 +21,7 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(SLMUSEFrameAxisAutoencoder, self).__init__()
+        super(MUSEFrameAxisAutoencoder, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
@@ -76,48 +74,6 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         else:
             raise ValueError(f"Unsupported activation function: {activation}")
 
-    def sample_gumbel(self, shape, eps=1e-20, device="cpu"):
-        """Sample from Gumbel(0, 1)"""
-        U = torch.rand(shape, device=device)
-        return -torch.log(-torch.log(U + eps) + eps)
-
-    def gumbel_softmax_sample(self, logits, t):
-        """Draw a sample from the Gumbel-Softmax distribution"""
-        y = logits + self.sample_gumbel(logits.size(), device=logits.device)
-        return softmax(y / t, dim=-1)
-
-    def gumbel_logsoftmax_sample(self, logits, t):
-        """Draw a sample from the Gumbel-Softmax distribution"""
-        y = logits + self.sample_gumbel(logits.size(), device=logits.device)
-        return log_softmax(y / t, dim=-1)
-
-    def custom_gumbel_softmax(self, logits, tau, hard=False, log=False):
-        """Sample from the Gumbel-Softmax distribution and optionally discretize.
-        Args:
-        logits: [batch_size, n_class] unnormalized log-probs
-        tau: non-negative scalar
-        hard: if True, take argmax, but differentiate w.r.t. soft sample y
-        Returns:
-        [batch_size, n_class] sample from the Gumbel-Softmax distribution.
-        If hard=True, then the returned sample will be one-hot, otherwise it will
-        be a probabilitiy distribution that sums to 1 across classes
-        """
-        if log:
-            y = self.gumbel_logsoftmax_sample(logits, tau)
-        else:
-            y = self.gumbel_softmax_sample(logits, tau)
-
-        if hard:
-            shape = y.size()
-            _, ind = y.max(dim=-1)
-            y_hard = torch.zeros_like(y).view(-1, shape[-1])
-            y_hard.scatter_(1, ind.view(-1, 1), 1)
-            y_hard = y_hard.view(*shape)
-            # Set gradients w.r.t. y_hard gradients w.r.t. y
-            y_hard = (y_hard - y).detach() + y
-            return y_hard
-        return y
-
     def forward(
         self,
         v_frameaxis,
@@ -152,10 +108,10 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
                 self.logger.error("❌ NaNs detected in logits")
                 raise ValueError("NaNs detected in logits")
 
-            d = torch.softmax(logits, dim=1) * mask.unsqueeze(-1).float()
+            d = torch.sigmoid(logits) * mask.unsqueeze(-1).float()
 
             g = (
-                self.custom_gumbel_softmax(d, tau=tau, hard=False, log=self.log)
+                custom_gumbel_sigmoid(d, tau=tau, hard=False, log=self.log)
                 * mask.unsqueeze(-1).float()
             )
 

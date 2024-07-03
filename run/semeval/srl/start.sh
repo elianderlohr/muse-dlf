@@ -43,7 +43,7 @@ echo "=================== Training Start ==================="
 # echo "Setting up Accelerate configuration..."
 
 echo "Running srls.py..."
-python src/srls.py \
+python src/start_srls.py \
     --data_path $DATA_PATH \
     --output_path $OUTPUT_PATH 
 

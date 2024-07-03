@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.muse.combined_autoencoder import CombinedAutoencoder
-from model.muse.frameaxis_autoencoder import FrameAxisAutoencoder
+from model.oldmuse.combined_autoencoder import CombinedAutoencoder
+from model.oldmuse.frameaxis_autoencoder import FrameAxisAutoencoder
 
-from model.muse.loss_module import LossModule
+from model.oldmuse.loss_module import LossModule
 
 # Assuming you have already defined CombinedAutoencoder and its methods as provided earlier.
 

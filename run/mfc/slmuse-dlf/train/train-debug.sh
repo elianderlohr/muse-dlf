@@ -66,7 +66,7 @@ done
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
-SAVE_PATH="models/muse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
+SAVE_PATH="models/slmuse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $SAVE_PATH"
 
@@ -91,6 +91,7 @@ echo "=================== Training Start ==================="
 
 echo "Launching debug script..."
 python src/debug.py \
+    --model_type slmuse-dlf \
     --path_data $DATA_PATH \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
