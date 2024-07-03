@@ -103,7 +103,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --hidden_dim 768 \
     --num_classes 15 \
     --dropout_prob 0.3 \
-    --alpha 0.1 \
+    --alpha 0.5 \
     --lambda_orthogonality 0.01 \
     --lr 0.0001 \
     --M 8 \
@@ -117,14 +117,11 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_unsupervised_activation relu \
     --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
-    --muse_unsupervised_gumbel_softmax_hard False \
     --muse_unsupervised_gumbel_softmax_log False \
     --muse_frameaxis_unsupervised_num_layers 2 \
     --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
-    --muse_frameaxis_unsupervised_concat_frameaxis True \
-    --muse_frameaxis_unsupervised_gumbel_softmax_hard False \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
