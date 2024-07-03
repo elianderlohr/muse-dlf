@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from src.model.slmuse_dlf.embeddings import SLMUSEEmbeddings
+from model.slmuse_dlf.embeddings import SLMUSEEmbeddings
 from model.slmuse_dlf.supervised_module import SLMUSESupervised
 from model.slmuse_dlf.unsupervised_module import SLMUSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import SLMUSEFrameAxisUnsupervised
