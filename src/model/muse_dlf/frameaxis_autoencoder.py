@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from src.model.muse_dlf.helper import custom_gumbel_sigmoid
+from model.muse_dlf.helper import custom_gumbel_sigmoid
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast

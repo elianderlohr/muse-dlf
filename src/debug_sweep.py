@@ -7,7 +7,7 @@ import torch.nn as nn
 
 import wandb
 from utils.logging_manager import LoggerManager
-from src.training.slmuse_trainer import Trainer
+from training.trainer import Trainer
 from transformers import (
     BertTokenizer,
     RobertaTokenizerFast,
