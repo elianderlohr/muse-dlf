@@ -95,7 +95,7 @@ class Trainer:
             self.accelerator = None
 
         # Get the model type
-        self.model_type = self.model.model_type
+        self.model_type = model_type
 
         logger.info(f"Model type: {self.model_type}")
 

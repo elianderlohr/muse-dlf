@@ -684,6 +684,7 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         scheduler=scheduler,
+        model_type=args.model_type,
         training_management="accelerate",
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
