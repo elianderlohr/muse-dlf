@@ -167,6 +167,8 @@ def main():
 
     num_negatives = 128
 
+    accumulation_steps = 4
+
     # Parameters from wandb.config
     hidden_dim = wandb.config.hidden_dim
     dropout_prob = wandb.config.dropout_prob
@@ -366,6 +368,7 @@ def main():
         tau_decay=tau_decay,
         save_path=save_path,
         wandb_instance=wandb_instance,
+        accumulation_steps=accumulation_steps,
     )
 
     logger.info("🏋️ Starting training")
