@@ -299,34 +299,45 @@ class Trainer:
                     mixed_precision=self.mixed_precision,
                 )
 
-                # Check for NaNs in model outputs
-                if (
-                    self.check_for_nans(unsupervised_loss, "unsupervised_loss")
-                    or self.check_for_nans(span_logits, "span_logits")
-                    or self.check_for_nans(sentence_logits, "sentence_logits")
-                    or self.check_for_nans(combined_logits, "combined_logits")
-                    or self.check_for_nans(other["predicate"], "other['predicate']")
-                    or self.check_for_nans(other["arg0"], "other['arg0']")
-                    or self.check_for_nans(other["arg1"], "other['arg1']")
-                    or self.check_for_nans(other["frameaxis"], "other['frameaxis']")
-                ):
-                    logger.error(
-                        f"{experiment_id} - {batch_idx} - NaNs detected in model outputs, skipping this batch."
-                    )
-                    continue
+            # Delete tensors immediately after use
+            del (
+                sentence_ids,
+                sentence_attention_masks,
+                predicate_ids,
+                arg0_ids,
+                arg1_ids,
+                frameaxis_data,
+            )
+            torch.cuda.empty_cache()
 
-                span_loss = 0.0
-                sentence_loss = 0.0
+            # Check for NaNs in model outputs
+            if (
+                self.check_for_nans(unsupervised_loss, "unsupervised_loss")
+                or self.check_for_nans(span_logits, "span_logits")
+                or self.check_for_nans(sentence_logits, "sentence_logits")
+                or self.check_for_nans(combined_logits, "combined_logits")
+                or self.check_for_nans(other["predicate"], "other['predicate']")
+                or self.check_for_nans(other["arg0"], "other['arg0']")
+                or self.check_for_nans(other["arg1"], "other['arg1']")
+                or self.check_for_nans(other["frameaxis"], "other['frameaxis']")
+            ):
+                logger.error(
+                    f"{experiment_id} - {batch_idx} - NaNs detected in model outputs, skipping this batch."
+                )
+                continue
 
-                span_loss = self.loss_function(span_logits, labels.float())
-                sentence_loss = self.loss_function(sentence_logits, labels.float())
-                supervised_loss = span_loss + sentence_loss
+            span_loss = 0.0
+            sentence_loss = 0.0
 
-                sum_of_parameters = sum(p.sum() for p in self.model.parameters())
-                zero_sum = sum_of_parameters * 0.0
-                combined_loss = (
-                    alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-                ) + zero_sum
+            span_loss = self.loss_function(span_logits, labels.float())
+            sentence_loss = self.loss_function(sentence_logits, labels.float())
+            supervised_loss = span_loss + sentence_loss
+
+            sum_of_parameters = sum(p.sum() for p in self.model.parameters())
+            zero_sum = sum_of_parameters * 0.0
+            combined_loss = (
+                alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+            ) + zero_sum
 
             # other loss (debug)
             predicate_loss = self.loss_function(other["predicate"], labels.float())
@@ -635,15 +646,25 @@ class Trainer:
                         early_stopping["early_stopped"] = True
                         return early_stopping
 
+            # Delete tensors after logging metrics
             del (
-                sentence_ids,
-                predicate_ids,
-                arg0_ids,
-                arg1_ids,
                 labels,
-                unsupervised_loss,
-                supervised_loss,
-                combined_loss,
+                combined_pred,
+                span_pred,
+                sentence_pred,
+                predicate_pred,
+                arg0_pred,
+                arg1_pred,
+                frameaxis_pred,
+            )
+            del (
+                combined_labels,
+                span_labels,
+                sentence_labels,
+                predicate_labels,
+                arg0_labels,
+                arg1_labels,
+                frameaxis_labels,
             )
             torch.cuda.empty_cache()
 

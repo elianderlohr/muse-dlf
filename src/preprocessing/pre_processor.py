@@ -277,6 +277,8 @@ class PreProcessor:
             # shuffle=False,
             collate_fn=custom_collate_fn,
             drop_last=True,
+            pin_memory=True,
+            num_workers=4,
         )
 
         test_dataloader = DataLoader(
@@ -285,6 +287,8 @@ class PreProcessor:
             # shuffle=False,
             collate_fn=custom_collate_fn,
             drop_last=True,
+            pin_memory=True,
+            num_workers=4,
         )
 
         return train_dataset, test_dataset, train_dataloader, test_dataloader
