@@ -412,6 +412,21 @@ class Trainer:
                 }
             )
 
+            combined_pred = None
+            span_pred = None
+            sentence_pred = None
+            predicate_pred = None
+            arg0_pred = None
+            arg1_pred = None
+            frameaxis_pred = None
+            combined_labels = None
+            span_labels = None
+            sentence_labels = None
+            predicate_labels = None
+            arg0_labels = None
+            arg1_labels = None
+            frameaxis_labels = None
+
             # Check train metrics every 50 steps
             if local_steps % 50 == 0:
                 combined_pred = self.get_activation_function(combined_logits).int()
