@@ -161,11 +161,11 @@ def main():
     frameaxis_dim = 10
     max_sentence_length = 64
     max_args_per_sentence = 10
-    max_arg_length = 16
+    max_arg_length = 10
     test_size = 0.1
     epochs = 10
 
-    num_negatives = 128
+    num_negatives = 64
 
     accumulation_steps = 4
 
