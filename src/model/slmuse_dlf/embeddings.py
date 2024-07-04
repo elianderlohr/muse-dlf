@@ -95,6 +95,8 @@ class SLMUSEEmbeddings(nn.Module):
             batch_size * num_sentences, max_sentence_length
         )
 
+        del ids
+
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
@@ -112,7 +114,12 @@ class SLMUSEEmbeddings(nn.Module):
                     output_hidden_states=True,
                 )
 
+                del ids_flat, attention_masks_flat
+                torch.cuda.empty_cache()
+
                 second_to_last_hidden_state = outputs.hidden_states[-2]
+                del outputs
+                torch.cuda.empty_cache()
 
             self.check_for_nans(
                 second_to_last_hidden_state, "second to last hidden state"
@@ -139,21 +146,22 @@ class SLMUSEEmbeddings(nn.Module):
                     .clamp(min=1)
                 )
                 embeddings_mean = sum_embeddings / token_counts
+
+                del (
+                    attention_masks,
+                    attention_masks_expanded,
+                    embeddings_masked,
+                    sum_embeddings,
+                    token_counts,
+                )
+                torch.cuda.empty_cache()
             elif self.pooling == "cls":
                 embeddings_mean = second_to_last_hidden_state[:, :, 0, :]
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")
 
             # Delete intermediate tensors
-            del (
-                ids_flat,
-                attention_masks_flat,
-                outputs,
-                attention_masks_expanded,
-                embeddings_masked,
-                sum_embeddings,
-                token_counts,
-            )
+            del second_to_last_hidden_state
             torch.cuda.empty_cache()
 
         return second_to_last_hidden_state, embeddings_mean
@@ -205,10 +213,6 @@ class SLMUSEEmbeddings(nn.Module):
                         selected_embeddings = torch.cat(selected_embeddings, dim=0)
                         avg_embedding = selected_embeddings.mean(dim=0)
                         arg_embeddings[batch_idx, sent_idx, arg_idx] = avg_embedding
-
-                    # Delete intermediate tensors
-                    del selected_embeddings, match_indices, flat_indices
-                    torch.cuda.empty_cache()
 
         return arg_embeddings
 
