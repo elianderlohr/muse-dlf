@@ -99,7 +99,7 @@ python src/start_train.py \
     --dropout_prob 0.3 \
     --alpha 0.9 \
     --lambda_orthogonality 0.003926361300125269 \
-    --lr 0.0006736889024717656 \
+    --lr 0.00005 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
