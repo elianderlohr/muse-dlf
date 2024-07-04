@@ -386,6 +386,10 @@ class SLMUSEDLF(nn.Module):
                                 )
                             )
 
+                        # Delete span-related tensors after use
+                        del v_p_span, v_a0_span, v_a1_span, mask_p, mask_a0, mask_a1
+                        torch.cuda.empty_cache()
+
                     mask_fx = (v_fx.abs().sum(dim=-1) != 0).float()
 
                     # As per sentence only one frameaxis data set is present calculate only once
@@ -405,7 +409,7 @@ class SLMUSEDLF(nn.Module):
                     valid_counts += mask_fx
 
                     # Delete unsupervised_fx_results to free memory
-                    del unsupervised_fx_results
+                    del unsupervised_fx_results, mask_fx
                     torch.cuda.empty_cache()
 
                     # Apply mask to sentence loss
@@ -454,6 +458,8 @@ class SLMUSEDLF(nn.Module):
                             device=predicate_embeddings.device,
                         )
                     )
+
+                del s_sentence_span, v_fx
 
                 # Aggregating across all spans
                 if len(d_p_sentence_list) > 0:
