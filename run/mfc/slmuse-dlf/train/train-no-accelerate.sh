@@ -111,12 +111,12 @@ python src/start_train.py \
     --muse_unsupervised_activation relu \
     --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
-    --muse_unsupervised_gumbel_softmax_log False \
+    --muse_unsupervised_gumbel_softmax_log True \
     --muse_frameaxis_unsupervised_num_layers 2 \
     --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
-    --muse_frameaxis_unsupervised_gumbel_softmax_log False \
+    --muse_frameaxis_unsupervised_gumbel_softmax_log True \
     --num_negatives 128 \
     --supervised_concat_frameaxis False \
     --supervised_num_layers 2 \
