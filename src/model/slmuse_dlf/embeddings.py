@@ -160,10 +160,6 @@ class SLMUSEEmbeddings(nn.Module):
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")
 
-            # Delete intermediate tensors
-            del second_to_last_hidden_state
-            torch.cuda.empty_cache()
-
         return second_to_last_hidden_state, embeddings_mean
 
     def get_arg_embedding(
