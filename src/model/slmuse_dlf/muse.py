@@ -246,6 +246,16 @@ class SLMUSEDLF(nn.Module):
                 mixed_precision=mixed_precision,
             )
 
+            # Delete input tensors after conversion to embeddings
+            del (
+                sentence_ids,
+                sentence_attention_masks,
+                predicate_ids,
+                arg0_ids,
+                arg1_ids,
+            )
+            torch.cuda.empty_cache()
+
             # Creating storage for aggregated d tensors
             d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
 
@@ -343,6 +353,10 @@ class SLMUSEDLF(nn.Module):
                             d_p_sentence_list.append(unsupervised_results["p"]["d"])
                             d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
                             d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
+
+                            # Delete unsupervised_results to free memory
+                            del unsupervised_results
+                            torch.cuda.empty_cache()
                         else:
                             d_p_sentence_list.append(
                                 torch.zeros(
@@ -389,6 +403,10 @@ class SLMUSEDLF(nn.Module):
                     # Add the loss to the unsupervised losses
                     sentence_loss += unsupervised_fx_results["loss"] * (mask_fx).float()
                     valid_counts += mask_fx
+
+                    # Delete unsupervised_fx_results to free memory
+                    del unsupervised_fx_results
+                    torch.cuda.empty_cache()
 
                     # Apply mask to sentence loss
                     unsupervised_losses += sentence_loss
@@ -469,6 +487,10 @@ class SLMUSEDLF(nn.Module):
                 d_a0_list.append(d_a0_sentence)
                 d_a1_list.append(d_a1_sentence)
 
+                # Delete sentence-related tensors after use
+                del d_p_sentence_list, d_a0_sentence_list, d_a1_sentence_list
+                torch.cuda.empty_cache()
+
             # Aggregating across all sentences
             if len(d_p_list) > 0:
                 max_dim = max(d.shape[-1] for d in d_p_list)
@@ -534,5 +556,9 @@ class SLMUSEDLF(nn.Module):
 
             # Normalize the unsupervised losses by valid counts for each batch
             unsupervised_loss = (unsupervised_losses / valid_counts).mean()
+
+            # Delete aggregated tensors after use
+            del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
+            torch.cuda.empty_cache()
 
             return unsupervised_loss, span_pred, sentence_pred, combined_pred, other

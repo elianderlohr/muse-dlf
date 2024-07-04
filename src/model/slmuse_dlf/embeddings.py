@@ -144,6 +144,18 @@ class SLMUSEEmbeddings(nn.Module):
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")
 
+            # Delete intermediate tensors
+            del (
+                ids_flat,
+                attention_masks_flat,
+                outputs,
+                attention_masks_expanded,
+                embeddings_masked,
+                sum_embeddings,
+                token_counts,
+            )
+            torch.cuda.empty_cache()
+
         return second_to_last_hidden_state, embeddings_mean
 
     def get_arg_embedding(
@@ -193,6 +205,10 @@ class SLMUSEEmbeddings(nn.Module):
                         selected_embeddings = torch.cat(selected_embeddings, dim=0)
                         avg_embedding = selected_embeddings.mean(dim=0)
                         arg_embeddings[batch_idx, sent_idx, arg_idx] = avg_embedding
+
+                    # Delete intermediate tensors
+                    del selected_embeddings, match_indices, flat_indices
+                    torch.cuda.empty_cache()
 
         return arg_embeddings
 
@@ -244,6 +260,17 @@ class SLMUSEEmbeddings(nn.Module):
                 arg1_embeddings = self.get_arg_embedding(
                     arg1_ids, sentence_ids, sentence_embeddings
                 )
+
+                # Delete intermediate tensors
+                del (
+                    sentence_ids,
+                    sentence_attention_masks,
+                    predicate_ids,
+                    arg0_ids,
+                    arg1_ids,
+                    sentence_embeddings,
+                )
+                torch.cuda.empty_cache()
 
         return (
             sentence_embeddings_avg,
