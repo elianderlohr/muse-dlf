@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=mfc-slmuse-dlf-sweep-8
-#SBATCH --mem=32G
+#SBATCH --mem=48G
 #SBATCH --gres=gpu:8
 
 echo "===================== Job Details ====================="
@@ -61,14 +61,14 @@ export MODEL_TYPE="slmuse-dlf"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
-CUDA_VISIBLE_DEVICES=4 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
-CUDA_VISIBLE_DEVICES=5 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
-CUDA_VISIBLE_DEVICES=6 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
-CUDA_VISIBLE_DEVICES=7 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
+CUDA_VISIBLE_DEVICES=4 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
+CUDA_VISIBLE_DEVICES=5 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
+CUDA_VISIBLE_DEVICES=6 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
+CUDA_VISIBLE_DEVICES=7 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/cyyef6fu &
 
 # Wait for all background jobs to finish
 wait
