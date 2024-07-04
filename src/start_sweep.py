@@ -202,7 +202,7 @@ def main():
 
     alpha = wandb.config.alpha
     lr = wandb.config.lr
-    batch_size = 4
+    batch_size = 2
     tau_min = wandb.config.tau_min
     tau_decay = wandb.config.tau_decay
 
