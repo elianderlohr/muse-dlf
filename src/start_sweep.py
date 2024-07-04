@@ -165,7 +165,7 @@ def main():
     test_size = 0.1
     epochs = 10
 
-    num_negatives = 128
+    num_negatives = 64
 
     accumulation_steps = 2
 
