@@ -84,7 +84,7 @@ python src/start_train.py \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 3 \
+    --epochs 10 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -103,7 +103,7 @@ python src/start_train.py \
     --M 8 \
     --t 8 \
     --batch_size 8 \
-    --num_sentences 32 \
+    --num_sentences 48 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
     --max_arg_length 16 \
