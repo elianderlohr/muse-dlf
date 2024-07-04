@@ -429,6 +429,11 @@ class Trainer:
 
             # Check train metrics every 50 steps
             if local_steps % 50 == 0:
+
+                logger.info(
+                    f"Starting to evaluate the model at epoch {epoch}, batch {local_steps}"
+                )
+
                 combined_pred = self.get_activation_function(combined_logits).int()
                 span_pred = self.get_activation_function(span_logits).int()
                 sentence_pred = self.get_activation_function(sentence_logits).int()
