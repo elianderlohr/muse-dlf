@@ -119,8 +119,8 @@ python src/start_train.py \
     --muse_frameaxis_unsupervised_gumbel_softmax_log True \
     --num_negatives 128 \
     --supervised_concat_frameaxis False \
-    --supervised_num_layers 2 \
-    --supervised_activation relu \
+    --supervised_num_layers 1 \
+    --supervised_activation leaky_relu \
     --adamw_weight_decay 0.0001 \
     --optimizer adamw \
     --srl_embeddings_pooling mean \
