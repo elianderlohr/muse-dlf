@@ -61,10 +61,10 @@ export MODEL_TYPE="slmuse-dlf"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/mphkbwlz &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/mphkbwlz &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/mphkbwlz &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/mphkbwlz &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/ibzt8cy6 &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/ibzt8cy6 &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/ibzt8cy6 &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/ibzt8cy6 &
 
 # Wait for all background jobs to finish
 wait
