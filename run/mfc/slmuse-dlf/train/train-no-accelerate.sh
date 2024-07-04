@@ -102,7 +102,7 @@ python src/start_train.py \
     --lr 0.0005 \
     --M 8 \
     --t 8 \
-    --batch_size 8 \
+    --batch_size 32 \
     --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
