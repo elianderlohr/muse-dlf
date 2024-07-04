@@ -84,7 +84,7 @@ python src/start_train.py \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 10 \
+    --epochs 30 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -94,12 +94,12 @@ python src/start_train.py \
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 768 \
+    --hidden_dim 2056 \
     --num_classes 15 \
     --dropout_prob 0.3 \
-    --alpha 0.1 \
-    --lambda_orthogonality 0.01 \
-    --lr 0.0001 \
+    --alpha 0.9 \
+    --lambda_orthogonality 0.001 \
+    --lr 0.0005 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
@@ -111,17 +111,24 @@ python src/start_train.py \
     --muse_unsupervised_activation relu \
     --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
-    --muse_unsupervised_gumbel_softmax_hard False \
     --muse_unsupervised_gumbel_softmax_log False \
     --muse_frameaxis_unsupervised_num_layers 2 \
     --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
-    --muse_frameaxis_unsupervised_gumbel_softmax_hard False \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-    --supervised_concat_frameaxis True \
+    --num_negatives 128 \
+    --supervised_concat_frameaxis False \
     --supervised_num_layers 2 \
     --supervised_activation relu \
+    --adamw_weight_decay 0.0001 \
+    --optimizer adamw \
+    --srl_embeddings_pooling mean \
+    --tau_decay 0.00045 \
+    --tau_min 0.5 \
+    --seed 42 \
+    --mixed_precision fp16 \
+    --accumulation_steps 1 \
     $DEBUG
 
 # Cleanup and Closeout
