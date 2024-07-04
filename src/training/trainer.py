@@ -22,7 +22,7 @@ class Trainer:
         optimizer,
         loss_function,
         scheduler,
-        model_type="muse",  # muse or slmuse
+        model_type="muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
         training_management=None,  # 'accelerate', 'wandb', or None
@@ -124,12 +124,14 @@ class Trainer:
         return False
 
     def get_activation_function(self, logits):
-        if self.model_type == "muse":
+        if self.model_type == "muse-dlf":
             return torch.sigmoid(logits) > 0.5
-        elif self.model_type == "slmuse":
+        elif self.model_type == "slmuse-dlf":
             return torch.softmax(logits, dim=1) > 0.5
         else:
-            raise ValueError(f"Model type {self.model_type} not supported.")
+            raise ValueError(
+                f"Model type {self.model_type} not supported: only muse-dlf and slmuse-dlf are supported."
+            )
 
     def _train(
         self,

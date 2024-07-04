@@ -559,6 +559,10 @@ def main():
         args.wandb_api_key, args.project_name, args.tags, config, args.mixed_precision
     )
 
+    # only muse-dlf and slmuse-dlf models are supported
+    if args.model_type not in ["muse-dlf", "slmuse-dlf"]:
+        raise ValueError("Only muse-dlf and slmuse-dlf models are supported")
+
     model = load_model(
         model_type=args.model_type,
         embedding_dim=args.embedding_dim,
