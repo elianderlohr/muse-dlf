@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --job-name=mfc-slmuse-dlf-train-1
 #SBATCH --gres=gpu:1
-#SBATCH --mem=32G
+#SBATCH --mem=48G
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
@@ -128,7 +128,7 @@ python src/start_train.py \
     --tau_min 0.5 \
     --seed 42 \
     --mixed_precision fp16 \
-    --accumulation_steps 1 \
+    --accumulation_steps 4 \
     $DEBUG
 
 # Cleanup and Closeout
