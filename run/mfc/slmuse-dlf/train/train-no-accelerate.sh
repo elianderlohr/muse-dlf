@@ -96,7 +96,7 @@ python src/start_train.py \
     --embedding_dim 768 \
     --hidden_dim 2056 \
     --num_classes 15 \
-    --dropout_prob 0.1 \
+    --dropout_prob 0.0 \
     --alpha 0.9 \
     --lambda_orthogonality 0.003926361300125269 \
     --lr 0.0006736889024717656 \
