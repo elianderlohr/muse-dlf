@@ -84,7 +84,7 @@ python src/start_train.py \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 30 \
+    --epochs 3 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -96,35 +96,35 @@ python src/start_train.py \
     --embedding_dim 768 \
     --hidden_dim 2056 \
     --num_classes 15 \
-    --dropout_prob 0.0 \
+    --dropout_prob 0.5 \
     --alpha 0.9 \
     --lambda_orthogonality 0.003926361300125269 \
     --lr 0.0006736889024717656 \
     --M 8 \
     --t 8 \
-    --batch_size 32 \
+    --batch_size 8 \
     --num_sentences 32 \
-    --max_sentence_length 64 \
+    --max_sentence_length 32 \
     --max_args_per_sentence 10 \
-    --max_arg_length 10 \
-    --muse_unsupervised_num_layers 2 \
-    --muse_unsupervised_activation relu \
-    --muse_unsupervised_use_batch_norm True \
-    --muse_unsupervised_matmul_input d \
-    --muse_unsupervised_gumbel_softmax_log True \
-    --muse_frameaxis_unsupervised_num_layers 2 \
-    --muse_frameaxis_unsupervised_activation relu \
+    --max_arg_length 16 \
+    --muse_unsupervised_num_layers 1 \
+    --muse_unsupervised_activation gelu \
+    --muse_unsupervised_use_batch_norm False \
+    --muse_unsupervised_matmul_input g \
+    --muse_unsupervised_gumbel_softmax_log False \
+    --muse_frameaxis_unsupervised_num_layers 4 \
+    --muse_frameaxis_unsupervised_activation gelu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input d \
     --muse_frameaxis_unsupervised_gumbel_softmax_log True \
     --num_negatives 128 \
     --supervised_concat_frameaxis False \
-    --supervised_num_layers 1 \
-    --supervised_activation leaky_relu \
-    --adamw_weight_decay 0.0001 \
+    --supervised_num_layers 2 \
+    --supervised_activation relu \
+    --adamw_weight_decay 0.00001 \
     --optimizer adamw \
     --srl_embeddings_pooling mean \
-    --tau_decay 0.00045 \
+    --tau_decay 0.00002706519088856684 \
     --tau_min 0.5 \
     --seed 42 \
     --mixed_precision fp16 \
