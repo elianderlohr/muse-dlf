@@ -167,7 +167,7 @@ def main():
 
     num_negatives = 128
 
-    accumulation_steps = 4
+    accumulation_steps = 2
 
     # Parameters from wandb.config
     hidden_dim = wandb.config.hidden_dim
