@@ -87,7 +87,7 @@ python src/start_train.py \
     --epochs 10 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
-    --path_name_bert_model models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3710 \
+    --path_name_bert_model models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922 \
     --path_srls data/srls/semeval/semeval_train.pkl \
     --path_frameaxis data/frameaxis/semeval/frameaxis_semeval_mft.pkl \
     --path_antonym_pairs data/axis/mft.json \
