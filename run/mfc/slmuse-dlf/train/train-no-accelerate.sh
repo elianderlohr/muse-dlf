@@ -128,7 +128,7 @@ python src/start_train.py \
     --tau_min 0.5 \
     --seed 42 \
     --mixed_precision fp16 \
-    --accumulation_steps 4 \
+    --accumulation_steps 1 \
     $DEBUG
 
 # Cleanup and Closeout
