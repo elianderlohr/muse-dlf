@@ -363,6 +363,7 @@ def main():
         optimizer=optimizer,
         loss_function=loss_function,
         scheduler=scheduler,
+        model_type=model_type,
         training_management="wandb",
         tau_min=tau_min,
         tau_decay=tau_decay,
