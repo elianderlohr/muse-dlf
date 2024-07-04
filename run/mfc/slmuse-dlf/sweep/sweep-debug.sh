@@ -57,6 +57,7 @@ export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
 export PATH_ANTONYM_PAIRS="data/axis/mft.json"
 export DIM_NAMES="virtue,vice"
 export DEBUG="True"
+export MODEL_TYPE="slmuse-dlf"
 
 # Training Script Execution
 echo "=================== Training Start ==================="

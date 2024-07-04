@@ -56,18 +56,19 @@ export PATH_SRLS="data/srls/mfc/mfc_labeled.pkl"
 export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
 export PATH_ANTONYM_PAIRS="data/axis/mft.json"
 export DIM_NAMES="virtue,vice"
+export MODEL_TYPE="slmuse-dlf"
 
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
-CUDA_VISIBLE_DEVICES=4 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
-CUDA_VISIBLE_DEVICES=5 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
-CUDA_VISIBLE_DEVICES=6 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
-CUDA_VISIBLE_DEVICES=7 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/18haau44 &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=4 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=5 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=6 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
+CUDA_VISIBLE_DEVICES=7 python -m wandb agent --count 50 elianderlohr/slmuse-dlf/5wsnk1o1 &
 
 # Wait for all background jobs to finish
 wait

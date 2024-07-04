@@ -1,7 +1,10 @@
 import random
+from venv import logger
+from charset_normalizer import detect
 import numpy as np
 import torch
 from model.slmuse_dlf.muse import SLMUSEDLF
+from model.muse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
@@ -41,6 +44,7 @@ def welcome_message():
 
 
 def load_model(
+    model_type,
     embedding_dim,
     frameaxis_dim,
     hidden_dim,
@@ -63,43 +67,83 @@ def load_model(
     muse_frameaxis_unsupervised_use_batch_norm,
     muse_frameaxis_unsupervised_matmul_input,
     muse_frameaxis_unsupervised_gumbel_softmax_log,
+    num_negatives,
     supervised_concat_frameaxis,
     supervised_num_layers,
     supervised_activation,
     device="cuda",
+    logger=LoggerManager.get_logger(__name__),
     _debug=False,
+    _detect_anomaly=False,
 ):
-    model = SLMUSEDLF(
-        embedding_dim=embedding_dim,
-        frameaxis_dim=frameaxis_dim,
-        hidden_dim=hidden_dim,
-        num_classes=num_classes,
-        num_sentences=num_sentences,
-        dropout_prob=dropout_prob,
-        bert_model_name=bert_model_name,
-        bert_model_name_or_path=bert_model_name_or_path,
-        srl_embeddings_pooling=srl_embeddings_pooling,
-        lambda_orthogonality=lambda_orthogonality,
-        M=M,
-        t=t,
-        muse_unsupervised_num_layers=muse_unsupervised_num_layers,
-        muse_unsupervised_activation=muse_unsupervised_activation,
-        muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
-        muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
-        muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
-        muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
-        muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
-        muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
-        muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-        muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
-        supervised_concat_frameaxis=supervised_concat_frameaxis,
-        supervised_num_layers=supervised_num_layers,
-        supervised_activation=supervised_activation,
-        _debug=_debug,
-    )
+    logger.info("Loading model of type: %s", model_type)
+
+    if model_type == "slmuse-dlf":
+        model = SLMUSEDLF(
+            embedding_dim=embedding_dim,
+            frameaxis_dim=frameaxis_dim,
+            hidden_dim=hidden_dim,
+            num_classes=num_classes,
+            num_sentences=num_sentences,
+            dropout_prob=dropout_prob,
+            bert_model_name=bert_model_name,
+            bert_model_name_or_path=bert_model_name_or_path,
+            srl_embeddings_pooling=srl_embeddings_pooling,
+            lambda_orthogonality=lambda_orthogonality,
+            M=M,
+            t=t,
+            muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+            muse_unsupervised_activation=muse_unsupervised_activation,
+            muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+            muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+            muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+            muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+            muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+            muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+            muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+            muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+            num_negatives=num_negatives,
+            supervised_concat_frameaxis=supervised_concat_frameaxis,
+            supervised_num_layers=supervised_num_layers,
+            supervised_activation=supervised_activation,
+            _debug=_debug,
+            _detect_anomaly=_detect_anomaly,
+        )
+    else:
+        model = MUSEDLF(
+            embedding_dim=embedding_dim,
+            frameaxis_dim=frameaxis_dim,
+            hidden_dim=hidden_dim,
+            num_classes=num_classes,
+            num_sentences=num_sentences,
+            dropout_prob=dropout_prob,
+            bert_model_name=bert_model_name,
+            bert_model_name_or_path=bert_model_name_or_path,
+            srl_embeddings_pooling=srl_embeddings_pooling,
+            lambda_orthogonality=lambda_orthogonality,
+            M=M,
+            t=t,
+            muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+            muse_unsupervised_activation=muse_unsupervised_activation,
+            muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+            muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+            muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+            muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+            muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+            muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+            muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+            muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+            num_negatives=num_negatives,
+            supervised_concat_frameaxis=supervised_concat_frameaxis,
+            supervised_num_layers=supervised_num_layers,
+            supervised_activation=supervised_activation,
+            _debug=_debug,
+            _detect_anomaly=_detect_anomaly,
+        )
 
     model = model.to(device)
 
+    logger.info("Model loaded successfully")
     return model
 
 
@@ -115,11 +159,13 @@ def main():
     t = 8
     num_sentences = 32
     frameaxis_dim = 10
-    max_sentence_length = 32
+    max_sentence_length = 64
     max_args_per_sentence = 10
     max_arg_length = 16
     test_size = 0.1
     epochs = 10
+
+    num_negatives = 128
 
     # Parameters from wandb.config
     hidden_dim = wandb.config.hidden_dim
@@ -175,14 +221,20 @@ def main():
     path_antonym_pairs = os.getenv("PATH_ANTONYM_PAIRS")
     dim_names = os.getenv("DIM_NAMES")
     save_path = os.getenv("SAVE_PATH")
+    model_type = os.getenv("MODEL_TYPE")
 
     # Advanced Settings
     force_recalculate_srls = False
     force_recalculate_frameaxis = False
     sample_size = -1
 
+    if os.getenv("DETECT_ANOMALY", "False") == "True":
+        detect_anomaly = True
+    else:
+        detect_anomaly = False
+
     # parse debug flag from environment as bool
-    debug = os.getenv("DEBUG")
+    debug = os.getenv("DEBUG", "False")
     print(f"DEBUG: {debug}")
     if debug == "True":
         debug = True
@@ -210,6 +262,7 @@ def main():
     torch.backends.cudnn.benchmark = False
 
     model = load_model(
+        model_type=model_type,
         embedding_dim=embedding_dim,
         frameaxis_dim=frameaxis_dim,
         hidden_dim=hidden_dim,
@@ -232,11 +285,14 @@ def main():
         muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
         muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
         muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+        num_negatives=num_negatives,
         supervised_concat_frameaxis=supervised_concat_frameaxis,
         supervised_num_layers=supervised_num_layers,
         supervised_activation=supervised_activation,
         device="cuda",
+        logger=logger,
         _debug=debug,
+        _detect_anomaly=detect_anomaly,
     )
 
     if name_tokenizer == "roberta-base":
@@ -279,7 +335,12 @@ def main():
         sample_size=sample_size,
     )
 
-    loss_function = nn.CrossEntropyLoss()
+    if model_type == "slmuse-dlf":
+        loss_function = nn.CrossEntropyLoss()
+        logger.info("Loss function: CrossEntropyLoss")
+    else:
+        loss_function = nn.BCEWithLogitsLoss()
+        logger.info("Loss function: BCEWithLogitsLoss")
 
     if optimizer_type == "adam":
         optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)

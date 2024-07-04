@@ -117,7 +117,7 @@ def main():
     t = 8
     num_sentences = 32
     frameaxis_dim = 10
-    max_sentence_length = 32
+    max_sentence_length = 64
     max_args_per_sentence = 10
     max_arg_length = 16
     test_size = 0.1
