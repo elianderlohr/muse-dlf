@@ -165,9 +165,9 @@ def main():
     test_size = 0.1
     epochs = 10
 
-    num_negatives = 64
+    num_negatives = 128
 
-    accumulation_steps = 4
+    accumulation_steps = 1
 
     # Parameters from wandb.config
     hidden_dim = wandb.config.hidden_dim
@@ -202,7 +202,7 @@ def main():
 
     alpha = wandb.config.alpha
     lr = wandb.config.lr
-    batch_size = 4
+    batch_size = 8
     tau_min = wandb.config.tau_min
     tau_decay = wandb.config.tau_decay
 
