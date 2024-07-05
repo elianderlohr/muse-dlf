@@ -17,7 +17,6 @@ class Trainer:
     def __init__(
         self,
         model,
-        model_config,
         train_dataloader,
         test_dataloader,
         optimizer,
@@ -36,7 +35,6 @@ class Trainer:
         **kwargs,
     ):
         self.model = model.to(device)
-        self.model_config = model_config
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
         self.optimizer = optimizer
@@ -680,7 +678,7 @@ class Trainer:
                         logger.info("Early stopping triggered.")
                         early_stopping["early_stopped"] = True
                         return early_stopping
-                    
+
                 # TODO REMOVE AFTER TEST
                 self._save_best_model(metrics)
 
