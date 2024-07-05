@@ -229,6 +229,8 @@ def main():
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+    accelerator = Accelerator(log_with="wandb", mixed_precision="fp16")
+
     model = load_model(
         model_type=model_type,
         embedding_dim=embedding_dim,
@@ -296,6 +298,10 @@ def main():
         },
         sample_size=sample_size,
     )
+    # prepare components for accelerate
+    model, train_dataloader, test_dataloader = accelerator.prepare(
+        model, train_dataloader, test_dataloader
+    )
 
     if model_type == "slmuse-dlf":
         loss_function = nn.CrossEntropyLoss()
@@ -315,12 +321,8 @@ def main():
         num_training_steps=len(train_dataloader) * epochs,
     )
 
-    accelerator = Accelerator(log_with="wandb", mixed_precision="fp16")
-    model, train_dataloader, test_dataloader, optimizer, scheduler = (
-        accelerator.prepare(
-            model, train_dataloader, test_dataloader, optimizer, scheduler
-        )
-    )
+    # prepare optimizer and scheduler
+    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
     trainer = Trainer(
         model=model,
@@ -339,6 +341,8 @@ def main():
         accelerator_instance=accelerator,
     )
 
+    trainer = accelerator.prepare(trainer)
+
     logger.info("🏋️ Starting training")
     early_stopping = trainer.run_training(epochs=epochs, alpha=alpha)
     logger.info("🏁 Training finished")
@@ -348,6 +352,8 @@ def main():
         wandb_instance.finish(early_stopping["stopping_code"])
     else:
         wandb_instance.finish()
+
+    accelerator.end_training()
 
 
 if __name__ == "__main__":
