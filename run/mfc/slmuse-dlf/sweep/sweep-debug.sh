@@ -3,9 +3,9 @@
 # SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --job-name=mfc-slmuse-dlf-sweep-1-debug
+#SBATCH --job-name=mfc-slmuse-dlf-sweep-2-debug
 #SBATCH --mem=32G
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:2
 
 echo "===================== Job Details ====================="
 # Activate the virtual environment
@@ -62,10 +62,8 @@ export MODEL_TYPE="slmuse-dlf"
 # Training Script Execution
 echo "=================== Training Start ==================="
 
-CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/mphkbwlz &
-CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/mphkbwlz &
-CUDA_VISIBLE_DEVICES=2 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/mphkbwlz &
-CUDA_VISIBLE_DEVICES=3 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/mphkbwlz &
+CUDA_VISIBLE_DEVICES=0 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/ici7aehk &
+CUDA_VISIBLE_DEVICES=1 python -m wandb agent --count 250 elianderlohr/slmuse-dlf/ici7aehk &
 
 wait
 
