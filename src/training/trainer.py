@@ -428,7 +428,7 @@ class Trainer:
             frameaxis_labels = None
 
             # Check train metrics every 50 steps # TODO INCREASE BACK TO 50
-            if local_steps % 10 == 0:
+            if local_steps % 2 == 0:
 
                 logger.info(
                     f"Starting to evaluate the model at epoch {epoch}, batch {local_steps}"
@@ -1081,6 +1081,7 @@ class Trainer:
         return metrics
 
     def _save_best_model(self, metrics):
+        logger.info("Saving best model.")
         # save dir path
         save_dir = os.path.join(self.save_path)
         try:
