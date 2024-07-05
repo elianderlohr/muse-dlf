@@ -12,3 +12,5 @@ data/srls/
 .env
 data/srls/mfc/mfc_labeled.pkl
 **.pyc
+**.wandb
+**.log
