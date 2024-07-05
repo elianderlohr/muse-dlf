@@ -17,6 +17,7 @@ class Trainer:
     def __init__(
         self,
         model,
+        model_config,
         train_dataloader,
         test_dataloader,
         optimizer,
@@ -35,6 +36,7 @@ class Trainer:
         **kwargs,
     ):
         self.model = model.to(device)
+        self.model_config = model_config
         self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
         self.optimizer = optimizer
@@ -427,8 +429,8 @@ class Trainer:
             arg1_labels = None
             frameaxis_labels = None
 
-            # Check train metrics every 50 steps
-            if local_steps % 50 == 0:
+            # Check train metrics every 50 steps # TODO INCREASE BACK TO 50
+            if local_steps % 10 == 0:
 
                 logger.info(
                     f"Starting to evaluate the model at epoch {epoch}, batch {local_steps}"
@@ -678,6 +680,9 @@ class Trainer:
                         logger.info("Early stopping triggered.")
                         early_stopping["early_stopped"] = True
                         return early_stopping
+                    
+                # TODO REMOVE AFTER TEST
+                self._save_best_model(metrics)
 
             # Delete tensors after logging metrics
             del (
@@ -1082,29 +1087,62 @@ class Trainer:
         save_dir = os.path.join(self.save_path)
         try:
             os.makedirs(save_dir, exist_ok=True)
+        except PermissionError as e:
+            logger.error(
+                f"Permission denied: Cannot create directory {save_dir}. Exception: {e}"
+            )
+            return
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Warning: Could not create directory {save_dir}. Exception: {e}"
             )
+            return
 
         # save model
-        model_save_path = os.path.join(save_dir, f"model.pth")
+        model_save_path = os.path.join(save_dir, "model.pth")
+        temp_model_save_path = model_save_path + ".tmp"
         try:
-            torch.save(self.model.state_dict(), model_save_path)
+            torch.save(self.model.state_dict(), temp_model_save_path)
+            os.rename(temp_model_save_path, model_save_path)
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
             )
+            if os.path.exists(temp_model_save_path):
+                os.remove(temp_model_save_path)
+            return
 
         # save metrics
-        metrics_save_path = os.path.join(save_dir, f"metrics.json")
+        metrics_save_path = os.path.join(save_dir, "metrics.json")
+        temp_metrics_save_path = metrics_save_path + ".tmp"
         try:
-            with open(metrics_save_path, "w") as f:
+            with open(temp_metrics_save_path, "w") as f:
                 json.dump(metrics, f)
+            os.rename(temp_metrics_save_path, metrics_save_path)
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
             )
+            if os.path.exists(temp_metrics_save_path):
+                os.remove(temp_metrics_save_path)
+
+        # save model configuration
+        config_save_path = os.path.join(save_dir, "model_config.json")
+        temp_config_save_path = config_save_path + ".tmp"
+        try:
+            with open(temp_config_save_path, "w") as f:
+                json.dump(self.config, f)
+            os.rename(temp_config_save_path, config_save_path)
+        except Exception as e:
+            logger.error(
+                f"Warning: Failed to save model configuration at {config_save_path}. Exception: {e}"
+            )
+            if os.path.exists(temp_config_save_path):
+                os.remove(temp_config_save_path)
+
+        logger.info(
+            f"Model, metrics, and configuration saved successfully in {save_dir}"
+        )
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1

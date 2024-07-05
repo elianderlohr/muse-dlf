@@ -90,7 +90,7 @@ clear_gpu_memory
 echo "=================== Training Start ==================="
 
 echo "Launching debug script..."
-python src/debug.py \
+python src/start_train.py \
     --model_type slmuse-dlf \
     --path_data $DATA_PATH \
     --frameaxis_dim 10 \
@@ -105,8 +105,10 @@ python src/debug.py \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
     --max_arg_length 10 \
-    --srl_embeddings_pooling cls \
+    --srl_embeddings_pooling mean \
     --seed 42 \
+    --epochs 1 \
+    --sample_size 200 \
     $DEBUG
 
 # Cleanup and Closeout

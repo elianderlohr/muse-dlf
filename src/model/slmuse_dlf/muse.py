@@ -126,6 +126,38 @@ class SLMUSEDLF(nn.Module):
 
         self._debug = _debug
 
+        # Store configuration
+        self._config = {
+            "embedding_dim": embedding_dim,
+            "frameaxis_dim": frameaxis_dim,
+            "hidden_dim": hidden_dim,
+            "num_classes": num_classes,
+            "num_sentences": num_sentences,
+            "dropout_prob": dropout_prob,
+            "bert_model_name": bert_model_name,
+            "bert_model_name_or_path": bert_model_name_or_path,
+            "srl_embeddings_pooling": srl_embeddings_pooling,
+            "lambda_orthogonality": lambda_orthogonality,
+            "M": M,
+            "t": t,
+            "muse_unsupervised_num_layers": muse_unsupervised_num_layers,
+            "muse_unsupervised_activation": muse_unsupervised_activation,
+            "muse_unsupervised_use_batch_norm": muse_unsupervised_use_batch_norm,
+            "muse_unsupervised_matmul_input": muse_unsupervised_matmul_input,
+            "muse_unsupervised_gumbel_softmax_log": muse_unsupervised_gumbel_softmax_log,
+            "muse_frameaxis_unsupervised_num_layers": muse_frameaxis_unsupervised_num_layers,
+            "muse_frameaxis_unsupervised_activation": muse_frameaxis_unsupervised_activation,
+            "muse_frameaxis_unsupervised_use_batch_norm": muse_frameaxis_unsupervised_use_batch_norm,
+            "muse_frameaxis_unsupervised_matmul_input": muse_frameaxis_unsupervised_matmul_input,
+            "muse_frameaxis_unsupervised_gumbel_softmax_log": muse_frameaxis_unsupervised_gumbel_softmax_log,
+            "num_negatives": num_negatives,
+            "supervised_concat_frameaxis": supervised_concat_frameaxis,
+            "supervised_num_layers": supervised_num_layers,
+            "supervised_activation": supervised_activation,
+            "_debug": _debug,
+            "_detect_anomaly": _detect_anomaly,
+        }
+
         # Debugging:
         self.logger.debug(f"✅ MUSEDLF successfully initialized")
 
