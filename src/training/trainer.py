@@ -1130,7 +1130,7 @@ class Trainer:
         temp_config_save_path = config_save_path + ".tmp"
         try:
             with open(temp_config_save_path, "w") as f:
-                json.dump(self.config, f)
+                json.dump(self.model.config, f)
             os.rename(temp_config_save_path, config_save_path)
         except Exception as e:
             logger.error(
