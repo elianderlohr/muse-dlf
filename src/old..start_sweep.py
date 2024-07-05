@@ -1,22 +1,24 @@
 import random
-import os
-import warnings
-import torch
+from venv import logger
+from charset_normalizer import detect
 import numpy as np
-import wandb
+import torch
 from model.slmuse_dlf.muse import SLMUSEDLF
 from model.muse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
-from torch.optim import Adam, AdamW
+
+import wandb
+from utils.logging_manager import LoggerManager
+from training.trainer import Trainer
 from transformers import (
     BertTokenizer,
     RobertaTokenizerFast,
     get_linear_schedule_with_warmup,
 )
-from utils.logging_manager import LoggerManager
-from training.trainer import Trainer
-from accelerate import Accelerator
+from torch.optim import Adam, AdamW
+import warnings
+import os
 
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
@@ -27,7 +29,20 @@ warnings.filterwarnings("ignore", message="invalid value encountered in double_s
 wandb.require("core")
 
 
-# Function to load the model
+# welcome console message
+def welcome_message():
+    print(
+        "#####################################################\n"
+        "#                                                   #\n"
+        "#              Welcome to MUSE-DLF SWEEP!                     #\n"
+        "#                                                   #\n"
+        "# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #\n"
+        "#          Learning for Frame Classification        #\n"
+        "#                                                   #\n"
+        "#####################################################"
+    )
+
+
 def load_model(
     model_type,
     embedding_dim,
@@ -127,11 +142,13 @@ def load_model(
         )
 
     model = model.to(device)
+
     logger.info("Model loaded successfully")
     return model
 
 
 def main():
+
     wandb.login()
     wandb_instance = wandb.init(project="slmuse-dlf")
 
@@ -147,7 +164,9 @@ def main():
     max_arg_length = 10
     test_size = 0.1
     epochs = 10
+
     num_negatives = 64
+
     accumulation_steps = 4
 
     # Parameters from wandb.config
@@ -180,13 +199,14 @@ def main():
     supervised_num_layers = wandb.config.supervised_num_layers
     supervised_activation = wandb.config.supervised_activation
     srl_embeddings_pooling = wandb.config.srl_embeddings_pooling
+
     alpha = wandb.config.alpha
     lr = wandb.config.lr
     batch_size = 2
     tau_min = wandb.config.tau_min
     tau_decay = wandb.config.tau_decay
-    optimizer_type = wandb.config.optimizer
 
+    optimizer_type = wandb.config.optimizer
     if optimizer_type == "adam":
         weight_decay = wandb.config.adam_weight_decay
     elif optimizer_type == "adamw":
@@ -205,18 +225,30 @@ def main():
     save_path = os.getenv("SAVE_PATH")
     model_type = os.getenv("MODEL_TYPE")
 
+    # Advanced Settings
     force_recalculate_srls = False
     force_recalculate_frameaxis = False
     sample_size = -1
 
-    detect_anomaly = os.getenv("DETECT_ANOMALY", "False") == "True"
-    debug = os.getenv("DEBUG", "False") == "True"
-    if debug:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
+    if os.getenv("DETECT_ANOMALY", "False") == "True":
+        detect_anomaly = True
     else:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
+        detect_anomaly = False
+
+    # parse debug flag from environment as bool
+    debug = os.getenv("DEBUG", "False")
+    print(f"DEBUG: {debug}")
+    if debug == "True":
+        debug = True
+        LoggerManager.use_accelerate(accelerate_used=False, log_level="DEBUG")
+        print("Debugging enabled")
+    else:
+        debug = False
+        LoggerManager.use_accelerate(accelerate_used=False, log_level="INFO")
+        print("Debugging disabled")
 
     logger = LoggerManager.get_logger(__name__)
+
     logger.info("Starting sweep")
 
     seed = 42
@@ -226,6 +258,8 @@ def main():
         torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
+
+    # Ensure reproducibility in CuDNN
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
@@ -268,8 +302,10 @@ def main():
     elif name_tokenizer == "bert-base-uncased":
         tokenizer = BertTokenizer.from_pretrained(name_tokenizer)
 
+    # Preprocess the dim_names
     dim_names = dim_names.split(",")
 
+    # Preprocess the input
     preprocessor = PreProcessor(
         tokenizer,
         batch_size=batch_size,
@@ -286,10 +322,14 @@ def main():
         dim_names=dim_names,
     )
 
+    # Load the data
     _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
         path_data,
         "json",
-        dataframe_path={"srl": path_srls, "frameaxis": path_frameaxis},
+        dataframe_path={
+            "srl": path_srls,
+            "frameaxis": path_frameaxis,
+        },
         force_recalculate={
             "srl": force_recalculate_srls,
             "frameaxis": force_recalculate_frameaxis,
@@ -315,13 +355,7 @@ def main():
         num_training_steps=len(train_dataloader) * epochs,
     )
 
-    accelerator = Accelerator(log_with="wandb", mixed_precision="fp16")
-    model, train_dataloader, test_dataloader, optimizer, scheduler = (
-        accelerator.prepare(
-            model, train_dataloader, test_dataloader, optimizer, scheduler
-        )
-    )
-
+    # Train the model
     trainer = Trainer(
         model=model,
         train_dataloader=train_dataloader,
@@ -330,17 +364,18 @@ def main():
         loss_function=loss_function,
         scheduler=scheduler,
         model_type=model_type,
-        training_management="accelerate",
+        training_management="wandb",
         tau_min=tau_min,
         tau_decay=tau_decay,
         save_path=save_path,
         wandb_instance=wandb_instance,
         accumulation_steps=accumulation_steps,
-        accelerator_instance=accelerator,
     )
 
     logger.info("🏋️ Starting training")
+
     early_stopping = trainer.run_training(epochs=epochs, alpha=alpha)
+
     logger.info("🏁 Training finished")
 
     if early_stopping["early_stopped"]:
@@ -351,4 +386,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
