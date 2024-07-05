@@ -159,9 +159,9 @@ def main():
     t = 8
     num_sentences = 32
     frameaxis_dim = 10
-    max_sentence_length = 64
+    max_sentence_length = 52
     max_args_per_sentence = 10
-    max_arg_length = 10
+    max_arg_length = 16
     test_size = 0.1
     epochs = 10
 
@@ -202,7 +202,7 @@ def main():
 
     alpha = wandb.config.alpha
     lr = wandb.config.lr
-    batch_size = 2
+    batch_size = 4
     tau_min = wandb.config.tau_min
     tau_decay = wandb.config.tau_decay
 
