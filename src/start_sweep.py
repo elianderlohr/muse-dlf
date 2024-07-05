@@ -167,7 +167,13 @@ def main():
 
     num_negatives = 128
 
-    accumulation_steps = 1
+    # Gradient accumulation steps
+    accumulation_steps = 4
+
+    # Batch size
+    batch_size = 8
+
+    # real batch size = batch_size * accumulation_steps = 8 * 4 = 32 (default)
 
     # Parameters from wandb.config
     hidden_dim = wandb.config.hidden_dim
@@ -202,7 +208,6 @@ def main():
 
     alpha = wandb.config.alpha
     lr = wandb.config.lr
-    batch_size = 8
     tau_min = wandb.config.tau_min
     tau_decay = wandb.config.tau_decay
 
