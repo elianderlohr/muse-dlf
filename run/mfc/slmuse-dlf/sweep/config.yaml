@@ -2,35 +2,101 @@ method: bayes
 metric:
   goal: maximize
   name: accuracy
+name: "slmuse-dlf sweep [prd]"
 parameters:
-  D_h:
-    values:
-      - 256
-      - 512
-      - 768
-      - 1024
-      - 1280
-      - 1536
-      - 2056
-  alpha:
+  adam_weight_decay:
     distribution: uniform
-    max: 0.6
-    min: 0.1
-  batch_size:
-    values:
-      - 8
-      - 16
-      - 32
+    max: 0.01
+    min: 0.0001
+  adamw_weight_decay:
+    distribution: uniform
+    max: 0.1
+    min: 0.01
+  alpha:
+    value: 0.5
   dropout_prob:
     distribution: uniform
-    max: 0.9
+    max: 0.4
     min: 0.1
+  hidden_dim:
+    distribution: int_uniform
+    max: 2056
+    min: 512
   lambda_orthogonality:
     distribution: uniform
     max: 0.01
     min: 0.0001
   lr:
-    distribution: uniform
-    max: 0.0005
-    min: 0.000005
-program: src/sweep.py
+    distribution: log_uniform
+    max: 0.001
+    min: 1e-05
+  muse_frameaxis_unsupervised_activation:
+    values:
+      - relu
+      - elu
+      - gelu
+  muse_frameaxis_unsupervised_gumbel_softmax_log:
+    values:
+      - false
+      - true
+  muse_frameaxis_unsupervised_matmul_input:
+    values:
+      - g
+      - d
+  muse_frameaxis_unsupervised_num_layers:
+    distribution: int_uniform
+    max: 4
+    min: 1
+  muse_frameaxis_unsupervised_use_batch_norm:
+    values:
+      - false
+      - true
+  muse_unsupervised_activation:
+    values:
+      - relu
+      - elu
+      - gelu
+  muse_unsupervised_gumbel_softmax_log:
+    values:
+      - false
+      - true
+  muse_unsupervised_matmul_input:
+    values:
+      - g
+      - d
+  muse_unsupervised_num_layers:
+    distribution: int_uniform
+    max: 4
+    min: 1
+  muse_unsupervised_use_batch_norm:
+    values:
+      - false
+      - true
+  optimizer:
+    values:
+      - adamw
+      - adam
+  srl_embeddings_pooling:
+    values:
+      - cls
+      - mean
+  supervised_activation:
+    values:
+      - relu
+      - elu
+      - gelu
+  supervised_concat_frameaxis:
+    values:
+      - false
+      - true
+  supervised_num_layers:
+    distribution: int_uniform
+    max: 3
+    min: 1
+  tau_decay:
+    distribution: log_uniform
+    max: 0.001
+    min: 1e-05
+  tau_min:
+    value: 0.5
+program: src/start_sweep.py
