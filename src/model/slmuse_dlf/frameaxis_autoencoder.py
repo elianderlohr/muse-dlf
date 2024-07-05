@@ -143,6 +143,9 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
 
             logits = self.feed_forward_2(h) * mask.unsqueeze(-1).float()
 
+            epsilon = 1e-10
+            logits = logits + (1 - mask.unsqueeze(-1).float()) * epsilon
+
             if (logits == 0).all() or (logits.std() == 0):
                 self.logger.debug(
                     f"❌ logits has mean {logits.mean().item()} or std {logits.std().item()}"
