@@ -65,8 +65,15 @@ done
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
-SAVE_PATH="models/slmuse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
+export PATH_DATA="data/mfc/immigration_labeled_preprocessed.json"
+export SAVE_PATH="models/slmuse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
+export NAME_TOKENIZER="roberta-base"
+export PATH_NAME_BERT_MODEL="models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
+export PATH_SRLS="data/srls/mfc/mfc_labeled.pkl"
+export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
+export PATH_ANTONYM_PAIRS="data/axis/mft.json"
+export DIM_NAMES="virtue,vice"
+export MODEL_TYPE="slmuse-dlf"
 echo "Data path: $DATA_PATH"
 echo "Output path: $SAVE_PATH"
 
