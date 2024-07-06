@@ -427,8 +427,8 @@ class Trainer:
             arg1_labels = None
             frameaxis_labels = None
 
-            # Check train metrics every 50 steps # TODO INCREASE BACK TO 50
-            if local_steps % 2 == 0:
+            # Check train metrics every 50 steps
+            if local_steps % 50 == 0:
 
                 logger.info(
                     f"Starting to evaluate the model at epoch {epoch}, batch {local_steps}"
@@ -678,9 +678,6 @@ class Trainer:
                         logger.info("Early stopping triggered.")
                         early_stopping["early_stopped"] = True
                         return early_stopping
-
-                # TODO REMOVE AFTER TEST
-                self._save_best_model(metrics)
 
             # Delete tensors after logging metrics
             del (
