@@ -161,7 +161,7 @@ def main():
     frameaxis_dim = 10
     max_sentence_length = 52
     max_args_per_sentence = 10
-    max_arg_length = 16
+    max_arg_length = 10
     test_size = 0.1
     epochs = 10
 
