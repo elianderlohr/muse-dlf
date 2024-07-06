@@ -151,9 +151,9 @@ def objective(trial):
 
     wandb.init(project="slmuse-dlf", reinit=True)
     # Define hyperparameters to tune
-    hidden_dim = trial.suggest_int("hidden_dim", 64, 512)
-    dropout_prob = trial.suggest_float("dropout_prob", 0.1, 0.5)
-    lambda_orthogonality = trial.suggest_float("lambda_orthogonality", 0.1, 1.0)
+    hidden_dim = trial.suggest_int("hidden_dim", 768, 2056, step=256)
+    dropout_prob = trial.suggest_float("dropout_prob", 0.1, 0.4)
+    lambda_orthogonality = trial.suggest_float("lambda_orthogonality", 0.0001, 0.01)
     muse_unsupervised_num_layers = trial.suggest_int(
         "muse_unsupervised_num_layers", 1, 3
     )
@@ -173,7 +173,7 @@ def objective(trial):
         "muse_frameaxis_unsupervised_num_layers", 1, 3
     )
     muse_frameaxis_unsupervised_activation = trial.suggest_categorical(
-        "muse_frameaxis_unsupervised_activation", ["relu", "tanh"]
+        "muse_frameaxis_unsupervised_activation", ["relu", "elu", "gelu", "leaky_relu"]
     )
     muse_frameaxis_unsupervised_use_batch_norm = trial.suggest_categorical(
         "muse_frameaxis_unsupervised_use_batch_norm", [True, False]
@@ -189,17 +189,18 @@ def objective(trial):
     )
     supervised_num_layers = trial.suggest_int("supervised_num_layers", 1, 3)
     supervised_activation = trial.suggest_categorical(
-        "supervised_activation", ["relu", "tanh"]
+        "supervised_activation", ["relu", "elu", "gelu", "leaky_relu"]
     )
     srl_embeddings_pooling = trial.suggest_categorical(
-        "srl_embeddings_pooling", ["mean", "max"]
-    )
-    alpha = trial.suggest_float("alpha", 0.1, 1.0)
+        "srl_embeddings_pooling", ["mean", "srl"]
+    ))
     lr = trial.suggest_float("lr", 1e-5, 1e-3)
-    tau_min = trial.suggest_float("tau_min", 0.1, 1.0)
     tau_decay = trial.suggest_float("tau_decay", 1e-5, 1e-3)
     optimizer_type = trial.suggest_categorical("optimizer", ["adam", "adamw"])
     weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-3)
+
+    tau_min = 0.5
+    alpha = 0.9
 
     # Hardcoded parameters
     embedding_dim = 768
