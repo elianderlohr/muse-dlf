@@ -151,7 +151,6 @@ class Trainer:
     ):
         self.model.train()
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
-        global global_steps
 
         # Load the evaluate metrics
         f1_metric_micro = evaluate.load(
@@ -232,6 +231,7 @@ class Trainer:
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
         ):
+            global global_steps
             global_steps += 1
             if global_steps % 50 == 0:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
