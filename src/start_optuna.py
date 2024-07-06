@@ -146,7 +146,7 @@ def load_model(
 
 
 def objective(trial):
-    accelerator = Accelerator(fp16=True)
+    accelerator = Accelerator(mixed_precision="fp16")
     device = accelerator.device
 
     wandb.init(project="slmuse-dlf", reinit=True)
