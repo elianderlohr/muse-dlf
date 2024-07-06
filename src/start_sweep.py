@@ -163,7 +163,8 @@ def main():
     max_args_per_sentence = 10
     max_arg_length = 10
     test_size = 0.1
-    epochs = 10
+    epochs = 5
+    planned_epochs = 10
 
     num_negatives = 128
 
@@ -357,7 +358,7 @@ def main():
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=10,
-        num_training_steps=len(train_dataloader) * epochs,
+        num_training_steps=len(train_dataloader) * planned_epochs,
     )
 
     # Train the model
@@ -376,6 +377,7 @@ def main():
         wandb_instance=wandb_instance,
         accumulation_steps=accumulation_steps,
         mixed_precision="fp16",
+        early_stopping=10,
     )
 
     logger.info("🏋️ Starting training")
