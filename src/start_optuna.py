@@ -193,7 +193,7 @@ def objective(trial):
     )
     srl_embeddings_pooling = trial.suggest_categorical(
         "srl_embeddings_pooling", ["mean", "srl"]
-    ))
+    )
     lr = trial.suggest_float("lr", 1e-5, 1e-3)
     tau_decay = trial.suggest_float("tau_decay", 1e-5, 1e-3)
     optimizer_type = trial.suggest_categorical("optimizer", ["adam", "adamw"])
