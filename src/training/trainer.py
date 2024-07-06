@@ -431,60 +431,46 @@ class Trainer:
                     f"Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                 )
 
-                combined_pred = (
-                    self.get_activation_function(combined_logits).int().cpu()
-                )
-                span_pred = self.get_activation_function(span_logits).int().cpu()
-                sentence_pred = (
-                    self.get_activation_function(sentence_logits).int().cpu()
-                )
+                combined_pred = self.get_activation_function(combined_logits).int()
+                span_pred = self.get_activation_function(span_logits).int()
+                sentence_pred = self.get_activation_function(sentence_logits).int()
 
                 # predicate, arg0, arg1, frameaxis
-                predicate_pred = (
-                    self.get_activation_function(other["predicate"]).int().cpu()
-                )
-                arg0_pred = self.get_activation_function(other["arg0"]).int().cpu()
-                arg1_pred = self.get_activation_function(other["arg1"]).int().cpu()
-                frameaxis_pred = (
-                    self.get_activation_function(other["frameaxis"]).int().cpu()
-                )
-
-                labels_cpu = labels.cpu()
+                predicate_pred = self.get_activation_function(other["predicate"]).int()
+                arg0_pred = self.get_activation_function(other["arg0"]).int()
+                arg1_pred = self.get_activation_function(other["arg1"]).int()
+                frameaxis_pred = self.get_activation_function(other["frameaxis"]).int()
 
                 if self.training_management == "accelerate":
                     combined_pred, combined_labels = (
-                        self.accelerator.gather_for_metrics((combined_pred, labels_cpu))
+                        self.accelerator.gather_for_metrics((combined_pred, labels))
                     )
                     span_pred, span_labels = self.accelerator.gather_for_metrics(
-                        (span_pred, labels_cpu)
+                        (span_pred, labels)
                     )
                     sentence_pred, sentence_labels = (
-                        self.accelerator.gather_for_metrics((sentence_pred, labels_cpu))
+                        self.accelerator.gather_for_metrics((sentence_pred, labels))
                     )
                     predicate_pred, predicate_labels = (
-                        self.accelerator.gather_for_metrics(
-                            (predicate_pred, labels_cpu)
-                        )
+                        self.accelerator.gather_for_metrics((predicate_pred, labels))
                     )
                     arg0_pred, arg0_labels = self.accelerator.gather_for_metrics(
-                        (arg0_pred, labels_cpu)
+                        (arg0_pred, labels)
                     )
                     arg1_pred, arg1_labels = self.accelerator.gather_for_metrics(
-                        (arg1_pred, labels_cpu)
+                        (arg1_pred, labels)
                     )
                     frameaxis_pred, frameaxis_labels = (
-                        self.accelerator.gather_for_metrics(
-                            (frameaxis_pred, labels_cpu)
-                        )
+                        self.accelerator.gather_for_metrics((frameaxis_pred, labels))
                     )
                 else:
-                    combined_labels = labels_cpu
-                    span_labels = labels_cpu
-                    sentence_labels = labels_cpu
-                    predicate_labels = labels_cpu
-                    arg0_labels = labels_cpu
-                    arg1_labels = labels_cpu
-                    frameaxis_labels = labels_cpu
+                    combined_labels = labels
+                    span_labels = labels
+                    sentence_labels = labels
+                    predicate_labels = labels
+                    arg0_labels = labels
+                    arg1_labels = labels
+                    frameaxis_labels = labels
 
                 # Transform from one-hot to class index
                 combined_pred = combined_pred.argmax(dim=1)
