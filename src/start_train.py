@@ -460,6 +460,14 @@ def main():
         help="Path to save the model",
         required=True,
     )
+    # class_column_names
+    io_paths.add_argument(
+        "--class_column_names",
+        type=str,
+        default="",
+        help="Class column names",
+        required=True,
+    )
 
     # Advanced Settings
     advanced_settings = parser.add_argument_group("Advanced Settings")
@@ -608,6 +616,9 @@ def main():
     # Preprocess the dim_names
     dim_names = args.dim_names.split(",")
 
+    # Split class_column_names into a list
+    class_column_names = args.class_column_names.split(";")
+
     # Preprocess the input
     preprocessor = PreProcessor(
         tokenizer,
@@ -623,6 +634,7 @@ def main():
         path_name_bert_model=args.path_name_bert_model,
         path_antonym_pairs=args.path_antonym_pairs,
         dim_names=dim_names,
+        class_column_names=class_column_names,
     )
 
     logger.info("Preprocessor loaded successfully")

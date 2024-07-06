@@ -70,6 +70,9 @@ SAVE_PATH="models/slmuse-dlf/$(date +'%Y-%m-%d_%H-%M-%S')/"
 echo "Data path: $DATA_PATH"
 echo "Output path: $SAVE_PATH"
 
+CLASS_COLUMN_NAMES="Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense"
+echo "Class column names: $CLASS_COLUMN_NAMES"
+
 # GPU Setup and Verification
 echo "GPU status:"
 nvidia-smi
@@ -103,6 +106,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --path_srls data/srls/mfc/mfc_labeled.pkl \
     --path_frameaxis data/frameaxis/mfc/frameaxis_mft.pkl \
     --path_antonym_pairs data/axis/mft.json \
+    --class_column_names "$CLASS_COLUMN_NAMES" \
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
     --embedding_dim 768 \

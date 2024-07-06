@@ -57,6 +57,7 @@ export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
 export PATH_ANTONYM_PAIRS="data/axis/mft.json"
 export DIM_NAMES="virtue,vice"
 export MODEL_TYPE="slmuse-dlf"
+export CLASS_COLUMN_NAMES="Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense"
 
 # Training Script Execution
 echo "=================== Training Start ==================="

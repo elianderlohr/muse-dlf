@@ -230,6 +230,7 @@ def main():
     dim_names = os.getenv("DIM_NAMES")
     save_path = os.getenv("SAVE_PATH")
     model_type = os.getenv("MODEL_TYPE")
+    class_column_names = os.getenv("CLASS_COLUMN_NAMES")
 
     # Advanced Settings
     force_recalculate_srls = False
@@ -311,6 +312,9 @@ def main():
     # Preprocess the dim_names
     dim_names = dim_names.split(",")
 
+    # Preprocess the class_column_names
+    class_column_names = class_column_names.split(";")
+
     # Preprocess the input
     preprocessor = PreProcessor(
         tokenizer,
@@ -326,6 +330,7 @@ def main():
         path_name_bert_model=path_name_bert_model,
         path_antonym_pairs=path_antonym_pairs,
         dim_names=dim_names,
+        class_column_names=class_column_names,
     )
 
     # Load the data

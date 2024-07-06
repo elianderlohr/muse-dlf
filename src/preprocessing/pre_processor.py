@@ -31,6 +31,23 @@ class PreProcessor:
         path_name_bert_model="bert-base-uncased",
         path_antonym_pairs="frameaxis/axes/custom.tsv",
         dim_names=["positive", "negative"],
+        class_column_names=[
+            "Capacity and Resources",
+            "Crime and Punishment",
+            "Cultural Identity",
+            "Economic",
+            "External Regulation and Reputation",
+            "Fairness and Equality",
+            "Health and Safety",
+            "Legality, Constitutionality, Jurisdiction",
+            "Morality",
+            "Other",
+            "Policy Prescription and Evaluation",
+            "Political",
+            "Public Sentiment",
+            "Quality of Life",
+            "Security and Defense",
+        ],
     ):
         """
         Initializes the PreProcessor.
@@ -62,6 +79,8 @@ class PreProcessor:
         self.path_name_bert_model = path_name_bert_model
         self.path_antonym_pairs = path_antonym_pairs
         self.dim_names = dim_names
+
+        self.class_column_names = class_column_names
 
     def _load_data(self, path, format):
         """
@@ -121,27 +140,9 @@ class PreProcessor:
 
         frameaxis_df = frameaxis_df.reset_index(drop=True)
 
-        y_cols = [
-            "Capacity and Resources",
-            "Crime and Punishment",
-            "Cultural Identity",
-            "Economic",
-            "External Regulation and Reputation",
-            "Fairness and Equality",
-            "Health and Safety",
-            "Legality, Constitutionality, Jurisdiction",
-            "Morality",
-            "Other",
-            "Policy Prescription and Evaluation",
-            "Political",
-            "Public Sentiment",
-            "Quality of Life",
-            "Security and Defense",
-        ]
-
         # Creating y_subset
         y_subset = (
-            df.groupby("article_id")[y_cols]
+            df.groupby("article_id")[self.class_column_names]
             .apply(lambda x: x.values.tolist())
             .reset_index(name="encoded_values")
         )

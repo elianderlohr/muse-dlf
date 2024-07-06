@@ -56,6 +56,7 @@ export PATH_SRLS="data/srls/mfc/mfc_labeled.pkl"
 export PATH_FRAMEAXIS="data/frameaxis/mfc/frameaxis_mft.pkl"
 export PATH_ANTONYM_PAIRS="data/axis/mft.json"
 export DIM_NAMES="virtue,vice"
+export CLASS_COLUMN_NAMES="Capacity_and_resources;Crime_and_punishment;Cultural_identity;Economic;External_regulation_and_reputation;Fairness_and_equality;Health_and_safety;Legality_Constitutionality_and_jurisprudence;Morality;Policy_prescription_and_evaluation;Political;Public_opinion;Quality_of_life;Security_and_defense"
 
 # Training Script Execution
 echo "=================== Training Start ==================="
