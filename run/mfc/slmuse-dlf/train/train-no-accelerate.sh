@@ -104,7 +104,7 @@ python src/start_train.py \
     --t 8 \
     --batch_size 8 \
     --num_sentences 32 \
-    --max_sentence_length 64 \
+    --max_sentence_length 52 \
     --max_args_per_sentence 10 \
     --max_arg_length 10 \
     --muse_unsupervised_num_layers 2 \
@@ -128,7 +128,7 @@ python src/start_train.py \
     --tau_min 0.5 \
     --seed 42 \
     --mixed_precision fp16 \
-    --accumulation_steps 1 \
+    --accumulation_steps 4 \
     $DEBUG
 
 # Cleanup and Closeout
