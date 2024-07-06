@@ -227,7 +227,6 @@ class Trainer:
             else torch.bfloat16 if self.mixed_precision == "bf16" else torch.float32
         )
 
-        local_steps = 0
         for batch_idx, batch in enumerate(
             tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
         ):
@@ -235,8 +234,6 @@ class Trainer:
             global_steps += 1
             if global_steps % 50 == 0:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
-
-            local_steps += 1
 
             sentence_ids = (
                 batch["sentence_ids"]
@@ -428,10 +425,10 @@ class Trainer:
             frameaxis_labels = None
 
             # Check train metrics every 50 steps
-            if local_steps % 50 == 0:
+            if global_steps % 50 == 0:
 
                 logger.info(
-                    f"Starting to evaluate the model at epoch {epoch}, batch {local_steps}"
+                    f"Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                 )
 
                 combined_pred = (
@@ -657,7 +654,7 @@ class Trainer:
                     "train_accuracy_arg1": eval_accuracy_arg1["accuracy"],
                     "train_accuracy_frameaxis": eval_accuracy_frameaxis["accuracy"],
                     "epoch": epoch,
-                    "batch": local_steps,
+                    "batch": global_steps,
                     "global_steps": global_steps,
                 }
 
