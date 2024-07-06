@@ -192,7 +192,7 @@ def objective(trial):
         "supervised_activation", ["relu", "elu", "gelu", "leaky_relu"]
     )
     srl_embeddings_pooling = trial.suggest_categorical(
-        "srl_embeddings_pooling", ["mean", "srl"]
+        "srl_embeddings_pooling", ["mean", "cls"]
     )
     lr = trial.suggest_float("lr", 1e-5, 1e-3)
     tau_decay = trial.suggest_float("tau_decay", 1e-5, 1e-3)
