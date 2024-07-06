@@ -158,7 +158,7 @@ def objective(trial):
         "muse_unsupervised_num_layers", 1, 3
     )
     muse_unsupervised_activation = trial.suggest_categorical(
-        "muse_unsupervised_activation", ["relu", "tanh"]
+        "muse_unsupervised_activation", ["relu", "elu", "gelu", "leaky_relu"]
     )
     muse_unsupervised_use_batch_norm = trial.suggest_categorical(
         "muse_unsupervised_use_batch_norm", [True, False]
