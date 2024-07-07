@@ -106,7 +106,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --save_path $SAVE_PATH \
     --embedding_dim 768 \
     --hidden_dim 768 \
-    --num_classes 15 \
+    --num_classes 14 \
     --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 0.01 \
