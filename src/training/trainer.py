@@ -490,92 +490,92 @@ class Trainer:
 
                 # Macro F1
                 f1_metric_macro.add_batch(
-                    predictions=combined_pred.numpy(),
-                    references=combined_labels.numpy(),
+                    predictions=combined_pred.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
                 )
                 f1_metric_macro_span.add_batch(
-                    predictions=span_pred.numpy(),
-                    references=span_labels.numpy(),
+                    predictions=span_pred.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
                 )
                 f1_metric_macro_sentence.add_batch(
-                    predictions=sentence_pred.numpy(),
-                    references=sentence_labels.numpy(),
+                    predictions=sentence_pred.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
                 )
                 f1_metric_macro_predicate.add_batch(
-                    predictions=predicate_pred.numpy(),
-                    references=predicate_labels.numpy(),
+                    predictions=predicate_pred.cpu().numpy(),
+                    references=predicate_labels.cpu().numpy(),
                 )
                 f1_metric_macro_arg0.add_batch(
-                    predictions=arg0_pred.numpy(),
-                    references=arg0_labels.numpy(),
+                    predictions=arg0_pred.cpu().numpy(),
+                    references=arg0_labels.cpu().numpy(),
                 )
                 f1_metric_macro_arg1.add_batch(
-                    predictions=arg1_pred.numpy(),
-                    references=arg1_labels.numpy(),
+                    predictions=arg1_pred.cpu().numpy(),
+                    references=arg1_labels.cpu().numpy(),
                 )
                 f1_metric_macro_frameaxis.add_batch(
-                    predictions=frameaxis_pred.numpy(),
-                    references=frameaxis_labels.numpy(),
+                    predictions=frameaxis_pred.cpu().numpy(),
+                    references=frameaxis_labels.cpu().numpy(),
                 )
 
                 # Micro F1
                 f1_metric_micro.add_batch(
-                    predictions=combined_pred.numpy(),
-                    references=combined_labels.numpy(),
+                    predictions=combined_pred.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
                 )
                 f1_metric_micro_span.add_batch(
-                    predictions=span_pred.numpy(),
-                    references=span_labels.numpy(),
+                    predictions=span_pred.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
                 )
                 f1_metric_micro_sentence.add_batch(
-                    predictions=sentence_pred.numpy(),
-                    references=sentence_labels.numpy(),
+                    predictions=sentence_pred.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
                 )
                 f1_metric_micro_predicate.add_batch(
-                    predictions=predicate_pred.numpy(),
-                    references=predicate_labels.numpy(),
+                    predictions=predicate_pred.cpu().numpy(),
+                    references=predicate_labels.cpu().numpy(),
                 )
                 f1_metric_micro_arg0.add_batch(
-                    predictions=arg0_pred.numpy(),
-                    references=arg0_labels.numpy(),
+                    predictions=arg0_pred.cpu().numpy(),
+                    references=arg0_labels.cpu().numpy(),
                 )
                 f1_metric_micro_arg1.add_batch(
-                    predictions=arg1_pred.numpy(),
-                    references=arg1_labels.numpy(),
+                    predictions=arg1_pred.cpu().numpy(),
+                    references=arg1_labels.cpu().numpy(),
                 )
                 f1_metric_micro_frameaxis.add_batch(
-                    predictions=frameaxis_pred.numpy(),
-                    references=frameaxis_labels.numpy(),
+                    predictions=frameaxis_pred.cpu().numpy(),
+                    references=frameaxis_labels.cpu().numpy(),
                 )
 
                 # Accuracy
                 accuracy_metric.add_batch(
-                    predictions=combined_pred.numpy(),
-                    references=combined_labels.numpy(),
+                    predictions=combined_pred.cpu().numpy(),
+                    references=combined_labels.cpu().numpy(),
                 )
                 accuracy_metric_span.add_batch(
-                    predictions=span_pred.numpy(),
-                    references=span_labels.numpy(),
+                    predictions=span_pred.cpu().numpy(),
+                    references=span_labels.cpu().numpy(),
                 )
                 accuracy_metric_sentence.add_batch(
-                    predictions=sentence_pred.numpy(),
-                    references=sentence_labels.numpy(),
+                    predictions=sentence_pred.cpu().numpy(),
+                    references=sentence_labels.cpu().numpy(),
                 )
                 accuracy_metric_predicate.add_batch(
-                    predictions=predicate_pred.numpy(),
-                    references=predicate_labels.numpy(),
+                    predictions=predicate_pred.cpu().numpy(),
+                    references=predicate_labels.cpu().numpy(),
                 )
                 accuracy_metric_arg0.add_batch(
-                    predictions=arg0_pred.numpy(),
-                    references=arg0_labels.numpy(),
+                    predictions=arg0_pred.cpu().numpy(),
+                    references=arg0_labels.cpu().numpy(),
                 )
                 accuracy_metric_arg1.add_batch(
-                    predictions=arg1_pred.numpy(),
-                    references=arg1_labels.numpy(),
+                    predictions=arg1_pred.cpu().numpy(),
+                    references=arg1_labels.cpu().numpy(),
                 )
                 accuracy_metric_frameaxis.add_batch(
-                    predictions=frameaxis_pred.numpy(),
-                    references=frameaxis_labels.numpy(),
+                    predictions=frameaxis_pred.cpu().numpy(),
+                    references=frameaxis_labels.cpu().numpy(),
                 )
 
                 eval_results_micro = f1_metric_micro.compute(average="micro")

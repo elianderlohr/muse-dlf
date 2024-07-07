@@ -312,6 +312,8 @@ def main():
     # Preprocess the dim_names
     dim_names = dim_names.split(",")
 
+    print(f"Class column names: {class_column_names}")
+
     # Preprocess the class_column_names
     class_column_names = class_column_names.split(";")
 
