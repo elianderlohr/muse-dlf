@@ -95,6 +95,8 @@ class MUSEEmbeddings(nn.Module):
             batch_size * num_sentences, max_sentence_length
         )
 
+        del ids
+
         precision_dtype = (
             torch.float16
             if mixed_precision == "fp16"
@@ -111,8 +113,12 @@ class MUSEEmbeddings(nn.Module):
                     attention_mask=attention_masks_flat,
                     output_hidden_states=True,
                 )
-
+                del ids_flat, attention_masks_flat
+                torch.cuda.empty_cache()
                 second_to_last_hidden_state = outputs.hidden_states[-2]
+
+                del outputs
+                torch.cuda.empty_cache()
 
             self.check_for_nans(
                 second_to_last_hidden_state, "second to last hidden state"
@@ -139,6 +145,15 @@ class MUSEEmbeddings(nn.Module):
                     .clamp(min=1)
                 )
                 embeddings_mean = sum_embeddings / token_counts
+
+                del (
+                    attention_masks,
+                    attention_masks_expanded,
+                    embeddings_masked,
+                    sum_embeddings,
+                    token_counts,
+                )
+                torch.cuda.empty_cache()
             elif self.pooling == "cls":
                 embeddings_mean = second_to_last_hidden_state[:, :, 0, :]
 
@@ -245,6 +260,16 @@ class MUSEEmbeddings(nn.Module):
                     arg1_ids, sentence_ids, sentence_embeddings
                 )
 
+                # Delete intermediate tensors
+                del (
+                    sentence_ids,
+                    sentence_attention_masks,
+                    predicate_ids,
+                    arg0_ids,
+                    arg1_ids,
+                    sentence_embeddings,
+                )
+                torch.cuda.empty_cache()
         return (
             sentence_embeddings_avg,
             predicate_embeddings,

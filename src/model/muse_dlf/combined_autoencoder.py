@@ -232,6 +232,17 @@ class MUSECombinedAutoencoder(nn.Module):
             self.logger.error("❌ NaNs detected in vhat")
             raise ValueError("NaNs detected in vhat")
 
+        # Clear intermediate tensors
+        del (
+            h_p,
+            h_a0,
+            h_a1,
+            logits_p,
+            logits_a0,
+            logits_a1,
+        )
+        torch.cuda.empty_cache()
+
         return {
             "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
             "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},

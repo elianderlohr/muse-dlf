@@ -99,6 +99,9 @@ class MUSEFrameAxisAutoencoder(nn.Module):
 
             logits = self.feed_forward_2(h) * mask.unsqueeze(-1).float()
 
+            epsilon = 1e-10
+            logits = logits + (1 - mask.unsqueeze(-1).float()) * epsilon
+
             if (logits == 0).all() or (logits.std() == 0):
                 self.logger.debug(
                     f"❌ logits has mean {logits.mean().item()} or std {logits.std().item()}"
@@ -125,6 +128,9 @@ class MUSEFrameAxisAutoencoder(nn.Module):
         if torch.isnan(vhat).any():
             self.logger.error("❌ NaNs detected in vhat")
             raise ValueError("NaNs detected in vhat")
+
+        del h, logits
+        torch.cuda.empty_cache()
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
 
