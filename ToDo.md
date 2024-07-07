@@ -15,3 +15,11 @@
 ## TODO SRL / MuSE-DLF
 
 - [x] Sentences are sometimes not correctly split e.g. "Our Sen. John McCain" -> "Our Sen." and "John McCain" which leads to wrong SRL results
+
+# TODO Thesis
+
+- [ ] Update frameaxis preparation chapter --> with irgnoring words etc.
+- [ ] Add MuSE-DLF chapter
+- [ ] Explainability charts
+- [ ] Metric results for SLMuSE-DLF and MuSE-DLF
+- [ ] Conclusion chapter

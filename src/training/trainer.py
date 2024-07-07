@@ -428,7 +428,7 @@ class Trainer:
             if global_steps % 50 == 0:
 
                 logger.info(
-                    f"Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
+                    f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                 )
 
                 combined_pred = self.get_activation_function(combined_logits).int()
@@ -615,7 +615,7 @@ class Trainer:
                 eval_accuracy_frameaxis = accuracy_metric_frameaxis.compute()
 
                 logger.info(
-                    f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
+                    f"[TRAIN] Epoch {epoch}, Step {global_steps}: Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
                 )
                 metrics = {
                     "train_micro_f1": eval_results_micro["f1"],
@@ -689,7 +689,7 @@ class Trainer:
         avg_unsupervised_loss = unsupervised_total_loss / len(train_dataloader)
 
         logger.info(
-            f"Epoch {epoch}, Avg Total Loss: {avg_total_loss}, Avg Supervised Loss: {avg_supervised_loss}, Avg Unsupervised Loss: {avg_unsupervised_loss}"
+            f"[TRAIN] Epoch {epoch}, Step {global_steps}: Avg Total Loss: {avg_total_loss}, Avg Supervised Loss: {avg_supervised_loss}, Avg Unsupervised Loss: {avg_unsupervised_loss}"
         )
 
         self._log_metrics(
@@ -1028,7 +1028,7 @@ class Trainer:
         eval_accuracy_frameaxis = accuracy_metric_frameaxis.compute()
 
         logger.info(
-            f"Epoch {epoch}, Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
+            f"[EVALUATE] Epoch {epoch}: Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
         )
 
         metrics = {
@@ -1061,7 +1061,6 @@ class Trainer:
         return metrics
 
     def _save_best_model(self, metrics):
-        logger.info("Saving best model.")
         # save dir path
         save_dir = os.path.join(self.save_path)
         try:
@@ -1118,10 +1117,6 @@ class Trainer:
             )
             if os.path.exists(temp_config_save_path):
                 os.remove(temp_config_save_path)
-
-        logger.info(
-            f"Model, metrics, and configuration saved successfully in {save_dir}"
-        )
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
