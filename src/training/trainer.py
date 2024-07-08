@@ -232,6 +232,8 @@ class Trainer:
         ):
             global global_steps
             global_steps += 1
+
+            # Update tau every 50 steps
             if global_steps % 50 == 0:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
 
@@ -404,7 +406,7 @@ class Trainer:
                     "batch_arg0_loss": arg0_loss.item(),
                     "batch_arg1_loss": arg1_loss.item(),
                     "batch_frameaxis_loss": frameaxis_loss.item(),
-                    "tau": tau,
+                    "tau": tau, 
                     "epoch": epoch,
                 }
             )
@@ -701,7 +703,7 @@ class Trainer:
             }
         )
 
-        return early_stopping
+        return tau, early_stopping
 
     def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
         self.model.eval()
@@ -1139,7 +1141,7 @@ class Trainer:
 
         for epoch in range(1, epochs + 1):
             try:
-                early_stopping = self._train(
+                tau, early_stopping = self._train(
                     epoch,
                     self.train_dataloader,
                     tau,

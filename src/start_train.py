@@ -371,6 +371,10 @@ def main():
     training_params.add_argument(
         "--epochs", type=int, default=10, help="Number of epochs"
     )
+    # planned_epochs = 10
+    training_params.add_argument(
+        "--planned_epochs", type=int, default=10, help="Number of planned epochs"
+    )
     training_params.add_argument(
         "--test_size", type=float, default=0.1, help="Size of the test set"
     )
@@ -680,7 +684,7 @@ def main():
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=10,
-        num_training_steps=len(train_dataloader) * args.epochs,
+        num_training_steps=len(train_dataloader) * args.planned_epochs,
     )
 
     logger.info("Loss function and optimizer loaded successfully")
