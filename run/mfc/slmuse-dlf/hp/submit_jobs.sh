@@ -100,7 +100,7 @@ do
         --lr \$lr \
         --M 8 \
         --t 8 \
-        --batch_size 32 \
+        --batch_size 16 \
         --num_sentences 32 \
         --max_sentence_length 52 \
         --max_args_per_sentence 10 \
