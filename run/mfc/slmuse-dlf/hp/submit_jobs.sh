@@ -14,6 +14,8 @@ do
 #SBATCH --job-name=mfc-slmuse-dlf-batch-${split_id}
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
+#SBATCH --time=24:00:00
+#SBATCH --partition=single
 
 echo "===================== Job Details ====================="
 echo "Job settings at start:"
