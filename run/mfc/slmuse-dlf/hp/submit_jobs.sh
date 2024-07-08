@@ -100,7 +100,7 @@ do
         --lr \$lr \
         --M 8 \
         --t 8 \
-        --batch_size 16 \
+        --batch_size 8 \
         --num_sentences 32 \
         --max_sentence_length 52 \
         --max_args_per_sentence 10 \
@@ -127,7 +127,7 @@ do
         --tau_min 0.5 \
         --seed 42 \
         --mixed_precision fp16 \
-        --accumulation_steps 1 \
+        --accumulation_steps 4 \
         \$DEBUG
 
     # Clear GPU memory after each run
