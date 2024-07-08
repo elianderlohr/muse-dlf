@@ -14,8 +14,8 @@ do
 #SBATCH --job-name=mfc-slmuse-dlf-batch-${split_id}
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
-#SBATCH --time=36:00:00
-#SBATCH --partition=single
+#SBATCH --time=00:30:00
+#SBATCH --partition=devel
 
 echo "===================== Job Details ====================="
 echo "Job settings at start:"
@@ -73,7 +73,7 @@ do
     TAGS="split=${split_id},index=\${index},lr=\${lr},supervised_concat_frameaxis=\${concat_frameaxis},supervised_num_layers=\${num_layers},supervised_activation=\${activation},optimizer=\${optimizer}"
 
     echo "=================== Training Start ==================="
-    echo "Launching training script for split \$split_id and index \$index with Accelerate and the following settings:"
+    echo "Launching training script for split \${split_id} and index \$index with Accelerate and the following settings:"
     echo "lr=\$lr, concat_frameaxis=\$concat_frameaxis, num_layers=\$num_layers, activation=\$activation, optimizer=\$optimizer, weight_decay=\$weight_decay"
     accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/start_train.py \
         --model_type slmuse-dlf \
@@ -81,7 +81,8 @@ do
         --tags \$TAGS \
         --wandb_api_key \$WANDB_API_KEY \
         --path_data data/mfc/immigration_labeled_preprocessed.json \
-        --epochs 30 \
+        --epochs 3 \
+        --planned_epochs 10 \
         --frameaxis_dim 10 \
         --name_tokenizer roberta-base \
         --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -92,7 +93,7 @@ do
         --dim_names virtue,vice \
         --save_path models/slmuse-dlf/\$(date +'%Y-%m-%d_%H-%M-%S')/ \
         --embedding_dim 768 \
-        --hidden_dim 2056 \
+        --hidden_dim 768 \
         --num_classes 15 \
         --dropout_prob 0.3 \
         --alpha 0.9 \
@@ -105,17 +106,17 @@ do
         --max_sentence_length 52 \
         --max_args_per_sentence 10 \
         --max_arg_length 10 \
-        --muse_unsupervised_num_layers 4 \
+        --muse_unsupervised_num_layers 1 \
         --muse_unsupervised_activation gelu \
         --muse_unsupervised_use_batch_norm True \
         --muse_unsupervised_matmul_input g \
         --muse_unsupervised_gumbel_softmax_log False \
-        --muse_frameaxis_unsupervised_num_layers 4 \
+        --muse_frameaxis_unsupervised_num_layers 1 \
         --muse_frameaxis_unsupervised_activation gelu \
         --muse_frameaxis_unsupervised_use_batch_norm True \
         --muse_frameaxis_unsupervised_matmul_input g \
         --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-        --num_negatives 128 \
+        --num_negatives 32 \
         --supervised_concat_frameaxis \$concat_frameaxis \
         --supervised_num_layers \$num_layers \
         --supervised_activation \$activation \
@@ -127,7 +128,7 @@ do
         --tau_min 0.5 \
         --seed 42 \
         --mixed_precision fp16 \
-        --accumulation_steps 4 \
+        --accumulation_steps 2 \
         \$DEBUG
 
     # Clear GPU memory after each run
