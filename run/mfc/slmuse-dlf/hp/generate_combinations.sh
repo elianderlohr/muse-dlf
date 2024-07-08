@@ -1,8 +1,8 @@
 #!/bin/bash
 
 learning_rates=(0.0001 0.0003 0.0005 0.001)
-supervised_concat_frameaxis_values=(false)
-supervised_num_layers_values=(1 2 3)
+supervised_concat_frameaxis_values=(true false)
+supervised_num_layers_values=(1 2)
 supervised_activations=("gelu" "relu")
 optimizers=("adam" "adamw")
 
