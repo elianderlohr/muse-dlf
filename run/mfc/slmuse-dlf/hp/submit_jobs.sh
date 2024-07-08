@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# Define the path to the combination files
+combination_files_path="run/mfc/slmuse-dlf/hp"
+
 # Submit jobs for each combination file
-for file in combination_*
+for file in ${combination_files_path}/combination_*
 do
     split_id=${file##*_} # Extract the split identifier
     sbatch <<EOT
