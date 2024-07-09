@@ -133,7 +133,7 @@ do
     # Clear GPU memory after each run
     clear_gpu_memory
 
-    sleep $((RANDOM % 60))
+    sleep 60
 
 done < $file
 
