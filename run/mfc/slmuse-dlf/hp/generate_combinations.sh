@@ -13,7 +13,7 @@ for pooling in "${srl_embeddings_pooling[@]}"; do
         for activation in "${supervised_activations[@]}"; do
             lr=0.0003
             weight_decay=0.0001
-            echo "$lr $dropout_prob $activation $pooling $weight_decay" >> $output_file
+            echo "$lr $dropout $activation $pooling $weight_decay" >> $output_file
         done
     done
 done
