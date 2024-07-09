@@ -66,15 +66,14 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # Iterate through combinations and run them sequentially
 index=0
-while read lr concat_frameaxis num_layers activation optimizer weight_decay
+while read lr dropout_prob activation pooling weight_decay
 do
     index=\$((index + 1))
-    JOB_NAME="mfc-slmuse-dlf-train-4-split${split_id}-idx\${index}-lr\${lr}-concat\${concat_frameaxis}-layers\${num_layers}-activation\${activation}-opt\${optimizer}"
-    TAGS="split=${split_id},index=\${index},lr=\${lr},supervised_concat_frameaxis=\${concat_frameaxis},supervised_num_layers=\${num_layers},supervised_activation=\${activation},optimizer=\${optimizer}"
+    JOB_NAME="mfc-slmuse-dlf-train-4-split${split_id}-idx\${index}-lr\${lr}-dropout\${dropout_prob}-activation\${activation}-pooling\${pooling}"
+    TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},supervised_activation=\${activation},srl_embeddings_pooling=\${pooling}"
 
     echo "=================== Training Start ==================="
-    echo "Launching training script for split \${split_id} and index \$index with Accelerate and the following settings:"
-    echo "lr=\$lr, concat_frameaxis=\$concat_frameaxis, num_layers=\$num_layers, activation=\$activation, optimizer=\$optimizer, weight_decay=\$weight_decay"
+    echo "Launching training script with Accelerate..."
     accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/start_train.py \
         --model_type slmuse-dlf \
         --project_name slmuse-dlf \
@@ -95,7 +94,7 @@ do
         --embedding_dim 768 \
         --hidden_dim 768 \
         --num_classes 15 \
-        --dropout_prob 0.3 \
+        --dropout_prob \$dropout_prob \
         --alpha 0.9 \
         --lambda_orthogonality 0.001626384818258435 \
         --lr \$lr \
@@ -117,13 +116,13 @@ do
         --muse_frameaxis_unsupervised_matmul_input g \
         --muse_frameaxis_unsupervised_gumbel_softmax_log False \
         --num_negatives 32 \
-        --supervised_concat_frameaxis \$concat_frameaxis \
-        --supervised_num_layers \$num_layers \
+        --supervised_concat_frameaxis false \
+        --supervised_num_layers 1 \
         --supervised_activation \$activation \
-        --optimizer \$optimizer \
+        --optimizer adamw \
         --adamw_weight_decay \$weight_decay \
         --adam_weight_decay \$weight_decay \
-        --srl_embeddings_pooling mean \
+        --srl_embeddings_pooling \$pooling \
         --tau_decay 0.0004682416233229908 \
         --tau_min 0.5 \
         --seed 42 \
