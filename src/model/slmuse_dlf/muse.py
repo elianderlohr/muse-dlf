@@ -111,7 +111,7 @@ class SLMUSEDLF(nn.Module):
         )
 
         if use_alternative_supervised:
-            self.logger.debug("🔄 Using alternative supervised module")
+            self.logger.info("🔄 Using alternative supervised module")
             # Supervised training module
             self.supervised = SLMUSESupervisedAlternative(
                 embedding_dim,
@@ -125,7 +125,7 @@ class SLMUSEDLF(nn.Module):
                 _debug=_debug,
             )
         else:
-            self.logger.debug("🔄 Using default supervised module")
+            self.logger.info("🔄 Using default supervised module")
 
             # Supervised training module
             self.supervised = SLMUSESupervised(
