@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from model.slmuse_dlf.embeddings import SLMUSEEmbeddings
 from model.slmuse_dlf.supervised_module import SLMUSESupervised
-from model.slmuse_dlf.supervised_module_alternative import SLMUSESupervisedAlternative
+from model.slmuse_dlf.supervised_module_alternative1 import SLMUSESupervisedAlternative1
 from model.slmuse_dlf.unsupervised_module import SLMUSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import SLMUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -113,7 +113,7 @@ class SLMUSEDLF(nn.Module):
         if use_alternative_supervised:
             self.logger.info("🔄 Using alternative supervised module")
             # Supervised training module
-            self.supervised = SLMUSESupervisedAlternative(
+            self.supervised = SLMUSESupervisedAlternative1(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,

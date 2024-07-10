@@ -135,7 +135,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --num_negatives 128 \
     --supervised_concat_frameaxis False \
-    --supervised_num_layers 1 \
+    --supervised_num_layers 3 \
     --supervised_activation gelu \
     --adamw_weight_decay 0.0001 \
     --optimizer adamw \
