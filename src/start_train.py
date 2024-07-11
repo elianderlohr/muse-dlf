@@ -594,6 +594,7 @@ def main():
         "mixed_precision": args.mixed_precision,
         "num_negatives": args.num_negatives,
         "accumulation_steps": args.accumulation_steps,
+        "sample_size": args.sample_size,
     }
 
     # generate run name
@@ -610,6 +611,8 @@ def main():
     )
 
     wandb_tracker = accelerator.get_tracker("wandb", unwrap=True)
+
+    wandb_tracker.store_init_configuration(config)
 
     if args.seed:
         set_seed(args.seed)

@@ -1101,30 +1101,18 @@ class Trainer:
                 f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
             )
 
-        # save model configuration
-        config_save_path = os.path.join(save_dir, "model_config.json")
-        try:
-            with open(config_save_path, "w") as f:
-                json.dump(self.model.config, f)
-        except Exception as e:
-            logger.error(
-                f"Warning: Failed to save model configuration at {config_save_path}. Exception: {e}"
-            )
-
         # Save to wandb
         if self.training_management == "wandb":
-            self.wandb.log_model(model_save_path)
-
-            self.wandb.log_artifact(metrics_save_path)
-            self.wandb.log_artifact(config_save_path)
+            self.wandb.log_artifact(metrics_save_path, "metrics")
+            
+            self.wandb.log_model(model_save_path, "model")
 
         if self.training_management == "accelerate":
             wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
             if self.accelerator.is_main_process:
-                wandb_tracker.log_artifact(metrics_save_path)
-                wandb_tracker.log_artifact(config_save_path)
+                wandb_tracker.log_artifact(metrics_save_path, "metrics")
 
-                wandb_tracker.log_model(model_save_path)
+                wandb_tracker.log_model(model_save_path, "model")
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
