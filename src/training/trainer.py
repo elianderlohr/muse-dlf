@@ -1063,6 +1063,15 @@ class Trainer:
         return metrics
 
     def _save_best_model(self, metrics):
+
+        def save_model(model_to_save: torch.nn.Module, model_save_path: str):
+            if self.is_accelerate and self.accelerator.is_local_main_process:
+                self.accelerator.wait_for_everyone()
+                state = self.accelerator.get_state_dict(model_to_save)
+                self.accelerator.save(state, model_save_path)
+            else:
+                torch.save(model_to_save.state_dict(), model_save_path)
+
         # save dir path
         save_dir = os.path.join(self.save_path)
         try:
@@ -1082,7 +1091,7 @@ class Trainer:
         model_save_path = os.path.join(save_dir, "model.pth")
         temp_model_save_path = model_save_path + ".tmp"
         try:
-            torch.save(self.model.state_dict(), temp_model_save_path)
+            save_model(self.model, temp_model_save_path)
             os.rename(temp_model_save_path, model_save_path)
         except Exception as e:
             logger.error(
