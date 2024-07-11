@@ -767,6 +767,7 @@ def main():
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
         save_path=save_path,
+        run_name=run_name,
         accelerator_instance=accelerator,
         mixed_precision=args.mixed_precision,
         accumulation_steps=args.accumulation_steps,

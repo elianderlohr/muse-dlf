@@ -25,6 +25,7 @@ class Trainer:
         model_type="muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
+        run_name="",
         training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
@@ -42,6 +43,7 @@ class Trainer:
         self.scheduler = scheduler
         self.device = device
         self.save_path = save_path
+        self.run_name = run_name
         self.tau_min = tau_min
         self.tau_decay = tau_decay
         self.early_stop = early_stop
@@ -664,6 +666,9 @@ class Trainer:
                         early_stopping["early_stopped"] = True
                         return early_stopping
 
+            # todo
+            self._save_best_model({})
+
             # Delete tensors after logging metrics
             del (
                 labels,
@@ -1101,16 +1106,16 @@ class Trainer:
 
         # Save to wandb
         if self.training_management == "wandb":
-            self.wandb.log_artifact(metrics_save_path, "metrics", "metrics")
+            self.wandb.log_artifact(metrics_save_path, f"{self.run_name.replace("-", "_")}_metrics", "metrics")
 
-            self.wandb.log_model(model_save_path, "model")
+            self.wandb.log_model(model_save_path, f"{self.run_name.replace("-", "_")}_model")
 
         if self.training_management == "accelerate":
             wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
             if self.accelerator.is_main_process:
-                wandb_tracker.log_artifact(metrics_save_path, "metrics", "metrics")
+                wandb_tracker.log_artifact(metrics_save_path, f"{self.run_name.replace("-", "_")}_metrics", "metrics")
 
-                wandb_tracker.log_model(model_save_path, "model")
+                wandb_tracker.log_model(model_save_path, f"{self.run_name.replace("-", "_")}_model")
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
