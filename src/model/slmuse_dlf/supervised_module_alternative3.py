@@ -158,7 +158,7 @@ class ResidualBlock(nn.Module):
         self.dropout = nn.Dropout(dropout_prob)
         self.use_layer_norm = use_layer_norm
         if use_layer_norm:
-            self.layer_norm = LayerNorm(output_dim)
+            self.layer_norm = nn.LayerNorm(output_dim)
 
     def forward(self, x):
         residual = x
