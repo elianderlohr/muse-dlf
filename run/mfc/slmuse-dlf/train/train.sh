@@ -118,7 +118,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --lr 0.0003 \
     --M 8 \
     --t 8 \
-    --batch_size 8 \
+    --batch_size 32 \
     --num_sentences 32 \
     --max_sentence_length 52 \
     --max_args_per_sentence 10 \
@@ -145,7 +145,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised default \
+    --alternative_supervised alt2 \
     $DEBUG
 
 # Cleanup and Closeout
