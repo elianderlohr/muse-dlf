@@ -230,22 +230,14 @@ def main():
     )
 
     # Log the train dataset artifact
-    train_artifact = wandb.Artifact("train_dataset_artifact", type="dataset")
-    train_artifact.add_file(train_artifact_filepath)
-    run.log_artifact(train_artifact)
-
-    # Log the test dataset artifact
-    test_artifact = wandb.Artifact("test_dataset_artifact", type="dataset")
-    test_artifact.add_file(test_artifact_filepath)
-    run.log_artifact(test_artifact)
+    artifact = wandb.Artifact("mfc_dataset", type="dataset")
+    artifact.add_file(train_artifact_filepath)
+    artifact.add_file(test_artifact_filepath)
+    run.log_artifact(artifact)
 
     # Link the artifacts
     run.link_artifact(
-        train_artifact,
-        target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
-    )
-    run.link_artifact(
-        test_artifact,
+        artifact,
         target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
     )
 
