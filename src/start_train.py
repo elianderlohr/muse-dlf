@@ -647,10 +647,6 @@ def main():
 
     logger.info("Running the model with the following arguments: %s", args)
 
-    if args.seed:
-        set_seed(args.seed)
-        logger.info("Random seed set to: %d", args.seed)
-
     config = {
         "embedding_dim": args.embedding_dim,
         "hidden_dim": args.hidden_dim,
@@ -708,6 +704,10 @@ def main():
         args.mixed_precision,
         run_name,
     )
+
+    if args.seed:
+        set_seed(args.seed)
+        logger.info("Random seed set to: %d", args.seed)
 
     # build save path
     save_path = f"{args.save_base_path}/{run_name}"
