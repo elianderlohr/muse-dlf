@@ -1123,9 +1123,8 @@ class Trainer:
             )
 
         model_artifact = wandb.Artifact(
-            f"{self.run_name.replace('-', '_')}_model",
+            name=f"{self.run_name.replace('-', '_')}_model",
             type="model",
-            name=self.run_name,
             metadata=self.model_config,
         )
 
