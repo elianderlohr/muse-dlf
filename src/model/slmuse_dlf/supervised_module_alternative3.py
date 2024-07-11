@@ -49,17 +49,17 @@ class SLMUSESupervisedAlternative3(nn.Module):
         input_dim = D_h * num_sentences
 
         # First layer
-        layers.append(nn.Linear(input_dim, 512))
+        layers.append(nn.Linear(input_dim, 768))
         if use_layer_norm:
-            layers.append(LayerNorm(512))
+            layers.append(nn.LayerNorm(768))
         else:
-            layers.append(nn.BatchNorm1d(512))
+            layers.append(nn.BatchNorm1d(768))
         layers.append(self.activations[0])  # GELU
         layers.append(nn.Dropout(dropout_prob))
 
         # Second layer with residual connection
         layers.append(
-            ResidualBlock(512, 256, dropout_prob, self.activations[1], use_layer_norm)
+            ResidualBlock(768, 256, dropout_prob, self.activations[1], use_layer_norm)
         )
 
         # Output layer
