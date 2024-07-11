@@ -159,9 +159,13 @@ class ResidualBlock(nn.Module):
         self.use_layer_norm = use_layer_norm
         if use_layer_norm:
             self.layer_norm = nn.LayerNorm(output_dim)
+        if input_dim != output_dim:
+            self.residual_transform = nn.Linear(input_dim, output_dim)
+        else:
+            self.residual_transform = nn.Identity()
 
     def forward(self, x):
-        residual = x
+        residual = self.residual_transform(x)
         out = self.linear(x)
         if self.use_layer_norm:
             out = self.layer_norm(out)
