@@ -1067,7 +1067,10 @@ class Trainer:
     def _save_best_model(self, metrics):
 
         def save_model(model_to_save: torch.nn.Module, model_save_path: str):
-            if self.is_accelerate and self.accelerator.is_local_main_process:
+            if (
+                self.training_management == "accelerate"
+                and self.accelerator.is_local_main_process
+            ):
                 self.accelerator.wait_for_everyone()
                 state = self.accelerator.get_state_dict(model_to_save)
                 self.accelerator.save(state, model_save_path)
