@@ -664,6 +664,8 @@ class Trainer:
                         early_stopping["early_stopped"] = True
                         return early_stopping
 
+            self._save_best_model({"test": "test"})
+
             # Delete tensors after logging metrics
             del (
                 labels,
