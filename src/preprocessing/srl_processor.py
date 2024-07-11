@@ -37,16 +37,16 @@ class SRLProcessor:
                 "Invalid save_type. Must be one of 'csv', 'pickle', or 'json'."
             )
 
-    def get_srl_embeddings(self):
+    def get_srl_embeddings(self, batch_size=32):
         """
         Main method to process the SRL components, either by loading them from a pickle file or by recalculating.
         """
         if self.force_recalculate or not os.path.exists(self.dataframe_path):
-            return self._recalculate_srl()
+            return self._recalculate_srl(batch_size=batch_size)
         else:
             return self._load_srl()
 
-    def _recalculate_srl(self):
+    def _recalculate_srl(self, batch_size=32):
         """
         Recalculates the SRL components for the sentences in the DataFrame and returns a DataFrame
         with columns for article_id, text, and srls, where srls is a list of SRL components for each text entry.
@@ -61,7 +61,7 @@ class SRLProcessor:
         )
 
         # Convert the processed data into a DataFrame
-        result_df = self._batch_process_srl_with_ids(self.df, predictor)
+        result_df = self._batch_process_srl_with_ids(self.df, predictor, batch_size)
 
         # Save the DataFrame if a path is specified
         if self.dataframe_path:
@@ -143,10 +143,11 @@ class SRLProcessor:
         ):
             # Slice the DataFrame to get the current batch
             batch_df = df.iloc[i : i + batch_size]
-            # Convert the batch into a list of records for processing
-            batch_records = batch_df.to_dict("records")
+
+            batched_dict = batch_df.to_dict(orient="records")
+
             # Extract SRLs for the batch of records
-            batch_results = self._extract_srl_batch(batch_records, predictor)
+            batch_results = self._extract_srl_batch(batched_dict, predictor)
             # Add the batch results to the main list
             srl_data.extend(batch_results)
         return pd.DataFrame(srl_data)

@@ -9,10 +9,43 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import pickle
 from sklearn.model_selection import train_test_split
+from nltk.tokenize import sent_tokenize
+import re
 
 from utils.logging_manager import LoggerManager
 
 logger = LoggerManager.get_logger(__name__)
+
+
+def preprocess_text(text):
+    text = text.replace("\n\n", ". ")
+    text = text.replace(".. ", ". ")
+    text = text.replace("  ", " ")
+    text = text.strip()
+    text = re.sub(r"^IMM-\d+. PRIMARY. ", "", text)
+    text = text.strip()
+    return text
+
+
+def expand_row(row):
+    sentences = sent_tokenize(row["text"])
+    return pd.DataFrame(
+        {
+            "article_id": [row["article_id"]] * len(sentences),
+            "text": sentences,
+            **{
+                col: [row[col]] * len(sentences)
+                for col in row.index
+                if col not in ["article_id", "text"]
+            },
+        }
+    )
+
+
+def split_sentences_in_df(df):
+    list_of_dataframes = df.progress_apply(expand_row, axis=1)
+    new_df = pd.concat(list_of_dataframes.tolist(), ignore_index=True)
+    return new_df
 
 
 class PreProcessor:
@@ -29,6 +62,7 @@ class PreProcessor:
         bert_model_name="bert-base-uncased",
         name_tokenizer="bert-base-uncased",
         path_name_bert_model="bert-base-uncased",
+        # frameaxis
         path_antonym_pairs="frameaxis/axes/custom.tsv",
         dim_names=["positive", "negative"],
         class_column_names=[
@@ -77,6 +111,8 @@ class PreProcessor:
         self.bert_model_name = bert_model_name
         self.name_tokenizer = name_tokenizer
         self.path_name_bert_model = path_name_bert_model
+
+        # frameaxis
         self.path_antonym_pairs = path_antonym_pairs
         self.dim_names = dim_names
 
@@ -105,6 +141,7 @@ class PreProcessor:
         dataframe_path={
             "srl": "data/srls/mfc/srls.pkl",
             "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+            "frameaxis_microframe": "data/frameaxis/mfc/frameaxis_microframes.pkl",
         },
         force_recalculate={
             "srl": False,
@@ -117,7 +154,7 @@ class PreProcessor:
         df = df.reset_index(drop=True)
 
         srl_processor = SRLProcessor(
-            df["text"],
+            df,
             dataframe_path=dataframe_path.get("srl", None),
             force_recalculate=force_recalculate.get("srl", False),
         )
@@ -126,15 +163,17 @@ class PreProcessor:
         srl_df = srl_df.reset_index(drop=True)
 
         frameaxis_processor = FrameAxisProcessor(
-            df,
-            dataframe_path=dataframe_path.get("frameaxis", None),
-            force_recalculate=force_recalculate.get("frameaxis", False),
+            df=df,
+            path_antonym_pairs=self.path_antonym_pairs,
+            save_path=dataframe_path.get("frameaxis", None),
+            path_microframes=dataframe_path.get("frameaxis_microframe", None),
             bert_model_name=self.bert_model_name,
             name_tokenizer=self.name_tokenizer,
             path_name_bert_model=self.path_name_bert_model,
-            path_antonym_pairs=self.path_antonym_pairs,
+            force_recalculate=force_recalculate.get("frameaxis", False),
             save_type="pickle",
             dim_names=self.dim_names,
+            word_blacklist=[],
         )
         frameaxis_df = frameaxis_processor.get_frameaxis_data()
 
@@ -184,6 +223,7 @@ class PreProcessor:
         dataframe_path={
             "srl": "data/srls/mfc/srls.pkl",
             "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+            "frameaxis_microframe": "data/frameaxis/mfc/frameaxis_microframes.pkl",
         },
         force_recalculate={
             "srl": False,
@@ -315,3 +355,91 @@ class PreProcessor:
         )
 
         return train_dataset, test_dataset, train_dataloader, test_dataloader
+
+    def preprocess_single_article(
+        self,
+        text,
+        frameaxis_microframe_path="../../data/frameaxis/mfc/frameaxis_mft_microframes.pkl",
+        frameaxis_word_blacklist=[],
+        cuda=False,
+    ):
+        text = preprocess_text(text)
+        sentences = sent_tokenize(text)
+        df = pd.DataFrame({"article_id": [0] * len(sentences), "text": sentences})
+
+        srl_processor = SRLProcessor(
+            df,
+            dataframe_path=None,
+            force_recalculate=True,
+            device=-1 if not cuda else 0,
+        )
+        srl_df = srl_processor.get_srl_embeddings()
+        srl_df = srl_df.reset_index(drop=True)
+
+        frameaxis_processor = FrameAxisProcessor(
+            df=df,
+            path_antonym_pairs=self.path_antonym_pairs,
+            save_path=None,
+            path_microframes=frameaxis_microframe_path,
+            bert_model_name=self.bert_model_name,
+            name_tokenizer=self.name_tokenizer,
+            path_name_bert_model=self.path_name_bert_model,
+            force_recalculate=True,
+            save_type="pickle",
+            dim_names=self.dim_names,
+            word_blacklist=frameaxis_word_blacklist,
+        )
+        frameaxis_df = frameaxis_processor.get_frameaxis_data()
+        frameaxis_df = frameaxis_df.reset_index(drop=True)
+
+        X_srl_subset = (
+            srl_df.groupby(df["article_id"])["srls"]
+            .apply(lambda x: x.values.tolist())
+            .reset_index(name="srl_values")
+        )
+
+        frameaxis_cols = frameaxis_df.columns.tolist()
+        if "article_id" in frameaxis_cols:
+            frameaxis_cols.remove("article_id")
+        if "text" in frameaxis_cols:
+            frameaxis_cols.remove("text")
+        frameaxis_df["frameaxis_values"] = frameaxis_df[frameaxis_cols].apply(
+            list, axis=1
+        )
+        frameaxis_df = frameaxis_df[["article_id", "frameaxis_values"]]
+
+        frameaxis_df_subset = (
+            frameaxis_df.groupby(frameaxis_df["article_id"])["frameaxis_values"]
+            .apply(lambda x: x.values.tolist())
+            .reset_index(name="frameaxis_values")
+        )
+
+        X_subset = df.groupby("article_id")["text"].apply(list).reset_index(name="text")
+
+        assert len(X_subset) == len(X_srl_subset)
+        assert len(X_subset) == len(frameaxis_df_subset)
+
+        dataset = ArticleDataset(
+            X_subset["text"],
+            X_srl_subset["srl_values"],
+            frameaxis_df_subset["frameaxis_values"],
+            self.tokenizer,
+            [None] * len(X_subset),
+            max_sentences_per_article=self.max_sentences_per_article,
+            max_sentence_length=self.max_sentence_length,
+            max_args_per_sentence=self.max_args_per_sentence,
+            max_arg_length=self.max_arg_length,
+            frameaxis_dim=self.frameaxis_dim,
+            train_mode=False,
+        )
+
+        dataloader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            collate_fn=custom_collate_fn,
+            drop_last=False,
+            pin_memory=True,
+            num_workers=1,
+        )
+
+        return dataset, dataloader

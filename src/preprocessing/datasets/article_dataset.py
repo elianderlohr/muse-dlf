@@ -17,6 +17,7 @@ class ArticleDataset(Dataset):
         max_args_per_sentence=10,
         max_arg_length=16,
         frameaxis_dim=20,
+        train_mode=True,
     ):
         self.X = X
         self.X_srl = X_srl
@@ -30,6 +31,8 @@ class ArticleDataset(Dataset):
         self.max_arg_length = max_arg_length
 
         self.frameaxis_dim = frameaxis_dim
+
+        self.train_mode = train_mode
 
     def __len__(self):
         return len(self.X)
@@ -98,7 +101,7 @@ class ArticleDataset(Dataset):
         frameaxis_data = self.X_frameaxis.loc[idx]
 
         # labels
-        labels = self.labels.loc[idx]
+        labels = self.labels.loc[idx] if self.train_mode else None
 
         # Tokenize sentences and get attention masks
         sentence_ids, sentence_attention_masks = [], []
@@ -304,8 +307,10 @@ class ArticleDataset(Dataset):
                 arg1_attention_masks, dtype=torch.long
             ),
             "frameaxis": torch.tensor(frameaxis_data, dtype=torch.float),
-            "labels": torch.tensor(labels[0], dtype=torch.long),
         }
+
+        if self.train_mode:
+            data["labels"] = torch.tensor(labels[0], dtype=torch.long)
 
         return data
 
@@ -321,37 +326,20 @@ def custom_collate_fn(batch):
     arg1_ids = [item["arg1_ids"] for item in batch]
     arg1_attention_masks = [item["arg1_attention_masks"] for item in batch]
     frameaxis = [item["frameaxis"] for item in batch]
-    labels = [item["labels"] for item in batch]
 
-    # Pad each list
-    sentence_ids = torch.nn.utils.rnn.pad_sequence(
-        sentence_ids, batch_first=True, padding_value=0
-    )
-    sentence_attention_masks = torch.nn.utils.rnn.pad_sequence(
-        sentence_attention_masks, batch_first=True, padding_value=0
-    )
-    predicate_ids = torch.nn.utils.rnn.pad_sequence(
-        predicate_ids, batch_first=True, padding_value=0
-    )
-    predicate_attention_masks = torch.nn.utils.rnn.pad_sequence(
-        predicate_attention_masks, batch_first=True, padding_value=0
-    )
-    arg0_ids = torch.nn.utils.rnn.pad_sequence(
-        arg0_ids, batch_first=True, padding_value=0
-    )
-    arg0_attention_masks = torch.nn.utils.rnn.pad_sequence(
-        arg0_attention_masks, batch_first=True, padding_value=0
-    )
-    arg1_ids = torch.nn.utils.rnn.pad_sequence(
-        arg1_ids, batch_first=True, padding_value=0
-    )
-    arg1_attention_masks = torch.nn.utils.rnn.pad_sequence(
-        arg1_attention_masks, batch_first=True, padding_value=0
-    )
-    frameaxis = torch.nn.utils.rnn.pad_sequence(
-        frameaxis, batch_first=True, padding_value=0
-    )
-    labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=0)
+    if "labels" in batch[0]:
+        labels = [item["labels"] for item in batch]
+
+    # Convert lists to tensors
+    sentence_ids = torch.stack(sentence_ids)
+    sentence_attention_masks = torch.stack(sentence_attention_masks)
+    predicate_ids = torch.stack(predicate_ids)
+    predicate_attention_masks = torch.stack(predicate_attention_masks)
+    arg0_ids = torch.stack(arg0_ids)
+    arg0_attention_masks = torch.stack(arg0_attention_masks)
+    arg1_ids = torch.stack(arg1_ids)
+    arg1_attention_masks = torch.stack(arg1_attention_masks)
+    frameaxis = torch.stack(frameaxis)
 
     # Create the output dictionary
     output_dict = {
@@ -364,7 +352,10 @@ def custom_collate_fn(batch):
         "arg1_ids": arg1_ids,
         "arg1_attention_masks": arg1_attention_masks,
         "frameaxis": frameaxis,
-        "labels": labels,
     }
+
+    if "labels" in batch[0]:
+        labels = torch.stack(labels)
+        output_dict["labels"] = labels
 
     return output_dict

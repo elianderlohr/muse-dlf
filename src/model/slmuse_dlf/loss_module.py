@@ -7,7 +7,7 @@ from torch.cuda.amp import autocast
 
 class SLMUSELossModule(nn.Module):
     def __init__(self, lambda_orthogonality, M, t, _debug=False):
-        super(SLMUSELossModule, self).__init__()
+        super().__init__()
         self.logger = LoggerManager.get_logger(__name__)
         self.lambda_orthogonality = lambda_orthogonality
         self.M = M
@@ -39,7 +39,7 @@ class SLMUSELossModule(nn.Module):
 
         loss = loss / N
         loss = loss * mask.float()
-        return loss.sum() / mask.sum()
+        return loss.sum() / mask.sum()  # Ensure scalar output
 
     def focal_triplet_loss(self, v, vhat_z, g, F, mask):
         if mask.sum() == 0:
@@ -63,13 +63,13 @@ class SLMUSELossModule(nn.Module):
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
         loss = loss * mask.float()
-        return loss.sum() / torch.clamp(mask.sum(), min=1)
+        return loss.sum() / torch.clamp(mask.sum(), min=1)  # Ensure scalar output
 
     def orthogonality_term(self, F, reg=1e-4):
         gram_matrix = torch.mm(F, F.T)
         identity_matrix = torch.eye(gram_matrix.size(0), device=gram_matrix.device)
         ortho_loss = (gram_matrix - identity_matrix).abs().sum()
-        return ortho_loss
+        return ortho_loss  # Ensure scalar output
 
     def forward(
         self,
@@ -93,6 +93,7 @@ class SLMUSELossModule(nn.Module):
             v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
             Ju = self.contrastive_loss(v, vhat, negatives, mask)
             Jt = self.focal_triplet_loss(v, vhat, g, F, mask)
-            Jz = Ju + Jt + self.lambda_orthogonality * self.orthogonality_term(F) ** 2
+            ortho_term = self.lambda_orthogonality * self.orthogonality_term(F)
+            Jz = Ju + Jt + ortho_term
 
-        return Jz
+        return Jz  # Ensure scalar output

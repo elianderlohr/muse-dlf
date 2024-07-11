@@ -108,29 +108,38 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --hidden_dim 768 \
     --num_classes 14 \
     --dropout_prob 0.3 \
-    --alpha 0.5 \
-    --lambda_orthogonality 0.01 \
-    --lr 0.0001 \
+    --alpha 0.9 \
+    --lambda_orthogonality 0.001626384818258435 \
+    --lr 0.0001036694641733833 \
     --M 8 \
     --t 8 \
-    --batch_size 8 \
-    --num_sentences 32 \
+    --batch_size 4 \
+    --num_sentences 64 \
     --max_sentence_length 64 \
-    --max_args_per_sentence 10 \
+    --max_args_per_sentence 20 \
     --max_arg_length 10 \
-    --muse_unsupervised_num_layers 2 \
+    --muse_unsupervised_num_layers 4 \
     --muse_unsupervised_activation relu \
     --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
     --muse_unsupervised_gumbel_softmax_log False \
-    --muse_frameaxis_unsupervised_num_layers 2 \
+    --muse_frameaxis_unsupervised_num_layers 4 \
     --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-    --supervised_concat_frameaxis True \
+    --num_negatives 128 \
+    --supervised_concat_frameaxis False \
     --supervised_num_layers 2 \
     --supervised_activation relu \
+    --adamw_weight_decay 0.0001 \
+    --optimizer adamw \
+    --srl_embeddings_pooling mean \
+    --tau_decay 0.0004682416233229908 \
+    --tau_min 0.5 \
+    --seed 42 \
+    --mixed_precision fp16 \
+    --accumulation_steps 1 \
     $DEBUG
 
 # Cleanup and Closeout
