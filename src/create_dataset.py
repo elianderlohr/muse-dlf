@@ -68,7 +68,7 @@ def main():
     )
     # project
     required_args.add_argument(
-        "----project_name",
+        "--project_name",
         type=str,
         default="mfc-roberta-finetune",
         help="Project name",
