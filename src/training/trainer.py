@@ -6,6 +6,7 @@ from tqdm import tqdm
 import math
 import evaluate
 from wandb import AlertLevel
+from src import model
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast, GradScaler
@@ -1112,11 +1113,19 @@ class Trainer:
             )
 
         # Save to wandb
-        if self.training_management == "wandb" or self.training_management == "accelerate":        
+        if self.training_management == "wandb":
             self.wandb.log_model(model_save_path)
 
             self.wandb.log_artifact(metrics_save_path)
             self.wandb.log_artifact(config_save_path)
+
+        if self.training_management == "accelerate":
+            wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
+            if self.accelerator.is_main_process:
+                wandb_tracker.log_artifact(metrics_save_path)
+                wandb_tracker.log_artifact(config_save_path)
+
+                wandb_tracker.log_model(model_save_path)
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
