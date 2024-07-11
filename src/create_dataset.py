@@ -221,6 +221,7 @@ def main():
     logger.info("Data loaded successfully")
 
     # save the datasets to W&B
+    wandb.login(key=args.wandb_api_key)
     # Initialize W&B run
     run = wandb.init(project=args.project_name)
 
