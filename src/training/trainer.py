@@ -1106,16 +1106,16 @@ class Trainer:
 
         # Save to wandb
         if self.training_management == "wandb":
-            self.wandb.log_artifact(metrics_save_path, f"{self.run_name.replace("-", "_")}_metrics", "metrics")
+            self.wandb.log_artifact(metrics_save_path, f"{self.run_name.replace('-', '_')}_metrics", "metrics")
 
-            self.wandb.log_model(model_save_path, f"{self.run_name.replace("-", "_")}_model")
+            self.wandb.log_model(model_save_path, f"{self.run_name.replace('-', '_')}_model")
 
         if self.training_management == "accelerate":
             wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
             if self.accelerator.is_main_process:
-                wandb_tracker.log_artifact(metrics_save_path, f"{self.run_name.replace("-", "_")}_metrics", "metrics")
+                wandb_tracker.log_artifact(metrics_save_path, f"{self.run_name.replace('-', '_')}_metrics", "metrics")
 
-                wandb_tracker.log_model(model_save_path, f"{self.run_name.replace("-", "_")}_model")
+                wandb_tracker.log_model(model_save_path, f"{self.run_name.replace('-', '_')}_model")
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
