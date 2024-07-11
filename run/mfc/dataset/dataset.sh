@@ -84,8 +84,7 @@ echo "Launching dataset creation script..."
 
 echo "______________________________________________________"
 
-src/start_train.py \
-    --model_type slmuse-dlf \
+python src/create_dataset.py \
     --project_name slmuse-dlf \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
