@@ -140,13 +140,13 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --adamw_weight_decay 0.0001 \
     --optimizer adamw \
     --sentence_pooling mean \
-    --hidden_state last \
+    --hidden_state second_to_last \
     --tau_decay 0.0004682416233229908 \
     --tau_min 0.5 \
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt2 \
+    --alternative_supervised alt5 \
     $DEBUG
 
 # Cleanup and Closeout
