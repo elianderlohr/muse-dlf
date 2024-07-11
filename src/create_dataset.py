@@ -38,15 +38,6 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
-def setup_logging(debug):
-    if debug:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
-    else:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
-    logger = LoggerManager.get_logger(__name__)
-    return logger
-
-
 def set_seed(seed):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
@@ -157,16 +148,13 @@ def main():
         default=False,
         help="Force recalculate FrameAxis",
     )
-    # debug
-    required_args.add_argument(
-        "--debug", type=str2bool, default=False, help="Debug mode"
-    )
     required_args.add_argument("--seed", type=int, default=42, help="Random seed")
 
     args = parser.parse_args()
 
     # Setup logging
-    logger = setup_logging(args.debug)
+    LoggerManager.use_accelerate(accelerate_used=False, log_level="INFO")
+    logger = LoggerManager.get_logger(__name__)
 
     logger.info("Create dataset started")
 
