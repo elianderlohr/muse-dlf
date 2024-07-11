@@ -134,13 +134,6 @@ def main():
         default="positive,negative",
         help="Dimension names for the FrameAxis",
     )
-    required_args.add_argument(
-        "--save_base_path",
-        type=str,
-        default="",
-        help="Base path to save the model",
-        required=True,
-    )
     # class_column_names
     required_args.add_argument(
         "--class_column_names",

@@ -62,9 +62,7 @@ done
 # Data and Output Configuration
 echo "Configuring paths..."
 DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
-SAVE_BASE_PATH="models/slmuse-dlf/"
 echo "Data path: $DATA_PATH"
-echo "Output path: $SAVE_BASE_PATH"
 
 CLASS_COLUMN_NAMES="Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense"
 echo "Class column names: $CLASS_COLUMN_NAMES"
