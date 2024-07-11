@@ -24,6 +24,8 @@ import wandb
 from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
+from utils.wandb_utils import save_model_to_wandb
+
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
@@ -607,6 +609,8 @@ def main():
         run_name,
     )
 
+    wandb_tracker = accelerator.get_tracker("wandb")
+
     if args.seed:
         set_seed(args.seed)
         logger.info("Random seed set to: %d", args.seed)
@@ -770,6 +774,9 @@ def main():
     trainer = accelerator.prepare(trainer)
 
     trainer.run_training(epochs=args.epochs, alpha=args.alpha)
+
+    # Save the model to W&B
+    save_model_to_wandb(wandb_tracker, args.project_name, save_path, args.run_name, "model")
 
     accelerator.end_training()
 

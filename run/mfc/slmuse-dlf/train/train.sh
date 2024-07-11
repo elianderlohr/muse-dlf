@@ -133,7 +133,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 30 \
+    --epochs 1 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -181,6 +181,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --mixed_precision fp16 \
     --accumulation_steps 2 \
     --alternative_supervised alt5 \
+    --sample_size 200 \
     $DEBUG
 
 # Cleanup and Closeout
