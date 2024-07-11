@@ -110,9 +110,9 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_path $SAVE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 2056 \
+    --hidden_dim 768 \
     --num_classes 15 \
-    --dropout_prob 0.4 \
+    --dropout_prob 0.3 \
     --alpha 0.9 \
     --lambda_orthogonality 0.001626384818258435 \
     --lr 0.0003 \
@@ -145,7 +145,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt3 \
+    --alternative_supervised default \
     $DEBUG
 
 # Cleanup and Closeout
