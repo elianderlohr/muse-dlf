@@ -707,6 +707,8 @@ def main():
         sample_size=args.sample_size,
     )
 
+    logger.info("Data loaded successfully")
+
     # prepare components for accelerate
     model, train_dataloader, test_dataloader = accelerator.prepare(
         model, train_dataloader, test_dataloader
