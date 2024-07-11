@@ -776,7 +776,7 @@ def main():
         accelerator_instance=accelerator,
         mixed_precision=args.mixed_precision,
         accumulation_steps=args.accumulation_steps,
-        model_config=model_config,
+        model_config=config,
     )
 
     trainer = accelerator.prepare(trainer)
