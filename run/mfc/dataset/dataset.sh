@@ -94,7 +94,6 @@ python src/create_dataset.py \
     --path_antonym_pairs data/axis/mft.json \
     --class_column_names "$CLASS_COLUMN_NAMES" \
     --dim_names virtue,vice \
-    --num_classes 15 \
     --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \

@@ -68,7 +68,10 @@ def main():
     )
     # project
     required_args.add_argument(
-        "--project", type=str, default="mfc-roberta-finetune", help="Project name"
+        "----project_name",
+        type=str,
+        default="mfc-roberta-finetune",
+        help="Project name",
     )
     required_args.add_argument(
         "--wandb_api_key", type=str, required=True, help="Wandb API key"
@@ -227,7 +230,7 @@ def main():
 
     # save the datasets to W&B
     # Initialize W&B run
-    run = wandb.init(project=args.project)
+    run = wandb.init(project=args.project_name)
 
     # Log the train dataset artifact
     train_artifact = wandb.Artifact("train_dataset_artifact", type="dataset")
@@ -242,11 +245,11 @@ def main():
     # Link the artifacts
     run.link_artifact(
         train_artifact,
-        target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project}",
+        target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
     )
     run.link_artifact(
         test_artifact,
-        target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project}",
+        target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
     )
 
     # Finish the run
