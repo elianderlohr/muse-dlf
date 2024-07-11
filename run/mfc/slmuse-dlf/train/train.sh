@@ -89,6 +89,39 @@ function clear_gpu_memory {
 # Clear GPU memory before starting
 clear_gpu_memory
 
+# Function to generate run name
+generate_run_name() {
+    verbs=(
+        "flowing" "running" "jumping" "flying" "glowing" "shining" "burning"
+        "exploding" "melting" "freezing" "crashing" "colliding" "breaking"
+        "building" "growing" "shrinking" "expanding" "contracting" "twisting"
+        "turning" "spinning" "rotating" "orbiting" "revolving" "circling"
+        "swirling" "whirling" "whipping" "flipping" "flopping" "flapping"
+        "fluttering" "flickering" "flaring" "blinking" "glinting" "gleaming"
+        "glimmering" "glittering" "sparkling" "shimmering"
+    )
+    nouns=(
+        "sound" "wave" "light" "shadow" "star" "planet" "house" "model" "car"
+        "boat" "plane" "train" "bus" "truck" "bike" "motorcycle" "scooter"
+        "skateboard" "surfboard" "snowboard" "skis" "helmet" "goggles" "gloves"
+        "jacket" "coat" "shirt" "pants" "shorts" "shoes" "boots" "socks" "hat"
+        "cap" "glasses" "watch" "ring" "necklace" "bracelet" "earrings" "belt"
+        "tie" "scarf" "gloves" "mittens" "umbrella" "bag" "backpack" "purse"
+        "wallet" "phone" "laptop"
+    )
+
+    random_verb=${verbs[$RANDOM % ${#verbs[@]}]}
+    random_noun=${nouns[$RANDOM % ${#nouns[@]}]}
+    random_num=$((1000 + RANDOM % 9000))
+
+    run_name="${random_verb}-${random_noun}-${random_num}"
+    echo "$run_name"
+}
+
+# Generate a run name
+RUN_NAME=$(generate_run_name)
+echo "Generated run name: $RUN_NAME"
+
 # Training Script Execution
 echo "=================== Training Start ==================="
 
@@ -96,6 +129,7 @@ echo "Launching training script with Accelerate..."
 accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/start_train.py \
     --model_type slmuse-dlf \
     --project_name slmuse-dlf \
+    --run_name $RUN_NAME \
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \

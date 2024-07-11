@@ -191,111 +191,6 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 
-def generate_run_name():
-    verbs = [
-        "flowing",
-        "running",
-        "jumping",
-        "flying",
-        "glowing",
-        "shining",
-        "burning",
-        "exploding",
-        "melting",
-        "freezing",
-        "crashing",
-        "colliding",
-        "breaking",
-        "building",
-        "growing",
-        "shrinking",
-        "expanding",
-        "contracting",
-        "twisting",
-        "turning",
-        "spinning",
-        "rotating",
-        "orbiting",
-        "revolving",
-        "circling",
-        "swirling",
-        "whirling",
-        "whipping",
-        "flipping",
-        "flopping",
-        "flapping",
-        "fluttering",
-        "flickering",
-        "flaring",
-        "blinking",
-        "glinting",
-        "gleaming",
-        "glimmering",
-        "glittering",
-        "sparkling",
-        "shimmering",
-    ]
-    nouns = [
-        "sound",
-        "wave",
-        "light",
-        "shadow",
-        "star",
-        "planet",
-        "house",
-        "model",
-        "car",
-        "boat",
-        "plane",
-        "train",
-        "bus",
-        "truck",
-        "bike",
-        "motorcycle",
-        "scooter",
-        "skateboard",
-        "surfboard",
-        "snowboard",
-        "skis",
-        "helmet",
-        "goggles",
-        "gloves",
-        "jacket",
-        "coat",
-        "shirt",
-        "pants",
-        "shorts",
-        "shoes",
-        "boots",
-        "socks",
-        "hat",
-        "cap",
-        "glasses",
-        "watch",
-        "ring",
-        "necklace",
-        "bracelet",
-        "earrings",
-        "belt",
-        "tie",
-        "scarf",
-        "gloves",
-        "mittens",
-        "umbrella",
-        "bag",
-        "backpack",
-        "purse",
-        "wallet",
-        "phone",
-        "laptop",
-    ]
-    random_verb = random.choice(verbs)
-    random_noun = random.choice(nouns)
-    random_num = random.randint(1000, 9999)
-    run_name = f"{random_verb}-{random_noun}-{random_num}"
-    return run_name
-
-
 def main():
     parser = argparse.ArgumentParser(description="Train MUSE model")
 
@@ -316,6 +211,13 @@ def main():
         default="muse-dlf",
         help="Type of model to train (muse-dlf, slmuse-dlf)",
         choices=["muse-dlf", "slmuse-dlf"],
+    )
+    # run_name
+    required_args.add_argument(
+        "--run_name",
+        type=str,
+        required=True,
+        help="Name of the run",
     )
 
     parser.add_argument(
@@ -693,7 +595,7 @@ def main():
     }
 
     # generate run name
-    run_name = generate_run_name()
+    run_name = args.run_name
 
     # Initialize wandb and accelerator
     accelerator = initialize_wandb(
