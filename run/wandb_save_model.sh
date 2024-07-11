@@ -38,7 +38,7 @@ PROJECT=$1
 DIR_PATH=$2
 ARTIFACT_NAME=$3
 ARTIFACT_TYPE=$4
-TARGET_PATH=$5
+MODEL_TYPE=$5
 
 # Run the Python script
-python src/helper/wandb_save_model.py --project "$PROJECT" --dir_path "$DIR_PATH" --artifact_name "$ARTIFACT_NAME" --artifact_type "$ARTIFACT_TYPE" --target_path "$TARGET_PATH"
+python log_and_link_artifact.py --project "$PROJECT" --dir_path "$DIR_PATH" --artifact_name "$ARTIFACT_NAME" --artifact_type "$ARTIFACT_TYPE" --model_type "$MODEL_TYPE"

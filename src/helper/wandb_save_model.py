@@ -3,7 +3,7 @@ from pathlib import Path
 import wandb
 
 
-def main(project, dir_path, artifact_name, artifact_type, target_path):
+def main(project, dir_path, artifact_name, artifact_type, model_type):
     run = wandb.init(project=project)
 
     dir_path = Path(dir_path)
@@ -19,6 +19,14 @@ def main(project, dir_path, artifact_name, artifact_type, target_path):
 
     logged_artifact = run.log_artifact(artifact)
     logged_artifact.wait()
+
+    # Hardcoded base target path
+    base_target_path = "elianderlohr-org/wandb-registry-model"
+    target_path = (
+        f"{base_target_path}/{model_type}"
+        if model_type == "slmuse"
+        else base_target_path
+    )
 
     run.link_artifact(artifact=logged_artifact, target_path=target_path)
     run.finish()
@@ -41,9 +49,10 @@ if __name__ == "__main__":
         "--artifact_type", required=True, help="The type of the artifact (e.g., model)."
     )
     parser.add_argument(
-        "--target_path",
+        "--model_type",
         required=True,
-        help="The target path to link the artifact in W&B.",
+        choices=["slmuse", "muse"],
+        help="The type of the model (either 'slmuse' or 'muse').",
     )
 
     args = parser.parse_args()
@@ -52,5 +61,5 @@ if __name__ == "__main__":
         args.dir_path,
         args.artifact_name,
         args.artifact_type,
-        args.target_path,
+        args.model_type,
     )
