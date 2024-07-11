@@ -1,5 +1,8 @@
 import argparse
+import json
+import os
 import random
+from textwrap import indent
 
 import numpy as np
 
@@ -476,10 +479,10 @@ def main():
         help="Dimension names for the FrameAxis",
     )
     io_paths.add_argument(
-        "--save_path",
+        "--save_base_path",
         type=str,
         default="",
-        help="Path to save the model",
+        help="Base path to save the model",
         required=True,
     )
     # class_column_names
@@ -590,6 +593,11 @@ def main():
     accelerator = initialize_wandb(
         args.wandb_api_key, args.project_name, args.tags, config, args.mixed_precision
     )
+
+    run_name = accelerator.trackers[0].run.name
+
+    # build save path
+    save_path = f"{args.save_base_path}/{run_name}"
 
     # only muse-dlf and slmuse-dlf models are supported
     if args.model_type not in ["muse-dlf", "slmuse-dlf"]:
@@ -716,7 +724,15 @@ def main():
 
     logger.info("Log model using WANDB", main_process_only=True)
     logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
+    logger.info("WANDB run name: %s", run_name, main_process_only=True)
     logger.info("WANDB tags: %s", args.tags, main_process_only=True)
+
+    # make dir
+    os.makedirs(save_path, exist_ok=True)
+
+    # save the "config" to save_path as "config.json" file
+    with open(f"{save_path}/config.json", "w") as json_file:
+        json.dump(config, json_file, indent=4)
 
     # Train the model
     trainer = Trainer(
@@ -730,7 +746,7 @@ def main():
         training_management="accelerate",
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
-        save_path=args.save_path,
+        save_path=save_path,
         accelerator_instance=accelerator,
         mixed_precision=args.mixed_precision,
         accumulation_steps=args.accumulation_steps,
