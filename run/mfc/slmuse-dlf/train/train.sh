@@ -118,8 +118,6 @@ generate_run_name() {
     echo "$run_name"
 }
 
-
-
 # Generate a run name
 RUN_NAME=$(generate_run_name)
 
