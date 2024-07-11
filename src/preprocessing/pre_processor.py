@@ -279,7 +279,7 @@ class PreProcessor:
         },
         sample_size=None,
     ):
-        train_dataset, test_dataset = self.get_datset(
+        train_dataset, test_dataset = self.get_dataset(
             path,
             format,
             dataframe_path,
