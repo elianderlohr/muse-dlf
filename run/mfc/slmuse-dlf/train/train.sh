@@ -146,7 +146,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised default \
+    --alternative_supervised alt2 \
     $DEBUG
 
 # Cleanup and Closeout
