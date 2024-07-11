@@ -139,7 +139,8 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_activation gelu \
     --adamw_weight_decay 0.0001 \
     --optimizer adamw \
-    --srl_embeddings_pooling mean \
+    --sentence_pooling mean \
+    --hidden_state last \
     --tau_decay 0.0004682416233229908 \
     --tau_min 0.5 \
     --seed 42 \

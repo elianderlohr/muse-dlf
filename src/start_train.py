@@ -40,7 +40,8 @@ def load_model(
     dropout_prob,
     bert_model_name,
     bert_model_name_or_path,
-    srl_embeddings_pooling,
+    sentence_pooling,
+    hidden_state,
     lambda_orthogonality,
     M,
     t,
@@ -77,7 +78,8 @@ def load_model(
             dropout_prob=dropout_prob,
             bert_model_name=bert_model_name,
             bert_model_name_or_path=bert_model_name_or_path,
-            srl_embeddings_pooling=srl_embeddings_pooling,
+            sentence_pooling=sentence_pooling,
+            hidden_state=hidden_state,
             lambda_orthogonality=lambda_orthogonality,
             M=M,
             t=t,
@@ -109,7 +111,8 @@ def load_model(
             dropout_prob=dropout_prob,
             bert_model_name=bert_model_name,
             bert_model_name_or_path=bert_model_name_or_path,
-            srl_embeddings_pooling=srl_embeddings_pooling,
+            sentence_pooling=sentence_pooling,
+            hidden_state=hidden_state,
             lambda_orthogonality=lambda_orthogonality,
             M=M,
             t=t,
@@ -335,10 +338,16 @@ def main():
         help="Activation function in the supervised module",
     )
     model_config.add_argument(
-        "--srl_embeddings_pooling",
+        "--sentence_pooling",
         type=str,
         default="mean",
         help="Pooling method for SRL embeddings",
+    )
+    model_config.add_argument(
+        "--hidden_state",
+        type=str,
+        default="last",
+        help="Hidden state to use for sentence embeddings",
     )
     # alternative_supervised
     model_config.add_argument(
@@ -564,7 +573,8 @@ def main():
         "supervised_num_layers": args.supervised_num_layers,
         "supervised_activation": args.supervised_activation,
         "alternative_supervised": args.alternative_supervised,
-        "srl_embeddings_pooling": args.srl_embeddings_pooling,
+        "sentence_pooling": args.sentence_pooling,
+        "hidden_state": args.hidden_state,
         "lr": args.lr,
         "adam_weight_decay": args.adam_weight_decay,
         "adamw_weight_decay": args.adamw_weight_decay,
@@ -595,7 +605,8 @@ def main():
         dropout_prob=args.dropout_prob,
         bert_model_name=args.name_tokenizer,
         bert_model_name_or_path=args.path_name_bert_model,
-        srl_embeddings_pooling=args.srl_embeddings_pooling,
+        sentence_pooling=args.sentence_pooling,
+        hidden_state=args.hidden_state,
         lambda_orthogonality=args.lambda_orthogonality,
         M=args.M,
         t=args.t,

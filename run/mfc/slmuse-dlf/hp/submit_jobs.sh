@@ -122,7 +122,7 @@ do
         --optimizer adamw \
         --adamw_weight_decay \$weight_decay \
         --adam_weight_decay \$weight_decay \
-        --srl_embeddings_pooling \$pooling \
+        --sentence_pooling \$pooling \
         --tau_decay 0.0004682416233229908 \
         --tau_min 0.5 \
         --seed 42 \

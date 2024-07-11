@@ -127,7 +127,7 @@ python src/start_train.py \
     --supervised_activation relu \
     --adamw_weight_decay 0.0001 \
     --optimizer adamw \
-    --srl_embeddings_pooling mean \
+    --sentence_pooling mean \
     --tau_decay 0.0004682416233229908 \
     --tau_min 0.5 \
     --seed 42 \

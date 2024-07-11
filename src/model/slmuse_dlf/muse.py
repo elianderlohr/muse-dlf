@@ -28,7 +28,8 @@ class SLMUSEDLF(nn.Module):
         # SRLEmbeddings Parameters
         bert_model_name="roberta-base",  # Name of the pre-trained model to use from huggingface.co/models
         bert_model_name_or_path="roberta-base",  # Path to the pre-trained model or model identifier from huggingface.co/models
-        srl_embeddings_pooling="mean",  # mean or cls
+        sentence_pooling="mean",  # mean or cls
+        hidden_state="second_to_last",
         # LossModule Parameters
         lambda_orthogonality=1e-3,  # lambda for orthogonality loss
         M=8,  # M total margin budget for triplet loss
@@ -76,7 +77,8 @@ class SLMUSEDLF(nn.Module):
         self.aggregation = SLMUSEEmbeddings(
             model_name_or_path=bert_model_name_or_path,
             model_type=bert_model_name,
-            pooling=srl_embeddings_pooling,
+            hidden_state=hidden_state,
+            sentence_pooling=sentence_pooling,
             _debug=_debug,
         )
 
@@ -201,7 +203,7 @@ class SLMUSEDLF(nn.Module):
             "dropout_prob": dropout_prob,
             "bert_model_name": bert_model_name,
             "bert_model_name_or_path": bert_model_name_or_path,
-            "srl_embeddings_pooling": srl_embeddings_pooling,
+            "sentence_pooling": sentence_pooling,
             "lambda_orthogonality": lambda_orthogonality,
             "M": M,
             "t": t,
