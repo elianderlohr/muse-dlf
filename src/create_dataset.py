@@ -13,6 +13,8 @@ from transformers import (
 import warnings
 import wandb
 
+import os
+
 from pathlib import Path
 
 from utils.logging_manager import LoggerManager
@@ -50,7 +52,9 @@ def set_seed(seed):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train MUSE model")
+    parser = argparse.ArgumentParser(description="Create Dataset")
+
+    os.environ["WANDB__SERVICE_WAIT"] = "300"
 
     # Required arguments
     required_args = parser.add_argument_group("Required Arguments")
@@ -220,10 +224,10 @@ def main():
 
     logger.info("Data loaded successfully")
 
-    # save the datasets to W&B
-    wandb.login(key=args.wandb_api_key)
     # Initialize W&B run
-    run = wandb.init(project=args.project_name)
+    run = wandb.init(
+        project=args.project_name, settings=wandb.Settings(_service_wait=300)
+    )
 
     # Log the train dataset artifact
     train_artifact = wandb.Artifact("train_dataset_artifact", type="dataset")
