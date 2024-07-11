@@ -777,7 +777,7 @@ def main():
 
     logger.info("Training completed successfully")
 
-    with accelerator.on_main_process:
+    with accelerator.main_process_first():
         logger.info("Saving the model to W&B...")
         # Save the model to W&B
         save_model_to_wandb(
