@@ -102,7 +102,7 @@ python src/create_dataset.py \
     --max_args_per_sentence 10 \
     --max_arg_length 16 \
     --force_recalculate_srls False \
-    --force_recalculate_frameaxis False \
+    --force_recalculate_frameaxis False 
 
 echo "______________________________________________________"
 
