@@ -14,10 +14,13 @@ def main(project, dir_path, artifact_name, artifact_type):
 
     artifact = wandb.Artifact(artifact_name, type=artifact_type)
 
-    # Add files to the artifact
-    for file_path in dir_path.iterdir():
-        if file_path.suffix in [".pth", ".json"]:
+    # Add specific files to the artifact
+    for file_name in ["model.pth", "metrics.json", "config.json"]:
+        file_path = dir_path / file_name
+        if file_path.exists():
             artifact.add_file(str(file_path))
+        else:
+            print(f"Warning: {file_path} does not exist and will not be added.")
 
     logged_artifact = run.log_artifact(artifact)
     logged_artifact.wait()

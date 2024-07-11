@@ -406,7 +406,7 @@ class Trainer:
                     "batch_arg0_loss": arg0_loss.item(),
                     "batch_arg1_loss": arg1_loss.item(),
                     "batch_frameaxis_loss": frameaxis_loss.item(),
-                    "tau": tau, 
+                    "tau": tau,
                     "epoch": epoch,
                 }
             )
