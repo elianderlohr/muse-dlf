@@ -2,7 +2,7 @@ from pathlib import Path
 import wandb
 
 # Initialize the W&B run
-run = wandb.init(project="collection-linking-quickstart")
+run = wandb.init(project="mfc-roberta-finetune")
 
 # Define the path to the model directory
 model_dir = Path(
