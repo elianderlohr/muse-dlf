@@ -1,5 +1,8 @@
 import argparse
+import json
+import os
 import random
+from textwrap import indent
 
 import numpy as np
 
@@ -21,6 +24,8 @@ import wandb
 from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
+from utils.wandb_utils import save_model_to_wandb
+
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
     "ignore", message="Mean of empty slice.", category=RuntimeWarning
@@ -40,7 +45,8 @@ def load_model(
     dropout_prob,
     bert_model_name,
     bert_model_name_or_path,
-    srl_embeddings_pooling,
+    sentence_pooling,
+    hidden_state,
     lambda_orthogonality,
     M,
     t,
@@ -58,6 +64,7 @@ def load_model(
     supervised_concat_frameaxis,
     supervised_num_layers,
     supervised_activation,
+    alternative_supervised,
     path_pretrained_model="",
     device="cuda",
     logger=LoggerManager.get_logger(__name__),
@@ -76,7 +83,8 @@ def load_model(
             dropout_prob=dropout_prob,
             bert_model_name=bert_model_name,
             bert_model_name_or_path=bert_model_name_or_path,
-            srl_embeddings_pooling=srl_embeddings_pooling,
+            sentence_pooling=sentence_pooling,
+            hidden_state=hidden_state,
             lambda_orthogonality=lambda_orthogonality,
             M=M,
             t=t,
@@ -94,6 +102,7 @@ def load_model(
             supervised_concat_frameaxis=supervised_concat_frameaxis,
             supervised_num_layers=supervised_num_layers,
             supervised_activation=supervised_activation,
+            alternative_supervised=alternative_supervised,
             _debug=_debug,
             _detect_anomaly=_detect_anomaly,
         )
@@ -107,7 +116,8 @@ def load_model(
             dropout_prob=dropout_prob,
             bert_model_name=bert_model_name,
             bert_model_name_or_path=bert_model_name_or_path,
-            srl_embeddings_pooling=srl_embeddings_pooling,
+            sentence_pooling=sentence_pooling,
+            hidden_state=hidden_state,
             lambda_orthogonality=lambda_orthogonality,
             M=M,
             t=t,
@@ -159,13 +169,15 @@ def setup_logging(debug):
     return logger
 
 
-def initialize_wandb(wandb_api_key, project_name, tags, config, mixed_precision):
+def initialize_wandb(
+    wandb_api_key, project_name, tags, config, mixed_precision, run_name
+):
     wandb.login(key=wandb_api_key)
     accelerator = Accelerator(log_with="wandb", mixed_precision=mixed_precision)
     accelerator.init_trackers(
         project_name,
         config,
-        init_kwargs={"wandb": {"tags": tags.split(",")}},
+        init_kwargs={"wandb": {"tags": tags.split(","), "name": run_name}},
     )
     return accelerator
 
@@ -201,6 +213,13 @@ def main():
         default="muse-dlf",
         help="Type of model to train (muse-dlf, slmuse-dlf)",
         choices=["muse-dlf", "slmuse-dlf"],
+    )
+    # run_name
+    required_args.add_argument(
+        "--run_name",
+        type=str,
+        required=True,
+        help="Name of the run",
     )
 
     parser.add_argument(
@@ -333,10 +352,23 @@ def main():
         help="Activation function in the supervised module",
     )
     model_config.add_argument(
-        "--srl_embeddings_pooling",
+        "--sentence_pooling",
         type=str,
         default="mean",
         help="Pooling method for SRL embeddings",
+    )
+    model_config.add_argument(
+        "--hidden_state",
+        type=str,
+        default="last",
+        help="Hidden state to use for sentence embeddings",
+    )
+    # alternative_supervised
+    model_config.add_argument(
+        "--alternative_supervised",
+        type=str,
+        default="default",
+        help="Use alternative supervised module",
     )
     model_config.add_argument(
         "--mixed_precision", type=str, default="fp16", help="Mixed precision training"
@@ -370,6 +402,10 @@ def main():
     )
     training_params.add_argument(
         "--epochs", type=int, default=10, help="Number of epochs"
+    )
+    # planned_epochs = 10
+    training_params.add_argument(
+        "--planned_epochs", type=int, default=10, help="Number of planned epochs"
     )
     training_params.add_argument(
         "--test_size", type=float, default=0.1, help="Size of the test set"
@@ -454,10 +490,10 @@ def main():
         help="Dimension names for the FrameAxis",
     )
     io_paths.add_argument(
-        "--save_path",
+        "--save_base_path",
         type=str,
         default="",
-        help="Path to save the model",
+        help="Base path to save the model",
         required=True,
     )
     # class_column_names
@@ -515,10 +551,6 @@ def main():
 
     logger.info("Running the model with the following arguments: %s", args)
 
-    if args.seed:
-        set_seed(args.seed)
-        logger.info("Random seed set to: %d", args.seed)
-
     config = {
         "embedding_dim": args.embedding_dim,
         "hidden_dim": args.hidden_dim,
@@ -550,7 +582,9 @@ def main():
         "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
         "supervised_num_layers": args.supervised_num_layers,
         "supervised_activation": args.supervised_activation,
-        "srl_embeddings_pooling": args.srl_embeddings_pooling,
+        "alternative_supervised": args.alternative_supervised,
+        "sentence_pooling": args.sentence_pooling,
+        "hidden_state": args.hidden_state,
         "lr": args.lr,
         "adam_weight_decay": args.adam_weight_decay,
         "adamw_weight_decay": args.adamw_weight_decay,
@@ -560,12 +594,28 @@ def main():
         "mixed_precision": args.mixed_precision,
         "num_negatives": args.num_negatives,
         "accumulation_steps": args.accumulation_steps,
+        "sample_size": args.sample_size,
     }
+
+    # generate run name
+    run_name = args.run_name
 
     # Initialize wandb and accelerator
     accelerator = initialize_wandb(
-        args.wandb_api_key, args.project_name, args.tags, config, args.mixed_precision
+        args.wandb_api_key,
+        args.project_name,
+        args.tags,
+        config,
+        args.mixed_precision,
+        run_name,
     )
+
+    if args.seed:
+        set_seed(args.seed)
+        logger.info("Random seed set to: %d", args.seed)
+
+    # build save path
+    save_path = f"{args.save_base_path}/{run_name}"
 
     # only muse-dlf and slmuse-dlf models are supported
     if args.model_type not in ["muse-dlf", "slmuse-dlf"]:
@@ -581,7 +631,8 @@ def main():
         dropout_prob=args.dropout_prob,
         bert_model_name=args.name_tokenizer,
         bert_model_name_or_path=args.path_name_bert_model,
-        srl_embeddings_pooling=args.srl_embeddings_pooling,
+        sentence_pooling=args.sentence_pooling,
+        hidden_state=args.hidden_state,
         lambda_orthogonality=args.lambda_orthogonality,
         M=args.M,
         t=args.t,
@@ -599,6 +650,7 @@ def main():
         supervised_concat_frameaxis=args.supervised_concat_frameaxis,
         supervised_num_layers=args.supervised_num_layers,
         supervised_activation=args.supervised_activation,
+        alternative_supervised=args.alternative_supervised,
         path_pretrained_model=args.path_name_pretrained_muse_model,
         device="cuda",
         logger=logger,
@@ -654,6 +706,8 @@ def main():
         sample_size=args.sample_size,
     )
 
+    logger.info("Data loaded successfully")
+
     # prepare components for accelerate
     model, train_dataloader, test_dataloader = accelerator.prepare(
         model, train_dataloader, test_dataloader
@@ -680,7 +734,7 @@ def main():
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=10,
-        num_training_steps=len(train_dataloader) * args.epochs,
+        num_training_steps=len(train_dataloader) * args.planned_epochs,
     )
 
     logger.info("Loss function and optimizer loaded successfully")
@@ -690,7 +744,15 @@ def main():
 
     logger.info("Log model using WANDB", main_process_only=True)
     logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
+    logger.info("WANDB run name: %s", run_name, main_process_only=True)
     logger.info("WANDB tags: %s", args.tags, main_process_only=True)
+
+    # make dir
+    os.makedirs(save_path, exist_ok=True)
+
+    # save the "config" to save_path as "config.json" file
+    with open(f"{save_path}/config.json", "w") as json_file:
+        json.dump(config, json_file, indent=4)
 
     # Train the model
     trainer = Trainer(
@@ -704,7 +766,7 @@ def main():
         training_management="accelerate",
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
-        save_path=args.save_path,
+        save_path=save_path,
         accelerator_instance=accelerator,
         mixed_precision=args.mixed_precision,
         accumulation_steps=args.accumulation_steps,
@@ -713,6 +775,8 @@ def main():
     trainer = accelerator.prepare(trainer)
 
     trainer.run_training(epochs=args.epochs, alpha=args.alpha)
+
+    logger.info("Training completed successfully")
 
     accelerator.end_training()
 

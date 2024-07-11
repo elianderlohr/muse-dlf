@@ -49,7 +49,7 @@ def load_model(
     dropout_prob,
     bert_model_name,
     bert_model_name_or_path,
-    srl_embeddings_pooling,
+    sentence_pooling,
     lambda_orthogonality,
     M,
     t,
@@ -79,7 +79,7 @@ def load_model(
         dropout_prob=dropout_prob,
         bert_model_name=bert_model_name,
         bert_model_name_or_path=bert_model_name_or_path,
-        srl_embeddings_pooling=srl_embeddings_pooling,
+        sentence_pooling=sentence_pooling,
         lambda_orthogonality=lambda_orthogonality,
         M=M,
         t=t,
@@ -155,7 +155,7 @@ def main():
     supervised_concat_frameaxis = wandb.config.supervised_concat_frameaxis
     supervised_num_layers = wandb.config.supervised_num_layers
     supervised_activation = wandb.config.supervised_activation
-    srl_embeddings_pooling = wandb.config.srl_embeddings_pooling
+    sentence_pooling = wandb.config.sentence_pooling
 
     alpha = wandb.config.alpha
     lr = wandb.config.lr
@@ -223,7 +223,7 @@ def main():
         dropout_prob=dropout_prob,
         bert_model_name=name_tokenizer,
         bert_model_name_or_path=path_name_bert_model,
-        srl_embeddings_pooling=srl_embeddings_pooling,
+        sentence_pooling=sentence_pooling,
         lambda_orthogonality=lambda_orthogonality,
         M=M,
         t=t,

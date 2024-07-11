@@ -1,20 +1,20 @@
 import torch
 import torch.nn as nn
-from torch.cuda.amp import autocast
 from utils.logging_manager import LoggerManager
+from torch.cuda.amp import autocast
 
 
 class SLMUSESupervisedAlternative(nn.Module):
     def __init__(
         self,
-        embedding_dim,
-        num_classes,
-        frameaxis_dim,
-        num_sentences,
-        dropout_prob=0.3,
-        concat_frameaxis=True,
-        num_layers=3,
-        activation_function="relu",
+        embedding_dim,  # Embedding dimension (e.g. RoBERTa 768)
+        num_classes,  # Number of classes to predict
+        frameaxis_dim,  # Frameaxis dimension
+        num_sentences,  # Number of sentences
+        dropout_prob=0.3,  # Dropout probability
+        concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
+        num_layers=3,  # Number of layers in feed-forward network
+        activation_function="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         _debug=False,
     ):
         super(SLMUSESupervisedAlternative, self).__init__()
@@ -41,14 +41,19 @@ class SLMUSESupervisedAlternative(nn.Module):
                 f"Unsupported activation function. Use 'relu', 'gelu', 'leaky_relu' or 'elu'. Found: {activation_function}."
             )
 
-        # Feed-forward networks for sentence embeddings
+        # Feed-forward networks for sentence embeddings with residual connections and layer normalization
         layers = []
-        input_dim = D_h  # Input to feed-forward will be pooled embeddings
+        input_dim = D_h * num_sentences
         for _ in range(num_layers):
             layers.append(nn.Linear(input_dim, input_dim))
-            layers.append(nn.BatchNorm1d(input_dim))
+            layers.append(nn.LayerNorm(input_dim))
             layers.append(self.activation)
             layers.append(nn.Dropout(dropout_prob))
+            layers.append(nn.Linear(input_dim, input_dim))
+            layers.append(nn.LayerNorm(input_dim))
+            layers.append(self.activation)
+            layers.append(nn.Dropout(dropout_prob))
+
         layers.append(nn.Linear(input_dim, embedding_dim))
         layers.append(self.activation)
         layers.append(nn.Dropout(dropout_prob))
@@ -56,14 +61,12 @@ class SLMUSESupervisedAlternative(nn.Module):
 
         self.feed_forward_sentence = nn.Sequential(*layers)
 
+        # Flatten
+        self.flatten = nn.Flatten(start_dim=1)
+
         self.concat_frameaxis = concat_frameaxis
+
         self._debug = _debug
-
-        # Attention mechanism
-        self.attention = nn.MultiheadAttention(D_h, num_heads=8)
-
-        # Positional encoding
-        self.positional_encoding = nn.Parameter(torch.randn(num_sentences, D_h))
 
         # Debugging:
         self.logger.debug(f"✅ MUSESupervised successfully initialized")
@@ -76,7 +79,7 @@ class SLMUSESupervisedAlternative(nn.Module):
         d_fx,
         vs,
         frameaxis_data,
-        mixed_precision="fp16",
+        mixed_precision="fp16",  # mixed precision as a parameter
     ):
         precision_dtype = (
             torch.float16
@@ -87,8 +90,6 @@ class SLMUSESupervisedAlternative(nn.Module):
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
-            # PART 1: Span embeddings
-
             batch_size, num_sentences, num_args, embedding_dim = d_p.shape
 
             d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
@@ -122,29 +123,13 @@ class SLMUSESupervisedAlternative(nn.Module):
             # Combine and normalize the final descriptor
             y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
-            # ############################################################
-            # PART 2: Sentence embeddings
-
             if self.concat_frameaxis:
                 vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-            # Positional encoding
-            vs = vs + self.positional_encoding
+            # reshape vs from [batch_size, num_sentences, embedding_dim] to [batch_size * num_sentences, embedding_dim]
+            ws_flattened = self.flatten(vs)
 
-            # Mask for vs
-            mask_vs = (vs.abs().sum(dim=-1) != 0).float()
-
-            # Attention mechanism
-            vs_transposed = vs.transpose(0, 1)  # Transpose for attention mechanism
-            attn_output, _ = self.attention(vs_transposed, vs_transposed, vs_transposed)
-            attn_output = attn_output.transpose(0, 1)
-
-            # Apply mask
-            attn_output_mean = (attn_output * mask_vs.unsqueeze(-1)).sum(
-                dim=1
-            ) / torch.clamp(mask_vs.sum(dim=1, keepdim=True), min=1)
-
-            y_hat_s = self.feed_forward_sentence(attn_output_mean)
+            y_hat_s = self.feed_forward_sentence(ws_flattened)
 
             # Sum the two predictions
             combined = y_hat_u + y_hat_s

@@ -232,6 +232,8 @@ class Trainer:
         ):
             global global_steps
             global_steps += 1
+
+            # Update tau every 50 steps
             if global_steps % 50 == 0:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
 
@@ -701,7 +703,7 @@ class Trainer:
             }
         )
 
-        return early_stopping
+        return tau, early_stopping
 
     def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
         self.model.eval()
@@ -1061,6 +1063,7 @@ class Trainer:
         return metrics
 
     def _save_best_model(self, metrics):
+
         # save dir path
         save_dir = os.path.join(self.save_path)
         try:
@@ -1078,45 +1081,36 @@ class Trainer:
 
         # save model
         model_save_path = os.path.join(save_dir, "model.pth")
-        temp_model_save_path = model_save_path + ".tmp"
         try:
-            torch.save(self.model.state_dict(), temp_model_save_path)
-            os.rename(temp_model_save_path, model_save_path)
+            torch.save(self.model.state_dict(), model_save_path)
         except Exception as e:
             logger.error(
                 f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
             )
-            if os.path.exists(temp_model_save_path):
-                os.remove(temp_model_save_path)
             return
 
         # save metrics
         metrics_save_path = os.path.join(save_dir, "metrics.json")
-        temp_metrics_save_path = metrics_save_path + ".tmp"
         try:
-            with open(temp_metrics_save_path, "w") as f:
+            with open(metrics_save_path, "w") as f:
                 json.dump(metrics, f)
-            os.rename(temp_metrics_save_path, metrics_save_path)
         except Exception as e:
             logger.error(
                 f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
             )
-            if os.path.exists(temp_metrics_save_path):
-                os.remove(temp_metrics_save_path)
 
-        # save model configuration
-        config_save_path = os.path.join(save_dir, "model_config.json")
-        temp_config_save_path = config_save_path + ".tmp"
-        try:
-            with open(temp_config_save_path, "w") as f:
-                json.dump(self.model.config, f)
-            os.rename(temp_config_save_path, config_save_path)
-        except Exception as e:
-            logger.error(
-                f"Warning: Failed to save model configuration at {config_save_path}. Exception: {e}"
-            )
-            if os.path.exists(temp_config_save_path):
-                os.remove(temp_config_save_path)
+        # Save to wandb
+        if self.training_management == "wandb":
+            self.wandb.log_artifact(metrics_save_path, "metrics", "metrics")
+
+            self.wandb.log_model(model_save_path, "model")
+
+        if self.training_management == "accelerate":
+            wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
+            if self.accelerator.is_main_process:
+                wandb_tracker.log_artifact(metrics_save_path, "metrics", "metrics")
+
+                wandb_tracker.log_model(model_save_path, "model")
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
@@ -1139,7 +1133,7 @@ class Trainer:
 
         for epoch in range(1, epochs + 1):
             try:
-                early_stopping = self._train(
+                tau, early_stopping = self._train(
                     epoch,
                     self.train_dataloader,
                     tau,

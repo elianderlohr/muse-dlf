@@ -3,6 +3,12 @@ import torch.nn as nn
 
 from model.slmuse_dlf.embeddings import SLMUSEEmbeddings
 from model.slmuse_dlf.supervised_module import SLMUSESupervised
+from model.slmuse_dlf.supervised_module_alternative import SLMUSESupervisedAlternative
+from model.slmuse_dlf.supervised_module_alternative1 import SLMUSESupervisedAlternative1
+from model.slmuse_dlf.supervised_module_alternative2 import SLMUSESupervisedAlternative2
+from model.slmuse_dlf.supervised_module_alternative3 import SLMUSESupervisedAlternative3
+from model.slmuse_dlf.supervised_module_alternative4 import SLMUSESupervisedAlternative4
+from model.slmuse_dlf.supervised_module_alternative5 import SLMUSESupervisedAlternative5
 from model.slmuse_dlf.unsupervised_module import SLMUSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import SLMUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -23,7 +29,8 @@ class SLMUSEDLF(nn.Module):
         # SRLEmbeddings Parameters
         bert_model_name="roberta-base",  # Name of the pre-trained model to use from huggingface.co/models
         bert_model_name_or_path="roberta-base",  # Path to the pre-trained model or model identifier from huggingface.co/models
-        srl_embeddings_pooling="mean",  # mean or cls
+        sentence_pooling="mean",  # mean or cls
+        hidden_state="second_to_last",
         # LossModule Parameters
         lambda_orthogonality=1e-3,  # lambda for orthogonality loss
         M=8,  # M total margin budget for triplet loss
@@ -46,6 +53,7 @@ class SLMUSEDLF(nn.Module):
         supervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
         supervised_num_layers=2,  # Number of layers in the encoder
         supervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
+        alternative_supervised="default",  # Load alternative supervised module
         # Debugging
         _debug=False,
         _detect_anomaly=False,
@@ -70,7 +78,8 @@ class SLMUSEDLF(nn.Module):
         self.aggregation = SLMUSEEmbeddings(
             model_name_or_path=bert_model_name_or_path,
             model_type=bert_model_name,
-            pooling=srl_embeddings_pooling,
+            hidden_state=hidden_state,
+            sentence_pooling=sentence_pooling,
             _debug=_debug,
         )
 
@@ -108,18 +117,86 @@ class SLMUSEDLF(nn.Module):
             _debug=_debug,
         )
 
-        # Supervised training module
-        self.supervised = SLMUSESupervised(
-            embedding_dim,
-            num_classes=num_classes,
-            frameaxis_dim=frameaxis_dim,
-            num_sentences=num_sentences,
-            dropout_prob=dropout_prob,
-            concat_frameaxis=supervised_concat_frameaxis,
-            num_layers=supervised_num_layers,
-            activation_function=supervised_activation,
-            _debug=_debug,
-        )
+        if alternative_supervised == "alt":
+            self.logger.info("🔄 Using alternative supervised module")
+            # Supervised training module
+            self.supervised = SLMUSESupervisedAlternative(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                num_layers=supervised_num_layers,
+                activation_function=supervised_activation,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt1":
+            self.supervised = SLMUSESupervisedAlternative1(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                num_layers=supervised_num_layers,
+                activation_function=supervised_activation,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt2":
+            self.supervised = SLMUSESupervisedAlternative2(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                num_layers=supervised_num_layers,
+                # activation_functions=[supervised_activation, "relu"],
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt3":
+            self.supervised = SLMUSESupervisedAlternative3(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt4":
+            self.supervised = SLMUSESupervisedAlternative4(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt5":
+            self.supervised = SLMUSESupervisedAlternative5(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                _debug=_debug,
+            )
+        else:
+            self.logger.info("🔄 Using default supervised module")
+
+            # Supervised training module
+            self.supervised = SLMUSESupervised(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                num_layers=supervised_num_layers,
+                activation_function=supervised_activation,
+                _debug=_debug,
+            )
 
         self.num_negatives = num_negatives
         self.num_classes = num_classes
@@ -136,7 +213,7 @@ class SLMUSEDLF(nn.Module):
             "dropout_prob": dropout_prob,
             "bert_model_name": bert_model_name,
             "bert_model_name_or_path": bert_model_name_or_path,
-            "srl_embeddings_pooling": srl_embeddings_pooling,
+            "sentence_pooling": sentence_pooling,
             "lambda_orthogonality": lambda_orthogonality,
             "M": M,
             "t": t,
