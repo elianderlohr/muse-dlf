@@ -157,6 +157,10 @@ def main():
         default=False,
         help="Force recalculate FrameAxis",
     )
+    # debug
+    required_args.add_argument(
+        "--debug", type=str2bool, default=False, help="Debug mode"
+    )
     required_args.add_argument("--seed", type=int, default=42, help="Random seed")
 
     args = parser.parse_args()
