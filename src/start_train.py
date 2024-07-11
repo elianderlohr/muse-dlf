@@ -609,7 +609,7 @@ def main():
         run_name,
     )
 
-    wandb_tracker = accelerator.get_tracker("wandb")
+    wandb_tracker = accelerator.get_tracker("wandb", unwrap=True)
 
     if args.seed:
         set_seed(args.seed)
@@ -775,8 +775,14 @@ def main():
 
     trainer.run_training(epochs=args.epochs, alpha=args.alpha)
 
-    # Save the model to W&B
-    save_model_to_wandb(wandb_tracker, args.project_name, save_path, args.run_name, "model")
+    logger.info("Training completed successfully")
+
+    with accelerator.on_main_process:
+        logger.info("Saving the model to W&B...")
+        # Save the model to W&B
+        save_model_to_wandb(
+            wandb_tracker, args.project_name, save_path, args.run_name, "model"
+        )
 
     accelerator.end_training()
 

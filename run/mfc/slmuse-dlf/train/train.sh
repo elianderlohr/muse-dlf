@@ -118,14 +118,19 @@ generate_run_name() {
     echo "$run_name"
 }
 
+
+
 # Generate a run name
 RUN_NAME=$(generate_run_name)
-echo "Generated run name: $RUN_NAME"
 
 # Training Script Execution
 echo "=================== Training Start ==================="
 
 echo "Launching training script with Accelerate..."
+echo "Using run name: $RUN_NAME"
+
+echo "______________________________________________________"
+
 accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/start_train.py \
     --model_type slmuse-dlf \
     --project_name slmuse-dlf \
@@ -183,6 +188,8 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --alternative_supervised alt5 \
     --sample_size 200 \
     $DEBUG
+
+echo "______________________________________________________"
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
