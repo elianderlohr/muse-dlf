@@ -664,8 +664,6 @@ class Trainer:
                         early_stopping["early_stopped"] = True
                         return early_stopping
 
-            self._save_best_model({"test": "test"})
-
             # Delete tensors after logging metrics
             del (
                 labels,
@@ -1103,14 +1101,14 @@ class Trainer:
 
         # Save to wandb
         if self.training_management == "wandb":
-            self.wandb.log_artifact(metrics_save_path, "metrics")
-            
+            self.wandb.log_artifact(metrics_save_path, "metrics", "metrics")
+
             self.wandb.log_model(model_save_path, "model")
 
         if self.training_management == "accelerate":
             wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
             if self.accelerator.is_main_process:
-                wandb_tracker.log_artifact(metrics_save_path, "metrics")
+                wandb_tracker.log_artifact(metrics_save_path, "metrics", "metrics")
 
                 wandb_tracker.log_model(model_save_path, "model")
 
