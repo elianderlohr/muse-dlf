@@ -48,7 +48,7 @@ class SLMUSEDLF(nn.Module):
         supervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
         supervised_num_layers=2,  # Number of layers in the encoder
         supervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
-        use_alternative_supervised=False,  # Load alternative supervised module
+        alternative_supervised="default",  # Load alternative supervised module
         # Debugging
         _debug=False,
         _detect_anomaly=False,
@@ -111,10 +111,22 @@ class SLMUSEDLF(nn.Module):
             _debug=_debug,
         )
 
-        if use_alternative_supervised:
+        if alternative_supervised == "alt":
             self.logger.info("🔄 Using alternative supervised module")
             # Supervised training module
             self.supervised = SLMUSESupervisedAlternative(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                num_layers=supervised_num_layers,
+                activation_function=supervised_activation,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt1":
+            self.supervised = SLMUSESupervisedAlternative1(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,

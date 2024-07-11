@@ -58,7 +58,7 @@ def load_model(
     supervised_concat_frameaxis,
     supervised_num_layers,
     supervised_activation,
-    use_alternative_supervised,
+    alternative_supervised,
     path_pretrained_model="",
     device="cuda",
     logger=LoggerManager.get_logger(__name__),
@@ -95,7 +95,7 @@ def load_model(
             supervised_concat_frameaxis=supervised_concat_frameaxis,
             supervised_num_layers=supervised_num_layers,
             supervised_activation=supervised_activation,
-            use_alternative_supervised=use_alternative_supervised,
+            alternative_supervised=alternative_supervised,
             _debug=_debug,
             _detect_anomaly=_detect_anomaly,
         )
@@ -340,11 +340,11 @@ def main():
         default="mean",
         help="Pooling method for SRL embeddings",
     )
-    # use_alternative_supervised
+    # alternative_supervised
     model_config.add_argument(
-        "--use_alternative_supervised",
-        type=str2bool,
-        default=False,
+        "--alternative_supervised",
+        type=str,
+        default="default",
         help="Use alternative supervised module",
     )
     model_config.add_argument(
@@ -563,7 +563,7 @@ def main():
         "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
         "supervised_num_layers": args.supervised_num_layers,
         "supervised_activation": args.supervised_activation,
-        "use_alternative_supervised": args.use_alternative_supervised,
+        "alternative_supervised": args.alternative_supervised,
         "srl_embeddings_pooling": args.srl_embeddings_pooling,
         "lr": args.lr,
         "adam_weight_decay": args.adam_weight_decay,
@@ -613,7 +613,7 @@ def main():
         supervised_concat_frameaxis=args.supervised_concat_frameaxis,
         supervised_num_layers=args.supervised_num_layers,
         supervised_activation=args.supervised_activation,
-        use_alternative_supervised=args.use_alternative_supervised,
+        alternative_supervised=args.alternative_supervised,
         path_pretrained_model=args.path_name_pretrained_muse_model,
         device="cuda",
         logger=logger,
