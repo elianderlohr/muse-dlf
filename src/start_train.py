@@ -167,13 +167,15 @@ def setup_logging(debug):
     return logger
 
 
-def initialize_wandb(wandb_api_key, project_name, tags, config, mixed_precision):
+def initialize_wandb(
+    wandb_api_key, project_name, tags, config, mixed_precision, run_name
+):
     wandb.login(key=wandb_api_key)
     accelerator = Accelerator(log_with="wandb", mixed_precision=mixed_precision)
     accelerator.init_trackers(
         project_name,
         config,
-        init_kwargs={"wandb": {"tags": tags.split(",")}},
+        init_kwargs={"wandb": {"tags": tags.split(","), "name": run_name}},
     )
     return accelerator
 
@@ -187,6 +189,111 @@ def set_seed(seed):
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def generate_run_name():
+    verbs = [
+        "flowing",
+        "running",
+        "jumping",
+        "flying",
+        "glowing",
+        "shining",
+        "burning",
+        "exploding",
+        "melting",
+        "freezing",
+        "crashing",
+        "colliding",
+        "breaking",
+        "building",
+        "growing",
+        "shrinking",
+        "expanding",
+        "contracting",
+        "twisting",
+        "turning",
+        "spinning",
+        "rotating",
+        "orbiting",
+        "revolving",
+        "circling",
+        "swirling",
+        "whirling",
+        "whipping",
+        "flipping",
+        "flopping",
+        "flapping",
+        "fluttering",
+        "flickering",
+        "flaring",
+        "blinking",
+        "glinting",
+        "gleaming",
+        "glimmering",
+        "glittering",
+        "sparkling",
+        "shimmering",
+    ]
+    nouns = [
+        "sound",
+        "wave",
+        "light",
+        "shadow",
+        "star",
+        "planet",
+        "house",
+        "model",
+        "car",
+        "boat",
+        "plane",
+        "train",
+        "bus",
+        "truck",
+        "bike",
+        "motorcycle",
+        "scooter",
+        "skateboard",
+        "surfboard",
+        "snowboard",
+        "skis",
+        "helmet",
+        "goggles",
+        "gloves",
+        "jacket",
+        "coat",
+        "shirt",
+        "pants",
+        "shorts",
+        "shoes",
+        "boots",
+        "socks",
+        "hat",
+        "cap",
+        "glasses",
+        "watch",
+        "ring",
+        "necklace",
+        "bracelet",
+        "earrings",
+        "belt",
+        "tie",
+        "scarf",
+        "gloves",
+        "mittens",
+        "umbrella",
+        "bag",
+        "backpack",
+        "purse",
+        "wallet",
+        "phone",
+        "laptop",
+    ]
+    random_verb = random.choice(verbs)
+    random_noun = random.choice(nouns)
+    random_num = random.randint(1000, 9999)
+    run_name = f"{random_verb}-{random_noun}-{random_num}"
+    return run_name
 
 
 def main():
@@ -589,12 +696,18 @@ def main():
         "accumulation_steps": args.accumulation_steps,
     }
 
+    # generate run name
+    run_name = generate_run_name()
+
     # Initialize wandb and accelerator
     accelerator = initialize_wandb(
-        args.wandb_api_key, args.project_name, args.tags, config, args.mixed_precision
+        args.wandb_api_key,
+        args.project_name,
+        args.tags,
+        config,
+        args.mixed_precision,
+        run_name,
     )
-
-    run_name = accelerator.trackers[0].run.name
 
     # build save path
     save_path = f"{args.save_base_path}/{run_name}"
