@@ -610,10 +610,9 @@ def main():
         run_name,
     )
 
-    wandb_tracker = accelerator.get_tracker("wandb", unwrap=True)
+    wandb_tracker: wandb = accelerator.get_tracker("wandb", unwrap=True)
 
-    if accelerator.is_main_process():
-        wandb_tracker.store_init_configuration(config)
+    wandb_tracker.config(config)
 
     if args.seed:
         set_seed(args.seed)
