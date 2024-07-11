@@ -3,8 +3,9 @@ import torch.nn as nn
 
 from model.slmuse_dlf.embeddings import SLMUSEEmbeddings
 from model.slmuse_dlf.supervised_module import SLMUSESupervised
-from model.slmuse_dlf.supervised_module_alternative1 import SLMUSESupervisedAlternative1
 from model.slmuse_dlf.supervised_module_alternative import SLMUSESupervisedAlternative
+from model.slmuse_dlf.supervised_module_alternative1 import SLMUSESupervisedAlternative1
+from model.slmuse_dlf.supervised_module_alternative2 import SLMUSESupervisedAlternative2
 from model.slmuse_dlf.unsupervised_module import SLMUSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import SLMUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -135,6 +136,18 @@ class SLMUSEDLF(nn.Module):
                 concat_frameaxis=supervised_concat_frameaxis,
                 num_layers=supervised_num_layers,
                 activation_function=supervised_activation,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt2":
+            self.supervised = SLMUSESupervisedAlternative2(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                num_layers=supervised_num_layers,
+                # activation_functions=[supervised_activation, "relu"],
                 _debug=_debug,
             )
         else:
