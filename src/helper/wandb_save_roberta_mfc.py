@@ -6,7 +6,7 @@ run = wandb.init(project="collection-linking-quickstart")
 
 # Define the path to the model directory
 model_dir = Path(
-    "../../models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
+    "models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
 )
 
 # Log the entire directory as an artifact
