@@ -6,7 +6,6 @@ from tqdm import tqdm
 import math
 import evaluate
 from wandb import AlertLevel
-from src import model
 from utils.logging_manager import LoggerManager
 
 from torch.cuda.amp import autocast, GradScaler
