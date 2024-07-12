@@ -595,6 +595,11 @@ def main():
         "num_negatives": args.num_negatives,
         "accumulation_steps": args.accumulation_steps,
         "sample_size": args.sample_size,
+        "seed": args.seed,
+        "detect_anomaly": args.detect_anomaly,
+        "bert_model_name": args.name_tokenizer,
+        "path_name_bert_model": args.path_name_bert_model,
+        "path_name_pretrained_muse_model": args.path_name_pretrained_muse_model,
     }
 
     # generate run name
@@ -767,9 +772,11 @@ def main():
         tau_min=args.tau_min,
         tau_decay=args.tau_decay,
         save_path=save_path,
+        run_name=run_name,
         accelerator_instance=accelerator,
         mixed_precision=args.mixed_precision,
         accumulation_steps=args.accumulation_steps,
+        model_config=config,
     )
 
     trainer = accelerator.prepare(trainer)

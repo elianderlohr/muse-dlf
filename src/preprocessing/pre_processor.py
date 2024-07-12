@@ -216,7 +216,7 @@ class PreProcessor:
 
         return X_subset, X_srl_subset, frameaxis_df_subset, y_subset
 
-    def get_dataloader(
+    def get_dataset(
         self,
         path,
         format,
@@ -229,7 +229,6 @@ class PreProcessor:
             "srl": False,
             "frameaxis": False,
         },
-        sample_size=None,
     ):
         """
         Returns the train and test datasets.
@@ -302,6 +301,29 @@ class PreProcessor:
             max_args_per_sentence=self.max_args_per_sentence,
             max_arg_length=self.max_arg_length,
             frameaxis_dim=self.frameaxis_dim,
+        )
+
+        return train_dataset, test_dataset
+
+    def get_dataloader(
+        self,
+        path,
+        format,
+        dataframe_path={
+            "srl": "data/srls/mfc/srls.pkl",
+            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+        },
+        force_recalculate={
+            "srl": False,
+            "frameaxis": False,
+        },
+        sample_size=None,
+    ):
+        train_dataset, test_dataset = self.get_dataset(
+            path,
+            format,
+            dataframe_path,
+            force_recalculate,
         )
 
         if sample_size > 0:

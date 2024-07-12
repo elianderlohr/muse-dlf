@@ -1,3 +1,4 @@
+from logging import config
 import os
 import time
 import torch
@@ -12,6 +13,10 @@ from torch.cuda.amp import autocast, GradScaler
 
 logger = LoggerManager.get_logger(__name__)
 
+import wandb
+
+wandb.require("core")
+
 
 class Trainer:
     def __init__(
@@ -25,6 +30,7 @@ class Trainer:
         model_type="muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
+        run_name="",
         training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
@@ -32,6 +38,7 @@ class Trainer:
         mixed_precision="fp16",  # "fp16"
         clip_value=1.0,
         accumulation_steps=1,
+        model_config={},
         **kwargs,
     ):
         self.model = model.to(device)
@@ -42,9 +49,12 @@ class Trainer:
         self.scheduler = scheduler
         self.device = device
         self.save_path = save_path
+        self.run_name = run_name
         self.tau_min = tau_min
         self.tau_decay = tau_decay
         self.early_stop = early_stop
+
+        self.model_config = model_config
 
         # Initialize the mixed precision
         logger.info(
@@ -1099,18 +1109,47 @@ class Trainer:
                 f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
             )
 
+        # save config file
+        config_save_path = os.path.join(save_dir, "config.json")
+        try:
+            with open(config_save_path, "w") as f:
+                json.dump(self.model_config, f)
+        except Exception as e:
+            logger.error(
+                f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
+            )
+
+        model_artifact = wandb.Artifact(
+            name=f"{self.run_name.replace('-', '_')}_model",
+            type="model",
+            metadata=self.model_config,
+        )
+
+        model_artifact.add_file(model_save_path)
+        model_artifact.add_file(config_save_path)
+
         # Save to wandb
         if self.training_management == "wandb":
-            self.wandb.log_artifact(metrics_save_path, "metrics", "metrics")
+            self.wandb.log_artifact(
+                metrics_save_path,
+                f"{self.run_name.replace('-', '_')}_metrics",
+                "metrics",
+            )
 
-            self.wandb.log_model(model_save_path, "model")
+            logged_artifact = self.wandb.log_artifact(model_artifact)
+            logged_artifact.wait()
 
         if self.training_management == "accelerate":
             wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
             if self.accelerator.is_main_process:
-                wandb_tracker.log_artifact(metrics_save_path, "metrics", "metrics")
+                wandb_tracker.log_artifact(
+                    metrics_save_path,
+                    f"{self.run_name.replace('-', '_')}_metrics",
+                    "metrics",
+                )
 
-                wandb_tracker.log_model(model_save_path, "model")
+                logged_artifact = wandb_tracker.log_artifact(model_artifact)
+                logged_artifact.wait()
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
