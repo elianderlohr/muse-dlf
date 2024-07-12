@@ -151,11 +151,11 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --num_classes 15 \
     --dropout_prob 0.3 \
     --alpha 0.9 \
-    --lambda_orthogonality 0.001626384818258435 \
-    --lr 0.0003 \
+    --lambda_orthogonality 0.003 \
+    --lr 0.0005 \
     --M 8 \
     --t 8 \
-    --batch_size 32 \
+    --batch_size 8 \
     --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
@@ -178,12 +178,12 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --optimizer adamw \
     --sentence_pooling mean \
     --hidden_state second_to_last \
-    --tau_decay 0.0004682416233229908 \
+    --tau_decay 0.0005 \
     --tau_min 0.5 \
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt5 \
+    --alternative_supervised alt4 \
     $DEBUG
 
 echo "______________________________________________________"

@@ -13,7 +13,6 @@ class SLMUSESupervisedAlternative4(nn.Module):
         num_sentences,  # Number of sentences
         dropout_prob=0.1,  # Dropout probability
         concat_frameaxis=False,  # Whether to concatenate frameaxis with sentence
-        num_layers=1,  # Number of layers in feed-forward network
         activation_functions=(
             "gelu",
             "relu",
