@@ -162,6 +162,11 @@ class Trainer:
         self.model.train()
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
 
+        # Loss scaling
+        running_supervised_loss = 0.0
+        running_unsupervised_loss = 0.0
+        beta = 0.9  # Decay rate for running average
+
         # Load the evaluate metrics
         f1_metric_micro = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
@@ -342,11 +347,36 @@ class Trainer:
             sentence_loss = self.loss_function(sentence_logits, labels.float())
             supervised_loss = span_loss + sentence_loss
 
+            # Update running averages
+            running_supervised_loss = (
+                beta * running_supervised_loss + (1 - beta) * supervised_loss.item()
+            )
+            running_unsupervised_loss = (
+                beta * running_unsupervised_loss + (1 - beta) * unsupervised_loss.item()
+            )
+
+            # Normalize the losses
+            if running_supervised_loss > 0:
+                normalized_supervised_loss = supervised_loss / running_supervised_loss
+            else:
+                normalized_supervised_loss = supervised_loss
+
+            if running_unsupervised_loss > 0:
+                normalized_unsupervised_loss = (
+                    unsupervised_loss / running_unsupervised_loss
+                )
+            else:
+                normalized_unsupervised_loss = unsupervised_loss
+
+            combined_loss = (
+                alpha * normalized_supervised_loss
+                + (1 - alpha) * normalized_unsupervised_loss
+            )
+
+            # Adding zero_sum as a trick to prevent any unwanted behavior (assumed purpose from the code)
             sum_of_parameters = sum(p.sum() for p in self.model.parameters())
             zero_sum = sum_of_parameters * 0.0
-            combined_loss = (
-                alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-            ) + zero_sum
+            combined_loss = combined_loss + zero_sum
 
             # other loss (debug)
             predicate_loss = self.loss_function(other["predicate"], labels.float())
