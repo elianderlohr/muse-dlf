@@ -177,7 +177,9 @@ def initialize_wandb(
     accelerator.init_trackers(
         project_name,
         config,
-        init_kwargs={"wandb": {"tags": tags.split(","), "name": run_name}},
+        init_kwargs={
+            "wandb": {"tags": tags.split(","), "name": run_name, "job_type": "train"}
+        },
     )
     return accelerator
 
