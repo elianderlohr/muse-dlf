@@ -62,8 +62,9 @@ class SLMUSELossModule(nn.Module):
             )
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
+        loss = loss / self.t
         loss = loss * mask.float()
-        return loss.sum() / torch.clamp(mask.sum(), min=1)  # Ensure scalar output
+        return loss.sum() / mask.sum()
 
     def orthogonality_term(self, F, reg=1e-4):
         gram_matrix = torch.mm(F, F.T)
@@ -93,7 +94,7 @@ class SLMUSELossModule(nn.Module):
             v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
             Ju = self.contrastive_loss(v, vhat, negatives, mask)
             Jt = self.focal_triplet_loss(v, vhat, g, F, mask)
-            ortho_term = self.lambda_orthogonality * self.orthogonality_term(F)
-            Jz = Ju + Jt + ortho_term
+            # ortho_term = self.lambda_orthogonality * self.orthogonality_term(F)
+            Jz = Ju + Jt  # + ortho_term
 
         return Jz  # Ensure scalar output

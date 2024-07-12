@@ -162,11 +162,6 @@ class Trainer:
         self.model.train()
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
 
-        # Loss scaling
-        running_supervised_loss = 0.0
-        running_unsupervised_loss = 0.0
-        beta = 0.9  # Decay rate for running average
-
         # Load the evaluate metrics
         f1_metric_micro = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
@@ -347,36 +342,12 @@ class Trainer:
             sentence_loss = self.loss_function(sentence_logits, labels.float())
             supervised_loss = span_loss + sentence_loss
 
-            # Update running averages
-            running_supervised_loss = (
-                beta * running_supervised_loss + (1 - beta) * supervised_loss.item()
-            )
-            running_unsupervised_loss = (
-                beta * running_unsupervised_loss + (1 - beta) * unsupervised_loss.item()
-            )
-
-            # Normalize the losses
-            if running_supervised_loss > 0:
-                normalized_supervised_loss = supervised_loss / running_supervised_loss
-            else:
-                normalized_supervised_loss = supervised_loss
-
-            if running_unsupervised_loss > 0:
-                normalized_unsupervised_loss = (
-                    unsupervised_loss / running_unsupervised_loss
-                )
-            else:
-                normalized_unsupervised_loss = unsupervised_loss
-
-            combined_loss = (
-                alpha * normalized_supervised_loss
-                + (1 - alpha) * normalized_unsupervised_loss
-            )
-
-            # Adding zero_sum as a trick to prevent any unwanted behavior (assumed purpose from the code)
+            # Adding zero_sum as a trick to prevent any unwanted behavior
             sum_of_parameters = sum(p.sum() for p in self.model.parameters())
             zero_sum = sum_of_parameters * 0.0
-            combined_loss = combined_loss + zero_sum
+            combined_loss = (
+                alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+            ) + zero_sum
 
             # Calculate other losses for debugging without gradient tracking
             with torch.no_grad():
@@ -480,10 +451,14 @@ class Trainer:
                     sentence_pred = self.get_activation_function(sentence_logits).int()
 
                     # predicate, arg0, arg1, frameaxis
-                    predicate_pred = self.get_activation_function(other["predicate"]).int()
+                    predicate_pred = self.get_activation_function(
+                        other["predicate"]
+                    ).int()
                     arg0_pred = self.get_activation_function(other["arg0"]).int()
                     arg1_pred = self.get_activation_function(other["arg1"]).int()
-                    frameaxis_pred = self.get_activation_function(other["frameaxis"]).int()
+                    frameaxis_pred = self.get_activation_function(
+                        other["frameaxis"]
+                    ).int()
 
                     if self.training_management == "accelerate":
                         combined_pred, combined_labels = (
@@ -496,7 +471,9 @@ class Trainer:
                             self.accelerator.gather_for_metrics((sentence_pred, labels))
                         )
                         predicate_pred, predicate_labels = (
-                            self.accelerator.gather_for_metrics((predicate_pred, labels))
+                            self.accelerator.gather_for_metrics(
+                                (predicate_pred, labels)
+                            )
                         )
                         arg0_pred, arg0_labels = self.accelerator.gather_for_metrics(
                             (arg0_pred, labels)
@@ -505,7 +482,9 @@ class Trainer:
                             (arg1_pred, labels)
                         )
                         frameaxis_pred, frameaxis_labels = (
-                            self.accelerator.gather_for_metrics((frameaxis_pred, labels))
+                            self.accelerator.gather_for_metrics(
+                                (frameaxis_pred, labels)
+                            )
                         )
                     else:
                         combined_labels = labels
@@ -623,29 +602,41 @@ class Trainer:
                     )
 
                     eval_results_micro = f1_metric_micro.compute(average="micro")
-                    eval_results_micro_span = f1_metric_micro_span.compute(average="micro")
+                    eval_results_micro_span = f1_metric_micro_span.compute(
+                        average="micro"
+                    )
                     eval_results_micro_sentence = f1_metric_micro_sentence.compute(
                         average="micro"
                     )
                     eval_results_micro_predicate = f1_metric_micro_predicate.compute(
                         average="micro"
                     )
-                    eval_results_micro_arg0 = f1_metric_micro_arg0.compute(average="micro")
-                    eval_results_micro_arg1 = f1_metric_micro_arg1.compute(average="micro")
+                    eval_results_micro_arg0 = f1_metric_micro_arg0.compute(
+                        average="micro"
+                    )
+                    eval_results_micro_arg1 = f1_metric_micro_arg1.compute(
+                        average="micro"
+                    )
                     eval_results_micro_frameaxis = f1_metric_micro_frameaxis.compute(
                         average="micro"
                     )
 
                     eval_results_macro = f1_metric_macro.compute(average="macro")
-                    eval_results_macro_span = f1_metric_macro_span.compute(average="macro")
+                    eval_results_macro_span = f1_metric_macro_span.compute(
+                        average="macro"
+                    )
                     eval_results_macro_sentence = f1_metric_macro_sentence.compute(
                         average="macro"
                     )
                     eval_results_macro_predicate = f1_metric_macro_predicate.compute(
                         average="macro"
                     )
-                    eval_results_macro_arg0 = f1_metric_macro_arg0.compute(average="macro")
-                    eval_results_macro_arg1 = f1_metric_macro_arg1.compute(average="macro")
+                    eval_results_macro_arg0 = f1_metric_macro_arg0.compute(
+                        average="macro"
+                    )
+                    eval_results_macro_arg1 = f1_metric_macro_arg1.compute(
+                        average="macro"
+                    )
                     eval_results_macro_frameaxis = f1_metric_macro_frameaxis.compute(
                         average="macro"
                     )

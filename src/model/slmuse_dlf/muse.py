@@ -61,6 +61,8 @@ class SLMUSEDLF(nn.Module):
 
         self.model_type = "slmuse-dlf"
 
+        self.lambda_orthogonality = lambda_orthogonality
+
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
@@ -380,6 +382,19 @@ class SLMUSEDLF(nn.Module):
                 (sentence_embeddings.size(0),), device=sentence_embeddings.device
             )
 
+            sentence_loss_p = torch.zeros(
+                (sentence_embeddings.size(0),), device=sentence_embeddings.device
+            )
+            sentence_loss_a0 = torch.zeros(
+                (sentence_embeddings.size(0),), device=sentence_embeddings.device
+            )
+            sentence_loss_a1 = torch.zeros(
+                (sentence_embeddings.size(0),), device=sentence_embeddings.device
+            )
+            sentence_loss_fx = torch.zeros(
+                (sentence_embeddings.size(0),), device=sentence_embeddings.device
+            )
+
             # Process each sentence
             for sentence_idx in range(sentence_embeddings.size(1)):
 
@@ -392,10 +407,6 @@ class SLMUSEDLF(nn.Module):
                 d_p_sentence_list = []
                 d_a0_sentence_list = []
                 d_a1_sentence_list = []
-
-                sentence_loss = torch.zeros(
-                    (sentence_embeddings.size(0),), device=sentence_embeddings.device
-                )
 
                 # run if sentence embedding is not all zeros
                 if not torch.all(s_sentence_span == 0):
@@ -442,10 +453,16 @@ class SLMUSEDLF(nn.Module):
                                 mixed_precision=mixed_precision,
                             )
 
-                            sentence_loss += (
-                                unsupervised_results["loss"]
-                                * (mask_p & mask_a0 & mask_a1).float()
+                            sentence_loss_p += (
+                                unsupervised_results["loss_p"] * (mask_p).float()
                             )
+                            sentence_loss_a0 += (
+                                unsupervised_results["loss_a0"] * (mask_a0).float()
+                            )
+                            sentence_loss_a1 += (
+                                unsupervised_results["loss_a1"] * (mask_a1).float()
+                            )
+
                             valid_counts += (mask_p & mask_a0 & mask_a1).float()
 
                             # Use the vhat (reconstructed embeddings) for supervised predictions
@@ -504,15 +521,14 @@ class SLMUSEDLF(nn.Module):
                     d_fx_list.append(unsupervised_fx_results["fx"]["d"])
 
                     # Add the loss to the unsupervised losses
-                    sentence_loss += unsupervised_fx_results["loss"] * (mask_fx).float()
+                    sentence_loss_fx += (
+                        unsupervised_fx_results["loss"] * (mask_fx).float()
+                    )
                     valid_counts += mask_fx
 
                     # Delete unsupervised_fx_results to free memory
                     del unsupervised_fx_results, mask_fx
                     torch.cuda.empty_cache()
-
-                    # Apply mask to sentence loss
-                    unsupervised_losses += sentence_loss
                 else:
                     self.logger.debug(
                         f"Idx: [{sentence_idx}] Found all zeros in sentence embeddings"
@@ -659,8 +675,38 @@ class SLMUSEDLF(nn.Module):
                 mixed_precision=mixed_precision,
             )
 
-            # Normalize the unsupervised losses by valid counts for each batch
-            unsupervised_loss = (unsupervised_losses / valid_counts).mean()
+            # finalize unsupervised loss calc
+
+            # add ortho term to each unsupervised loss
+            span_p_loss = sentence_loss_p.sum() + (
+                self.lambda_orthogonality
+                * self.unsupervised.loss_fn.orthogonality_term(
+                    self.unsupervised.combined_autoencoder.F_matrices["p"]
+                )
+            )
+            span_a0_loss = sentence_loss_a0.sum() + (
+                self.lambda_orthogonality
+                * self.unsupervised.loss_fn.orthogonality_term(
+                    self.unsupervised.combined_autoencoder.F_matrices["a0"]
+                )
+            )
+            span_a1_loss = sentence_loss_a1.sum() + (
+                self.lambda_orthogonality
+                * self.unsupervised.loss_fn.orthogonality_term(
+                    self.unsupervised.combined_autoencoder.F_matrices["a1"]
+                )
+            )
+            span_fx_loss = sentence_loss_fx.sum() + (
+                self.lambda_orthogonality
+                * self.unsupervised.loss_fn.orthogonality_term(
+                    self.unsupervised_fx.frameaxis_autoencoder.F
+                )
+            )
+
+            # sum span losses
+            unsupervised_loss = (
+                span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss
+            ) / valid_counts.sum()
 
             # Delete aggregated tensors after use
             del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated

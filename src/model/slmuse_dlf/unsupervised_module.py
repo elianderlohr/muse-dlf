@@ -124,10 +124,10 @@ class SLMUSEUnsupervised(nn.Module):
                 mixed_precision=mixed_precision,
             )
 
-            loss = loss_p + loss_a0 + loss_a1
-
             results = {
-                "loss": loss,
+                "loss_p": loss_p,
+                "loss_a0": loss_a0,
+                "loss_a1": loss_a1,
                 "p": outputs["p"],
                 "a0": outputs["a0"],
                 "a1": outputs["a1"],
