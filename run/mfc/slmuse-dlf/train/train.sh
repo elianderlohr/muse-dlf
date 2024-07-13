@@ -157,9 +157,9 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --t 8 \
     --batch_size 8 \
     --num_sentences 32 \
-    --max_sentence_length 64 \
+    --max_sentence_length 58 \
     --max_args_per_sentence 10 \
-    --max_arg_length 16 \
+    --max_arg_length 10 \
     --muse_unsupervised_num_layers 2 \
     --muse_unsupervised_activation gelu \
     --muse_unsupervised_use_batch_norm True \
