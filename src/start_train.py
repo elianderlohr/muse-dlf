@@ -71,82 +71,89 @@ def load_model(
     _debug=False,
     _detect_anomaly=False,
 ):
-    logger.info("Loading model of type: %s", model_type)
+    try:
+        logger.info("Loading model of type: %s", model_type)
 
-    if model_type == "slmuse-dlf":
-        model = SLMUSEDLF(
-            embedding_dim=embedding_dim,
-            frameaxis_dim=frameaxis_dim,
-            hidden_dim=hidden_dim,
-            num_classes=num_classes,
-            num_sentences=num_sentences,
-            dropout_prob=dropout_prob,
-            bert_model_name=bert_model_name,
-            bert_model_name_or_path=bert_model_name_or_path,
-            sentence_pooling=sentence_pooling,
-            hidden_state=hidden_state,
-            lambda_orthogonality=lambda_orthogonality,
-            M=M,
-            t=t,
-            muse_unsupervised_num_layers=muse_unsupervised_num_layers,
-            muse_unsupervised_activation=muse_unsupervised_activation,
-            muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
-            muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
-            muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
-            muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
-            muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
-            muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
-            muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-            muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
-            num_negatives=num_negatives,
-            supervised_concat_frameaxis=supervised_concat_frameaxis,
-            supervised_num_layers=supervised_num_layers,
-            supervised_activation=supervised_activation,
-            alternative_supervised=alternative_supervised,
-            _debug=_debug,
-            _detect_anomaly=_detect_anomaly,
-        )
-    else:
-        model = MUSEDLF(
-            embedding_dim=embedding_dim,
-            frameaxis_dim=frameaxis_dim,
-            hidden_dim=hidden_dim,
-            num_classes=num_classes,
-            num_sentences=num_sentences,
-            dropout_prob=dropout_prob,
-            bert_model_name=bert_model_name,
-            bert_model_name_or_path=bert_model_name_or_path,
-            sentence_pooling=sentence_pooling,
-            hidden_state=hidden_state,
-            lambda_orthogonality=lambda_orthogonality,
-            M=M,
-            t=t,
-            muse_unsupervised_num_layers=muse_unsupervised_num_layers,
-            muse_unsupervised_activation=muse_unsupervised_activation,
-            muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
-            muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
-            muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
-            muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
-            muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
-            muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
-            muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-            muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
-            num_negatives=num_negatives,
-            supervised_concat_frameaxis=supervised_concat_frameaxis,
-            supervised_num_layers=supervised_num_layers,
-            supervised_activation=supervised_activation,
-            _debug=_debug,
-            _detect_anomaly=_detect_anomaly,
-        )
+        if model_type == "slmuse-dlf":
+            model = SLMUSEDLF(
+                embedding_dim=embedding_dim,
+                frameaxis_dim=frameaxis_dim,
+                hidden_dim=hidden_dim,
+                num_classes=num_classes,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                bert_model_name=bert_model_name,
+                bert_model_name_or_path=bert_model_name_or_path,
+                sentence_pooling=sentence_pooling,
+                hidden_state=hidden_state,
+                lambda_orthogonality=lambda_orthogonality,
+                M=M,
+                t=t,
+                muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+                muse_unsupervised_activation=muse_unsupervised_activation,
+                muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+                muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+                muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+                muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+                muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+                muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+                muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+                muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+                num_negatives=num_negatives,
+                supervised_concat_frameaxis=supervised_concat_frameaxis,
+                supervised_num_layers=supervised_num_layers,
+                supervised_activation=supervised_activation,
+                alternative_supervised=alternative_supervised,
+                _debug=_debug,
+                _detect_anomaly=_detect_anomaly,
+            )
+        else:
+            model = MUSEDLF(
+                embedding_dim=embedding_dim,
+                frameaxis_dim=frameaxis_dim,
+                hidden_dim=hidden_dim,
+                num_classes=num_classes,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                bert_model_name=bert_model_name,
+                bert_model_name_or_path=bert_model_name_or_path,
+                sentence_pooling=sentence_pooling,
+                hidden_state=hidden_state,
+                lambda_orthogonality=lambda_orthogonality,
+                M=M,
+                t=t,
+                muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+                muse_unsupervised_activation=muse_unsupervised_activation,
+                muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+                muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+                muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+                muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+                muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+                muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+                muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+                muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+                num_negatives=num_negatives,
+                supervised_concat_frameaxis=supervised_concat_frameaxis,
+                supervised_num_layers=supervised_num_layers,
+                supervised_activation=supervised_activation,
+                _debug=_debug,
+                _detect_anomaly=_detect_anomaly,
+            )
 
-    model = model.to(device)
+        model = model.to(device)
 
-    if path_pretrained_model:
-        logger.info("Loading model from pretrained path: %s", path_pretrained_model)
-        model.load_state_dict(torch.load(path_pretrained_model, map_location=device))
+        if path_pretrained_model:
+            logger.info("Loading model from pretrained path: %s", path_pretrained_model)
+            model.load_state_dict(
+                torch.load(path_pretrained_model, map_location=device)
+            )
 
-    logger.info("Model loaded successfully")
-    return model
+        logger.info("Model loaded successfully")
+        return model
+
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        raise
 
 
 def str2bool(v):
@@ -161,38 +168,54 @@ def str2bool(v):
 
 
 def setup_logging(debug):
-    if debug:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
-    else:
-        LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
-    logger = LoggerManager.get_logger(__name__)
-    return logger
+    try:
+        if debug:
+            LoggerManager.use_accelerate(accelerate_used=True, log_level="DEBUG")
+        else:
+            LoggerManager.use_accelerate(accelerate_used=True, log_level="INFO")
+        logger = LoggerManager.get_logger(__name__)
+        return logger
+    except Exception as e:
+        print(f"Error setting up logging: {e}")
+        raise
 
 
 def initialize_wandb(
     wandb_api_key, project_name, tags, config, mixed_precision, run_name
 ):
-    wandb.login(key=wandb_api_key)
-    accelerator = Accelerator(log_with="wandb", mixed_precision=mixed_precision)
-    accelerator.init_trackers(
-        project_name,
-        config,
-        init_kwargs={
-            "wandb": {"tags": tags.split(","), "name": run_name, "job_type": "train"}
-        },
-    )
-    return accelerator
+    try:
+        wandb.login(key=wandb_api_key)
+        accelerator = Accelerator(log_with="wandb", mixed_precision=mixed_precision)
+        accelerator.init_trackers(
+            project_name,
+            config,
+            init_kwargs={
+                "wandb": {
+                    "tags": tags.split(","),
+                    "name": run_name,
+                    "job_type": "train",
+                }
+            },
+        )
+        return accelerator
+    except Exception as e:
+        print(f"Error initializing wandb: {e}")
+        raise
 
 
 def set_seed(seed):
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    try:
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    except Exception as e:
+        print(f"Error setting seed: {e}")
+        raise
 
 
 def main():
@@ -535,11 +558,12 @@ def main():
 
     args = parser.parse_args()
 
-    # Setup logging
-    logger = setup_logging(args.debug)
+    try:
+        # Setup logging
+        logger = setup_logging(args.debug)
 
-    logger.info(
-        """#####################################################
+        logger.info(
+            """#####################################################
 #                                                   #
 #              Welcome to MUSE-DLF TRAIN!           #
 #                                                   #
@@ -547,247 +571,254 @@ def main():
 #          Learning for Frame Classification        #
 #                                                   #
 #####################################################"""
-    )
+        )
 
-    logger.info(f"Running {args.model_type} model...")
+        logger.info(f"Running {args.model_type} model...")
 
-    logger.info("Running the model with the following arguments: %s", args)
+        logger.info("Running the model with the following arguments: %s", args)
 
-    config = {
-        "embedding_dim": args.embedding_dim,
-        "hidden_dim": args.hidden_dim,
-        "num_classes": args.num_classes,
-        "lambda_orthogonality": args.lambda_orthogonality,
-        "dropout_prob": args.dropout_prob,
-        "M": args.M,
-        "t": args.t,
-        "num_sentences": args.num_sentences,
-        "frameaxis_dim": args.frameaxis_dim,
-        "max_sentence_length": args.max_sentence_length,
-        "max_args_per_sentence": args.max_args_per_sentence,
-        "max_arg_length": args.max_arg_length,
-        "batch_size": args.batch_size,
-        "epochs": args.epochs,
-        "test_size": args.test_size,
-        "tau_min": args.tau_min,
-        "tau_decay": args.tau_decay,
-        "muse_unsupervised_num_layers": args.muse_unsupervised_num_layers,
-        "muse_unsupervised_activation": args.muse_unsupervised_activation,
-        "muse_unsupervised_use_batch_norm": args.muse_unsupervised_use_batch_norm,
-        "muse_unsupervised_matmul_input": args.muse_unsupervised_matmul_input,
-        "muse_unsupervised_gumbel_softmax_log": args.muse_unsupervised_gumbel_softmax_log,
-        "muse_frameaxis_unsupervised_num_layers": args.muse_frameaxis_unsupervised_num_layers,
-        "muse_frameaxis_unsupervised_activation": args.muse_frameaxis_unsupervised_activation,
-        "muse_frameaxis_unsupervised_use_batch_norm": args.muse_frameaxis_unsupervised_use_batch_norm,
-        "muse_frameaxis_unsupervised_matmul_input": args.muse_frameaxis_unsupervised_matmul_input,
-        "muse_frameaxis_unsupervised_gumbel_softmax_log": args.muse_frameaxis_unsupervised_gumbel_softmax_log,
-        "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
-        "supervised_num_layers": args.supervised_num_layers,
-        "supervised_activation": args.supervised_activation,
-        "alternative_supervised": args.alternative_supervised,
-        "sentence_pooling": args.sentence_pooling,
-        "hidden_state": args.hidden_state,
-        "lr": args.lr,
-        "adam_weight_decay": args.adam_weight_decay,
-        "adamw_weight_decay": args.adamw_weight_decay,
-        "optimizer": args.optimizer,
-        "alpha": args.alpha,
-        "debug": args.debug,
-        "mixed_precision": args.mixed_precision,
-        "num_negatives": args.num_negatives,
-        "accumulation_steps": args.accumulation_steps,
-        "sample_size": args.sample_size,
-        "seed": args.seed,
-        "detect_anomaly": args.detect_anomaly,
-        "bert_model_name": args.name_tokenizer,
-        "path_name_bert_model": args.path_name_bert_model,
-        "path_name_pretrained_muse_model": args.path_name_pretrained_muse_model,
-    }
+        config = {
+            "embedding_dim": args.embedding_dim,
+            "hidden_dim": args.hidden_dim,
+            "num_classes": args.num_classes,
+            "lambda_orthogonality": args.lambda_orthogonality,
+            "dropout_prob": args.dropout_prob,
+            "M": args.M,
+            "t": args.t,
+            "num_sentences": args.num_sentences,
+            "frameaxis_dim": args.frameaxis_dim,
+            "max_sentence_length": args.max_sentence_length,
+            "max_args_per_sentence": args.max_args_per_sentence,
+            "max_arg_length": args.max_arg_length,
+            "batch_size": args.batch_size,
+            "epochs": args.epochs,
+            "test_size": args.test_size,
+            "tau_min": args.tau_min,
+            "tau_decay": args.tau_decay,
+            "muse_unsupervised_num_layers": args.muse_unsupervised_num_layers,
+            "muse_unsupervised_activation": args.muse_unsupervised_activation,
+            "muse_unsupervised_use_batch_norm": args.muse_unsupervised_use_batch_norm,
+            "muse_unsupervised_matmul_input": args.muse_unsupervised_matmul_input,
+            "muse_unsupervised_gumbel_softmax_log": args.muse_unsupervised_gumbel_softmax_log,
+            "muse_frameaxis_unsupervised_num_layers": args.muse_frameaxis_unsupervised_num_layers,
+            "muse_frameaxis_unsupervised_activation": args.muse_frameaxis_unsupervised_activation,
+            "muse_frameaxis_unsupervised_use_batch_norm": args.muse_frameaxis_unsupervised_use_batch_norm,
+            "muse_frameaxis_unsupervised_matmul_input": args.muse_frameaxis_unsupervised_matmul_input,
+            "muse_frameaxis_unsupervised_gumbel_softmax_log": args.muse_frameaxis_unsupervised_gumbel_softmax_log,
+            "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
+            "supervised_num_layers": args.supervised_num_layers,
+            "supervised_activation": args.supervised_activation,
+            "alternative_supervised": args.alternative_supervised,
+            "sentence_pooling": args.sentence_pooling,
+            "hidden_state": args.hidden_state,
+            "lr": args.lr,
+            "adam_weight_decay": args.adam_weight_decay,
+            "adamw_weight_decay": args.adamw_weight_decay,
+            "optimizer": args.optimizer,
+            "alpha": args.alpha,
+            "debug": args.debug,
+            "mixed_precision": args.mixed_precision,
+            "num_negatives": args.num_negatives,
+            "accumulation_steps": args.accumulation_steps,
+            "sample_size": args.sample_size,
+            "seed": args.seed,
+            "detect_anomaly": args.detect_anomaly,
+            "bert_model_name": args.name_tokenizer,
+            "path_name_bert_model": args.path_name_bert_model,
+            "path_name_pretrained_muse_model": args.path_name_pretrained_muse_model,
+        }
 
-    # generate run name
-    run_name = args.run_name
+        # generate run name
+        run_name = args.run_name
 
-    # Initialize wandb and accelerator
-    accelerator = initialize_wandb(
-        args.wandb_api_key,
-        args.project_name,
-        args.tags,
-        config,
-        args.mixed_precision,
-        run_name,
-    )
+        # Initialize wandb and accelerator
+        accelerator = initialize_wandb(
+            args.wandb_api_key,
+            args.project_name,
+            args.tags,
+            config,
+            args.mixed_precision,
+            run_name,
+        )
 
-    if args.seed:
-        set_seed(args.seed)
-        logger.info("Random seed set to: %d", args.seed)
+        if args.seed:
+            set_seed(args.seed)
+            logger.info("Random seed set to: %d", args.seed)
 
-    # build save path
-    save_path = f"{args.save_base_path}/{run_name}"
+        # build save path
+        save_path = f"{args.save_base_path}/{run_name}"
 
-    # only muse-dlf and slmuse-dlf models are supported
-    if args.model_type not in ["muse-dlf", "slmuse-dlf"]:
-        raise ValueError("Only muse-dlf and slmuse-dlf models are supported")
+        # only muse-dlf and slmuse-dlf models are supported
+        if args.model_type not in ["muse-dlf", "slmuse-dlf"]:
+            raise ValueError("Only muse-dlf and slmuse-dlf models are supported")
 
-    model = load_model(
-        model_type=args.model_type,
-        embedding_dim=args.embedding_dim,
-        frameaxis_dim=args.frameaxis_dim,
-        hidden_dim=args.hidden_dim,
-        num_classes=args.num_classes,
-        num_sentences=args.num_sentences,
-        dropout_prob=args.dropout_prob,
-        bert_model_name=args.name_tokenizer,
-        bert_model_name_or_path=args.path_name_bert_model,
-        sentence_pooling=args.sentence_pooling,
-        hidden_state=args.hidden_state,
-        lambda_orthogonality=args.lambda_orthogonality,
-        M=args.M,
-        t=args.t,
-        muse_unsupervised_num_layers=args.muse_unsupervised_num_layers,
-        muse_unsupervised_activation=args.muse_unsupervised_activation,
-        muse_unsupervised_use_batch_norm=args.muse_unsupervised_use_batch_norm,
-        muse_unsupervised_matmul_input=args.muse_unsupervised_matmul_input,
-        muse_unsupervised_gumbel_softmax_log=args.muse_unsupervised_gumbel_softmax_log,
-        muse_frameaxis_unsupervised_num_layers=args.muse_frameaxis_unsupervised_num_layers,
-        muse_frameaxis_unsupervised_activation=args.muse_frameaxis_unsupervised_activation,
-        muse_frameaxis_unsupervised_use_batch_norm=args.muse_frameaxis_unsupervised_use_batch_norm,
-        muse_frameaxis_unsupervised_matmul_input=args.muse_frameaxis_unsupervised_matmul_input,
-        muse_frameaxis_unsupervised_gumbel_softmax_log=args.muse_frameaxis_unsupervised_gumbel_softmax_log,
-        num_negatives=args.num_negatives,
-        supervised_concat_frameaxis=args.supervised_concat_frameaxis,
-        supervised_num_layers=args.supervised_num_layers,
-        supervised_activation=args.supervised_activation,
-        alternative_supervised=args.alternative_supervised,
-        path_pretrained_model=args.path_name_pretrained_muse_model,
-        device="cuda",
-        logger=logger,
-        _debug=args.debug,
-        _detect_anomaly=args.detect_anomaly,
-    )
+        model = load_model(
+            model_type=args.model_type,
+            embedding_dim=args.embedding_dim,
+            frameaxis_dim=args.frameaxis_dim,
+            hidden_dim=args.hidden_dim,
+            num_classes=args.num_classes,
+            num_sentences=args.num_sentences,
+            dropout_prob=args.dropout_prob,
+            bert_model_name=args.name_tokenizer,
+            bert_model_name_or_path=args.path_name_bert_model,
+            sentence_pooling=args.sentence_pooling,
+            hidden_state=args.hidden_state,
+            lambda_orthogonality=args.lambda_orthogonality,
+            M=args.M,
+            t=args.t,
+            muse_unsupervised_num_layers=args.muse_unsupervised_num_layers,
+            muse_unsupervised_activation=args.muse_unsupervised_activation,
+            muse_unsupervised_use_batch_norm=args.muse_unsupervised_use_batch_norm,
+            muse_unsupervised_matmul_input=args.muse_unsupervised_matmul_input,
+            muse_unsupervised_gumbel_softmax_log=args.muse_unsupervised_gumbel_softmax_log,
+            muse_frameaxis_unsupervised_num_layers=args.muse_frameaxis_unsupervised_num_layers,
+            muse_frameaxis_unsupervised_activation=args.muse_frameaxis_unsupervised_activation,
+            muse_frameaxis_unsupervised_use_batch_norm=args.muse_frameaxis_unsupervised_use_batch_norm,
+            muse_frameaxis_unsupervised_matmul_input=args.muse_frameaxis_unsupervised_matmul_input,
+            muse_frameaxis_unsupervised_gumbel_softmax_log=args.muse_frameaxis_unsupervised_gumbel_softmax_log,
+            num_negatives=args.num_negatives,
+            supervised_concat_frameaxis=args.supervised_concat_frameaxis,
+            supervised_num_layers=args.supervised_num_layers,
+            supervised_activation=args.supervised_activation,
+            alternative_supervised=args.alternative_supervised,
+            path_pretrained_model=args.path_name_pretrained_muse_model,
+            device="cuda",
+            logger=logger,
+            _debug=args.debug,
+            _detect_anomaly=args.detect_anomaly,
+        )
 
-    if args.name_tokenizer == "roberta-base":
-        tokenizer = RobertaTokenizerFast.from_pretrained(args.name_tokenizer)
-    elif args.name_tokenizer == "bert-base-uncased":
-        tokenizer = BertTokenizer.from_pretrained(args.name_tokenizer)
+        if args.name_tokenizer == "roberta-base":
+            tokenizer = RobertaTokenizerFast.from_pretrained(args.name_tokenizer)
+        elif args.name_tokenizer == "bert-base-uncased":
+            tokenizer = BertTokenizer.from_pretrained(args.name_tokenizer)
 
-    logger.info("Tokenizer loaded successfully")
+        logger.info("Tokenizer loaded successfully")
 
-    # Preprocess the dim_names
-    dim_names = args.dim_names.split(",")
+        # Preprocess the dim_names
+        dim_names = args.dim_names.split(",")
 
-    # Split class_column_names into a list
-    class_column_names = args.class_column_names.split(";")
+        # Split class_column_names into a list
+        class_column_names = args.class_column_names.split(";")
 
-    # Preprocess the input
-    preprocessor = PreProcessor(
-        tokenizer,
-        batch_size=args.batch_size,
-        max_sentences_per_article=args.num_sentences,
-        max_sentence_length=args.max_sentence_length,
-        max_args_per_sentence=args.max_args_per_sentence,
-        max_arg_length=args.max_arg_length,
-        test_size=args.test_size,
-        frameaxis_dim=args.frameaxis_dim,
-        bert_model_name=args.name_tokenizer,
-        name_tokenizer=args.name_tokenizer,
-        path_name_bert_model=args.path_name_bert_model,
-        path_antonym_pairs=args.path_antonym_pairs,
-        dim_names=dim_names,
-        class_column_names=class_column_names,
-    )
+        # Preprocess the input
+        preprocessor = PreProcessor(
+            tokenizer,
+            batch_size=args.batch_size,
+            max_sentences_per_article=args.num_sentences,
+            max_sentence_length=args.max_sentence_length,
+            max_args_per_sentence=args.max_args_per_sentence,
+            max_arg_length=args.max_arg_length,
+            test_size=args.test_size,
+            frameaxis_dim=args.frameaxis_dim,
+            bert_model_name=args.name_tokenizer,
+            name_tokenizer=args.name_tokenizer,
+            path_name_bert_model=args.path_name_bert_model,
+            path_antonym_pairs=args.path_antonym_pairs,
+            dim_names=dim_names,
+            class_column_names=class_column_names,
+        )
 
-    logger.info("Preprocessor loaded successfully")
+        logger.info("Preprocessor loaded successfully")
 
-    # Load the data
-    _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
-        args.path_data,
-        "json",
-        dataframe_path={
-            "srl": args.path_srls,
-            "frameaxis": args.path_frameaxis,
-        },
-        force_recalculate={
-            "srl": args.force_recalculate_srls,
-            "frameaxis": args.force_recalculate_frameaxis,
-        },
-        sample_size=args.sample_size,
-    )
+        # Load the data
+        _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
+            args.path_data,
+            "json",
+            dataframe_path={
+                "srl": args.path_srls,
+                "frameaxis": args.path_frameaxis,
+            },
+            force_recalculate={
+                "srl": args.force_recalculate_srls,
+                "frameaxis": args.force_recalculate_frameaxis,
+            },
+            sample_size=args.sample_size,
+        )
 
-    logger.info("Data loaded successfully")
+        logger.info("Data loaded successfully")
 
-    # prepare components for accelerate
-    model, train_dataloader, test_dataloader = accelerator.prepare(
-        model, train_dataloader, test_dataloader
-    )
+        # prepare components for accelerate
+        model, train_dataloader, test_dataloader = accelerator.prepare(
+            model, train_dataloader, test_dataloader
+        )
 
-    # Loss function and optimizer
-    if args.model_type == "slmuse-dlf":
-        loss_function = nn.CrossEntropyLoss()
-        logger.info("Loss function set to CrossEntropyLoss")
-    else:
-        loss_function = nn.BCEWithLogitsLoss()
-        logger.info("Loss function set to BCEWithLogitsLoss")
+        # Loss function and optimizer
+        if args.model_type == "slmuse-dlf":
+            loss_function = nn.CrossEntropyLoss()
+            logger.info("Loss function set to CrossEntropyLoss")
+        else:
+            loss_function = nn.BCEWithLogitsLoss()
+            logger.info("Loss function set to BCEWithLogitsLoss")
 
-    lr = args.lr
+        lr = args.lr
 
-    optimizer_type = args.optimizer
-    if optimizer_type == "adam":
-        weight_decay = args.adam_weight_decay
-        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    elif optimizer_type == "adamw":
-        weight_decay = args.adamw_weight_decay
-        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer_type = args.optimizer
+        if optimizer_type == "adam":
+            weight_decay = args.adam_weight_decay
+            optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+        elif optimizer_type == "adamw":
+            weight_decay = args.adamw_weight_decay
+            optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=10,
-        num_training_steps=len(train_dataloader) * args.planned_epochs,
-    )
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=10,
+            num_training_steps=len(train_dataloader) * args.planned_epochs,
+        )
 
-    logger.info("Loss function and optimizer loaded successfully")
+        logger.info("Loss function and optimizer loaded successfully")
 
-    # prepare optimizer and scheduler
-    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
+        # prepare optimizer and scheduler
+        optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
-    logger.info("Log model using WANDB", main_process_only=True)
-    logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
-    logger.info("WANDB run name: %s", run_name, main_process_only=True)
-    logger.info("WANDB tags: %s", args.tags, main_process_only=True)
+        logger.info("Log model using WANDB", main_process_only=True)
+        logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
+        logger.info("WANDB run name: %s", run_name, main_process_only=True)
+        logger.info("WANDB tags: %s", args.tags, main_process_only=True)
 
-    # make dir
-    os.makedirs(save_path, exist_ok=True)
+        # make dir
+        os.makedirs(save_path, exist_ok=True)
 
-    # save the "config" to save_path as "config.json" file
-    with open(f"{save_path}/config.json", "w") as json_file:
-        json.dump(config, json_file, indent=4)
+        # save the "config" to save_path as "config.json" file
+        with open(f"{save_path}/config.json", "w") as json_file:
+            json.dump(config, json_file, indent=4)
 
-    # Train the model
-    trainer = Trainer(
-        model=model,
-        train_dataloader=train_dataloader,
-        test_dataloader=test_dataloader,
-        optimizer=optimizer,
-        loss_function=loss_function,
-        scheduler=scheduler,
-        model_type=args.model_type,
-        training_management="accelerate",
-        tau_min=args.tau_min,
-        tau_decay=args.tau_decay,
-        save_path=save_path,
-        run_name=run_name,
-        accelerator_instance=accelerator,
-        mixed_precision=args.mixed_precision,
-        accumulation_steps=args.accumulation_steps,
-        model_config=config,
-    )
+        # Train the model
+        trainer = Trainer(
+            model=model,
+            train_dataloader=train_dataloader,
+            test_dataloader=test_dataloader,
+            optimizer=optimizer,
+            loss_function=loss_function,
+            scheduler=scheduler,
+            model_type=args.model_type,
+            training_management="accelerate",
+            tau_min=args.tau_min,
+            tau_decay=args.tau_decay,
+            save_path=save_path,
+            run_name=run_name,
+            accelerator_instance=accelerator,
+            mixed_precision=args.mixed_precision,
+            accumulation_steps=args.accumulation_steps,
+            model_config=config,
+        )
 
-    trainer = accelerator.prepare(trainer)
+        trainer = accelerator.prepare(trainer)
 
-    trainer.run_training(epochs=args.epochs, alpha=args.alpha)
+        trainer.run_training(epochs=args.epochs, alpha=args.alpha)
 
-    logger.info("Training completed successfully")
+        logger.info("Training completed successfully")
 
-    accelerator.end_training()
+        accelerator.end_training()
+
+    except Exception as e:
+        if "logger" in locals():
+            logger.error(f"Error during training: {e}")
+        else:
+            print(f"Error during training: {e}")
+        raise
 
 
 if __name__ == "__main__":

@@ -718,7 +718,7 @@ class SLMUSEDLF(nn.Module):
             # sum span losses
             unsupervised_loss = (
                 span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss
-            )  # / valid_counts.sum()
+            ) / valid_counts.sum()
 
             # Delete aggregated tensors after use
             del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
