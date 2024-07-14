@@ -438,264 +438,294 @@ class Trainer:
             arg1_labels = None
             frameaxis_labels = None
 
-            with torch.no_grad():
-                # Check train metrics every 50 steps
-                if global_steps % 50 == 0:
-
-                    logger.info(
-                        f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
-                    )
-
-                    combined_pred = self.get_activation_function(combined_logits).int()
-                    span_pred = self.get_activation_function(span_logits).int()
-                    sentence_pred = self.get_activation_function(sentence_logits).int()
-
-                    # predicate, arg0, arg1, frameaxis
-                    predicate_pred = self.get_activation_function(
-                        other["predicate"]
-                    ).int()
-                    arg0_pred = self.get_activation_function(other["arg0"]).int()
-                    arg1_pred = self.get_activation_function(other["arg1"]).int()
-                    frameaxis_pred = self.get_activation_function(
-                        other["frameaxis"]
-                    ).int()
-
-                    if self.training_management == "accelerate":
-                        combined_pred, combined_labels = (
-                            self.accelerator.gather_for_metrics((combined_pred, labels))
+            try:
+                with torch.no_grad():
+                    # Check train metrics every 50 steps
+                    if global_steps % 50 == 0:
+                        logger.info(
+                            f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                         )
-                        span_pred, span_labels = self.accelerator.gather_for_metrics(
-                            (span_pred, labels)
-                        )
-                        sentence_pred, sentence_labels = (
-                            self.accelerator.gather_for_metrics((sentence_pred, labels))
-                        )
-                        predicate_pred, predicate_labels = (
-                            self.accelerator.gather_for_metrics(
-                                (predicate_pred, labels)
+
+                        combined_pred = self.get_activation_function(
+                            combined_logits
+                        ).int()
+                        span_pred = self.get_activation_function(span_logits).int()
+                        sentence_pred = self.get_activation_function(
+                            sentence_logits
+                        ).int()
+
+                        # predicate, arg0, arg1, frameaxis
+                        predicate_pred = self.get_activation_function(
+                            other["predicate"]
+                        ).int()
+                        arg0_pred = self.get_activation_function(other["arg0"]).int()
+                        arg1_pred = self.get_activation_function(other["arg1"]).int()
+                        frameaxis_pred = self.get_activation_function(
+                            other["frameaxis"]
+                        ).int()
+
+                        if self.training_management == "accelerate":
+                            combined_pred, combined_labels = (
+                                self.accelerator.gather_for_metrics(
+                                    (combined_pred, labels)
+                                )
                             )
-                        )
-                        arg0_pred, arg0_labels = self.accelerator.gather_for_metrics(
-                            (arg0_pred, labels)
-                        )
-                        arg1_pred, arg1_labels = self.accelerator.gather_for_metrics(
-                            (arg1_pred, labels)
-                        )
-                        frameaxis_pred, frameaxis_labels = (
-                            self.accelerator.gather_for_metrics(
-                                (frameaxis_pred, labels)
+                            span_pred, span_labels = (
+                                self.accelerator.gather_for_metrics((span_pred, labels))
                             )
+                            sentence_pred, sentence_labels = (
+                                self.accelerator.gather_for_metrics(
+                                    (sentence_pred, labels)
+                                )
+                            )
+                            predicate_pred, predicate_labels = (
+                                self.accelerator.gather_for_metrics(
+                                    (predicate_pred, labels)
+                                )
+                            )
+                            arg0_pred, arg0_labels = (
+                                self.accelerator.gather_for_metrics((arg0_pred, labels))
+                            )
+                            arg1_pred, arg1_labels = (
+                                self.accelerator.gather_for_metrics((arg1_pred, labels))
+                            )
+                            frameaxis_pred, frameaxis_labels = (
+                                self.accelerator.gather_for_metrics(
+                                    (frameaxis_pred, labels)
+                                )
+                            )
+                        else:
+                            combined_labels = labels
+                            span_labels = labels
+                            sentence_labels = labels
+                            predicate_labels = labels
+                            arg0_labels = labels
+                            arg1_labels = labels
+                            frameaxis_labels = labels
+
+                        # Transform from one-hot to class index
+                        combined_pred = combined_pred.argmax(dim=1)
+                        span_pred = span_pred.argmax(dim=1)
+                        sentence_pred = sentence_pred.argmax(dim=1)
+                        predicate_pred = predicate_pred.argmax(dim=1)
+                        arg0_pred = arg0_pred.argmax(dim=1)
+                        arg1_pred = arg1_pred.argmax(dim=1)
+                        frameaxis_pred = frameaxis_pred.argmax(dim=1)
+                        combined_labels = combined_labels.argmax(dim=1)
+                        span_labels = span_labels.argmax(dim=1)
+                        sentence_labels = sentence_labels.argmax(dim=1)
+                        predicate_labels = predicate_labels.argmax(dim=1)
+                        arg0_labels = arg0_labels.argmax(dim=1)
+                        arg1_labels = arg1_labels.argmax(dim=1)
+                        frameaxis_labels = frameaxis_labels.argmax(dim=1)
+
+                        # Macro F1
+                        f1_metric_macro.add_batch(
+                            predictions=combined_pred.cpu().numpy(),
+                            references=combined_labels.cpu().numpy(),
                         )
-                    else:
-                        combined_labels = labels
-                        span_labels = labels
-                        sentence_labels = labels
-                        predicate_labels = labels
-                        arg0_labels = labels
-                        arg1_labels = labels
-                        frameaxis_labels = labels
+                        f1_metric_macro_span.add_batch(
+                            predictions=span_pred.cpu().numpy(),
+                            references=span_labels.cpu().numpy(),
+                        )
+                        f1_metric_macro_sentence.add_batch(
+                            predictions=sentence_pred.cpu().numpy(),
+                            references=sentence_labels.cpu().numpy(),
+                        )
+                        f1_metric_macro_predicate.add_batch(
+                            predictions=predicate_pred.cpu().numpy(),
+                            references=predicate_labels.cpu().numpy(),
+                        )
+                        f1_metric_macro_arg0.add_batch(
+                            predictions=arg0_pred.cpu().numpy(),
+                            references=arg0_labels.cpu().numpy(),
+                        )
+                        f1_metric_macro_arg1.add_batch(
+                            predictions=arg1_pred.cpu().numpy(),
+                            references=arg1_labels.cpu().numpy(),
+                        )
+                        f1_metric_macro_frameaxis.add_batch(
+                            predictions=frameaxis_pred.cpu().numpy(),
+                            references=frameaxis_labels.cpu().numpy(),
+                        )
 
-                    # Transform from one-hot to class index
-                    combined_pred = combined_pred.argmax(dim=1)
-                    span_pred = span_pred.argmax(dim=1)
-                    sentence_pred = sentence_pred.argmax(dim=1)
-                    predicate_pred = predicate_pred.argmax(dim=1)
-                    arg0_pred = arg0_pred.argmax(dim=1)
-                    arg1_pred = arg1_pred.argmax(dim=1)
-                    frameaxis_pred = frameaxis_pred.argmax(dim=1)
-                    combined_labels = combined_labels.argmax(dim=1)
-                    span_labels = span_labels.argmax(dim=1)
-                    sentence_labels = sentence_labels.argmax(dim=1)
-                    predicate_labels = predicate_labels.argmax(dim=1)
-                    arg0_labels = arg0_labels.argmax(dim=1)
-                    arg1_labels = arg1_labels.argmax(dim=1)
-                    frameaxis_labels = frameaxis_labels.argmax(dim=1)
+                        # Micro F1
+                        f1_metric_micro.add_batch(
+                            predictions=combined_pred.cpu().numpy(),
+                            references=combined_labels.cpu().numpy(),
+                        )
+                        f1_metric_micro_span.add_batch(
+                            predictions=span_pred.cpu().numpy(),
+                            references=span_labels.cpu().numpy(),
+                        )
+                        f1_metric_micro_sentence.add_batch(
+                            predictions=sentence_pred.cpu().numpy(),
+                            references=sentence_labels.cpu().numpy(),
+                        )
+                        f1_metric_micro_predicate.add_batch(
+                            predictions=predicate_pred.cpu().numpy(),
+                            references=predicate_labels.cpu().numpy(),
+                        )
+                        f1_metric_micro_arg0.add_batch(
+                            predictions=arg0_pred.cpu().numpy(),
+                            references=arg0_labels.cpu().numpy(),
+                        )
+                        f1_metric_micro_arg1.add_batch(
+                            predictions=arg1_pred.cpu().numpy(),
+                            references=arg1_labels.cpu().numpy(),
+                        )
+                        f1_metric_micro_frameaxis.add_batch(
+                            predictions=frameaxis_pred.cpu().numpy(),
+                            references=frameaxis_labels.cpu().numpy(),
+                        )
 
-                    # Macro F1
-                    f1_metric_macro.add_batch(
-                        predictions=combined_pred.cpu().numpy(),
-                        references=combined_labels.cpu().numpy(),
-                    )
-                    f1_metric_macro_span.add_batch(
-                        predictions=span_pred.cpu().numpy(),
-                        references=span_labels.cpu().numpy(),
-                    )
-                    f1_metric_macro_sentence.add_batch(
-                        predictions=sentence_pred.cpu().numpy(),
-                        references=sentence_labels.cpu().numpy(),
-                    )
-                    f1_metric_macro_predicate.add_batch(
-                        predictions=predicate_pred.cpu().numpy(),
-                        references=predicate_labels.cpu().numpy(),
-                    )
-                    f1_metric_macro_arg0.add_batch(
-                        predictions=arg0_pred.cpu().numpy(),
-                        references=arg0_labels.cpu().numpy(),
-                    )
-                    f1_metric_macro_arg1.add_batch(
-                        predictions=arg1_pred.cpu().numpy(),
-                        references=arg1_labels.cpu().numpy(),
-                    )
-                    f1_metric_macro_frameaxis.add_batch(
-                        predictions=frameaxis_pred.cpu().numpy(),
-                        references=frameaxis_labels.cpu().numpy(),
-                    )
+                        # Accuracy
+                        accuracy_metric.add_batch(
+                            predictions=combined_pred.cpu().numpy(),
+                            references=combined_labels.cpu().numpy(),
+                        )
+                        accuracy_metric_span.add_batch(
+                            predictions=span_pred.cpu().numpy(),
+                            references=span_labels.cpu().numpy(),
+                        )
+                        accuracy_metric_sentence.add_batch(
+                            predictions=sentence_pred.cpu().numpy(),
+                            references=sentence_labels.cpu().numpy(),
+                        )
+                        accuracy_metric_predicate.add_batch(
+                            predictions=predicate_pred.cpu().numpy(),
+                            references=predicate_labels.cpu().numpy(),
+                        )
+                        accuracy_metric_arg0.add_batch(
+                            predictions=arg0_pred.cpu().numpy(),
+                            references=arg0_labels.cpu().numpy(),
+                        )
+                        accuracy_metric_arg1.add_batch(
+                            predictions=arg1_pred.cpu().numpy(),
+                            references=arg1_labels.cpu().numpy(),
+                        )
+                        accuracy_metric_frameaxis.add_batch(
+                            predictions=frameaxis_pred.cpu().numpy(),
+                            references=frameaxis_labels.cpu().numpy(),
+                        )
 
-                    # Micro F1
-                    f1_metric_micro.add_batch(
-                        predictions=combined_pred.cpu().numpy(),
-                        references=combined_labels.cpu().numpy(),
-                    )
-                    f1_metric_micro_span.add_batch(
-                        predictions=span_pred.cpu().numpy(),
-                        references=span_labels.cpu().numpy(),
-                    )
-                    f1_metric_micro_sentence.add_batch(
-                        predictions=sentence_pred.cpu().numpy(),
-                        references=sentence_labels.cpu().numpy(),
-                    )
-                    f1_metric_micro_predicate.add_batch(
-                        predictions=predicate_pred.cpu().numpy(),
-                        references=predicate_labels.cpu().numpy(),
-                    )
-                    f1_metric_micro_arg0.add_batch(
-                        predictions=arg0_pred.cpu().numpy(),
-                        references=arg0_labels.cpu().numpy(),
-                    )
-                    f1_metric_micro_arg1.add_batch(
-                        predictions=arg1_pred.cpu().numpy(),
-                        references=arg1_labels.cpu().numpy(),
-                    )
-                    f1_metric_micro_frameaxis.add_batch(
-                        predictions=frameaxis_pred.cpu().numpy(),
-                        references=frameaxis_labels.cpu().numpy(),
-                    )
+                        eval_results_micro = f1_metric_micro.compute(average="micro")
+                        eval_results_micro_span = f1_metric_micro_span.compute(
+                            average="micro"
+                        )
+                        eval_results_micro_sentence = f1_metric_micro_sentence.compute(
+                            average="micro"
+                        )
+                        eval_results_micro_predicate = (
+                            f1_metric_micro_predicate.compute(average="micro")
+                        )
+                        eval_results_micro_arg0 = f1_metric_micro_arg0.compute(
+                            average="micro"
+                        )
+                        eval_results_micro_arg1 = f1_metric_micro_arg1.compute(
+                            average="micro"
+                        )
+                        eval_results_micro_frameaxis = (
+                            f1_metric_micro_frameaxis.compute(average="micro")
+                        )
 
-                    # Accuracy
-                    accuracy_metric.add_batch(
-                        predictions=combined_pred.cpu().numpy(),
-                        references=combined_labels.cpu().numpy(),
-                    )
-                    accuracy_metric_span.add_batch(
-                        predictions=span_pred.cpu().numpy(),
-                        references=span_labels.cpu().numpy(),
-                    )
-                    accuracy_metric_sentence.add_batch(
-                        predictions=sentence_pred.cpu().numpy(),
-                        references=sentence_labels.cpu().numpy(),
-                    )
-                    accuracy_metric_predicate.add_batch(
-                        predictions=predicate_pred.cpu().numpy(),
-                        references=predicate_labels.cpu().numpy(),
-                    )
-                    accuracy_metric_arg0.add_batch(
-                        predictions=arg0_pred.cpu().numpy(),
-                        references=arg0_labels.cpu().numpy(),
-                    )
-                    accuracy_metric_arg1.add_batch(
-                        predictions=arg1_pred.cpu().numpy(),
-                        references=arg1_labels.cpu().numpy(),
-                    )
-                    accuracy_metric_frameaxis.add_batch(
-                        predictions=frameaxis_pred.cpu().numpy(),
-                        references=frameaxis_labels.cpu().numpy(),
-                    )
+                        eval_results_macro = f1_metric_macro.compute(average="macro")
+                        eval_results_macro_span = f1_metric_macro_span.compute(
+                            average="macro"
+                        )
+                        eval_results_macro_sentence = f1_metric_macro_sentence.compute(
+                            average="macro"
+                        )
+                        eval_results_macro_predicate = (
+                            f1_metric_macro_predicate.compute(average="macro")
+                        )
+                        eval_results_macro_arg0 = f1_metric_macro_arg0.compute(
+                            average="macro"
+                        )
+                        eval_results_macro_arg1 = f1_metric_macro_arg1.compute(
+                            average="macro"
+                        )
+                        eval_results_macro_frameaxis = (
+                            f1_metric_macro_frameaxis.compute(average="macro")
+                        )
 
-                    eval_results_micro = f1_metric_micro.compute(average="micro")
-                    eval_results_micro_span = f1_metric_micro_span.compute(
-                        average="micro"
-                    )
-                    eval_results_micro_sentence = f1_metric_micro_sentence.compute(
-                        average="micro"
-                    )
-                    eval_results_micro_predicate = f1_metric_micro_predicate.compute(
-                        average="micro"
-                    )
-                    eval_results_micro_arg0 = f1_metric_micro_arg0.compute(
-                        average="micro"
-                    )
-                    eval_results_micro_arg1 = f1_metric_micro_arg1.compute(
-                        average="micro"
-                    )
-                    eval_results_micro_frameaxis = f1_metric_micro_frameaxis.compute(
-                        average="micro"
-                    )
+                        eval_accuracy = accuracy_metric.compute()
+                        eval_accuracy_span = accuracy_metric_span.compute()
+                        eval_accuracy_sentence = accuracy_metric_sentence.compute()
+                        eval_accuracy_predicate = accuracy_metric_predicate.compute()
+                        eval_accuracy_arg0 = accuracy_metric_arg0.compute()
+                        eval_accuracy_arg1 = accuracy_metric_arg1.compute()
+                        eval_accuracy_frameaxis = accuracy_metric_frameaxis.compute()
 
-                    eval_results_macro = f1_metric_macro.compute(average="macro")
-                    eval_results_macro_span = f1_metric_macro_span.compute(
-                        average="macro"
-                    )
-                    eval_results_macro_sentence = f1_metric_macro_sentence.compute(
-                        average="macro"
-                    )
-                    eval_results_macro_predicate = f1_metric_macro_predicate.compute(
-                        average="macro"
-                    )
-                    eval_results_macro_arg0 = f1_metric_macro_arg0.compute(
-                        average="macro"
-                    )
-                    eval_results_macro_arg1 = f1_metric_macro_arg1.compute(
-                        average="macro"
-                    )
-                    eval_results_macro_frameaxis = f1_metric_macro_frameaxis.compute(
-                        average="macro"
-                    )
+                        logger.info(
+                            f"[TRAIN] Epoch {epoch}, Step {global_steps}: Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
+                        )
+                        metrics = {
+                            "train_micro_f1": eval_results_micro["f1"],
+                            "train_micro_f1_span": eval_results_micro_span["f1"],
+                            "train_micro_f1_sentence": eval_results_micro_sentence[
+                                "f1"
+                            ],
+                            "train_macro_f1": eval_results_macro["f1"],
+                            "train_macro_f1_span": eval_results_macro_span["f1"],
+                            "train_macro_f1_sentence": eval_results_macro_sentence[
+                                "f1"
+                            ],
+                            "train_accuracy": eval_accuracy["accuracy"],
+                            "train_accuracy_span": eval_accuracy_span["accuracy"],
+                            "train_accuracy_sentence": eval_accuracy_sentence[
+                                "accuracy"
+                            ],
+                            "train_micro_f1_predicate": eval_results_micro_predicate[
+                                "f1"
+                            ],
+                            "train_micro_f1_arg0": eval_results_micro_arg0["f1"],
+                            "train_micro_f1_arg1": eval_results_micro_arg1["f1"],
+                            "train_micro_f1_frameaxis": eval_results_micro_frameaxis[
+                                "f1"
+                            ],
+                            "train_macro_f1_predicate": eval_results_macro_predicate[
+                                "f1"
+                            ],
+                            "train_macro_f1_arg0": eval_results_macro_arg0["f1"],
+                            "train_macro_f1_arg1": eval_results_macro_arg1["f1"],
+                            "train_macro_f1_frameaxis": eval_results_macro_frameaxis[
+                                "f1"
+                            ],
+                            "train_accuracy_predicate": eval_accuracy_predicate[
+                                "accuracy"
+                            ],
+                            "train_accuracy_arg0": eval_accuracy_arg0["accuracy"],
+                            "train_accuracy_arg1": eval_accuracy_arg1["accuracy"],
+                            "train_accuracy_frameaxis": eval_accuracy_frameaxis[
+                                "accuracy"
+                            ],
+                            "epoch": epoch,
+                            "batch": global_steps,
+                            "global_steps": global_steps,
+                        }
 
-                    eval_accuracy = accuracy_metric.compute()
-                    eval_accuracy_span = accuracy_metric_span.compute()
-                    eval_accuracy_sentence = accuracy_metric_sentence.compute()
-                    eval_accuracy_predicate = accuracy_metric_predicate.compute()
-                    eval_accuracy_arg0 = accuracy_metric_arg0.compute()
-                    eval_accuracy_arg1 = accuracy_metric_arg1.compute()
-                    eval_accuracy_frameaxis = accuracy_metric_frameaxis.compute()
+                        self._log_metrics(metrics)
 
-                    logger.info(
-                        f"[TRAIN] Epoch {epoch}, Step {global_steps}: Micro F1: {eval_results_micro}, Macro F1: {eval_results_macro}, Accuracy: {eval_accuracy}"
-                    )
-                    metrics = {
-                        "train_micro_f1": eval_results_micro["f1"],
-                        "train_micro_f1_span": eval_results_micro_span["f1"],
-                        "train_micro_f1_sentence": eval_results_micro_sentence["f1"],
-                        "train_macro_f1": eval_results_macro["f1"],
-                        "train_macro_f1_span": eval_results_macro_span["f1"],
-                        "train_macro_f1_sentence": eval_results_macro_sentence["f1"],
-                        "train_accuracy": eval_accuracy["accuracy"],
-                        "train_accuracy_span": eval_accuracy_span["accuracy"],
-                        "train_accuracy_sentence": eval_accuracy_sentence["accuracy"],
-                        "train_micro_f1_predicate": eval_results_micro_predicate["f1"],
-                        "train_micro_f1_arg0": eval_results_micro_arg0["f1"],
-                        "train_micro_f1_arg1": eval_results_micro_arg1["f1"],
-                        "train_micro_f1_frameaxis": eval_results_micro_frameaxis["f1"],
-                        "train_macro_f1_predicate": eval_results_macro_predicate["f1"],
-                        "train_macro_f1_arg0": eval_results_macro_arg0["f1"],
-                        "train_macro_f1_arg1": eval_results_macro_arg1["f1"],
-                        "train_macro_f1_frameaxis": eval_results_macro_frameaxis["f1"],
-                        "train_accuracy_predicate": eval_accuracy_predicate["accuracy"],
-                        "train_accuracy_arg0": eval_accuracy_arg0["accuracy"],
-                        "train_accuracy_arg1": eval_accuracy_arg1["accuracy"],
-                        "train_accuracy_frameaxis": eval_accuracy_frameaxis["accuracy"],
-                        "epoch": epoch,
-                        "batch": global_steps,
-                        "global_steps": global_steps,
-                    }
+                        if eval_accuracy["accuracy"] > early_stopping["best_accuracy"]:
+                            early_stopping["best_accuracy"] = eval_accuracy["accuracy"]
+                            early_stopping["best_micro_f1"] = eval_results_micro["f1"]
+                            early_stopping["best_macro_f1"] = eval_results_macro["f1"]
+                            early_stopping["early_stop"] = 0
 
-                    self._log_metrics(metrics)
+                            if eval_accuracy["accuracy"] > 0.5:
+                                self._save_best_model(metrics)
+                        else:
+                            early_stopping["early_stop"] += 1
 
-                    if eval_accuracy["accuracy"] > early_stopping["best_accuracy"]:
-                        early_stopping["best_accuracy"] = eval_accuracy["accuracy"]
-                        early_stopping["best_micro_f1"] = eval_results_micro["f1"]
-                        early_stopping["best_macro_f1"] = eval_results_macro["f1"]
-                        early_stopping["early_stop"] = 0
+                            if early_stopping["early_stop"] >= self.early_stop:
+                                logger.info("Early stopping triggered.")
+                                early_stopping["early_stopped"] = True
+                                return early_stopping
 
-                        if eval_accuracy["accuracy"] > 0.5:
-                            self._save_best_model(metrics)
-                    else:
-                        early_stopping["early_stop"] += 1
-
-                        if early_stopping["early_stop"] >= self.early_stop:
-                            logger.info("Early stopping triggered.")
-                            early_stopping["early_stopped"] = True
-                            return early_stopping
+            except Exception as e:
+                logger.error(f"Error during metric logging at step {global_steps}: {e}")
+                continue
 
             # Delete tensors after logging metrics
             del (
@@ -1096,11 +1126,13 @@ class Trainer:
         return metrics
 
     def _save_best_model(self, metrics):
+        logger.info("Starting to save the best model.")
 
         # save dir path
         save_dir = os.path.join(self.save_path)
         try:
             os.makedirs(save_dir, exist_ok=True)
+            logger.info(f"Created directory: {save_dir}")
         except PermissionError as e:
             logger.error(
                 f"Permission denied: Cannot create directory {save_dir}. Exception: {e}"
@@ -1116,6 +1148,7 @@ class Trainer:
         model_save_path = os.path.join(save_dir, "model.pth")
         try:
             torch.save(self.model.state_dict(), model_save_path)
+            logger.info(f"Model saved at {model_save_path}")
         except Exception as e:
             logger.error(
                 f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
@@ -1127,6 +1160,7 @@ class Trainer:
         try:
             with open(metrics_save_path, "w") as f:
                 json.dump(metrics, f)
+            logger.info(f"Metrics saved at {metrics_save_path}")
         except Exception as e:
             logger.error(
                 f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
@@ -1137,6 +1171,7 @@ class Trainer:
         try:
             with open(config_save_path, "w") as f:
                 json.dump(self.model_config, f)
+            logger.info(f"Config saved at {config_save_path}")
         except Exception as e:
             logger.error(
                 f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
@@ -1153,26 +1188,38 @@ class Trainer:
 
         # Save to wandb
         if self.training_management == "wandb":
-            self.wandb.log_artifact(
-                metrics_save_path,
-                f"{self.run_name.replace('-', '_')}_metrics",
-                "metrics",
-            )
-
-            logged_artifact = self.wandb.log_artifact(model_artifact)
-            logged_artifact.wait()
-
-        if self.training_management == "accelerate":
-            wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
-            if self.accelerator.is_main_process:
-                wandb_tracker.log_artifact(
+            try:
+                self.wandb.log_artifact(
                     metrics_save_path,
                     f"{self.run_name.replace('-', '_')}_metrics",
                     "metrics",
                 )
-
-                logged_artifact = wandb_tracker.log_artifact(model_artifact)
+                logged_artifact = self.wandb.log_artifact(model_artifact)
                 logged_artifact.wait()
+                logger.info(f"Model artifact logged to Weights and Biases.")
+            except Exception as e:
+                logger.error(
+                    f"Failed to log artifact to Weights and Biases. Exception: {e}"
+                )
+
+        if self.training_management == "accelerate":
+            try:
+                wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
+                if self.accelerator.is_main_process:
+                    wandb_tracker.log_artifact(
+                        metrics_save_path,
+                        f"{self.run_name.replace('-', '_')}_metrics",
+                        "metrics",
+                    )
+                    logged_artifact = wandb_tracker.log_artifact(model_artifact)
+                    logged_artifact.wait()
+                    logger.info(
+                        f"Model artifact logged to Weights and Biases through Accelerate."
+                    )
+            except Exception as e:
+                logger.error(
+                    f"Failed to log artifact to Weights and Biases through Accelerate. Exception: {e}"
+                )
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
