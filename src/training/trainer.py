@@ -1146,36 +1146,38 @@ class Trainer:
 
         # save model
         model_save_path = os.path.join(save_dir, "model.pth")
-        try:
-            torch.save(self.model.state_dict(), model_save_path)
-            logger.info(f"Model saved at {model_save_path}")
-        except Exception as e:
-            logger.error(
-                f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
-            )
-            return
+        
+        if self.training_management != "accelerate" or (self.training_management == "accelerate" and self.accelerator.is_main_process):
+            try:
+                torch.save(self.model.state_dict(), model_save_path)
+                logger.info(f"Model saved at {model_save_path}")
+            except Exception as e:
+                logger.error(
+                    f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
+                )
+                return
 
-        # save metrics
-        metrics_save_path = os.path.join(save_dir, "metrics.json")
-        try:
-            with open(metrics_save_path, "w") as f:
-                json.dump(metrics, f)
-            logger.info(f"Metrics saved at {metrics_save_path}")
-        except Exception as e:
-            logger.error(
-                f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
-            )
+            # save metrics
+            metrics_save_path = os.path.join(save_dir, "metrics.json")
+            try:
+                with open(metrics_save_path, "w") as f:
+                    json.dump(metrics, f)
+                logger.info(f"Metrics saved at {metrics_save_path}")
+            except Exception as e:
+                logger.error(
+                    f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
+                )
 
-        # save config file
-        config_save_path = os.path.join(save_dir, "config.json")
-        try:
-            with open(config_save_path, "w") as f:
-                json.dump(self.model_config, f)
-            logger.info(f"Config saved at {config_save_path}")
-        except Exception as e:
-            logger.error(
-                f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
-            )
+            # save config file
+            config_save_path = os.path.join(save_dir, "config.json")
+            try:
+                with open(config_save_path, "w") as f:
+                    json.dump(self.model_config, f)
+                logger.info(f"Config saved at {config_save_path}")
+            except Exception as e:
+                logger.error(
+                    f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
+                )
 
         model_artifact = wandb.Artifact(
             name=f"{self.run_name.replace('-', '_')}_model",
@@ -1188,6 +1190,7 @@ class Trainer:
 
         # Save to wandb
         if self.training_management == "wandb":
+            logger.info("Use wandb object to save artifacts as training_mode='wandb'")
             try:
                 self.wandb.log_artifact(
                     metrics_save_path,
@@ -1203,6 +1206,7 @@ class Trainer:
                 )
 
         if self.training_management == "accelerate":
+            logger.info("Use wandb accelerate tracker object to save artifacts as training_mode='accelerate'")
             try:
                 wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
                 if self.accelerator.is_main_process:
@@ -1220,7 +1224,6 @@ class Trainer:
                 logger.error(
                     f"Failed to log artifact to Weights and Biases through Accelerate. Exception: {e}"
                 )
-
     def run_training(self, epochs, alpha=0.5):
         tau = 1
         if self.training_management != "accelerate":
