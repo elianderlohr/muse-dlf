@@ -1138,120 +1138,128 @@ class Trainer:
         return metrics
 
     def _save_model(self, epoch_step=None):
-        logger.info("Starting to save the best model.")
-
-        # save dir path
-        save_dir = os.path.join(self.save_path)
-        try:
-            os.makedirs(save_dir, exist_ok=True)
-            logger.info(f"Created directory: {save_dir}")
-        except PermissionError as e:
-            logger.error(
-                f"Permission denied: Cannot create directory {save_dir}. Exception: {e}"
-            )
-            return
-        except Exception as e:
-            logger.error(
-                f"Warning: Could not create directory {save_dir}. Exception: {e}"
-            )
-            return
-
-        # save model
-        if epoch_step:
-            model_save_path = os.path.join(save_dir, f"model_{epoch_step}.pth")
-        else:
-            model_save_path = os.path.join(save_dir, "model.pth")
+        logger.info("Starting to save the model.")
 
         if (
             self.training_management == "accelerate"
             and self.accelerator.is_main_process
-        ):
+        ) or self.training_management == "wandb":
+
+            # save dir path
+            save_dir = os.path.join(self.save_path)
             try:
-                # Save the model using accelerator.save_model
-                self.accelerator.save(
-                    self.model.state_dict(), model_save_path,
-                )
-                logger.info(f"Model saved at {save_dir}")
-            except Exception as e:
+                os.makedirs(save_dir, exist_ok=True)
+                logger.info(f"Created directory: {save_dir}")
+            except PermissionError as e:
                 logger.error(
-                    f"Warning: Failed to save model at {save_dir}. Exception: {e}"
+                    f"Permission denied: Cannot create directory {save_dir}. Exception: {e}"
                 )
                 return
-        elif self.training_management != "accelerate":
-            try:
-                # Validate model state dict
-                state_dict = self.model.state_dict()
-                torch.save(state_dict, model_save_path)
-                logger.info(f"Model saved at {model_save_path}")
             except Exception as e:
                 logger.error(
-                    f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
+                    f"Warning: Could not create directory {save_dir}. Exception: {e}"
                 )
                 return
 
-        # save config file
-        config_save_path = os.path.join(save_dir, "config.json")
-        if (
-            self.training_management == "accelerate"
-            and self.accelerator.is_main_process
-        ):
-            try:
-                self.accelerator.save(self.model_config, config_save_path)
-                logger.info(f"Config saved at {config_save_path}")
-            except Exception as e:
-                logger.error(
-                    f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
-                )
-        elif self.training_management != "accelerate":
-            try:
-                with open(config_save_path, "w") as f:
-                    json.dump(self.model_config, f)
-                logger.info(f"Config saved at {config_save_path}")
-            except Exception as e:
-                logger.error(
-                    f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
-                )
+            # save model
+            if epoch_step:
+                model_save_path = os.path.join(save_dir, f"model_{epoch_step}.pth")
+            else:
+                model_save_path = os.path.join(save_dir, "model.pth")
 
-        model_artifact = wandb.Artifact(
-            name=f"{self.run_name.replace('-', '_')}_model",
-            type="model",
-            metadata=self.model_config,
-        )
-
-        model_artifact.add_file(model_save_path)
-        model_artifact.add_file(config_save_path)
-
-        # Save to wandb
-        if self.training_management == "wandb":
-            logger.info("Use wandb object to save artifacts as training_mode='wandb'")
-            try:
-                logged_artifact = self.wandb.log_artifact(model_artifact)
-                logged_artifact.wait()
-                logger.info(f"Model artifact logged to Weights and Biases.")
-            except Exception as e:
-                logger.error(
-                    f"Failed to log artifact to Weights and Biases. Exception: {e}"
-                )
-
-        if self.training_management == "accelerate":
-            logger.info(
-                "Use wandb accelerate tracker object to save artifacts as training_mode='accelerate'"
-            )
-            try:
-                wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
-
-                if self.accelerator.is_main_process:
-
-                    logger.info(f"Logging model to W&B")
-                    logged_artifact = wandb_tracker.log_artifact(model_artifact)
-                    logged_artifact.wait()
-                    logger.info(
-                        f"Model artifact logged to Weights and Biases through Accelerate."
+            if (
+                self.training_management == "accelerate"
+                and self.accelerator.is_main_process
+            ):
+                try:
+                    # Save the model using accelerator.save_model
+                    self.accelerator.save(
+                        self.model.state_dict(),
+                        model_save_path,
                     )
-            except Exception as e:
-                logger.error(
-                    f"Failed to log artifact to Weights and Biases through Accelerate. Exception: {e}"
+                    logger.info(f"Model saved at {save_dir}")
+                except Exception as e:
+                    logger.error(
+                        f"Warning: Failed to save model at {save_dir}. Exception: {e}"
+                    )
+                    return
+            elif self.training_management != "accelerate":
+                try:
+                    # Validate model state dict
+                    state_dict = self.model.state_dict()
+                    torch.save(state_dict, model_save_path)
+                    logger.info(f"Model saved at {model_save_path}")
+                except Exception as e:
+                    logger.error(
+                        f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
+                    )
+                    return
+
+            # save config file
+            config_save_path = os.path.join(save_dir, "config.json")
+            if (
+                self.training_management == "accelerate"
+                and self.accelerator.is_main_process
+            ):
+                try:
+                    self.accelerator.save(self.model_config, config_save_path)
+                    logger.info(f"Config saved at {config_save_path}")
+                except Exception as e:
+                    logger.error(
+                        f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
+                    )
+            elif self.training_management != "accelerate":
+                try:
+                    with open(config_save_path, "w") as f:
+                        json.dump(self.model_config, f)
+                    logger.info(f"Config saved at {config_save_path}")
+                except Exception as e:
+                    logger.error(
+                        f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
+                    )
+
+            model_artifact = wandb.Artifact(
+                name=f"{self.run_name.replace('-', '_')}_model",
+                type="model",
+                metadata=self.model_config,
+            )
+
+            model_artifact.add_file(model_save_path)
+            model_artifact.add_file(config_save_path)
+
+            # Save to wandb
+            if self.training_management == "wandb":
+                logger.info(
+                    "Use wandb object to save artifacts as training_mode='wandb'"
                 )
+                try:
+                    logged_artifact = self.wandb.log_artifact(model_artifact)
+                    logged_artifact.wait()
+                    logger.info(f"Model artifact logged to Weights and Biases.")
+                except Exception as e:
+                    logger.error(
+                        f"Failed to log artifact to Weights and Biases. Exception: {e}"
+                    )
+
+            if self.training_management == "accelerate":
+                logger.info(
+                    "Use wandb accelerate tracker object to save artifacts as training_mode='accelerate'"
+                )
+                try:
+                    wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
+
+                    if self.accelerator.is_main_process:
+
+                        logger.info(f"Logging model to W&B")
+                        logged_artifact = wandb_tracker.log_artifact(model_artifact)
+                        logged_artifact.wait()
+                        logger.info(
+                            f"Model artifact logged to Weights and Biases through Accelerate."
+                        )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to log artifact to Weights and Biases through Accelerate. Exception: {e}"
+                    )
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
