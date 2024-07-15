@@ -34,7 +34,7 @@ class SLMUSESupervisedAlternative5(nn.Module):
         self.dropout_1 = nn.Dropout(dropout_prob)
         self.Wr = nn.Linear(D_h, hidden_dim)
         self.activation_first = self.get_activation(activation_functions[0])
-        self.batch_norm_1 = nn.BatchNorm1d(hidden_dim)
+        self.batch_norm_1 = nn.BatchNorm1d(D_h)  # Correct the number of features
 
         # Layer 2
         self.dropout_2 = nn.Dropout(dropout_prob)
@@ -126,7 +126,13 @@ class SLMUSESupervisedAlternative5(nn.Module):
             vs = self.dropout_1(vs)
             vs = self.Wr(vs)
             vs = self.activation_first(vs)
-            vs = self.batch_norm_1(vs)  # Apply batch normalization
+
+            # Apply batch normalization along the embedding dimension
+            vs = vs.view(-1, vs.size(-1))  # Flatten batch and sentence dimensions
+            vs = self.batch_norm_1(vs)
+            vs = vs.view(
+                batch_size, num_sentences, -1
+            )  # Restore the original dimensions
 
             # Average predictions across sentences but ignore padded elements (all zeros)
             mask_vs = (vs.abs().sum(dim=-1) != 0).float()
@@ -138,6 +144,8 @@ class SLMUSESupervisedAlternative5(nn.Module):
             vs = self.dropout_2(vs)
             vs = self.Wt(vs)
             vs = self.activation_last(vs)
+
+            # Apply second batch normalization
             vs = self.batch_norm_2(vs)
 
             # Layer 3
