@@ -38,6 +38,9 @@ class Trainer:
         mixed_precision="fp16",  # "fp16"
         clip_value=1.0,
         accumulation_steps=1,
+        save_every_n_steps=50,
+        save_threshold=0.5,
+        save_metric="accuracy",
         model_config={},
         **kwargs,
     ):
@@ -53,6 +56,10 @@ class Trainer:
         self.tau_min = tau_min
         self.tau_decay = tau_decay
         self.early_stop = early_stop
+
+        self.save_every_n_steps = save_every_n_steps
+        self.save_threshold = save_threshold
+        self.save_metric = save_metric
 
         self.model_config = model_config
 
@@ -441,7 +448,7 @@ class Trainer:
             try:
                 with torch.no_grad():
                     # Check train metrics every 50 steps
-                    if global_steps % 50 == 0:
+                    if global_steps % self.save_every_n_steps == 0:
                         logger.info(
                             f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                         )
@@ -707,14 +714,17 @@ class Trainer:
 
                         self._log_metrics(metrics)
 
-                        if eval_accuracy["accuracy"] > early_stopping["best_accuracy"]:
+                        if (
+                            eval_accuracy[self.save_metric]
+                            > early_stopping[f"best_{self.save_metric}"]
+                        ):
                             early_stopping["best_accuracy"] = eval_accuracy["accuracy"]
                             early_stopping["best_micro_f1"] = eval_results_micro["f1"]
                             early_stopping["best_macro_f1"] = eval_results_macro["f1"]
                             early_stopping["early_stop"] = 0
 
-                            if eval_accuracy["accuracy"] > 0.5:
-                                self._save_best_model(metrics)
+                            if eval_accuracy[self.save_metric] > self.save_threshold:
+                                self._save_model(f"step_{global_steps}")
                         else:
                             early_stopping["early_stop"] += 1
 
@@ -765,6 +775,8 @@ class Trainer:
                 "epoch": epoch,
             }
         )
+
+        self._save_model(f"epoch_{epoch}")
 
         return tau, early_stopping
 
@@ -1125,7 +1137,7 @@ class Trainer:
 
         return metrics
 
-    def _save_best_model(self, metrics):
+    def _save_model(self, epoch_step=None):
         logger.info("Starting to save the best model.")
 
         # save dir path
@@ -1145,7 +1157,10 @@ class Trainer:
             return
 
         # save model
-        model_save_path = os.path.join(save_dir, "model.pth")
+        if epoch_step:
+            model_save_path = os.path.join(save_dir, f"model_{epoch_step}.pth")
+        else:
+            model_save_path = os.path.join(save_dir, "model.pth")
 
         if (
             self.training_management == "accelerate"
@@ -1173,29 +1188,6 @@ class Trainer:
                     f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
                 )
                 return
-
-        # save metrics
-        metrics_save_path = os.path.join(save_dir, "metrics.json")
-        if (
-            self.training_management == "accelerate"
-            and self.accelerator.is_main_process
-        ):
-            try:
-                self.accelerator.save(metrics, metrics_save_path)
-                logger.info(f"Metrics saved at {metrics_save_path}")
-            except Exception as e:
-                logger.error(
-                    f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
-                )
-        else:
-            try:
-                with open(metrics_save_path, "w") as f:
-                    json.dump(metrics, f)
-                logger.info(f"Metrics saved at {metrics_save_path}")
-            except Exception as e:
-                logger.error(
-                    f"Warning: Failed to save metrics at {metrics_save_path}. Exception: {e}"
-                )
 
         # save config file
         config_save_path = os.path.join(save_dir, "config.json")
@@ -1226,23 +1218,13 @@ class Trainer:
             metadata=self.model_config,
         )
 
-        if self.training_management == "accelerate":
-            model_artifact.add_file(
-                os.path.join(save_dir, "pytorch_model.bin")
-            )  # The default name for the model file saved by accelerate
-        else:
-            model_artifact.add_file(model_save_path)
+        model_artifact.add_file(model_save_path)
         model_artifact.add_file(config_save_path)
 
         # Save to wandb
         if self.training_management == "wandb":
             logger.info("Use wandb object to save artifacts as training_mode='wandb'")
             try:
-                self.wandb.log_artifact(
-                    metrics_save_path,
-                    f"{self.run_name.replace('-', '_')}_metrics",
-                    "metrics",
-                )
                 logged_artifact = self.wandb.log_artifact(model_artifact)
                 logged_artifact.wait()
                 logger.info(f"Model artifact logged to Weights and Biases.")
@@ -1258,11 +1240,6 @@ class Trainer:
             try:
                 wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
 
-                wandb_tracker.log_artifact(
-                    metrics_save_path,
-                    f"{self.run_name.replace('-', '_')}_metrics",
-                    "metrics",
-                )
                 logger.info(f"Logging model to W&B")
                 logged_artifact = wandb_tracker.log_artifact(model_artifact)
                 logged_artifact.wait()
