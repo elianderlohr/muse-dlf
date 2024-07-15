@@ -10,7 +10,8 @@ class MUSEEmbeddings(nn.Module):
         self,
         model_name_or_path: str,
         model_type: str = "bert-base-uncased",
-        pooling: str = "mean",
+        hidden_state: str = "second_to_last",
+        sentence_pooling: str = "mean",
         _debug=False,
     ):
         super(MUSEEmbeddings, self).__init__()
@@ -37,12 +38,20 @@ class MUSEEmbeddings(nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
 
-        if pooling not in ["mean", "cls"]:
+        # embedding pooling last or last4
+        if hidden_state not in ["last", "second_to_last"]:
             raise ValueError(
-                f"Unsupported pooling type. Choose either 'mean' or 'cls'. Found: {pooling}"
+                f"Unsupported pooling type. Choose either 'last' or 'second_to_last'. Found: {hidden_state}"
             )
 
-        self.pooling = pooling
+        self.hidden_state = hidden_state
+
+        if sentence_pooling not in ["mean", "cls"]:
+            raise ValueError(
+                f"Unsupported pooling type. Choose either 'mean' or 'cls'. Found: {sentence_pooling}"
+            )
+
+        self.sentence_pooling = sentence_pooling
 
         self.embedding_dim = self.model.config.hidden_size
 
@@ -113,10 +122,14 @@ class MUSEEmbeddings(nn.Module):
                     attention_mask=attention_masks_flat,
                     output_hidden_states=True,
                 )
+
                 del ids_flat, attention_masks_flat
                 torch.cuda.empty_cache()
-                second_to_last_hidden_state = outputs.hidden_states[-2]
 
+                if self.hidden_state == "last":
+                    second_to_last_hidden_state = outputs.last_hidden_state
+                elif self.hidden_state == "second_to_last":
+                    second_to_last_hidden_state = outputs.hidden_states[-2]
                 del outputs
                 torch.cuda.empty_cache()
 
@@ -128,7 +141,7 @@ class MUSEEmbeddings(nn.Module):
                 batch_size, num_sentences, max_sentence_length, self.embedding_dim
             )
 
-            if self.pooling == "mean":
+            if self.sentence_pooling == "mean":
                 attention_masks_expanded = attention_masks.view(
                     batch_size, num_sentences, max_sentence_length, 1
                 )
@@ -154,7 +167,7 @@ class MUSEEmbeddings(nn.Module):
                     token_counts,
                 )
                 torch.cuda.empty_cache()
-            elif self.pooling == "cls":
+            elif self.sentence_pooling == "cls":
                 embeddings_mean = second_to_last_hidden_state[:, :, 0, :]
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")

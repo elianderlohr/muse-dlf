@@ -123,8 +123,11 @@ class SLMUSESupervisedAlternative5(nn.Module):
             vs_activated = self.relu(vs_transformed)
             vs_class_scores = self.Wt(vs_activated)
 
-            # Average predictions across sentences
-            y_hat_s = vs_class_scores.mean(dim=1)
+            # Average predictions across sentences but ignore padded elements (all zeros)
+            mask_vs = (vs.abs().sum(dim=-1) != 0).float()
+            y_hat_s = (vs_class_scores * mask_vs.unsqueeze(-1)).sum(
+                dim=1
+            ) / torch.clamp(mask_vs.sum(dim=1, keepdim=True), min=1)
 
             other = {
                 "predicate": d_p_mean,

@@ -92,6 +92,8 @@ class MUSELossModule(nn.Module):
             v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
             Ju = self.contrastive_loss(v, vhat, negatives, mask)
             Jt = self.focal_triplet_loss(v, vhat, g, F, mask)
-            Jz = Ju + Jt + self.lambda_orthogonality * self.orthogonality_term(F) ** 2
+            Jz = (
+                Ju + Jt
+            )  # + self.lambda_orthogonality * self.orthogonality_term(F) ** 2
 
         return Jz
