@@ -1175,12 +1175,10 @@ class Trainer:
                     f"Warning: Failed to save model at {save_dir}. Exception: {e}"
                 )
                 return
-        else:
+        elif self.training_management != "accelerate":
             try:
                 # Validate model state dict
                 state_dict = self.model.state_dict()
-                logger.info(f"Model state dict keys: {list(state_dict.keys())}")
-
                 torch.save(state_dict, model_save_path)
                 logger.info(f"Model saved at {model_save_path}")
             except Exception as e:
@@ -1202,7 +1200,7 @@ class Trainer:
                 logger.error(
                     f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
                 )
-        else:
+        elif self.training_management != "accelerate":
             try:
                 with open(config_save_path, "w") as f:
                     json.dump(self.model_config, f)
@@ -1240,12 +1238,14 @@ class Trainer:
             try:
                 wandb_tracker = self.accelerator.get_tracker("wandb", unwrap=True)
 
-                logger.info(f"Logging model to W&B")
-                logged_artifact = wandb_tracker.log_artifact(model_artifact)
-                logged_artifact.wait()
-                logger.info(
-                    f"Model artifact logged to Weights and Biases through Accelerate."
-                )
+                if self.accelerator.is_main_process:
+
+                    logger.info(f"Logging model to W&B")
+                    logged_artifact = wandb_tracker.log_artifact(model_artifact)
+                    logged_artifact.wait()
+                    logger.info(
+                        f"Model artifact logged to Weights and Biases through Accelerate."
+                    )
             except Exception as e:
                 logger.error(
                     f"Failed to log artifact to Weights and Biases through Accelerate. Exception: {e}"
