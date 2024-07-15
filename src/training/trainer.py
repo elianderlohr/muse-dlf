@@ -1168,7 +1168,9 @@ class Trainer:
         ):
             try:
                 # Save the model using accelerator.save_model
-                self.accelerator.save_model(self.model, save_dir)
+                self.accelerator.save_model(
+                    self.model, save_dir, safe_serialization=False
+                )
                 logger.info(f"Model saved at {save_dir}")
             except Exception as e:
                 logger.error(
