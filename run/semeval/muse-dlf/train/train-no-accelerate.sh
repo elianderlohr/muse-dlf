@@ -157,10 +157,10 @@ python src/start_train.py \
     --M 8 \
     --t 8 \
     --batch_size 8 \
-    --num_sentences 32 \
-    --max_sentence_length 64 \
-    --max_args_per_sentence 20 \
-    --max_arg_length 10 \
+    --num_sentences 70 \
+    --max_sentence_length 40 \
+    --max_args_per_sentence 21 \
+    --max_arg_length 21 \
     --muse_unsupervised_num_layers 2 \
     --muse_unsupervised_activation gelu \
     --muse_unsupervised_use_batch_norm True \
