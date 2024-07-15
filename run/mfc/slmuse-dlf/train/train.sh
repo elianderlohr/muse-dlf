@@ -152,10 +152,10 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 0.01 \
-    --lr 0.0001 \
+    --lr 0.0004 \
     --M 8 \
     --t 8 \
-    --batch_size 2 \
+    --batch_size 8 \
     --num_sentences 32 \
     --max_sentence_length 58 \
     --max_args_per_sentence 10 \
@@ -171,7 +171,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_frameaxis_unsupervised_matmul_input g \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --num_negatives 128 \
-    --supervised_concat_frameaxis False \
+    --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
     --supervised_activation gelu \
     --adamw_weight_decay 0.0000005 \
@@ -183,7 +183,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt5 \
+    --alternative_supervised alt6 \
     $DEBUG
 
 echo "______________________________________________________"
