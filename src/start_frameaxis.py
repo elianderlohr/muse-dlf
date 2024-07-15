@@ -1,4 +1,5 @@
 import argparse
+from ast import arg
 import json
 import logging
 import pandas as pd
@@ -15,6 +16,13 @@ def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description="Generate word embeddings using RoBERTa"
+    )
+    # save_path
+    parser.add_argument(
+        "--save_path",
+        type=str,
+        required=True,
+        help="Path where the embeddings JSON file will be saved",
     )
     parser.add_argument(
         "--data_path",
@@ -35,16 +43,10 @@ def main():
         help="Name of the dimensions to be used for the frame axis in the format: 'dim1,dim2'",
     )
     parser.add_argument(
-        "--model_path",
+        "--roberta_model_path",
         type=str,
         default="roberta-base",
         help="Path to the RoBERTa model or 'roberta-base' for the pre-trained model",
-    )
-    parser.add_argument(
-        "--output_path",
-        type=str,
-        required=True,
-        help="Path where the embeddings JSON file will be saved",
     )
     # path_microframes
     parser.add_argument(
@@ -53,7 +55,6 @@ def main():
         default=None,
         help="Path to the pickle file containing the calculated microframes.",
     )
-
     # blacklisted words
     parser.add_argument(
         "--word_blacklist",
@@ -84,13 +85,13 @@ def main():
 
     frameaxis_processor = FrameAxisProcessor(
         df,
-        dataframe_path=args.output_path,
-        force_recalculate=True,
+        path_antonym_pairs=args.path_antonym_pairs,
+        save_path=args.save_path,
         path_microframes=args.path_microframes,
         bert_model_name="roberta-base",
         name_tokenizer="roberta-base",
-        path_name_bert_model=args.model_path,
-        path_antonym_pairs=args.path_antonym_pairs,
+        path_name_bert_model=args.roberta_model_path,
+        force_recalculate=True,
         save_type="pickle",
         dim_names=args.dim_names.split(","),
         word_blacklist=args.word_blacklist,

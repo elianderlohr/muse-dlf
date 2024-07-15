@@ -26,20 +26,13 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
+SAVE_PATH="data/frameaxis/mfc/"
 DATA_PATH="data/mfc/immigration_labeled_preprocessed.json"
 PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
-MODEL_PATH="models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
-OUTPUT_PATH="data/frameaxis/mfc/frameaxis_mft.pkl"
-PATH_MICROFRAME="data/frameaxis/mfc/frameaxis_mft_microframes.pkl"
+ROBERTA_MODEL_PATH="models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
+PATH_MICROFRAMES="data/frameaxis/mfc/frameaxis_mft_microframes.pkl"
 
-
-echo "Data path: $DATA_PATH"
-echo "Antonym pairs path: $PATH_ANTONYM_PAIRS"
-echo "Model path: $MODEL_PATH"
-echo "Output path: $OUTPUT_PATH"
-echo "Dimensions: $DIM_NAMES"
-echo "Microframe path: $PATH_MICROFRAME"
 
 # GPU Setup and Verification
 echo "GPU status:"
@@ -51,12 +44,12 @@ echo "=================== Training Start ==================="
 
 echo "Running frameaxis.py..."
 python src/start_frameaxis.py \
+    --save_path $SAVE_PATH \
     --data_path $DATA_PATH \
     --path_antonym_pairs $PATH_ANTONYM_PAIRS \
-    --model_path $MODEL_PATH \
-    --output_path $OUTPUT_PATH \
     --dim_names $DIM_NAMES \
-    --path_microframe $PATH_MICROFRAME \
+    --roberta_model_path $ROBERTA_MODEL_PATH \
+    --path_microframes $PATH_MICROFRAMES \
     --word_blacklist "immigrant" "immigrants" "immigration" "illegal" "illegally" "illegals" "legally" "legalize" "legal"
 
 # Cleanup and Closeout
