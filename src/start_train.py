@@ -455,6 +455,28 @@ def main():
         "--accumulation_steps", type=int, default=2, help="Gradient accumulation steps"
     )
 
+    # save_every_n_steps
+    training_params.add_argument(
+        "--save_every_n_steps",
+        type=int,
+        default=50,
+        help="Save the model every n steps",
+    )
+    # save_threshold
+    training_params.add_argument(
+        "--save_threshold",
+        type=float,
+        default=0.5,
+        help="Save the model if the accuracy is greater than the threshold",
+    )
+    # save_metric
+    training_params.add_argument(
+        "--save_metric",
+        type=str,
+        default="accuracy",
+        help="Save the model based on the metric",
+    )
+
     # Data Processing
     data_processing = parser.add_argument_group("Data Processing")
     data_processing.add_argument(
@@ -809,6 +831,9 @@ def main():
             accelerator_instance=accelerator,
             mixed_precision=args.mixed_precision,
             accumulation_steps=args.accumulation_steps,
+            save_every_n_steps=args.save_every_n_steps,
+            save_threshold=args.save_threshold,
+            save_metric=args.save_metric,
             model_config=config,
         )
 
