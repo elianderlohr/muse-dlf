@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from model.muse_dlf.embeddings import MUSEEmbeddings
 from model.muse_dlf.supervised_module import MUSESupervised
+from model.muse_dlf.supervised_module_alternative5 import MUSESupervisedAlternative5
 from model.muse_dlf.unsupervised_module import MUSEUnsupervised
 from model.muse_dlf.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -47,6 +48,7 @@ class MUSEDLF(nn.Module):
         supervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
         supervised_num_layers=2,  # Number of layers in the encoder
         supervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
+        alternative_supervised="default",  # Load alternative supervised module
         # Debugging
         _debug=False,
         _detect_anomaly=False,
@@ -111,18 +113,32 @@ class MUSEDLF(nn.Module):
             _debug=_debug,
         )
 
-        # Supervised training module
-        self.supervised = MUSESupervised(
-            embedding_dim,
-            num_classes=num_classes,
-            frameaxis_dim=frameaxis_dim,
-            num_sentences=num_sentences,
-            dropout_prob=dropout_prob,
-            concat_frameaxis=supervised_concat_frameaxis,
-            num_layers=supervised_num_layers,
-            activation_function=supervised_activation,
-            _debug=_debug,
-        )
+        if alternative_supervised == "alt5":
+            self.logger.debug("🚦 Using alternative supervised module: alt5")
+            # Supervised training module
+            self.supervised = MUSESupervisedAlternative5(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                hidden_dim=hidden_dim,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                _debug=_debug,
+            )
+        else:
+            self.logger.debug("🚦 Using default supervised module")
+            # Supervised training module
+            self.supervised = MUSESupervised(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                num_layers=supervised_num_layers,
+                activation_function=supervised_activation,
+                _debug=_debug,
+            )
 
         self.num_negatives = num_negatives
         self.num_classes = num_classes
