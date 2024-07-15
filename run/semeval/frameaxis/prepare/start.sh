@@ -26,7 +26,7 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-SAVE_PATH="data/frameaxis/semeval/"
+SAVE_PATH="data/frameaxis/semeval/frameaxis_semeval_mft.pkl"
 DATA_PATH="data/semeval/muse-dlf/semeval_train.json"
 PATH_ANTONYM_PAIRS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
