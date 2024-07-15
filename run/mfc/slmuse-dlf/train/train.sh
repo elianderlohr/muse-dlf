@@ -155,7 +155,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --lr 0.0004 \
     --M 8 \
     --t 8 \
-    --batch_size 16 \
+    --batch_size 32 \
     --num_sentences 32 \
     --max_sentence_length 58 \
     --max_args_per_sentence 10 \
