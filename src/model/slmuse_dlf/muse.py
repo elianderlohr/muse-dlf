@@ -391,10 +391,6 @@ class SLMUSEDLF(nn.Module):
                 frameaxis_data, num_negatives=self.num_negatives
             )
 
-            # Initialize unsupervised_losses tensor and count tensor
-            unsupervised_losses = torch.zeros(
-                (sentence_embeddings.size(0),), device=sentence_embeddings.device
-            )
             valid_counts = torch.zeros(
                 (sentence_embeddings.size(0),), device=sentence_embeddings.device
             )

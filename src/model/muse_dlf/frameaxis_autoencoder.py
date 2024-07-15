@@ -17,8 +17,8 @@ class MUSEFrameAxisAutoencoder(nn.Module):
         dropout_prob=0.3,  # dropout probability
         activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
         use_batch_norm=True,  # whether to use batch normalization
-        matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        log=False,  # whether to use log gumbel softmax
+        matmul_input="g",  # g or d (g = gumbel-sigmoid, d = sigmoid)
+        log=False,  # whether to use log gumbel sigmoid
         _debug=False,
     ):
         super(MUSEFrameAxisAutoencoder, self).__init__()

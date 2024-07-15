@@ -72,9 +72,10 @@ def load_model(
     _detect_anomaly=False,
 ):
     try:
-        logger.info("Loading model of type: %s", model_type)
+        logger.info("Try to load model of type: %s", model_type)
 
         if model_type == "slmuse-dlf":
+            logger.info("Loading SLMUSE-DLF model")
             model = SLMUSEDLF(
                 embedding_dim=embedding_dim,
                 frameaxis_dim=frameaxis_dim,
@@ -108,6 +109,7 @@ def load_model(
                 _detect_anomaly=_detect_anomaly,
             )
         else:
+            logger.info("Loading MUSE-DLF model")
             model = MUSEDLF(
                 embedding_dim=embedding_dim,
                 frameaxis_dim=frameaxis_dim,
@@ -140,6 +142,7 @@ def load_model(
                 _detect_anomaly=_detect_anomaly,
             )
 
+        logger.info("Model loaded successfully, move to device: %s", device)
         model = model.to(device)
 
         if path_pretrained_model:
@@ -148,7 +151,7 @@ def load_model(
                 torch.load(path_pretrained_model, map_location=device)
             )
 
-        logger.info("Model loaded successfully")
+        logger.info("Return model")
         return model
 
     except Exception as e:
