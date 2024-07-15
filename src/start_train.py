@@ -110,37 +110,41 @@ def load_model(
             )
         else:
             logger.info("Loading MUSE-DLF model")
-            model = MUSEDLF(
-                embedding_dim=embedding_dim,
-                frameaxis_dim=frameaxis_dim,
-                hidden_dim=hidden_dim,
-                num_classes=num_classes,
-                num_sentences=num_sentences,
-                dropout_prob=dropout_prob,
-                bert_model_name=bert_model_name,
-                bert_model_name_or_path=bert_model_name_or_path,
-                sentence_pooling=sentence_pooling,
-                hidden_state=hidden_state,
-                lambda_orthogonality=lambda_orthogonality,
-                M=M,
-                t=t,
-                muse_unsupervised_num_layers=muse_unsupervised_num_layers,
-                muse_unsupervised_activation=muse_unsupervised_activation,
-                muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
-                muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
-                muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
-                muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
-                muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
-                muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
-                muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
-                muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
-                num_negatives=num_negatives,
-                supervised_concat_frameaxis=supervised_concat_frameaxis,
-                supervised_num_layers=supervised_num_layers,
-                supervised_activation=supervised_activation,
-                _debug=_debug,
-                _detect_anomaly=_detect_anomaly,
-            )
+            try:
+                model = MUSEDLF(
+                    embedding_dim=embedding_dim,
+                    frameaxis_dim=frameaxis_dim,
+                    hidden_dim=hidden_dim,
+                    num_classes=num_classes,
+                    num_sentences=num_sentences,
+                    dropout_prob=dropout_prob,
+                    bert_model_name=bert_model_name,
+                    bert_model_name_or_path=bert_model_name_or_path,
+                    sentence_pooling=sentence_pooling,
+                    hidden_state=hidden_state,
+                    lambda_orthogonality=lambda_orthogonality,
+                    M=M,
+                    t=t,
+                    muse_unsupervised_num_layers=muse_unsupervised_num_layers,
+                    muse_unsupervised_activation=muse_unsupervised_activation,
+                    muse_unsupervised_use_batch_norm=muse_unsupervised_use_batch_norm,
+                    muse_unsupervised_matmul_input=muse_unsupervised_matmul_input,
+                    muse_unsupervised_gumbel_softmax_log=muse_unsupervised_gumbel_softmax_log,
+                    muse_frameaxis_unsupervised_num_layers=muse_frameaxis_unsupervised_num_layers,
+                    muse_frameaxis_unsupervised_activation=muse_frameaxis_unsupervised_activation,
+                    muse_frameaxis_unsupervised_use_batch_norm=muse_frameaxis_unsupervised_use_batch_norm,
+                    muse_frameaxis_unsupervised_matmul_input=muse_frameaxis_unsupervised_matmul_input,
+                    muse_frameaxis_unsupervised_gumbel_softmax_log=muse_frameaxis_unsupervised_gumbel_softmax_log,
+                    num_negatives=num_negatives,
+                    supervised_concat_frameaxis=supervised_concat_frameaxis,
+                    supervised_num_layers=supervised_num_layers,
+                    supervised_activation=supervised_activation,
+                    _debug=_debug,
+                    _detect_anomaly=_detect_anomaly,
+                )
+            except Exception as e:
+                logger.error(f"Error loading MUSE-DLF model: {e}")
+                raise
 
         logger.info("Model loaded successfully, move to device: %s", device)
         model = model.to(device)
