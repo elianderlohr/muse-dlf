@@ -150,12 +150,12 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --hidden_dim 768 \
     --num_classes 15 \
     --dropout_prob 0.3 \
-    --alpha 0.9 \
-    --lambda_orthogonality 0.003 \
-    --lr 0.0005 \
+    --alpha 0.5 \
+    --lambda_orthogonality 0.01 \
+    --lr 0.0001 \
     --M 8 \
     --t 8 \
-    --batch_size 8 \
+    --batch_size 2 \
     --num_sentences 32 \
     --max_sentence_length 58 \
     --max_args_per_sentence 10 \
@@ -174,7 +174,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_concat_frameaxis False \
     --supervised_num_layers 2 \
     --supervised_activation gelu \
-    --adamw_weight_decay 0.0001 \
+    --adamw_weight_decay 0.0000005 \
     --optimizer adamw \
     --sentence_pooling mean \
     --hidden_state second_to_last \
@@ -184,7 +184,6 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --mixed_precision fp16 \
     --accumulation_steps 1 \
     --alternative_supervised alt5 \
-    --sample_size 300 \
     $DEBUG
 
 echo "______________________________________________________"
