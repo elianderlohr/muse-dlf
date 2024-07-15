@@ -30,20 +30,21 @@ class SLMUSESupervisedAlternative5(nn.Module):
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
-        # Define the activation functions
-        self.activation_first = self.get_activation(activation_functions[0])
-        self.activation_last = self.get_activation(activation_functions[1])
-
-        # Feed-forward network for sentence embeddings
+        # Layer 1
         self.dropout_1 = nn.Dropout(dropout_prob)
         self.Wr = nn.Linear(D_h, hidden_dim)
-        self.relu = nn.ReLU()
-        self.batch_norm = nn.BatchNorm1d(hidden_dim)  # Add batch normalization layer
-        self.Wt = nn.Linear(hidden_dim, num_classes)
-        self.dropout_2 = nn.Dropout(dropout_prob)
+        self.activation_first = self.get_activation(activation_functions[0])
+        self.batch_norm_1 = nn.BatchNorm1d(hidden_dim)
 
-        # Flatten
-        self.flatten = nn.Flatten(start_dim=1)
+        # Layer 2
+        self.dropout_2 = nn.Dropout(dropout_prob)
+        self.Wt = nn.Linear(hidden_dim, hidden_dim)
+        self.activation_last = self.get_activation(activation_functions[1])
+        self.batch_norm_2 = nn.BatchNorm1d(hidden_dim)
+
+        # Layer 3
+        self.dropout_3 = nn.Dropout(dropout_prob)
+        self.Wo = nn.Linear(hidden_dim, num_classes)
 
         self.concat_frameaxis = concat_frameaxis
 
@@ -121,11 +122,11 @@ class SLMUSESupervisedAlternative5(nn.Module):
             if self.concat_frameaxis:
                 vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-            # Process each sentence embedding through Wr, ReLU, and Wt
+            # Layer 1
             vs = self.dropout_1(vs)
             vs = self.Wr(vs)
-            vs = self.relu(vs)
-            vs = self.batch_norm(vs)  # Apply batch normalization
+            vs = self.activation_first(vs)
+            vs = self.batch_norm_1(vs)  # Apply batch normalization
 
             # Average predictions across sentences but ignore padded elements (all zeros)
             mask_vs = (vs.abs().sum(dim=-1) != 0).float()
@@ -133,8 +134,15 @@ class SLMUSESupervisedAlternative5(nn.Module):
                 mask_vs.sum(dim=1, keepdim=True), min=1
             )
 
+            # Layer 2
             vs = self.dropout_2(vs)
             vs = self.Wt(vs)
+            vs = self.activation_last(vs)
+            vs = self.batch_norm_2(vs)
+
+            # Layer 3
+            vs = self.dropout_3(vs)
+            vs = self.Wo(vs)
 
             y_hat_s = vs
 

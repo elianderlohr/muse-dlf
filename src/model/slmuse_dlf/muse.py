@@ -134,6 +134,7 @@ class SLMUSEDLF(nn.Module):
                 _debug=_debug,
             )
         elif alternative_supervised == "alt1":
+            self.logger.info("🔄 Using alternative supervised module 1")
             self.supervised = SLMUSESupervisedAlternative1(
                 embedding_dim,
                 num_classes=num_classes,
@@ -146,6 +147,7 @@ class SLMUSEDLF(nn.Module):
                 _debug=_debug,
             )
         elif alternative_supervised == "alt2":
+            self.logger.info("🔄 Using alternative supervised module 2")
             self.supervised = SLMUSESupervisedAlternative2(
                 embedding_dim,
                 num_classes=num_classes,
@@ -158,6 +160,7 @@ class SLMUSEDLF(nn.Module):
                 _debug=_debug,
             )
         elif alternative_supervised == "alt3":
+            self.logger.info("🔄 Using alternative supervised module 3")
             self.supervised = SLMUSESupervisedAlternative3(
                 embedding_dim,
                 num_classes=num_classes,
@@ -167,6 +170,7 @@ class SLMUSEDLF(nn.Module):
                 _debug=_debug,
             )
         elif alternative_supervised == "alt4":
+            self.logger.info("🔄 Using alternative supervised module 4")
             self.supervised = SLMUSESupervisedAlternative4(
                 embedding_dim,
                 num_classes=num_classes,
@@ -176,6 +180,7 @@ class SLMUSEDLF(nn.Module):
                 _debug=_debug,
             )
         elif alternative_supervised == "alt5":
+            self.logger.info("🔄 Using alternative supervised module 5")
             self.supervised = SLMUSESupervisedAlternative5(
                 embedding_dim,
                 num_classes=num_classes,
@@ -183,7 +188,7 @@ class SLMUSEDLF(nn.Module):
                 hidden_dim=hidden_dim,
                 dropout_prob=dropout_prob,
                 concat_frameaxis=supervised_concat_frameaxis,
-                activation_functions=[supervised_activation, "relu"],
+                activation_functions=["gelu", "relu"],
                 _debug=_debug,
             )
         else:
