@@ -39,7 +39,7 @@ class SLMUSELossModule(nn.Module):
 
         loss = loss / N
         loss = loss * mask.float()
-        return loss.sum() / mask.sum()
+        return loss.sum() / torch.clamp(mask.sum(), min=1)
 
     def focal_triplet_loss(self, v, vhat_z, g, F, mask):
         if mask.sum() == 0:
@@ -62,6 +62,7 @@ class SLMUSELossModule(nn.Module):
             )
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
+        loss = loss / self.t
         loss = loss * mask.float()
         return loss.sum() / torch.clamp(mask.sum(), min=1)
 
@@ -93,7 +94,6 @@ class SLMUSELossModule(nn.Module):
             v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
             Ju = self.contrastive_loss(v, vhat, negatives, mask)
             Jt = self.focal_triplet_loss(v, vhat, g, F, mask)
-            # ortho_term = self.lambda_orthogonality * self.orthogonality_term(F)
-            Jz = Ju + Jt  # + ortho_term
+            Jz = Ju + Jt
 
         return Jz
