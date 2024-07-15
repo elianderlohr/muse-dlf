@@ -180,7 +180,7 @@ class SLMUSEDLF(nn.Module):
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
+                hidden_dim=hidden_dim,
                 dropout_prob=dropout_prob,
                 concat_frameaxis=supervised_concat_frameaxis,
                 activation_functions=[supervised_activation, "relu"],

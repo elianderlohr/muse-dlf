@@ -10,7 +10,7 @@ class SLMUSESupervisedAlternative5(nn.Module):
         embedding_dim,  # Embedding dimension (e.g. RoBERTa 768)
         num_classes,  # Number of classes to predict
         frameaxis_dim,  # Frameaxis dimension
-        num_sentences,  # Number of sentences
+        hidden_dim,  # Hidden size of the feed-forward network
         dropout_prob=0.1,  # Dropout probability
         concat_frameaxis=False,  # Whether to concatenate frameaxis with sentence
         activation_functions=(
@@ -35,9 +35,12 @@ class SLMUSESupervisedAlternative5(nn.Module):
         self.activation_last = self.get_activation(activation_functions[1])
 
         # Feed-forward network for sentence embeddings
-        self.Wr = nn.Linear(embedding_dim, embedding_dim)
+        self.dropout_1 = nn.Dropout(dropout_prob)
+        self.Wr = nn.Linear(D_h, hidden_dim)
         self.relu = nn.ReLU()
-        self.Wt = nn.Linear(embedding_dim, num_classes)
+        self.batch_norm = nn.BatchNorm1d(hidden_dim)  # Add batch normalization layer
+        self.Wt = nn.Linear(hidden_dim, num_classes)
+        self.dropout_2 = nn.Dropout(dropout_prob)
 
         # Flatten
         self.flatten = nn.Flatten(start_dim=1)
@@ -119,15 +122,21 @@ class SLMUSESupervisedAlternative5(nn.Module):
                 vs = torch.cat([vs, frameaxis_data], dim=-1)
 
             # Process each sentence embedding through Wr, ReLU, and Wt
-            vs_transformed = self.Wr(vs)
-            vs_activated = self.relu(vs_transformed)
-            vs_class_scores = self.Wt(vs_activated)
+            vs = self.dropout_1(vs)
+            vs = self.Wr(vs)
+            vs = self.relu(vs)
+            vs = self.batch_norm(vs)  # Apply batch normalization
 
             # Average predictions across sentences but ignore padded elements (all zeros)
             mask_vs = (vs.abs().sum(dim=-1) != 0).float()
-            y_hat_s = (vs_class_scores * mask_vs.unsqueeze(-1)).sum(
-                dim=1
-            ) / torch.clamp(mask_vs.sum(dim=1, keepdim=True), min=1)
+            vs = (vs * mask_vs.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+                mask_vs.sum(dim=1, keepdim=True), min=1
+            )
+
+            vs = self.dropout_2(vs)
+            vs = self.Wt(vs)
+
+            y_hat_s = vs
 
             other = {
                 "predicate": d_p_mean,
