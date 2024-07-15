@@ -157,7 +157,7 @@ python src/start_train.py \
     --M 8 \
     --t 8 \
     --batch_size 8 \
-    --num_sentences 64 \
+    --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 20 \
     --max_arg_length 10 \
