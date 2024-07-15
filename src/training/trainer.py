@@ -39,7 +39,7 @@ class Trainer:
         clip_value=1.0,
         accumulation_steps=1,
         save_every_n_steps=1,
-        save_threshold=0.5,
+        save_threshold=0.0,
         save_metric="accuracy",
         model_config={},
         **kwargs,
