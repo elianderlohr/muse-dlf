@@ -258,6 +258,9 @@ class MUSEDLF(nn.Module):
 
         return all_negatives
 
+    def count_non_padding_elements(self, tensor, dim=-1):
+        return (tensor.abs().sum(dim=dim) != 0).sum().item()
+
     def forward(
         self,
         sentence_ids,
@@ -282,6 +285,16 @@ class MUSEDLF(nn.Module):
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
+            # Count non-padding sentences in sentence_ids
+            num_valid_sentences = self.count_non_padding_elements(sentence_ids, dim=-1)
+
+            # Count non-padding spans in predicate_ids, arg0_ids, arg1_ids
+            num_valid_predicates = self.count_non_padding_elements(
+                predicate_ids, dim=-1
+            )
+            num_valid_arg0 = self.count_non_padding_elements(arg0_ids, dim=-1)
+            num_valid_arg1 = self.count_non_padding_elements(arg1_ids, dim=-1)
+
             # Convert input IDs to embeddings
             (
                 sentence_embeddings,
@@ -295,6 +308,32 @@ class MUSEDLF(nn.Module):
                 arg0_ids,
                 arg1_ids,
                 mixed_precision=mixed_precision,
+            )
+
+            # Count non-zero sentence embeddings
+            num_non_zero_sentences = self.count_non_padding_elements(
+                sentence_embeddings, dim=-1
+            )
+
+            # Count non-zero spans in predicate_embeddings, arg0_embeddings, arg1_embeddings
+            num_non_zero_predicates = self.count_non_padding_elements(
+                predicate_embeddings, dim=-1
+            )
+            num_non_zero_arg0 = self.count_non_padding_elements(arg0_embeddings, dim=-1)
+            num_non_zero_arg1 = self.count_non_padding_elements(arg1_embeddings, dim=-1)
+
+            # Log the counts
+            self.logger.debug(
+                f"Number of valid sentences fed in: {num_valid_sentences}, embeddings output: {num_non_zero_sentences}"
+            )
+            self.logger.debug(
+                f"Number of valid predicates fed in: {num_valid_predicates}, embeddings output: {num_non_zero_predicates}"
+            )
+            self.logger.debug(
+                f"Number of valid arg0 spans fed in: {num_valid_arg0}, embeddings output: {num_non_zero_arg0}"
+            )
+            self.logger.debug(
+                f"Number of valid arg1 spans fed in: {num_valid_arg1}, embeddings output: {num_non_zero_arg1}"
             )
 
             # Delete input tensors after conversion to embeddings
