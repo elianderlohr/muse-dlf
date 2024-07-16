@@ -342,6 +342,9 @@ class Trainer:
                 )
                 continue
 
+            # debug: return first elem of each batch of combined_logits for debugging
+            logger.debug(f"combined_logits: {combined_logits}")
+
             span_loss = 0.0
             sentence_loss = 0.0
 

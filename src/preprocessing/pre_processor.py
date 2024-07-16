@@ -192,10 +192,13 @@ class PreProcessor:
 
         # Aggregate frameaxis columns into a list of lists for each row
         frameaxis_cols = frameaxis_df.columns.tolist()
+
         if "article_id" in frameaxis_cols:
             frameaxis_cols.remove("article_id")
+
         if "text" in frameaxis_cols:
             frameaxis_cols.remove("text")
+
         frameaxis_df["frameaxis_values"] = frameaxis_df[frameaxis_cols].apply(
             list, axis=1
         )
@@ -263,7 +266,7 @@ class PreProcessor:
         if train_mode:
             # Split the merged DataFrame into train and test sets
             train_df, test_df = train_test_split(
-                merged_df, test_size=0.2, random_state=42
+                merged_df, test_size=self.test_size, random_state=42
             )
 
             # Reset indices for train and test DataFrames
@@ -316,6 +319,7 @@ class PreProcessor:
             assert len(X_test) == len(
                 X_frameaxis_test
             ), f"Length mismatch: X_test({len(X_test)}) and X_frameaxis_test({len(X_frameaxis_test)})"
+
             train_dataset = ArticleDataset(
                 X_train,
                 X_srl_train,
@@ -346,13 +350,13 @@ class PreProcessor:
 
             return train_dataset, test_dataset
         else:
-            X = merged_df["text"]
+            X_text = merged_df["text"]
 
             X_srl = merged_df["srl_values"]
             X_frameaxis = merged_df["frameaxis_values"]
 
             dataset = ArticleDataset(
-                X,
+                X_text,
                 X_srl,
                 X_frameaxis,
                 self.tokenizer,

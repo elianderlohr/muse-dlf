@@ -46,8 +46,8 @@ def main():
     srl_df = srl_processor.get_srl_embeddings()
 
     # print statistics
-    logging.info(f"FrameAxis data shape: {srl_df.shape}")
-    logging.info(f"FrameAxis data columns: {srl_df.columns}")
+    logging.info(f"SRL data shape: {srl_df.shape}")
+    logging.info(f"SRL data columns: {srl_df.columns}")
 
 
 if __name__ == "__main__":
