@@ -550,7 +550,7 @@ class SLMUSEDLF(nn.Module):
                     sentence_loss_fx += (
                         unsupervised_fx_results["loss"] * (mask_fx).float()
                     )
-                    valid_counts += mask_fx
+                    valid_counts += (mask_fx).float()
 
                     # Delete unsupervised_fx_results to free memory
                     del unsupervised_fx_results, mask_fx
@@ -626,10 +626,6 @@ class SLMUSEDLF(nn.Module):
                 d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
                 d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
 
-                self.logger.debug(f"Shape of d_p_sentence: {d_p_sentence.shape}")
-                self.logger.debug(f"Shape of d_a0_sentence: {d_a0_sentence.shape}")
-                self.logger.debug(f"Shape of d_a1_sentence: {d_a1_sentence.shape}")
-
                 d_p_list.append(d_p_sentence)
                 d_a0_list.append(d_a0_sentence)
                 d_a1_list.append(d_a1_sentence)
@@ -685,11 +681,6 @@ class SLMUSEDLF(nn.Module):
                 else torch.tensor([], device=sentence_embeddings.device)
             )
 
-            self.logger.debug(f"Shape of d_p_aggregated: {d_p_aggregated.shape}")
-            self.logger.debug(f"Shape of d_a0_aggregated: {d_a0_aggregated.shape}")
-            self.logger.debug(f"Shape of d_a1_aggregated: {d_a1_aggregated.shape}")
-            self.logger.debug(f"Shape of d_fx_aggregated: {d_fx_aggregated.shape}")
-
             # Supervised predictions
             span_pred, sentence_pred, combined_pred, other = self.supervised(
                 d_p_aggregated,
@@ -702,6 +693,23 @@ class SLMUSEDLF(nn.Module):
             )
 
             # finalize unsupervised loss calc
+            self.logger.debug(f"sentence_loss_p.sum(): {sentence_loss_p.sum()}")
+            self.logger.debug(f"sentence_loss_a0.sum(): {sentence_loss_a0.sum()}")
+            self.logger.debug(f"sentence_loss_a1.sum(): {sentence_loss_a1.sum()}")
+            self.logger.debug(f"sentence_loss_fx.sum(): {sentence_loss_fx.sum()}")
+
+            self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
+
+            self.logger.debug(
+                f"F_p: {self.unsupervised.combined_autoencoder.F_matrices['p']}"
+            )
+            self.logger.debug(
+                f"F_a0: {self.unsupervised.combined_autoencoder.F_matrices['a0']}"
+            )
+            self.logger.debug(
+                f"F_a1: {self.unsupervised.combined_autoencoder.F_matrices['a1']}"
+            )
+            self.logger.debug(f"F_fx: {self.unsupervised_fx.frameaxis_autoencoder.F}")
 
             # add ortho term to each unsupervised loss
             span_p_loss = sentence_loss_p.sum() + (
@@ -733,6 +741,10 @@ class SLMUSEDLF(nn.Module):
             unsupervised_loss = (
                 span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss
             ) / valid_counts.sum()
+
+            self.logger.debug(
+                f"unsupervised_loss: {span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss} / {valid_counts.sum()} = {unsupervised_loss}"
+            )
 
             # Delete aggregated tensors after use
             del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
