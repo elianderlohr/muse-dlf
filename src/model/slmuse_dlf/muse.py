@@ -489,7 +489,9 @@ class SLMUSEDLF(nn.Module):
                                 unsupervised_results["loss_a1"] * (mask_a1).float()
                             )
 
-                            valid_counts += (mask_p & mask_a0 & mask_a1).float()
+                            valid_counts += (mask_p).float()
+                            valid_counts += (mask_a0).float()
+                            valid_counts += (mask_a1).float()
 
                             # Use the vhat (reconstructed embeddings) for supervised predictions
                             d_p_sentence_list.append(unsupervised_results["p"]["d"])
