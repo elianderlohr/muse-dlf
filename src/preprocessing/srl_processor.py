@@ -53,7 +53,9 @@ class SRLProcessor:
         """
         logger.info("Recalculating SRL components...")
 
-        from allennlp.predictors.predictor import Predictor  # Load here only if needed
+        from allennlp.predictors.predictor import Predictor
+
+        print(f"Loading SRL predictor using device {self.device}...")
 
         predictor = Predictor.from_path(
             "https://storage.googleapis.com/allennlp-public-models/structured-prediction-srl-bert.2020.12.15.tar.gz",
