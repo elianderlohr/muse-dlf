@@ -1,13 +1,10 @@
 import json
-import os
 import pandas as pd
-from pyparsing import NotAny
 from preprocessing.datasets.article_dataset import ArticleDataset, custom_collate_fn
 from preprocessing.frameaxis_processor import FrameAxisProcessor
 from preprocessing.srl_processor import SRLProcessor
 import torch
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 import pickle
 from sklearn.model_selection import train_test_split
 from nltk.tokenize import sent_tokenize
