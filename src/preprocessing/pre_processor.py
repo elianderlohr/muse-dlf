@@ -236,7 +236,7 @@ class PreProcessor:
             "srl": False,
             "frameaxis": False,
         },
-        train_mode=False,
+        train_mode=True,
         device=-1,
     ):
         """
@@ -386,10 +386,7 @@ class PreProcessor:
         sample_size=None,
     ):
         train_dataset, test_dataset = self.get_dataset(
-            path,
-            format,
-            dataframe_path,
-            force_recalculate,
+            path, format, dataframe_path, force_recalculate, train_mode=True
         )
 
         if sample_size > 0:

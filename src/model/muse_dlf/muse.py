@@ -546,10 +546,6 @@ class MUSEDLF(nn.Module):
                 d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
                 d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
 
-                self.logger.debug(f"Shape of d_p_sentence: {d_p_sentence.shape}")
-                self.logger.debug(f"Shape of d_a0_sentence: {d_a0_sentence.shape}")
-                self.logger.debug(f"Shape of d_a1_sentence: {d_a1_sentence.shape}")
-
                 d_p_list.append(d_p_sentence)
                 d_a0_list.append(d_a0_sentence)
                 d_a1_list.append(d_a1_sentence)
@@ -604,11 +600,6 @@ class MUSEDLF(nn.Module):
                 if d_fx_list
                 else torch.tensor([], device=sentence_embeddings.device)
             )
-
-            self.logger.debug(f"Shape of d_p_aggregated: {d_p_aggregated.shape}")
-            self.logger.debug(f"Shape of d_a0_aggregated: {d_a0_aggregated.shape}")
-            self.logger.debug(f"Shape of d_a1_aggregated: {d_a1_aggregated.shape}")
-            self.logger.debug(f"Shape of d_fx_aggregated: {d_fx_aggregated.shape}")
 
             # Supervised predictions
             span_pred, sentence_pred, combined_pred, other = self.supervised(
