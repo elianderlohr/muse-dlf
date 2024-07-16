@@ -260,95 +260,112 @@ class PreProcessor:
                 X_frameaxis, on="article_id"
             )
 
-        # Split the merged DataFrame into train and test sets
-        train_df, test_df = train_test_split(merged_df, test_size=0.2, random_state=42)
-
-        # Reset indices for train and test DataFrames
-        train_df = train_df.reset_index(drop=True)
-        test_df = test_df.reset_index(drop=True)
-
-        # Extract relevant columns for training and testing
-        X_train = train_df["text"]
-        X_srl_train = train_df["srl_values"]
-        X_frameaxis_train = train_df["frameaxis_values"]
-
         if train_mode:
+            # Split the merged DataFrame into train and test sets
+            train_df, test_df = train_test_split(
+                merged_df, test_size=0.2, random_state=42
+            )
+
+            # Reset indices for train and test DataFrames
+            train_df = train_df.reset_index(drop=True)
+            test_df = test_df.reset_index(drop=True)
+
+            # Extract relevant columns for training and testing
+            X_train = train_df["text"]
+            X_srl_train = train_df["srl_values"]
+            X_frameaxis_train = train_df["frameaxis_values"]
+
             y_train = train_df["encoded_values"]
-        else:
-            # create empty y_train
-            y_train = pd.DataFrame(index=range(len(X_train)))
 
-        X_test = test_df["text"]
-        X_srl_test = test_df["srl_values"]
-        X_frameaxis_test = test_df["frameaxis_values"]
+            X_test = test_df["text"]
+            X_srl_test = test_df["srl_values"]
+            X_frameaxis_test = test_df["frameaxis_values"]
 
-        if train_mode:
             y_test = test_df["encoded_values"]
+
+            # Assert lengths
+            assert len(X_train) == len(
+                y_train
+            ), f"Length mismatch: X_train({len(X_train)}) and y_train({len(y_train)})"
+            assert len(X_test) == len(
+                y_test
+            ), f"Length mismatch: X_test({len(X_test)}) and y_test({len(y_test)})"
+            assert len(X_srl_train) == len(
+                y_train
+            ), f"Length mismatch: X_srl_train({len(X_srl_train)}) and y_train({len(y_train)})"
+            assert len(X_srl_test) == len(
+                y_test
+            ), f"Length mismatch: X_srl_test({len(X_srl_test)}) and y_test({len(y_test)})"
+            assert len(X_frameaxis_train) == len(
+                y_train
+            ), f"Length mismatch: X_frameaxis_train({len(X_frameaxis_train)}) and y_train({len(y_train)})"
+            assert len(X_frameaxis_test) == len(
+                y_test
+            ), f"Length mismatch: X_frameaxis_test({len(X_frameaxis_test)}) and y_test({len(y_test)})"
+
+            # Ensure the length is the same between the three datasets
+            assert len(X_train) == len(
+                X_srl_train
+            ), f"Length mismatch: X_train({len(X_train)}) and X_srl_train({len(X_srl_train)})"
+            assert len(X_train) == len(
+                X_frameaxis_train
+            ), f"Length mismatch: X_train({len(X_train)}) and X_frameaxis_train({len(X_frameaxis_train)})"
+            assert len(X_test) == len(
+                X_srl_test
+            ), f"Length mismatch: X_test({len(X_test)}) and X_srl_test({len(X_srl_test)})"
+            assert len(X_test) == len(
+                X_frameaxis_test
+            ), f"Length mismatch: X_test({len(X_test)}) and X_frameaxis_test({len(X_frameaxis_test)})"
+            train_dataset = ArticleDataset(
+                X_train,
+                X_srl_train,
+                X_frameaxis_train,
+                self.tokenizer,
+                y_train,
+                max_sentences_per_article=self.max_sentences_per_article,
+                max_sentence_length=self.max_sentence_length,
+                max_args_per_sentence=self.max_args_per_sentence,
+                max_arg_length=self.max_arg_length,
+                frameaxis_dim=self.frameaxis_dim,
+                train_mode=train_mode,
+            )
+
+            test_dataset = ArticleDataset(
+                X_test,
+                X_srl_test,
+                X_frameaxis_test,
+                self.tokenizer,
+                y_test,
+                max_sentences_per_article=self.max_sentences_per_article,
+                max_sentence_length=self.max_sentence_length,
+                max_args_per_sentence=self.max_args_per_sentence,
+                max_arg_length=self.max_arg_length,
+                frameaxis_dim=self.frameaxis_dim,
+                train_mode=train_mode,
+            )
+
+            return train_dataset, test_dataset
         else:
-            y_test = pd.DataFrame(index=range(len(X_test)))
+            X = merged_df["text"]
 
-        # Assert lengths
-        assert len(X_train) == len(
-            y_train
-        ), f"Length mismatch: X_train({len(X_train)}) and y_train({len(y_train)})"
-        assert len(X_test) == len(
-            y_test
-        ), f"Length mismatch: X_test({len(X_test)}) and y_test({len(y_test)})"
-        assert len(X_srl_train) == len(
-            y_train
-        ), f"Length mismatch: X_srl_train({len(X_srl_train)}) and y_train({len(y_train)})"
-        assert len(X_srl_test) == len(
-            y_test
-        ), f"Length mismatch: X_srl_test({len(X_srl_test)}) and y_test({len(y_test)})"
-        assert len(X_frameaxis_train) == len(
-            y_train
-        ), f"Length mismatch: X_frameaxis_train({len(X_frameaxis_train)}) and y_train({len(y_train)})"
-        assert len(X_frameaxis_test) == len(
-            y_test
-        ), f"Length mismatch: X_frameaxis_test({len(X_frameaxis_test)}) and y_test({len(y_test)})"
+            X_srl = merged_df["srl_values"]
+            X_frameaxis = merged_df["frameaxis_values"]
 
-        # Ensure the length is the same between the three datasets
-        assert len(X_train) == len(
-            X_srl_train
-        ), f"Length mismatch: X_train({len(X_train)}) and X_srl_train({len(X_srl_train)})"
-        assert len(X_train) == len(
-            X_frameaxis_train
-        ), f"Length mismatch: X_train({len(X_train)}) and X_frameaxis_train({len(X_frameaxis_train)})"
-        assert len(X_test) == len(
-            X_srl_test
-        ), f"Length mismatch: X_test({len(X_test)}) and X_srl_test({len(X_srl_test)})"
-        assert len(X_test) == len(
-            X_frameaxis_test
-        ), f"Length mismatch: X_test({len(X_test)}) and X_frameaxis_test({len(X_frameaxis_test)})"
-        train_dataset = ArticleDataset(
-            X_train,
-            X_srl_train,
-            X_frameaxis_train,
-            self.tokenizer,
-            y_train,
-            max_sentences_per_article=self.max_sentences_per_article,
-            max_sentence_length=self.max_sentence_length,
-            max_args_per_sentence=self.max_args_per_sentence,
-            max_arg_length=self.max_arg_length,
-            frameaxis_dim=self.frameaxis_dim,
-            train_mode=train_mode,
-        )
+            dataset = ArticleDataset(
+                X,
+                X_srl,
+                X_frameaxis,
+                self.tokenizer,
+                None,
+                max_sentences_per_article=self.max_sentences_per_article,
+                max_sentence_length=self.max_sentence_length,
+                max_args_per_sentence=self.max_args_per_sentence,
+                max_arg_length=self.max_arg_length,
+                frameaxis_dim=self.frameaxis_dim,
+                train_mode=train_mode,
+            )
 
-        test_dataset = ArticleDataset(
-            X_test,
-            X_srl_test,
-            X_frameaxis_test,
-            self.tokenizer,
-            y_test,
-            max_sentences_per_article=self.max_sentences_per_article,
-            max_sentence_length=self.max_sentence_length,
-            max_args_per_sentence=self.max_args_per_sentence,
-            max_arg_length=self.max_arg_length,
-            frameaxis_dim=self.frameaxis_dim,
-            train_mode=train_mode,
-        )
-
-        return train_dataset, test_dataset
+            return dataset
 
     def get_dataloader(
         self,

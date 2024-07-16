@@ -220,53 +220,96 @@ def main():
 
     logger.info("Preprocessor loaded successfully")
 
-    # Load the data
-    train_dataset, test_dataset = preprocessor.get_dataset(
-        args.path_data,
-        "json",
-        dataframe_path={
-            "srl": args.path_srls,
-            "frameaxis": args.path_frameaxis,
-            "frameaxis_microframe": args.path_frameaxis_microframe,
-        },
-        force_recalculate={
-            "srl": args.force_recalculate_srls,
-            "frameaxis": args.force_recalculate_frameaxis,
-        },
-        train_mode=args.train_mode,
-        device=0,
-    )
+    if args.train_mode:
+        # Load the data
+        train_dataset, test_dataset = preprocessor.get_dataset(
+            args.path_data,
+            "json",
+            dataframe_path={
+                "srl": args.path_srls,
+                "frameaxis": args.path_frameaxis,
+                "frameaxis_microframe": args.path_frameaxis_microframe,
+            },
+            force_recalculate={
+                "srl": args.force_recalculate_srls,
+                "frameaxis": args.force_recalculate_frameaxis,
+            },
+            train_mode=args.train_mode,
+            device=0,
+        )
 
-    # Serialize datasets
-    train_artifact_filepath = Path("./train_dataset_artifact.pkl")
-    test_artifact_filepath = Path("./test_dataset_artifact.pkl")
+        # Serialize datasets
+        train_artifact_filepath = Path("./train_dataset_artifact.pkl")
+        test_artifact_filepath = Path("./test_dataset_artifact.pkl")
 
-    with train_artifact_filepath.open("wb") as f:
-        pickle.dump(train_dataset, f)
+        with train_artifact_filepath.open("wb") as f:
+            pickle.dump(train_dataset, f)
 
-    with test_artifact_filepath.open("wb") as f:
-        pickle.dump(test_dataset, f)
+        with test_artifact_filepath.open("wb") as f:
+            pickle.dump(test_dataset, f)
 
-    logger.info("Data loaded successfully")
+        logger.info("Data loaded successfully")
 
-    # Initialize W&B run
-    run = wandb.init(
-        project=args.project_name,
-        settings=wandb.Settings(_service_wait=300),
-        job_type="create-dataset",
-    )
+        # Initialize W&B run
+        run = wandb.init(
+            project=args.project_name,
+            settings=wandb.Settings(_service_wait=300),
+            job_type="create-dataset",
+        )
 
-    # Log the train dataset artifact
-    artifact = wandb.Artifact(args.artifact_name, type="dataset")
-    artifact.add_file(train_artifact_filepath)
-    artifact.add_file(test_artifact_filepath)
-    run.log_artifact(artifact)
+        # Log the train dataset artifact
+        artifact = wandb.Artifact(args.artifact_name, type="dataset")
+        artifact.add_file(train_artifact_filepath)
+        artifact.add_file(test_artifact_filepath)
+        run.log_artifact(artifact)
 
-    # Link the artifacts
-    run.link_artifact(
-        artifact,
-        target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
-    )
+        # Link the artifacts
+        run.link_artifact(
+            artifact,
+            target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
+        )
+    else:
+        dataset = preprocessor.get_dataset(
+            args.path_data,
+            "json",
+            dataframe_path={
+                "srl": args.path_srls,
+                "frameaxis": args.path_frameaxis,
+                "frameaxis_microframe": args.path_frameaxis_microframe,
+            },
+            force_recalculate={
+                "srl": args.force_recalculate_srls,
+                "frameaxis": args.force_recalculate_frameaxis,
+            },
+            train_mode=args.train_mode,
+            device=0,
+        )
+
+        # Serialize datasets
+        artifact_filepath = Path("./dataset_artifact.pkl")
+
+        with artifact_filepath.open("wb") as f:
+            pickle.dump(dataset, f)
+
+        logger.info("Data loaded successfully")
+
+        # Initialize W&B run
+        run = wandb.init(
+            project=args.project_name,
+            settings=wandb.Settings(_service_wait=300),
+            job_type="create-dataset",
+        )
+
+        # Log the dataset artifact
+        artifact = wandb.Artifact(args.artifact_name, type="dataset")
+        artifact.add_file(artifact_filepath)
+        run.log_artifact(artifact)
+
+        # Link the artifacts
+        run.link_artifact(
+            artifact,
+            target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
+        )
 
     # Finish the run
     run.finish()
