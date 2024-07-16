@@ -1214,6 +1214,7 @@ class Trainer:
                         f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
                     )
 
+            # save model artifact
             model_artifact = wandb.Artifact(
                 name=f"{self.run_name.replace('-', '_')}_model",
                 type="model",
