@@ -1162,10 +1162,6 @@ class Trainer:
                 return
 
             # save model
-            if epoch_step is not None:
-                model_save_path = os.path.join(save_dir, f"model_{epoch_step}.pth")
-            else:
-                model_save_path = os.path.join(save_dir, "model.pth")
             if (
                 self.training_management == "accelerate"
                 and self.accelerator.is_main_process
@@ -1174,24 +1170,24 @@ class Trainer:
                     # Save the model using accelerator.save_model
                     self.accelerator.save_model(
                         self.model,
-                        model_save_path,
+                        save_dir,
                         safe_serialization=False,
                     )
-                    logger.info(f"Model saved at {model_save_path}")
+                    logger.info(f"Model saved at {save_dir}")
                 except Exception as e:
                     logger.error(
-                        f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
+                        f"Warning: Failed to save model at {save_dir}. Exception: {e}"
                     )
                     return
             elif self.training_management != "accelerate":
                 try:
                     # Validate model state dict
                     state_dict = self.model.state_dict()
-                    torch.save(state_dict, model_save_path)
-                    logger.info(f"Model saved at {model_save_path}")
+                    torch.save(state_dict, save_dir)
+                    logger.info(f"Model saved at {save_dir}")
                 except Exception as e:
                     logger.error(
-                        f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
+                        f"Warning: Failed to save model at {save_dir}. Exception: {e}"
                     )
                     return
 
@@ -1224,8 +1220,7 @@ class Trainer:
                 metadata=self.model_config,
             )
 
-            model_artifact.add_file(model_save_path)
-            model_artifact.add_file(config_save_path)
+            model_artifact.add_dir(save_dir)
 
             # Save to wandb
             if self.training_management == "wandb":
@@ -1261,21 +1256,19 @@ class Trainer:
                         f"Failed to log artifact to Weights and Biases through Accelerate. Exception: {e}"
                     )
 
-            # Remove the files after uploading
+            # Remove the save_dir dir
             try:
-                os.remove(model_save_path)
-                logger.info(f"Removed local model file: {model_save_path}")
+                if os.path.exists(save_dir):
+                    for root, dirs, files in os.walk(save_dir, topdown=False):
+                        for file in files:
+                            os.remove(os.path.join(root, file))
+                        for dir in dirs:
+                            os.rmdir(os.path.join(root, dir))
+                    os.rmdir(save_dir)
+                logger.info(f"Removed local files: {save_dir}")
             except Exception as e:
                 logger.error(
-                    f"Failed to remove local model file: {model_save_path}. Exception: {e}"
-                )
-
-            try:
-                os.remove(config_save_path)
-                logger.info(f"Removed local config file: {config_save_path}")
-            except Exception as e:
-                logger.error(
-                    f"Failed to remove local config file: {config_save_path}. Exception: {e}"
+                    f"Failed to remove local files: {save_dir}. Exception: {e}"
                 )
 
     def run_training(self, epochs, alpha=0.5):
