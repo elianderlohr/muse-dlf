@@ -368,18 +368,20 @@ class MUSEDLF(nn.Module):
                         mask_a0 = (v_a0_span.abs().sum(dim=-1) != 0).float().bool()
                         mask_a1 = (v_a1_span.abs().sum(dim=-1) != 0).float().bool()
 
-                        if not mask_p.any():
-                            self.logger.debug(
-                                f"Idx: [{sentence_idx}, {span_idx}] Found {(mask_p.size(0) - mask_p.sum()).item()} of {mask_p.size(0)} zeros in mask_p"
-                            )
-                        if not mask_a0.any():
-                            self.logger.debug(
-                                f"Idx: [{sentence_idx}, {span_idx}] Found {(mask_a0.size(0) - mask_a0.sum()).item()} of {mask_a0.size(0)} zeros in mask_a0"
-                            )
-                        if not mask_a1.any():
-                            self.logger.debug(
-                                f"Idx: [{sentence_idx}, {span_idx}] Found {(mask_a1.size(0) - mask_a1.sum()).item()} of {mask_a1.size(0)} zeros in mask_a1"
-                            )
+                        # Log the number of fully zero elements
+                        num_zero_p = (mask_p.size(0) - mask_p.sum()).item()
+                        num_zero_a0 = (mask_a0.size(0) - mask_a0.sum()).item()
+                        num_zero_a1 = (mask_a1.size(0) - mask_a1.sum()).item()
+
+                        self.logger.debug(
+                            f"Idx: [{sentence_idx}/{sentence_embeddings.size(1)}, {span_idx}/{predicate_embeddings.size(2)}] Found {num_zero_p} of {mask_p.size(0)} zeros in mask_p"
+                        )
+                        self.logger.debug(
+                            f"Idx: [{sentence_idx}/{sentence_embeddings.size(1)}, {span_idx}/{predicate_embeddings.size(2)}] Found {num_zero_a0} of {mask_a0.size(0)} zeros in mask_a0"
+                        )
+                        self.logger.debug(
+                            f"Idx: [{sentence_idx}/{sentence_embeddings.size(1)}, {span_idx}/{predicate_embeddings.size(2)}] Found {num_zero_a1} of {mask_a1.size(0)} zeros in mask_a1"
+                        )
 
                         # Skip the unsupervised module call if all masks are zero
                         if mask_p.any() and mask_a0.any() and mask_a1.any():
