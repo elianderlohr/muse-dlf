@@ -146,6 +146,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=False,
+        device=-1,
     ):
         """
         Processes the data by preparing the SRL and FrameAxis components.
@@ -156,6 +157,7 @@ class PreProcessor:
             df,
             dataframe_path=dataframe_path.get("srl", None),
             force_recalculate=force_recalculate.get("srl", False),
+            device=device,
         )
         srl_df = srl_processor.get_srl_embeddings()
 
@@ -232,6 +234,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=False,
+        device=-1,
     ):
         """
         Returns the train and test datasets.
@@ -239,7 +242,7 @@ class PreProcessor:
         df = self._load_data(path=path, format=format)
 
         output = self._preprocess(
-            df, dataframe_path, force_recalculate, train_mode=train_mode
+            df, dataframe_path, force_recalculate, train_mode=train_mode, device=device
         )
 
         if train_mode:

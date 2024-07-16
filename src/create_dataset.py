@@ -225,6 +225,7 @@ def main():
             "frameaxis": args.force_recalculate_frameaxis,
         },
         train_mode=args.train_mode,
+        device=0,
     )
 
     # Serialize datasets
