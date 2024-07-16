@@ -1162,25 +1162,18 @@ class Trainer:
                 return
 
             # save model
-            if epoch_step:
-                model_save_path = os.path.join(save_dir, f"model_{epoch_step}.pth")
-            else:
-                model_save_path = os.path.join(save_dir, "model.pth")
-
+            model_save_path = os.path.join(save_dir, "model")
             if (
                 self.training_management == "accelerate"
                 and self.accelerator.is_main_process
             ):
                 try:
                     # Save the model using accelerator.save_model
-                    self.accelerator.save(
-                        self.model.state_dict(),
-                        model_save_path,
-                    )
-                    logger.info(f"Model saved at {save_dir}")
+                    self.accelerator.save_state(model_save_path)
+                    logger.info(f"Model saved at {model_save_path}")
                 except Exception as e:
                     logger.error(
-                        f"Warning: Failed to save model at {save_dir}. Exception: {e}"
+                        f"Warning: Failed to save model at {model_save_path}. Exception: {e}"
                     )
                     return
             elif self.training_management != "accelerate":

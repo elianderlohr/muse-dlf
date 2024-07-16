@@ -184,6 +184,9 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --mixed_precision fp16 \
     --accumulation_steps 1 \
     --alternative_supervised alt5 \
+    --sample_size 200 \
+    --save_threshold 0.0 \
+    --save_every_n_steps 1 \
     $DEBUG
 
 echo "______________________________________________________"
