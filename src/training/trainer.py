@@ -1169,7 +1169,14 @@ class Trainer:
             ):
                 try:
                     # Save the model using accelerator.save_model
-                    self.accelerator.save_state(model_save_path)
+                    self.accelerator.save_state(
+                        model_save_path, safe_serialization=False
+                    )
+                    self.accelerator.save_model(
+                        self.model,
+                        os.path.join(save_dir, "model.pth"),
+                        safe_serialization=False,
+                    )
                     logger.info(f"Model saved at {model_save_path}")
                 except Exception as e:
                     logger.error(
@@ -1217,7 +1224,7 @@ class Trainer:
                 metadata=self.model_config,
             )
 
-            model_artifact.add_file(model_save_path)
+            model_artifact.add_dir(model_save_path)
             model_artifact.add_file(config_save_path)
 
             # Save to wandb
@@ -1259,13 +1266,17 @@ class Trainer:
                 os.remove(model_save_path)
                 logger.info(f"Removed local model file: {model_save_path}")
             except Exception as e:
-                logger.error(f"Failed to remove local model file: {model_save_path}. Exception: {e}")
+                logger.error(
+                    f"Failed to remove local model file: {model_save_path}. Exception: {e}"
+                )
 
             try:
                 os.remove(config_save_path)
                 logger.info(f"Removed local config file: {config_save_path}")
             except Exception as e:
-                logger.error(f"Failed to remove local config file: {config_save_path}. Exception: {e}")
+                logger.error(
+                    f"Failed to remove local config file: {config_save_path}. Exception: {e}"
+                )
 
     def run_training(self, epochs, alpha=0.5):
         tau = 1
