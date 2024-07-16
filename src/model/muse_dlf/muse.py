@@ -467,7 +467,9 @@ class MUSEDLF(nn.Module):
                                 unsupervised_results["loss_a1"] * (mask_a1).float()
                             )
 
-                            valid_counts += (mask_p & mask_a0 & mask_a1).float()
+                            valid_counts += (mask_p).float()
+                            valid_counts += (mask_a0).float()
+                            valid_counts += (mask_a1).float()
 
                             # Use the vhat (reconstructed embeddings) for supervised predictions
                             d_p_sentence_list.append(unsupervised_results["p"]["d"])
@@ -528,7 +530,7 @@ class MUSEDLF(nn.Module):
                     sentence_loss_fx += (
                         unsupervised_fx_results["loss"] * (mask_fx).float()
                     )
-                    valid_counts += mask_fx
+                    valid_counts += (mask_fx).float()
 
                     # Delete unsupervised_fx_results to free memory
                     del unsupervised_fx_results, mask_fx
@@ -671,37 +673,27 @@ class MUSEDLF(nn.Module):
             )
 
             # finalize unsupervised loss calc
+            self.logger.debug(f"sentence_loss_p.sum(): {sentence_loss_p.sum()}")
+            self.logger.debug(f"sentence_loss_a0.sum(): {sentence_loss_a0.sum()}")
+            self.logger.debug(f"sentence_loss_a1.sum(): {sentence_loss_a1.sum()}")
+            self.logger.debug(f"sentence_loss_fx.sum(): {sentence_loss_fx.sum()}")
+
+            self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
 
             # add ortho term to each unsupervised loss
-            span_p_loss = sentence_loss_p.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
-                    self.unsupervised.combined_autoencoder.F_matrices["p"]
-                )
-            )
-            span_a0_loss = sentence_loss_a0.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
-                    self.unsupervised.combined_autoencoder.F_matrices["a0"]
-                )
-            )
-            span_a1_loss = sentence_loss_a1.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
-                    self.unsupervised.combined_autoencoder.F_matrices["a1"]
-                )
-            )
-            span_fx_loss = sentence_loss_fx.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
-                    self.unsupervised_fx.frameaxis_autoencoder.F
-                )
-            )
+            span_p_loss = sentence_loss_p.sum()
+            span_a0_loss = sentence_loss_a0.sum()
+            span_a1_loss = sentence_loss_a1.sum()
+            span_fx_loss = sentence_loss_fx.sum()
 
             # sum span losses
             unsupervised_loss = (
                 span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss
             ) / valid_counts.sum()
+
+            self.logger.debug(
+                f"unsupervised_loss: {span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss} / {valid_counts.sum()} = {unsupervised_loss}"
+            )
 
             # Delete aggregated tensors after use
             del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
