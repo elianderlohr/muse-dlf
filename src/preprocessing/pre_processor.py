@@ -273,7 +273,7 @@ class PreProcessor:
             y_train = train_df["encoded_values"]
         else:
             # create empty y_train
-            y_train = pd.DataFrame()
+            y_train = pd.DataFrame(index=range(len(X_train)))
 
         X_test = test_df["text"]
         X_srl_test = test_df["srl_values"]
@@ -282,22 +282,41 @@ class PreProcessor:
         if train_mode:
             y_test = test_df["encoded_values"]
         else:
-            y_test = pd.DataFrame()
+            y_test = pd.DataFrame(index=range(len(X_test)))
 
-        # assert lenth
-        assert len(X_train) == len(y_train)
-        assert len(X_test) == len(y_test)
-        assert len(X_srl_train) == len(y_train)
-        assert len(X_srl_test) == len(y_test)
-        assert len(X_frameaxis_train) == len(y_train)
-        assert len(X_frameaxis_test) == len(y_test)
+        # Assert lengths
+        assert len(X_train) == len(
+            y_train
+        ), f"Length mismatch: X_train({len(X_train)}) and y_train({len(y_train)})"
+        assert len(X_test) == len(
+            y_test
+        ), f"Length mismatch: X_test({len(X_test)}) and y_test({len(y_test)})"
+        assert len(X_srl_train) == len(
+            y_train
+        ), f"Length mismatch: X_srl_train({len(X_srl_train)}) and y_train({len(y_train)})"
+        assert len(X_srl_test) == len(
+            y_test
+        ), f"Length mismatch: X_srl_test({len(X_srl_test)}) and y_test({len(y_test)})"
+        assert len(X_frameaxis_train) == len(
+            y_train
+        ), f"Length mismatch: X_frameaxis_train({len(X_frameaxis_train)}) and y_train({len(y_train)})"
+        assert len(X_frameaxis_test) == len(
+            y_test
+        ), f"Length mismatch: X_frameaxis_test({len(X_frameaxis_test)}) and y_test({len(y_test)})"
 
-        # ensure the len is the same between the three
-        assert len(X_train) == len(X_srl_train)
-        assert len(X_train) == len(X_frameaxis_train)
-        assert len(X_test) == len(X_srl_test)
-        assert len(X_test) == len(X_frameaxis_test)
-
+        # Ensure the length is the same between the three datasets
+        assert len(X_train) == len(
+            X_srl_train
+        ), f"Length mismatch: X_train({len(X_train)}) and X_srl_train({len(X_srl_train)})"
+        assert len(X_train) == len(
+            X_frameaxis_train
+        ), f"Length mismatch: X_train({len(X_train)}) and X_frameaxis_train({len(X_frameaxis_train)})"
+        assert len(X_test) == len(
+            X_srl_test
+        ), f"Length mismatch: X_test({len(X_test)}) and X_srl_test({len(X_srl_test)})"
+        assert len(X_test) == len(
+            X_frameaxis_test
+        ), f"Length mismatch: X_test({len(X_test)}) and X_frameaxis_test({len(X_frameaxis_test)})"
         train_dataset = ArticleDataset(
             X_train,
             X_srl_train,
