@@ -199,9 +199,13 @@ class MUSEEmbeddings(nn.Module):
         )
 
         for batch_idx in range(batch_size):
+
             for sent_idx in range(num_sentences):
+
                 for arg_idx in range(num_args):
+
                     selected_embeddings = []
+
                     for token_idx in range(max_arg_length):
                         arg_token_id = arg_ids[
                             batch_idx, sent_idx, arg_idx, token_idx
