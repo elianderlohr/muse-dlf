@@ -27,6 +27,7 @@ class SLMUSESupervisedAlternative5(nn.Module):
         self.embedding_dim = embedding_dim
         self.frameaxis_dim = frameaxis_dim
         self.num_classes = num_classes
+        self.concat_frameaxis = concat_frameaxis
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
@@ -34,7 +35,7 @@ class SLMUSESupervisedAlternative5(nn.Module):
         self.dropout_1 = nn.Dropout(dropout_prob)
         self.Wr = nn.Linear(D_h, hidden_dim)
         self.activation_first = self.get_activation(activation_functions[0])
-        self.batch_norm_1 = nn.BatchNorm1d(D_h)  # Correct the number of features
+        self.batch_norm_1 = nn.BatchNorm1d(hidden_dim)  # Corrected to hidden_dim
 
         # Layer 2
         self.dropout_2 = nn.Dropout(dropout_prob)
@@ -45,8 +46,6 @@ class SLMUSESupervisedAlternative5(nn.Module):
         # Layer 3
         self.dropout_3 = nn.Dropout(dropout_prob)
         self.Wo = nn.Linear(hidden_dim, num_classes)
-
-        self.concat_frameaxis = concat_frameaxis
 
         self._debug = _debug
 
@@ -127,7 +126,7 @@ class SLMUSESupervisedAlternative5(nn.Module):
             vs = self.Wr(vs)
             vs = self.activation_first(vs)
 
-            # Apply batch normalization along the embedding dimension
+            # Apply batch normalization along the hidden dimension
             vs = vs.view(-1, vs.size(-1))  # Flatten batch and sentence dimensions
             vs = self.batch_norm_1(vs)
             vs = vs.view(
