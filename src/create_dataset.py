@@ -159,6 +159,13 @@ def main():
         default="mfc-roberta-finetune_dataset",
         help="Artifact name",
     )
+    # train_mode
+    required_args.add_argument(
+        "--train_mode",
+        type=str2bool,
+        default=True,
+        help="Train mode",
+    )
     required_args.add_argument("--seed", type=int, default=42, help="Random seed")
 
     args = parser.parse_args()
@@ -217,6 +224,7 @@ def main():
             "srl": args.force_recalculate_srls,
             "frameaxis": args.force_recalculate_frameaxis,
         },
+        train_mode=args.train_mode,
     )
 
     # Serialize datasets
@@ -237,7 +245,7 @@ def main():
     )
 
     # Log the train dataset artifact
-    artifact = wandb.Artifact(artifact_name, type="dataset")
+    artifact = wandb.Artifact(args.artifact_name, type="dataset")
     artifact.add_file(train_artifact_filepath)
     artifact.add_file(test_artifact_filepath)
     run.log_artifact(artifact)

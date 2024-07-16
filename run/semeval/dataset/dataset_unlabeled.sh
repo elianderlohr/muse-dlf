@@ -101,6 +101,7 @@ python src/create_dataset.py \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
     --artifact_name semeval-unlabeled-dataset \
+    --train_mode False
 
 echo "______________________________________________________"
 

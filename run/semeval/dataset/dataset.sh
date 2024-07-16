@@ -100,7 +100,8 @@ python src/create_dataset.py \
     --max_arg_length 16 \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
-    --artifact_name semeval-dataset 
+    --artifact_name semeval-dataset \
+    --train_mode True
 
 echo "______________________________________________________"
 

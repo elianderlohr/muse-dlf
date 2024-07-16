@@ -1,6 +1,7 @@
 import json
 import os
 import pandas as pd
+from pyparsing import NotAny
 from preprocessing.datasets.article_dataset import ArticleDataset, custom_collate_fn
 from preprocessing.frameaxis_processor import FrameAxisProcessor
 from preprocessing.srl_processor import SRLProcessor
@@ -147,6 +148,7 @@ class PreProcessor:
             "srl": False,
             "frameaxis": False,
         },
+        train_mode=False,
     ):
         """
         Processes the data by preparing the SRL and FrameAxis components.
@@ -179,13 +181,6 @@ class PreProcessor:
 
         frameaxis_df = frameaxis_df.reset_index(drop=True)
 
-        # Creating y_subset
-        y_subset = (
-            df.groupby("article_id")[self.class_column_names]
-            .apply(lambda x: x.values.tolist())
-            .reset_index(name="encoded_values")
-        )
-
         # Aggregating 'text' column in df into a list of strings for each article_id
         X_subset = df.groupby("article_id")["text"].apply(list).reset_index(name="text")
 
@@ -214,7 +209,17 @@ class PreProcessor:
             .reset_index(name="frameaxis_values")
         )
 
-        return X_subset, X_srl_subset, frameaxis_df_subset, y_subset
+        if not train_mode:
+            return X_subset, X_srl_subset, frameaxis_df_subset
+        else:
+            # Creating y_subset
+            y_subset = (
+                df.groupby("article_id")[self.class_column_names]
+                .apply(lambda x: x.values.tolist())
+                .reset_index(name="encoded_values")
+            )
+
+            return X_subset, X_srl_subset, frameaxis_df_subset, y_subset
 
     def get_dataset(
         self,
@@ -229,21 +234,31 @@ class PreProcessor:
             "srl": False,
             "frameaxis": False,
         },
+        train_mode=False,
     ):
         """
         Returns the train and test datasets.
         """
         df = self._load_data(path=path, format=format)
 
-        X, X_srl, X_frameaxis, y = self._preprocess(
-            df, dataframe_path, force_recalculate
+        output = self._preprocess(
+            df, dataframe_path, force_recalculate, train_mode=train_mode
         )
 
-        merged_df = (
-            X.merge(X_srl, on="article_id")
-            .merge(X_frameaxis, on="article_id")
-            .merge(y, on="article_id")
-        )
+        if train_mode:
+            X, X_srl, X_frameaxis, y = output
+
+            merged_df = (
+                X.merge(X_srl, on="article_id")
+                .merge(X_frameaxis, on="article_id")
+                .merge(y, on="article_id")
+            )
+        else:
+            X, X_srl, X_frameaxis = output
+
+            merged_df = X.merge(X_srl, on="article_id").merge(
+                X_frameaxis, on="article_id"
+            )
 
         # Split the merged DataFrame into train and test sets
         train_df, test_df = train_test_split(merged_df, test_size=0.2, random_state=42)
@@ -256,12 +271,21 @@ class PreProcessor:
         X_train = train_df["text"]
         X_srl_train = train_df["srl_values"]
         X_frameaxis_train = train_df["frameaxis_values"]
-        y_train = train_df["encoded_values"]
+
+        if train_mode:
+            y_train = train_df["encoded_values"]
+        else:
+            # create empty y_train
+            y_train = pd.DataFrame()
 
         X_test = test_df["text"]
         X_srl_test = test_df["srl_values"]
         X_frameaxis_test = test_df["frameaxis_values"]
-        y_test = test_df["encoded_values"]
+
+        if train_mode:
+            y_test = test_df["encoded_values"]
+        else:
+            y_test = pd.DataFrame()
 
         # assert lenth
         assert len(X_train) == len(y_train)
@@ -288,6 +312,7 @@ class PreProcessor:
             max_args_per_sentence=self.max_args_per_sentence,
             max_arg_length=self.max_arg_length,
             frameaxis_dim=self.frameaxis_dim,
+            train_mode=train_mode,
         )
 
         test_dataset = ArticleDataset(
@@ -301,6 +326,7 @@ class PreProcessor:
             max_args_per_sentence=self.max_args_per_sentence,
             max_arg_length=self.max_arg_length,
             frameaxis_dim=self.frameaxis_dim,
+            train_mode=train_mode,
         )
 
         return train_dataset, test_dataset
