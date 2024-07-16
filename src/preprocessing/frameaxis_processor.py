@@ -153,7 +153,7 @@ class FrameAxisProcessor:
 
         for _, row in tqdm(
             self.df.iterrows(),
-            desc="Generating antonym embeddings",
+            desc="1. Generating antonym embeddings",
             total=self.df.shape[0],
         ):
             article_text = row["text"]

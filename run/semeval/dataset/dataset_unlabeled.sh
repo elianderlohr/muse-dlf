@@ -101,7 +101,8 @@ python src/create_dataset.py \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis True \
     --artifact_name semeval-unlabeled-dataset \
-    --train_mode False
+    --train_mode False \
+    --path_frameaxis_microframe data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl
 
 echo "______________________________________________________"
 

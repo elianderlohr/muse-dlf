@@ -71,6 +71,14 @@ def main():
     required_args.add_argument(
         "--wandb_api_key", type=str, required=True, help="Wandb API key"
     )
+    # path_frameaxis_microframe
+    required_args.add_argument(
+        "--path_frameaxis_microframe",
+        type=str,
+        default="",
+        help="Path to the FrameAxis microframe file",
+        required=True,
+    )
     required_args.add_argument(
         "--frameaxis_dim", type=int, default=10, help="Dimension of the frame axis"
     )
@@ -219,6 +227,7 @@ def main():
         dataframe_path={
             "srl": args.path_srls,
             "frameaxis": args.path_frameaxis,
+            "frameaxis_microframe": args.path_frameaxis_microframe,
         },
         force_recalculate={
             "srl": args.force_recalculate_srls,
