@@ -230,7 +230,7 @@ def main():
     )
 
     # Log the train dataset artifact
-    artifact = wandb.Artifact("mfc_dataset", type="dataset")
+    artifact = wandb.Artifact(f"{args.project_name}_dataset", type="dataset")
     artifact.add_file(train_artifact_filepath)
     artifact.add_file(test_artifact_filepath)
     run.log_artifact(artifact)
