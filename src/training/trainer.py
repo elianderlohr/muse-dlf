@@ -1162,19 +1162,19 @@ class Trainer:
                 return
 
             # save model
-            model_save_path = os.path.join(save_dir, "model")
+            if epoch_step is not None:
+                model_save_path = os.path.join(save_dir, f"model_{epoch_step}.pth")
+            else:
+                model_save_path = os.path.join(save_dir, "model.pth")
             if (
                 self.training_management == "accelerate"
                 and self.accelerator.is_main_process
             ):
                 try:
                     # Save the model using accelerator.save_model
-                    self.accelerator.save_state(
-                        model_save_path, safe_serialization=False
-                    )
                     self.accelerator.save_model(
                         self.model,
-                        os.path.join(save_dir, "model.pth"),
+                        model_save_path
                         safe_serialization=False,
                     )
                     logger.info(f"Model saved at {model_save_path}")
@@ -1224,7 +1224,7 @@ class Trainer:
                 metadata=self.model_config,
             )
 
-            model_artifact.add_dir(model_save_path)
+            model_artifact.add_file(model_save_path)
             model_artifact.add_file(config_save_path)
 
             # Save to wandb
