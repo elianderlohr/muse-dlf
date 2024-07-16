@@ -241,7 +241,9 @@ def main():
 
     # Initialize W&B run
     run = wandb.init(
-        project=args.project_name, settings=wandb.Settings(_service_wait=300)
+        project=args.project_name,
+        settings=wandb.Settings(_service_wait=300),
+        job_type="create-dataset",
     )
 
     # Log the train dataset artifact
