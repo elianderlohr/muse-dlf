@@ -1254,6 +1254,19 @@ class Trainer:
                         f"Failed to log artifact to Weights and Biases through Accelerate. Exception: {e}"
                     )
 
+            # Remove the files after uploading
+            try:
+                os.remove(model_save_path)
+                logger.info(f"Removed local model file: {model_save_path}")
+            except Exception as e:
+                logger.error(f"Failed to remove local model file: {model_save_path}. Exception: {e}")
+
+            try:
+                os.remove(config_save_path)
+                logger.info(f"Removed local config file: {config_save_path}")
+            except Exception as e:
+                logger.error(f"Failed to remove local config file: {config_save_path}. Exception: {e}")
+
     def run_training(self, epochs, alpha=0.5):
         tau = 1
         if self.training_management != "accelerate":
