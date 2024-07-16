@@ -99,7 +99,7 @@ python src/create_dataset.py \
     --max_args_per_sentence 20 \
     --max_arg_length 16 \
     --force_recalculate_srls False \
-    --force_recalculate_frameaxis True \
+    --force_recalculate_frameaxis False \
     --artifact_name semeval-unlabeled-dataset \
     --train_mode False \
     --path_frameaxis_microframe data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl
