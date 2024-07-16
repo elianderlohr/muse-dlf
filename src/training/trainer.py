@@ -1174,7 +1174,7 @@ class Trainer:
                     # Save the model using accelerator.save_model
                     self.accelerator.save_model(
                         self.model,
-                        model_save_path
+                        model_save_path,
                         safe_serialization=False,
                     )
                     logger.info(f"Model saved at {model_save_path}")
