@@ -69,7 +69,7 @@ class SLMUSELossModule(nn.Module):
     def orthogonality_term(self, F, reg=1e-4):
         gram_matrix = torch.mm(F, F.T)
         identity_matrix = torch.eye(gram_matrix.size(0), device=gram_matrix.device)
-        ortho_loss = (gram_matrix - identity_matrix).abs().sum()
+        ortho_loss = reg * (gram_matrix - identity_matrix).abs().sum()
         return ortho_loss
 
     def forward(
