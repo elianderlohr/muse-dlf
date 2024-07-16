@@ -700,44 +700,11 @@ class SLMUSEDLF(nn.Module):
 
             self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
 
-            self.logger.debug(
-                f"F_p: {self.unsupervised.loss_fn.orthogonality_term(self.unsupervised.combined_autoencoder.F_matrices['p'])}"
-            )
-            self.logger.debug(
-                f"F_a0: {self.unsupervised.loss_fn.orthogonality_term(self.unsupervised.combined_autoencoder.F_matrices['a0'])}"
-            )
-            self.logger.debug(
-                f"F_a1: {self.unsupervised.loss_fn.orthogonality_term(self.unsupervised.combined_autoencoder.F_matrices['a1'])}"
-            )
-            self.logger.debug(
-                f"F_fx: {self.unsupervised_fx.loss_fn.orthogonality_term(self.unsupervised_fx.frameaxis_autoencoder.F)}"
-            )
-
             # add ortho term to each unsupervised loss
-            span_p_loss = sentence_loss_p.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
-                    self.unsupervised.combined_autoencoder.F_matrices["p"]
-                )
-            )
-            span_a0_loss = sentence_loss_a0.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
-                    self.unsupervised.combined_autoencoder.F_matrices["a0"]
-                )
-            )
-            span_a1_loss = sentence_loss_a1.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
-                    self.unsupervised.combined_autoencoder.F_matrices["a1"]
-                )
-            )
-            span_fx_loss = sentence_loss_fx.sum() + (
-                self.lambda_orthogonality
-                * self.unsupervised_fx.loss_fn.orthogonality_term(
-                    self.unsupervised_fx.frameaxis_autoencoder.F
-                )
-            )
+            span_p_loss = sentence_loss_p.sum()
+            span_a0_loss = sentence_loss_a0.sum()
+            span_a1_loss = sentence_loss_a1.sum()
+            span_fx_loss = sentence_loss_fx.sum()
 
             # sum span losses
             unsupervised_loss = (
