@@ -701,15 +701,17 @@ class SLMUSEDLF(nn.Module):
             self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
 
             self.logger.debug(
-                f"F_p: {self.unsupervised.combined_autoencoder.F_matrices['p']}"
+                f"F_p: {self.unsupervised.loss_fn.orthogonality_term(self.unsupervised.combined_autoencoder.F_matrices['p'])}"
             )
             self.logger.debug(
-                f"F_a0: {self.unsupervised.combined_autoencoder.F_matrices['a0']}"
+                f"F_a0: {self.unsupervised.loss_fn.orthogonality_term(self.unsupervised.combined_autoencoder.F_matrices['a0'])}"
             )
             self.logger.debug(
-                f"F_a1: {self.unsupervised.combined_autoencoder.F_matrices['a1']}"
+                f"F_a1: {self.unsupervised.loss_fn.orthogonality_term(self.unsupervised.combined_autoencoder.F_matrices['a1'])}"
             )
-            self.logger.debug(f"F_fx: {self.unsupervised_fx.frameaxis_autoencoder.F}")
+            self.logger.debug(
+                f"F_fx: {self.unsupervised_fx.loss_fn.orthogonality_term(self.unsupervised_fx.frameaxis_autoencoder.F)}"
+            )
 
             # add ortho term to each unsupervised loss
             span_p_loss = sentence_loss_p.sum() + (
@@ -732,7 +734,7 @@ class SLMUSEDLF(nn.Module):
             )
             span_fx_loss = sentence_loss_fx.sum() + (
                 self.lambda_orthogonality
-                * self.unsupervised.loss_fn.orthogonality_term(
+                * self.unsupervised_fx.loss_fn.orthogonality_term(
                     self.unsupervised_fx.frameaxis_autoencoder.F
                 )
             )
