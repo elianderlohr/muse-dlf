@@ -152,6 +152,13 @@ def main():
         default=False,
         help="Force recalculate FrameAxis",
     )
+    # artifact name
+    required_args.add_argument(
+        "--artifact_name",
+        type=str,
+        default="mfc-roberta-finetune_dataset",
+        help="Artifact name",
+    )
     required_args.add_argument("--seed", type=int, default=42, help="Random seed")
 
     args = parser.parse_args()
@@ -230,7 +237,7 @@ def main():
     )
 
     # Log the train dataset artifact
-    artifact = wandb.Artifact(f"{args.project_name}_dataset", type="dataset")
+    artifact = wandb.Artifact(artifact_name, type="dataset")
     artifact.add_file(train_artifact_filepath)
     artifact.add_file(test_artifact_filepath)
     run.log_artifact(artifact)

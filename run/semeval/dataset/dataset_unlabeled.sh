@@ -61,7 +61,7 @@ done
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/semeval/muse-dlf/semeval_train.json"
+DATA_PATH="data/semeval/muse-dlf/semeval_unlabeled_train.json"
 echo "Data path: $DATA_PATH"
 
 CLASS_COLUMN_NAMES="Capacity_and_resources;Crime_and_punishment;Cultural_identity;Economic;External_regulation_and_reputation;Fairness_and_equality;Health_and_safety;Legality_Constitutionality_and_jurisprudence;Morality;Policy_prescription_and_evaluation;Political;Public_opinion;Quality_of_life;Security_and_defense"
@@ -100,7 +100,7 @@ python src/create_dataset.py \
     --max_arg_length 16 \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
-    --artifact_name semeval-dataset 
+    --artifact_name semeval-unlabeled-dataset \
 
 echo "______________________________________________________"
 
