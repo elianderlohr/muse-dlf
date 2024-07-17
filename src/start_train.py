@@ -795,7 +795,7 @@ def main():
             )
 
         # Calculate the number of training steps and warmup steps
-        num_training_steps = len(train_dataloader) * planned_epochs
+        num_training_steps = len(train_dataloader) * args.planned_epochs
         num_warmup_steps = int(
             0.1 * num_training_steps
         )  # 10% of training steps for warmup
