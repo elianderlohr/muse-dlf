@@ -801,23 +801,16 @@ def main():
         )  # 10% of training steps for warmup
 
         # Initialize the warmup scheduler
-        warmup_scheduler = get_linear_schedule_with_warmup(
+        scheduler = get_linear_schedule_with_warmup(
             optimizer,
             num_warmup_steps=num_warmup_steps,
             num_training_steps=num_training_steps,
         )
 
-        # Initialize the ReduceLROnPlateau scheduler
-        plateau_scheduler = ReduceLROnPlateau(
-            optimizer, mode="min", factor=0.1, patience=2
-        )
-
         logger.info("Loss function and optimizer loaded successfully")
 
         # prepare optimizer and scheduler
-        optimizer, warmup_scheduler, plateau_scheduler = accelerator.prepare(
-            optimizer, warmup_scheduler, plateau_scheduler
-        )
+        optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
         logger.info("Log model using WANDB", main_process_only=True)
         logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
@@ -838,8 +831,7 @@ def main():
             test_dataloader=test_dataloader,
             optimizer=optimizer,
             loss_function=loss_function,
-            warmup_scheduler=warmup_scheduler,
-            plateau_scheduler=plateau_scheduler,
+            scheduler=scheduler,
             model_type=args.model_type,
             training_management="accelerate",
             tau_min=args.tau_min,

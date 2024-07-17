@@ -9,8 +9,6 @@ import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast, GradScaler
-from transformers import get_linear_schedule_with_warmup
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 logger = LoggerManager.get_logger(__name__)
 
@@ -27,8 +25,7 @@ class Trainer:
         test_dataloader,
         optimizer,
         loss_function,
-        warmup_scheduler,
-        plateau_scheduler,
+        scheduler,        
         model_type="muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
@@ -51,10 +48,7 @@ class Trainer:
         self.test_dataloader = test_dataloader
         self.optimizer = optimizer
         self.loss_function = loss_function
-
-        self.warmup_scheduler = warmup_scheduler
-        self.plateau_scheduler = plateau_scheduler
-
+        self.scheduler = scheduler
         self.device = device
         self.save_path = save_path
         self.run_name = run_name
@@ -369,6 +363,7 @@ class Trainer:
             sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
             supervised_loss = span_loss + sentence_loss
 
+            # Adding zero_sum as a trick to prevent any unwanted behavior
             sum_of_parameters = sum(p.sum() for p in self.model.parameters())
             zero_sum = sum_of_parameters * 0.0
             combined_loss = (
@@ -396,7 +391,7 @@ class Trainer:
                         self.model.parameters(), self.clip_value
                     )
                     self.optimizer.step()
-                    self.warmup_scheduler.step()
+                    self.scheduler.step()
                     self.optimizer.zero_grad()
             else:
                 if self.scaler is not None:
@@ -413,7 +408,7 @@ class Trainer:
                         self.scaler.step(self.optimizer)
                         self.scaler.update()
                         self.optimizer.zero_grad()
-                        self.warmup_scheduler.step()
+                        self.scheduler.step()
                 else:
                     (combined_loss / self.accumulation_steps).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
@@ -423,7 +418,7 @@ class Trainer:
                             self.model.parameters(), self.clip_value
                         )
                         self.optimizer.step()
-                        self.warmup_scheduler.step()
+                        self.scheduler.step()
                         self.optimizer.zero_grad()
 
             total_loss += combined_loss.item()
@@ -801,8 +796,6 @@ class Trainer:
     def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
         self.model.eval()
 
-        total_val_loss = 0.0
-
         # Load the evaluate metrics
         f1_metric_micro = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
@@ -920,16 +913,7 @@ class Trainer:
                 batch["labels"]
                 if self.training_management == "accelerate"
                 else batch["labels"].to(device)
-            )
-
-            if self.model_type == "muse-dlf":
-                arg_max_labels = labels.float()
-            elif self.model_type == "slmuse-dlf":
-                if labels.dim() == 2:
-                    logger.debug(
-                        "Labels are one-hot encoded, converting to class index."
-                    )
-                    arg_max_labels = torch.argmax(labels, dim=1).long()
+            )           
 
             with torch.no_grad():
                 with autocast(
@@ -937,7 +921,7 @@ class Trainer:
                     dtype=precision_dtype,
                 ):
                     (
-                        unsupervised_loss,
+                        _,
                         span_logits,
                         sentence_logits,
                         combined_logits,
@@ -951,13 +935,6 @@ class Trainer:
                         frameaxis_data,
                         tau,
                     )
-
-                span_loss = self.loss_function(span_logits, arg_max_labels)
-                sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
-                supervised_loss = span_loss + sentence_loss
-                combined_loss = 0.5 * supervised_loss + 0.5 * unsupervised_loss
-
-                total_val_loss += combined_loss.item()
 
                 combined_pred = self.get_activation_function(combined_logits).int()
                 span_pred = self.get_activation_function(span_logits).int()
@@ -1108,8 +1085,6 @@ class Trainer:
                 del sentence_ids, predicate_ids, arg0_ids, arg1_ids, labels
                 torch.cuda.empty_cache()
 
-        avg_val_loss = total_val_loss / len(test_dataloader)
-
         # Micro F1
         eval_results_micro = f1_metric_micro.compute(average="micro")
         eval_results_micro_span = f1_metric_micro_span.compute(average="micro")
@@ -1172,7 +1147,6 @@ class Trainer:
             "accuracy_arg1": eval_accuracy_arg1["accuracy"],
             "accuracy_frameaxis": eval_accuracy_frameaxis["accuracy"],
             "epoch": epoch,
-            "val_loss": avg_val_loss,  # Add the average validation loss to metrics
         }
 
         self._log_metrics(metrics)
@@ -1401,17 +1375,5 @@ class Trainer:
                     text="The model never surpassed 0.4 accuracy.",
                 )
                 break
-
-            # Step the plateau scheduler based on validation loss
-            self.plateau_scheduler.step(metrics["val_loss"])
-
-            # Log current learning rate
-            current_lr = self.get_lr()
-            self._log_metrics(
-                {
-                    "epoch": epoch,
-                    "learning_rate": current_lr,  # Log current learning rate
-                }
-            )
 
         return early_stopping
