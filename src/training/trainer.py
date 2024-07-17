@@ -25,7 +25,7 @@ class Trainer:
         test_dataloader,
         optimizer,
         loss_function,
-        scheduler,        
+        scheduler,
         model_type="muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
@@ -88,15 +88,13 @@ class Trainer:
                 self.optimizer,
                 self.train_dataloader,
                 self.test_dataloader,
-                self.warmup_scheduler,
-                self.plateau_scheduler,
+                self.scheduler,
             ) = self.accelerator.prepare(
                 self.model,
                 self.optimizer,
                 self.train_dataloader,
                 self.test_dataloader,
-                self.warmup_scheduler,
-                self.plateau_scheduler,
+                self.scheduler,
             )
         elif self.training_management == "wandb":
             logger.info("Using Weights and Biases for training.")
@@ -913,7 +911,7 @@ class Trainer:
                 batch["labels"]
                 if self.training_management == "accelerate"
                 else batch["labels"].to(device)
-            )           
+            )
 
             with torch.no_grad():
                 with autocast(
