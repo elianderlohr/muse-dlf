@@ -352,6 +352,11 @@ class Trainer:
             span_loss = 0.0
             sentence_loss = 0.0
 
+            # prin the labels for debugging
+            logger.debug(f"labels: {labels}")
+            # print shape
+            logger.debug(f"labels shape: {labels.shape}")
+
             span_loss = self.loss_function(span_logits, labels.float())
             sentence_loss = self.loss_function(sentence_logits, labels.float())
             supervised_loss = span_loss + sentence_loss

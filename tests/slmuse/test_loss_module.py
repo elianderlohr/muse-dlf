@@ -8,7 +8,15 @@ from torch.cuda.amp import autocast
 src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 sys.path.insert(0, src_dir)
 
-from src.model.slmuse_dlf.loss_module import LossModule
+from src.model.slmuse_dlf.loss_module import SLMUSELossModule as LossModule
+
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger()
 
 
 class TestLossModule(unittest.TestCase):
@@ -75,7 +83,7 @@ class TestLossModule(unittest.TestCase):
         num_classes = 10
         F = torch.randn(num_classes, num_classes).to(self.device)
 
-        loss = self.model.orthogonality_term(F)
+        loss = self.model.orthogonality_term(F, self.lambda_orthogonality)
 
         # Ensure loss value is non-negative
         self.assertTrue(loss >= 0)

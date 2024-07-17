@@ -60,6 +60,11 @@ class SLMUSELossModule(nn.Module):
             current_loss = (
                 current_m_t + self.l2(vhat_z, v) - self.l2(vhat_z, current_v_t)
             )
+            self.logger.debug(f"current_v_t: {current_v_t}")
+            self.logger.debug(f"current_m_t: {current_m_t}")
+
+            self.logger.debug(f"current_loss: {current_loss}")
+
             loss += torch.max(torch.zeros_like(current_loss), current_loss)
 
         loss = loss / self.t
