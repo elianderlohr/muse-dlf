@@ -174,7 +174,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
     --supervised_activation gelu \
-    --adamw_weight_decay 0.0000005 \
+    --adamw_weight_decay 0.0005 \
     --optimizer adamw \
     --sentence_pooling mean \
     --hidden_state second_to_last \

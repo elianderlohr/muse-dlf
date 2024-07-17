@@ -359,6 +359,8 @@ class SLMUSEDLF(nn.Module):
             else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
         )
 
+        batch_size = sentence_ids.size(0)
+
         with autocast(
             enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
         ):
@@ -704,6 +706,8 @@ class SLMUSEDLF(nn.Module):
 
             self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
 
+            denominator = valid_counts.sum() * batch_size
+
             # add ortho term to each unsupervised loss
             span_p_loss = sentence_loss_p.sum()
             span_a0_loss = sentence_loss_a0.sum()
@@ -713,10 +717,10 @@ class SLMUSEDLF(nn.Module):
             # sum span losses
             unsupervised_loss = (
                 span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss
-            ) / valid_counts.sum()
+            ) / (denominator)
 
             self.logger.debug(
-                f"unsupervised_loss: {span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss} / {valid_counts.sum()} = {unsupervised_loss}"
+                f"unsupervised_loss: {span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss} / {denominator} = {unsupervised_loss}"
             )
 
             # Delete aggregated tensors after use
