@@ -793,10 +793,12 @@ def main():
                 model.parameters(), lr=lr, weight_decay=weight_decay, amsgrad=True
             )
 
+        num_training_steps = len(train_dataloader) * args.planned_epochs
+
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
-            num_warmup_steps=10,
-            num_training_steps=len(train_dataloader) * args.planned_epochs,
+            num_warmup_steps=int(0.1 * num_training_steps),
+            num_training_steps=num_training_steps,
         )
 
         logger.info("Loss function and optimizer loaded successfully")
