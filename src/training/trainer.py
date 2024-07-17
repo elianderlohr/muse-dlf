@@ -94,13 +94,15 @@ class Trainer:
                 self.optimizer,
                 self.train_dataloader,
                 self.test_dataloader,
-                self.scheduler,
+                self.warmup_scheduler,
+                self.plateau_scheduler,
             ) = self.accelerator.prepare(
                 self.model,
                 self.optimizer,
                 self.train_dataloader,
                 self.test_dataloader,
-                self.scheduler,
+                self.warmup_scheduler,
+                self.plateau_scheduler,
             )
         elif self.training_management == "wandb":
             logger.info("Using Weights and Biases for training.")
