@@ -789,7 +789,9 @@ def main():
             optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
         elif optimizer_type == "adamw":
             weight_decay = args.adamw_weight_decay
-            optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+            optimizer = AdamW(
+                model.parameters(), lr=lr, weight_decay=weight_decay, amsgrad=True
+            )
 
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
