@@ -157,6 +157,10 @@ class Trainer:
                 f"Model type {self.model_type} not supported: only muse-dlf and slmuse-dlf are supported."
             )
 
+    def get_lr(self):
+        for param_group in self.optimizer.param_groups:
+            return param_group["lr"]
+
     def _train(
         self,
         epoch,
@@ -426,6 +430,7 @@ class Trainer:
             supervised_total_loss += supervised_loss.item()
             unsupervised_total_loss += unsupervised_loss.item()
 
+            current_lr = self.get_lr()
             self._log_metrics(
                 {
                     "batch_combined_loss": combined_loss.item(),
@@ -439,6 +444,7 @@ class Trainer:
                     "batch_frameaxis_loss": frameaxis_loss.item(),
                     "tau": tau,
                     "epoch": epoch,
+                    "learning_rate": current_lr,
                 }
             )
 
@@ -1389,5 +1395,14 @@ class Trainer:
 
             # Step the plateau scheduler based on validation loss
             self.plateau_scheduler.step(metrics["val_loss"])
+
+            # Log current learning rate
+            current_lr = self.get_lr()
+            self._log_metrics(
+                {
+                    "epoch": epoch,
+                    "learning_rate": current_lr,  # Log current learning rate
+                }
+            )
 
         return early_stopping
