@@ -17,6 +17,7 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 from torch.optim import Adam, AdamW
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from accelerate import Accelerator
 import warnings
 import wandb
@@ -793,18 +794,30 @@ def main():
                 model.parameters(), lr=lr, weight_decay=weight_decay, amsgrad=True
             )
 
+        # Calculate the number of training steps and warmup steps
         num_training_steps = len(train_dataloader) * args.planned_epochs
+        num_warmup_steps = int(
+            0.1 * num_training_steps
+        )  # 10% of training steps for warmup
 
-        scheduler = get_linear_schedule_with_warmup(
+        # Initialize the warmup scheduler
+        warmup_scheduler = get_linear_schedule_with_warmup(
             optimizer,
-            num_warmup_steps=int(0.1 * num_training_steps),
+            num_warmup_steps=num_warmup_steps,
             num_training_steps=num_training_steps,
+        )
+
+        # Initialize the ReduceLROnPlateau scheduler
+        plateau_scheduler = ReduceLROnPlateau(
+            optimizer, mode="min", factor=0.1, patience=2
         )
 
         logger.info("Loss function and optimizer loaded successfully")
 
         # prepare optimizer and scheduler
-        optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
+        optimizer, warmup_scheduler, plateau_scheduler = accelerator.prepare(
+            optimizer, warmup_scheduler, plateau_scheduler
+        )
 
         logger.info("Log model using WANDB", main_process_only=True)
         logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
@@ -825,7 +838,8 @@ def main():
             test_dataloader=test_dataloader,
             optimizer=optimizer,
             loss_function=loss_function,
-            scheduler=scheduler,
+            warmup_scheduler=warmup_scheduler,
+            plateau_scheduler=plateau_scheduler,
             model_type=args.model_type,
             training_management="accelerate",
             tau_min=args.tau_min,

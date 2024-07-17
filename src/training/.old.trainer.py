@@ -8,9 +8,8 @@ import math
 import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
+
 from torch.cuda.amp import autocast, GradScaler
-from transformers import get_linear_schedule_with_warmup
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 logger = LoggerManager.get_logger(__name__)
 
@@ -27,8 +26,7 @@ class Trainer:
         test_dataloader,
         optimizer,
         loss_function,
-        warmup_scheduler,
-        plateau_scheduler,
+        scheduler,
         model_type="muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
@@ -51,10 +49,7 @@ class Trainer:
         self.test_dataloader = test_dataloader
         self.optimizer = optimizer
         self.loss_function = loss_function
-
-        self.warmup_scheduler = warmup_scheduler
-        self.plateau_scheduler = plateau_scheduler
-
+        self.scheduler = scheduler
         self.device = device
         self.save_path = save_path
         self.run_name = run_name
@@ -363,34 +358,39 @@ class Trainer:
             sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
             supervised_loss = span_loss + sentence_loss
 
+            # Adding zero_sum as a trick to prevent any unwanted behavior
             sum_of_parameters = sum(p.sum() for p in self.model.parameters())
             zero_sum = sum_of_parameters * 0.0
             combined_loss = (
                 alpha * supervised_loss + (1 - alpha) * unsupervised_loss
             ) + zero_sum
 
+            # Calculate other losses for debugging without gradient tracking
             with torch.no_grad():
                 predicate_loss = self.loss_function(other["predicate"], arg_max_labels)
                 arg0_loss = self.loss_function(other["arg0"], arg_max_labels)
                 arg1_loss = self.loss_function(other["arg1"], arg_max_labels)
                 frameaxis_loss = self.loss_function(other["frameaxis"], arg_max_labels)
 
+            # Check for NaNs in combined loss
             if self.check_for_nans(combined_loss, "combined_loss"):
                 logger.error(
                     f"{experiment_id} - {batch_idx} - NaNs detected in combined_loss, skipping this batch."
                 )
                 continue
 
+            # Scale the loss and perform the backward pass
             if self.training_management == "accelerate":
                 self.accelerator.backward(combined_loss / self.accumulation_steps)
                 if (batch_idx + 1) % self.accumulation_steps == 0 or (
                     batch_idx + 1
                 ) == len(train_dataloader):
+                    # if self.accelerator.sync_gradients:
                     self.accelerator.clip_grad_norm_(
                         self.model.parameters(), self.clip_value
                     )
                     self.optimizer.step()
-                    self.warmup_scheduler.step()
+                    self.scheduler.step()
                     self.optimizer.zero_grad()
             else:
                 if self.scaler is not None:
@@ -407,7 +407,6 @@ class Trainer:
                         self.scaler.step(self.optimizer)
                         self.scaler.update()
                         self.optimizer.zero_grad()
-                        self.warmup_scheduler.step()
                 else:
                     (combined_loss / self.accumulation_steps).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
@@ -417,7 +416,7 @@ class Trainer:
                             self.model.parameters(), self.clip_value
                         )
                         self.optimizer.step()
-                        self.warmup_scheduler.step()
+                        self.scheduler.step()
                         self.optimizer.zero_grad()
 
             total_loss += combined_loss.item()
@@ -793,8 +792,6 @@ class Trainer:
     def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
         self.model.eval()
 
-        total_val_loss = 0.0
-
         # Load the evaluate metrics
         f1_metric_micro = evaluate.load(
             "f1", config_name="micro", experiment_id=experiment_id
@@ -919,28 +916,17 @@ class Trainer:
                     enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
                     dtype=precision_dtype,
                 ):
-                    (
-                        unsupervised_loss,
-                        span_logits,
-                        sentence_logits,
-                        combined_logits,
-                        other,
-                    ) = self.model(
-                        sentence_ids,
-                        sentence_attention_masks,
-                        predicate_ids,
-                        arg0_ids,
-                        arg1_ids,
-                        frameaxis_data,
-                        tau,
+                    _, span_logits, sentence_logits, combined_logits, other = (
+                        self.model(
+                            sentence_ids,
+                            sentence_attention_masks,
+                            predicate_ids,
+                            arg0_ids,
+                            arg1_ids,
+                            frameaxis_data,
+                            tau,
+                        )
                     )
-
-                span_loss = self.loss_function(span_logits, labels)
-                sentence_loss = self.loss_function(sentence_logits, labels)
-                supervised_loss = span_loss + sentence_loss
-                combined_loss = 0.5 * supervised_loss + 0.5 * unsupervised_loss
-
-                total_val_loss += combined_loss.item()
 
                 combined_pred = self.get_activation_function(combined_logits).int()
                 span_pred = self.get_activation_function(span_logits).int()
@@ -983,6 +969,7 @@ class Trainer:
                     arg1_labels = labels
                     frameaxis_labels = labels
 
+                # transform from one-hot to class index
                 combined_pred = combined_pred.argmax(dim=1)
                 span_pred = span_pred.argmax(dim=1)
                 sentence_pred = sentence_pred.argmax(dim=1)
@@ -1091,8 +1078,6 @@ class Trainer:
                 del sentence_ids, predicate_ids, arg0_ids, arg1_ids, labels
                 torch.cuda.empty_cache()
 
-        avg_val_loss = total_val_loss / len(test_dataloader)
-
         # Micro F1
         eval_results_micro = f1_metric_micro.compute(average="micro")
         eval_results_micro_span = f1_metric_micro_span.compute(average="micro")
@@ -1155,7 +1140,6 @@ class Trainer:
             "accuracy_arg1": eval_accuracy_arg1["accuracy"],
             "accuracy_frameaxis": eval_accuracy_frameaxis["accuracy"],
             "epoch": epoch,
-            "val_loss": avg_val_loss,  # Add the average validation loss to metrics
         }
 
         self._log_metrics(metrics)
@@ -1384,8 +1368,5 @@ class Trainer:
                     text="The model never surpassed 0.4 accuracy.",
                 )
                 break
-
-            # Step the plateau scheduler based on validation loss
-            self.plateau_scheduler.step(metrics["val_loss"])
 
         return early_stopping
