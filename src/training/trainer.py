@@ -294,6 +294,15 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
+            if self.model_type == "muse-dlf":
+                arg_max_labels = labels.float()
+            elif self.model_type == "slmuse-dlf":
+                if labels.dim() == 2:
+                    logger.debug(
+                        "Labels are one-hot encoded, converting to class index."
+                    )
+                    arg_max_labels = torch.argmax(labels, dim=1).long()
+
             with autocast(
                 enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
                 dtype=precision_dtype,
@@ -342,23 +351,11 @@ class Trainer:
                 )
                 continue
 
-            # debug: return first elem of each batch of combined_logits for debugging
-            logger.debug(f"combined_logits: {combined_logits}")
-            # feed into activation function and return
-            logger.debug(
-                f"combined_logits after activation function: {self.get_activation_function(combined_logits)}"
-            )
-
             span_loss = 0.0
             sentence_loss = 0.0
 
-            # prin the labels for debugging
-            logger.debug(f"labels: {labels}")
-            # print shape
-            logger.debug(f"labels shape: {labels.shape}")
-
-            span_loss = self.loss_function(span_logits, labels.float())
-            sentence_loss = self.loss_function(sentence_logits, labels.float())
+            span_loss = self.loss_function(span_logits, arg_max_labels)
+            sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
             supervised_loss = span_loss + sentence_loss
 
             # Adding zero_sum as a trick to prevent any unwanted behavior
@@ -370,10 +367,10 @@ class Trainer:
 
             # Calculate other losses for debugging without gradient tracking
             with torch.no_grad():
-                predicate_loss = self.loss_function(other["predicate"], labels.float())
-                arg0_loss = self.loss_function(other["arg0"], labels.float())
-                arg1_loss = self.loss_function(other["arg1"], labels.float())
-                frameaxis_loss = self.loss_function(other["frameaxis"], labels.float())
+                predicate_loss = self.loss_function(other["predicate"], arg_max_labels)
+                arg0_loss = self.loss_function(other["arg0"], arg_max_labels)
+                arg1_loss = self.loss_function(other["arg1"], arg_max_labels)
+                frameaxis_loss = self.loss_function(other["frameaxis"], arg_max_labels)
 
             # Check for NaNs in combined loss
             if self.check_for_nans(combined_loss, "combined_loss"):
