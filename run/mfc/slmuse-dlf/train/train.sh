@@ -149,10 +149,10 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --embedding_dim 768 \
     --hidden_dim 768 \
     --num_classes 15 \
-    --dropout_prob 0.3 \
-    --alpha 0.5 \
+    --dropout_prob 0.2 \
+    --alpha 0.3 \
     --lambda_orthogonality 0.01 \
-    --lr 0.0004 \
+    --lr 0.001 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
@@ -170,11 +170,11 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-    --num_negatives 32 \
+    --num_negatives 128 \
     --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
     --supervised_activation gelu \
-    --adamw_weight_decay 0.0005 \
+    --adamw_weight_decay 0.0004 \
     --optimizer adamw \
     --sentence_pooling mean \
     --hidden_state second_to_last \
