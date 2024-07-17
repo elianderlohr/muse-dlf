@@ -922,6 +922,15 @@ class Trainer:
                 else batch["labels"].to(device)
             )
 
+            if self.model_type == "muse-dlf":
+                arg_max_labels = labels.float()
+            elif self.model_type == "slmuse-dlf":
+                if labels.dim() == 2:
+                    logger.debug(
+                        "Labels are one-hot encoded, converting to class index."
+                    )
+                    arg_max_labels = torch.argmax(labels, dim=1).long()
+
             with torch.no_grad():
                 with autocast(
                     enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
@@ -943,8 +952,8 @@ class Trainer:
                         tau,
                     )
 
-                span_loss = self.loss_function(span_logits, labels)
-                sentence_loss = self.loss_function(sentence_logits, labels)
+                span_loss = self.loss_function(span_logits, arg_max_labels)
+                sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
                 supervised_loss = span_loss + sentence_loss
                 combined_loss = 0.5 * supervised_loss + 0.5 * unsupervised_loss
 
