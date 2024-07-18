@@ -121,8 +121,8 @@ class FrameAxisProcessor:
             raise ValueError(
                 "save_path is None, cannot generate save path with suffix."
             )
-        base, ext = os.path.splitext(self.save_path)
-        return f"{base}_{suffix}{ext}"
+
+        return os.path.join(self.save_path, f"{suffix}.pkl")
 
     def _load_or_calculate_antonym_embeddings(self):
         antonym_pairs_embeddings_filename = (
