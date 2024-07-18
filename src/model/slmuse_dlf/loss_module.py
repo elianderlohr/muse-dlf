@@ -1,4 +1,3 @@
-from math import isnan
 import torch
 import torch.nn as nn
 from utils.logging_manager import LoggerManager

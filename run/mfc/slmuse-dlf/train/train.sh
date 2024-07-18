@@ -153,7 +153,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dropout_prob 0.2 \
     --alpha 0.3 \
     --lambda_orthogonality 0.01 \
-    --lr 0.0001 \
+    --lr 0.00005 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
