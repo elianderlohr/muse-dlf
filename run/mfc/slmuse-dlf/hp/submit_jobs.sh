@@ -14,7 +14,7 @@ do
 #SBATCH --job-name=mfc-slmuse-dlf-batch-${split_id}
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
-#SBATCH --time=36:00:00
+#SBATCH --time=48:00:00
 #SBATCH --partition=single
 
 echo "===================== Job Details ====================="
@@ -66,17 +66,18 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # Iterate through combinations and run them sequentially
 index=0
-while read lr dropout_prob activation pooling weight_decay
+while read lr dropout_prob weight_decay batch_size ams_grad
 do
     index=\$((index + 1))
-    JOB_NAME="mfc-slmuse-dlf-train-4-split${split_id}-idx\${index}-lr\${lr}-dropout\${dropout_prob}-activation\${activation}-pooling\${pooling}"
-    TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},supervised_activation=\${activation},srl_embeddings_pooling=\${pooling}"
+    run_name="run-split${split_id}-idx\${index}-lr\${lr}-dropout\${dropout_prob}-wd\${weight_decay}-bs\${batch_size}-amsgrad\${ams_grad}"
+    TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},weight_decay=\${weight_decay},batch_size=\${batch_size},amsgrad=\${ams_grad}"
 
     echo "=================== Training Start ==================="
     echo "Launching training script with Accelerate..."
     accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/start_train.py \
         --model_type slmuse-dlf \
         --project_name slmuse-dlf \
+        --run_name \$run_name \
         --tags \$TAGS \
         --wandb_api_key \$WANDB_API_KEY \
         --path_data data/mfc/immigration_labeled_preprocessed.json \
@@ -100,7 +101,7 @@ do
         --lr \$lr \
         --M 8 \
         --t 8 \
-        --batch_size 8 \
+        --batch_size \$batch_size \
         --num_sentences 32 \
         --max_sentence_length 52 \
         --max_args_per_sentence 10 \
@@ -118,11 +119,12 @@ do
         --num_negatives 32 \
         --supervised_concat_frameaxis false \
         --supervised_num_layers 1 \
-        --supervised_activation \$activation \
+        --supervised_activation gelu \
         --optimizer adamw \
         --adamw_weight_decay \$weight_decay \
         --adam_weight_decay \$weight_decay \
-        --sentence_pooling \$pooling \
+        --sentence_pooling mean \
+        --hidden_state second_to_last \
         --tau_decay 0.0004682416233229908 \
         --tau_min 0.5 \
         --seed 42 \

@@ -1,20 +1,23 @@
 #!/bin/bash
 
-srl_embeddings_pooling=("mean" "cls")
 dropout_probs=(0.1 0.2 0.3 0.4 0.5)
-supervised_activations=("gelu" "relu")
+learning_rates=(1e-5 3e-5 1e-4 3e-4 1e-3)
+weight_decays=(1e-6 1e-5 1e-4 1e-3 1e-2)
+batch_sizes=(8 16 32 64)
+ams_grad_options=(False True)
 
 # Generate all combinations and write them to a file
 output_file="new_combinations.txt"
 > $output_file
 
-for pooling in "${srl_embeddings_pooling[@]}"; do
-    for dropout in "${dropout_probs[@]}"; do
-        for activation in "${supervised_activations[@]}"; do
-            lr=0.0003
-            weight_decay=0.0001
-            echo "$lr $dropout $activation $pooling $weight_decay" >> $output_file
+for dropout in "${dropout_probs[@]}"; do
+    for lr in "${learning_rates[@]}"; do
+        for weight_decay in "${weight_decays[@]}"; do
+            for batch_size in "${batch_sizes[@]}"; do
+                for ams_grad in "${ams_grad_options[@]}"; do
+                    echo "$lr $dropout $weight_decay $batch_size $ams_grad" >> $output_file
+                done
+            done
         done
     done
 done
-

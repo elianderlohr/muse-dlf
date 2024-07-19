@@ -428,6 +428,12 @@ def main():
         help="AdamW weight decay parameter",
     )
     training_params.add_argument(
+        "--ams_grad_options",
+        type=str2bool,
+        default=True,
+        help="Use amsgrad option for the optimizer",
+    )
+    training_params.add_argument(
         "--optimizer", type=str, default="adamw", help="Optimizer to use for training"
     )
     training_params.add_argument(
@@ -791,7 +797,7 @@ def main():
         elif optimizer_type == "adamw":
             weight_decay = args.adamw_weight_decay
             optimizer = AdamW(
-                model.parameters(), lr=lr, weight_decay=weight_decay, amsgrad=True
+                model.parameters(), lr=lr, weight_decay=weight_decay, amsgrad=args.ams_grad_options
             )
 
         # Calculate the number of training steps and warmup steps
