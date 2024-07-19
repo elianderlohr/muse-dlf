@@ -1,9 +1,9 @@
 #!/bin/bash
 
-dropout_probs=(0.1 0.2 0.3 0.4 0.5)
-learning_rates=(1e-5 3e-5 1e-4 3e-4 1e-3)
-weight_decays=(1e-6 1e-5 1e-4 1e-3 1e-2)
-batch_sizes=(8 16 32 64)
+dropout_probs=(0.2 0.3 0.4)
+learning_rates=(0.001 0.0005 0.0001 0.00005)
+weight_decays=(1e-5 1e-4 1e-3)
+batch_sizes=(8 16 32)
 ams_grad_options=(False True)
 
 # Generate all combinations and write them to a file
