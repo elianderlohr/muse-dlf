@@ -809,7 +809,7 @@ def main():
 
         # Initialize the ReduceLROnPlateau scheduler
         plateau_scheduler = ReduceLROnPlateau(
-            optimizer, mode="min", factor=0.1, patience=2
+            optimizer, mode="min", factor=0.1, patience=10
         )
 
         logger.info("Loss function and optimizer loaded successfully")
