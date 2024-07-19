@@ -81,7 +81,7 @@ do
         --tags \$TAGS \
         --wandb_api_key \$WANDB_API_KEY \
         --path_data data/mfc/immigration_labeled_preprocessed.json \
-        --epochs 3 \
+        --epochs 4 \
         --planned_epochs 10 \
         --frameaxis_dim 10 \
         --name_tokenizer roberta-base \
