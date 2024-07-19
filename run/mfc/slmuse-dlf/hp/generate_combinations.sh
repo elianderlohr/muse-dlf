@@ -1,10 +1,10 @@
 #!/bin/bash
 
 dropout_probs=(0.2 0.3 0.4)
-learning_rates=(0.001 0.0005 0.0001 0.00005)
+learning_rates=(0.001 0.0005 0.0001)
 weight_decays=(1e-5 1e-4 1e-3)
 batch_sizes=(8 16 32)
-ams_grad_options=(False True)
+ams_grad_options=(True)
 
 # Generate all combinations and write them to a file
 output_file="new_combinations.txt"
