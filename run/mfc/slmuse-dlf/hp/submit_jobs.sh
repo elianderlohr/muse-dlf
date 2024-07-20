@@ -11,11 +11,11 @@ do
 #!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --job-name=debug-mfc-slmuse-dlf-batch-${split_id}
+#SBATCH --job-name=mfc-slmuse-dlf-batch-${split_id}
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
-#SBATCH --time=48:00:00
-#SBATCH --partition=single
+#SBATCH --time=00:10:00
+#SBATCH --partition=devel
 
 echo "===================== Job Details ====================="
 echo "Job settings at start:"
