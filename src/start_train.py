@@ -21,6 +21,8 @@ from accelerate import Accelerator
 import warnings
 import wandb
 
+from accelerate.utils import set_seed
+
 from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
@@ -210,7 +212,7 @@ def initialize_wandb(
         raise
 
 
-def set_seed(seed):
+def set_custom_seed(seed):
     try:
         torch.manual_seed(seed)
         if torch.cuda.is_available():
@@ -220,6 +222,7 @@ def set_seed(seed):
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+        set_seed(seed)
     except Exception as e:
         print(f"Error setting seed: {e}")
         raise
@@ -677,7 +680,7 @@ def main():
         )
 
         if args.seed:
-            set_seed(args.seed)
+            set_custom_seed(args.seed)
             logger.info("Random seed set to: %d", args.seed)
 
         # build save path
