@@ -130,7 +130,7 @@ do
         --mixed_precision fp16 \
         --accumulation_steps 1 \
         --alternative_supervised alt5 \
-        --amsgrad \$ams_grad \
+        --ams_grad_options \$ams_grad \
         \$DEBUG
 
     # Clear GPU memory after each run
