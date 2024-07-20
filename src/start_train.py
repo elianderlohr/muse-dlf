@@ -789,6 +789,9 @@ def main():
 
         lr = args.lr
 
+        # scale learning rate by the number of GPUs
+        lr = lr * accelerator.num_processes
+
         optimizer_type = args.optimizer
         if optimizer_type == "adam":
             weight_decay = args.adam_weight_decay
@@ -803,7 +806,9 @@ def main():
             )
 
         # Calculate the number of training steps and warmup steps
-        num_training_steps = len(train_dataloader) * args.planned_epochs
+        num_training_steps = (
+            len(train_dataloader) * args.planned_epochs * accelerator.num_processes
+        )
         num_warmup_steps = int(
             0.1 * num_training_steps
         )  # 10% of training steps for warmup
@@ -821,9 +826,7 @@ def main():
         logger.info("Loss function and optimizer loaded successfully")
 
         # prepare optimizer and scheduler
-        optimizer, warmup_scheduler = accelerator.prepare(
-            optimizer, warmup_scheduler
-        )
+        optimizer, warmup_scheduler = accelerator.prepare(optimizer, warmup_scheduler)
 
         logger.info("Log model using WANDB", main_process_only=True)
         logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
