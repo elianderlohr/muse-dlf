@@ -412,8 +412,8 @@ class Trainer:
                         )
                         self.scaler.step(self.optimizer)
                         self.scaler.update()
-                        self.optimizer.zero_grad()
                         self.warmup_scheduler.step()
+                        self.optimizer.zero_grad()
                 else:
                     (combined_loss / self.accumulation_steps).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (

@@ -797,7 +797,10 @@ def main():
         elif optimizer_type == "adamw":
             weight_decay = args.adamw_weight_decay
             optimizer = AdamW(
-                model.parameters(), lr=lr, weight_decay=weight_decay, amsgrad=args.ams_grad_options
+                model.parameters(),
+                lr=lr,
+                weight_decay=weight_decay,
+                amsgrad=args.ams_grad_options,
             )
 
         # Calculate the number of training steps and warmup steps
@@ -812,6 +815,9 @@ def main():
             num_warmup_steps=num_warmup_steps,
             num_training_steps=num_training_steps,
         )
+
+        logger.info(f"Number of training steps: {num_training_steps}")
+        logger.info(f"Number of warmup steps: {num_warmup_steps}")
 
         # Initialize the ReduceLROnPlateau scheduler
         plateau_scheduler = ReduceLROnPlateau(
