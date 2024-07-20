@@ -820,6 +820,8 @@ def main():
             num_training_steps=num_training_steps,
         )
 
+        logger.info(f"Num GPUS: {accelerator.num_processes}")
+        logger.info(f"Learning rate: {lr}")
         logger.info(f"Number of training steps: {num_training_steps}")
         logger.info(f"Number of warmup steps: {num_warmup_steps}")
 
