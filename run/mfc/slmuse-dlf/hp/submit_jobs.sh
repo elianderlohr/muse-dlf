@@ -91,7 +91,7 @@ do
         --path_antonym_pairs data/axis/mft.json \
         --class_column_names "Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense" \
         --dim_names virtue,vice \
-        --save_path models/slmuse-dlf/\$(date +'%Y-%m-%d_%H-%M-%S')/ \
+        --save_base_path models/slmuse-dlf/ \
         --embedding_dim 768 \
         --hidden_dim 768 \
         --num_classes 15 \
@@ -103,33 +103,34 @@ do
         --t 8 \
         --batch_size \$batch_size \
         --num_sentences 32 \
-        --max_sentence_length 52 \
+        --max_sentence_length 58 \
         --max_args_per_sentence 10 \
         --max_arg_length 10 \
-        --muse_unsupervised_num_layers 1 \
-        --muse_unsupervised_activation gelu \
+        --muse_unsupervised_num_layers 2 \
+        --muse_unsupervised_activation relu \
         --muse_unsupervised_use_batch_norm True \
         --muse_unsupervised_matmul_input g \
         --muse_unsupervised_gumbel_softmax_log False \
-        --muse_frameaxis_unsupervised_num_layers 1 \
-        --muse_frameaxis_unsupervised_activation gelu \
+        --muse_frameaxis_unsupervised_num_layers 2 \
+        --muse_frameaxis_unsupervised_activation relu \
         --muse_frameaxis_unsupervised_use_batch_norm True \
         --muse_frameaxis_unsupervised_matmul_input g \
         --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-        --num_negatives 32 \
+        --num_negatives 128 \
         --supervised_concat_frameaxis false \
-        --supervised_num_layers 1 \
+        --supervised_num_layers 2 \
         --supervised_activation gelu \
         --optimizer adamw \
         --adamw_weight_decay \$weight_decay \
-        --adam_weight_decay \$weight_decay \
         --sentence_pooling mean \
         --hidden_state second_to_last \
-        --tau_decay 0.0004682416233229908 \
+        --tau_decay 0.0005 \
         --tau_min 0.5 \
         --seed 42 \
         --mixed_precision fp16 \
-        --accumulation_steps 2 \
+        --accumulation_steps 1 \
+        --alternative_supervised alt5 \
+        --amsgrad \$ams_grad \
         \$DEBUG
 
     # Clear GPU memory after each run
