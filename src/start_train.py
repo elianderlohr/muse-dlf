@@ -17,7 +17,6 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 from torch.optim import Adam, AdamW
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from accelerate import Accelerator
 import warnings
 import wandb
@@ -819,16 +818,11 @@ def main():
         logger.info(f"Number of training steps: {num_training_steps}")
         logger.info(f"Number of warmup steps: {num_warmup_steps}")
 
-        # Initialize the ReduceLROnPlateau scheduler
-        plateau_scheduler = ReduceLROnPlateau(
-            optimizer, mode="min", factor=0.1, patience=10
-        )
-
         logger.info("Loss function and optimizer loaded successfully")
 
         # prepare optimizer and scheduler
-        optimizer, warmup_scheduler, plateau_scheduler = accelerator.prepare(
-            optimizer, warmup_scheduler, plateau_scheduler
+        optimizer, warmup_scheduler = accelerator.prepare(
+            optimizer, warmup_scheduler
         )
 
         logger.info("Log model using WANDB", main_process_only=True)
@@ -851,7 +845,6 @@ def main():
             optimizer=optimizer,
             loss_function=loss_function,
             warmup_scheduler=warmup_scheduler,
-            plateau_scheduler=plateau_scheduler,
             model_type=args.model_type,
             training_management="accelerate",
             tau_min=args.tau_min,

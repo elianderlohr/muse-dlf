@@ -96,8 +96,8 @@ do
         --hidden_dim 768 \
         --num_classes 15 \
         --dropout_prob \$dropout_prob \
-        --alpha 0.9 \
-        --lambda_orthogonality 0.001626384818258435 \
+        --alpha 0.3 \
+        --lambda_orthogonality 0.01 \
         --lr \$lr \
         --M 8 \
         --t 8 \

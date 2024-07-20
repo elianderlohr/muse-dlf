@@ -9,8 +9,7 @@ import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast, GradScaler
-from transformers import get_linear_schedule_with_warmup
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+
 
 logger = LoggerManager.get_logger(__name__)
 
@@ -28,7 +27,6 @@ class Trainer:
         optimizer,
         loss_function,
         warmup_scheduler,
-        plateau_scheduler,
         model_type="muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
@@ -53,7 +51,6 @@ class Trainer:
         self.loss_function = loss_function
 
         self.warmup_scheduler = warmup_scheduler
-        self.plateau_scheduler = plateau_scheduler
 
         self.device = device
         self.save_path = save_path
@@ -95,14 +92,12 @@ class Trainer:
                 self.train_dataloader,
                 self.test_dataloader,
                 self.warmup_scheduler,
-                self.plateau_scheduler,
             ) = self.accelerator.prepare(
                 self.model,
                 self.optimizer,
                 self.train_dataloader,
                 self.test_dataloader,
                 self.warmup_scheduler,
-                self.plateau_scheduler,
             )
         elif self.training_management == "wandb":
             logger.info("Using Weights and Biases for training.")
@@ -1403,17 +1398,5 @@ class Trainer:
                     text="The model never surpassed 0.4 accuracy.",
                 )
                 break
-
-            # Step the plateau scheduler based on validation loss
-            self.plateau_scheduler.step(metrics["val_loss"])
-
-            # Log current learning rate
-            current_lr = self.get_lr()
-            self._log_metrics(
-                {
-                    "epoch": epoch,
-                    "learning_rate": current_lr,  # Log current learning rate
-                }
-            )
 
         return early_stopping
