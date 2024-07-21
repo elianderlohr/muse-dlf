@@ -7,6 +7,15 @@
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
 
+# Check if input and output paths are provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <data_path> <output_path>"
+    exit 1
+fi
+
+DATA_PATH=$1
+OUTPUT_PATH=$2
+
 echo "===================== Job Details ====================="
 # Activate the virtual environment
 echo "Activating virtual environment..."
@@ -26,9 +35,6 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/mfc/immigration_unlabeled_preprocessed.json"
-OUTPUT_PATH="data/srls/mfc/mfc_unlabeled.pkl"
-
 echo "Data path: $DATA_PATH"
 echo "Output path: $OUTPUT_PATH"
 
