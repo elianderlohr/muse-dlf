@@ -1,3 +1,6 @@
+import logging
+
+
 class CustomLogger:
     def __init__(self, logger, accelerate_used):
         self.logger = logger
