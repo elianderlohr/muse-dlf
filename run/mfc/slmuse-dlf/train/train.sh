@@ -136,8 +136,8 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 10 \
-    --planned_epochs 10 \
+    --epochs 20 \
+    --planned_epochs 20 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -148,25 +148,25 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_base_path $SAVE_BASE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 768 \
+    --hidden_dim 1536 \
     --num_classes 15 \
     --dropout_prob 0.2 \
     --alpha 0.3 \
     --lambda_orthogonality 0.01 \
-    --lr 0.0001 \
+    --lr 0.0002 \
     --M 8 \
     --t 8 \
-    --batch_size 16 \
+    --batch_size 8 \
     --num_sentences 32 \
-    --max_sentence_length 58 \
+    --max_sentence_length 48 \
     --max_args_per_sentence 10 \
-    --max_arg_length 10 \
-    --muse_unsupervised_num_layers 2 \
+    --max_arg_length 16 \
+    --muse_unsupervised_num_layers 1 \
     --muse_unsupervised_activation relu \
     --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
     --muse_unsupervised_gumbel_softmax_log False \
-    --muse_frameaxis_unsupervised_num_layers 2 \
+    --muse_frameaxis_unsupervised_num_layers 1 \
     --muse_frameaxis_unsupervised_activation relu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
@@ -184,7 +184,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt5 \
+    --alternative_supervised alt6 \
     --ams_grad_options True \
     $DEBUG
 
