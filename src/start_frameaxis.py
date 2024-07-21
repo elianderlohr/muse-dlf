@@ -17,9 +17,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate word embeddings using RoBERTa"
     )
-    # save_path
+    # save_file_name
     parser.add_argument(
-        "--save_path",
+        "--save_file_name",
         type=str,
         required=True,
         help="Path where the embeddings JSON file will be saved",
@@ -31,7 +31,7 @@ def main():
         help="Path to the JSON file containing the data in format: { 'articles': ['article1', 'article2', ...]}",
     )
     parser.add_argument(
-        "--path_antonym_pairs",
+        "--path_keywords",
         type=str,
         required=True,
         help="Path to the JSON file containing the antonym pairs of shape { 'key': { 'dim1': ['pro_word'], 'dim2': ['anti_word'] } }",
@@ -85,8 +85,8 @@ def main():
 
     frameaxis_processor = FrameAxisProcessor(
         df,
-        path_antonym_pairs=args.path_antonym_pairs,
-        save_path=args.save_path,
+        path_keywords=args.path_keywords,
+        save_file_name=args.save_file_name,
         path_microframes=args.path_microframes,
         bert_model_name="roberta-base",
         name_tokenizer="roberta-base",

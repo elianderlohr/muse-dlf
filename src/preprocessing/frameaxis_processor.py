@@ -35,10 +35,10 @@ class CPU_Unpickler(pickle.Unpickler):
 class FrameAxisProcessor:
     def __init__(
         self,
-        df,
-        path_antonym_pairs="frameaxis/axes/custom.tsv",
-        save_path=None,
-        path_microframes=None,
+        df,  # data df
+        path_keywords="frameaxis/axes/custom.tsv",  # path to list of keywords
+        path_microframes=None,  # path to the precomputed microframes
+        save_file_name=None,
         bert_model_name="bert-base-uncased",
         name_tokenizer="bert-base-uncased",
         path_name_bert_model="bert-base-uncased",
@@ -49,13 +49,18 @@ class FrameAxisProcessor:
     ):
         self.df = df
         self.force_recalculate = force_recalculate
-        self.save_path = save_path
+        self.save_file_name = save_file_name
         self.path_microframes = path_microframes
-        self.path_antonym_pairs = path_antonym_pairs
+        self.path_keywords = path_keywords
         self.word_blacklist = word_blacklist
         self.dim_names = dim_names
         self.save_type = save_type
         self.lemmatizer = WordNetLemmatizer()
+
+        # get dir from save_file_name
+        if self.save_file_name:
+            self.save_dir = os.path.dirname(self.save_file_name)
+            self.file_name = os.path.basename(self.save_file_name)
 
         self._initialize_tokenizer_and_model(
             bert_model_name, name_tokenizer, path_name_bert_model
@@ -82,7 +87,7 @@ class FrameAxisProcessor:
             self.model.to("cpu")
 
     def _load_antonym_pairs(self):
-        with open(self.path_antonym_pairs) as f:
+        with open(self.path_keywords) as f:
             self.antonym_pairs = json.load(f)
 
     def _initialize_stopwords_and_non_word_chars(self):
@@ -117,18 +122,13 @@ class FrameAxisProcessor:
                     return CPU_Unpickler(f).load()
 
     def _get_save_path(self, suffix):
-        if self.save_path is None:
-            raise ValueError(
-                "save_path is None, cannot generate save path with suffix."
-            )
-
-        return os.path.join(self.save_path, f"{suffix}.pkl")
+        return os.path.join(self.save_dir, f"{self.file_name}_{suffix}.pkl")
 
     def _load_or_calculate_antonym_embeddings(self):
         antonym_pairs_embeddings_filename = (
             self.path_microframes
             if self.path_microframes
-            else self._get_save_path("antonym_embeddings")
+            else self._get_save_path("microframes")
         )
 
         if os.path.exists(antonym_pairs_embeddings_filename):
@@ -137,7 +137,7 @@ class FrameAxisProcessor:
 
         logger.info("Calculating antonym embeddings.")
         antonym_pairs_embeddings = self.precompute_antonym_embeddings()
-        if self.save_path:
+        if self.save_file_name:
             self._save_to_file(
                 antonym_pairs_embeddings, antonym_pairs_embeddings_filename, "pickle"
             )
@@ -351,7 +351,7 @@ class FrameAxisProcessor:
             + str(word_contributions_df.shape)
         )
 
-        if self.save_path:
+        if self.save_dir:
             contributions_filename = self._get_save_path("contributions")
             self._save_to_file(word_contributions_df, contributions_filename, "pickle")
 
@@ -478,7 +478,7 @@ class FrameAxisProcessor:
 
     def get_frameaxis_data(self):
         if not self.force_recalculate and (
-            not self.save_path or not os.path.exists(self.save_path)
+            not self.save_file_name or not os.path.exists(self.save_file_name)
         ):
             self.force_recalculate = True
 
@@ -488,10 +488,10 @@ class FrameAxisProcessor:
 
             frameaxis_df = self.calculate_all_metrics(self.df, antonym_pairs_embeddings)
 
-            if self.save_path:
-                self._save_to_file(frameaxis_df, self.save_path, self.save_type)
+            if self.save_file_name:
+                self._save_to_file(frameaxis_df, self.save_file_name, self.save_type)
 
             return frameaxis_df
         else:
             logger.info("Loading FrameAxis Embeddings")
-            return self._load_from_file(self.save_path, self.save_type)
+            return self._load_from_file(self.save_file_name, self.save_type)
