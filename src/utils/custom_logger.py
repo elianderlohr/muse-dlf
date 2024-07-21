@@ -31,3 +31,6 @@ class CustomLogger:
 
     def critical(self, msg, *args, **kwargs):
         self.log("critical", msg, *args, **kwargs)
+
+    def set_log_level(self, log_level):
+        self.logger.setLevel(getattr(logging, log_level.upper()))

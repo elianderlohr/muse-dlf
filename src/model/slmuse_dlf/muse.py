@@ -260,6 +260,9 @@ class SLMUSEDLF(nn.Module):
         # Debugging:
         self.logger.debug(f"✅ MUSEDLF successfully initialized")
 
+    def set_log_level(self, log_level):
+        LoggerManager.set_log_level(log_level)
+
     def negative_sampling(self, embeddings, num_negatives=-1):
         if num_negatives == -1:
             num_negatives = embeddings.size(0)

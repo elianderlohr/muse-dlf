@@ -53,5 +53,11 @@ class LoggerManager:
         return logger
 
     @classmethod
+    def set_log_level(cls, log_level):
+        cls._log_level = log_level
+        for logger in cls._loggers.values():
+            logger.set_log_level(log_level)
+
+    @classmethod
     def clear(cls):
         cls._loggers.clear()
