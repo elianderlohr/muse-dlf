@@ -18,8 +18,20 @@
 
 # TODO Thesis
 
-- [ ] Update frameaxis preparation chapter --> with irgnoring words etc.
-- [ ] Add MuSE-DLF chapter
-- [ ] Explainability charts
-- [ ] Metric results for SLMuSE-DLF and MuSE-DLF
-- [ ] Conclusion chapter
+- [x] Update frameaxis preparation chapter --> with irgnoring words etc.
+- [x] Add SLMuSE-DLF chapter
+- [ ] Update MuSE-DLF chapter --> restructure with more info
+- [ ] Explainability:
+  - [ ] SRL Explainability
+    - [ ] Extract dict
+    - [ ] Add example sentence with annotations
+  - [ ] FrameAxis Explainability
+    - [ ] Generate Graph for FrameAxis
+- [ ] Experiment 1:
+  - [ ] Continue hyperparameter tuning chapter
+  - [ ] Add results of hyperparameter tuning
+  - [ ] Add results of the final model
+- [ ] Experiment 2:
+  - [ ] Write hyperparameter tuning chapter
+  - [ ] Add results of hyperparameter tuning
+  - [ ] Add results of the final model
