@@ -165,8 +165,8 @@ class PreProcessor:
 
         frameaxis_processor = FrameAxisProcessor(
             df=df,
-            path_antonym_pairs=self.path_antonym_pairs,
-            save_path=dataframe_path.get("frameaxis", None),
+            path_keywords=self.path_antonym_pairs,
+            save_file_name=dataframe_path.get("frameaxis", None),
             path_microframes=dataframe_path.get("frameaxis_microframe", None),
             bert_model_name=self.bert_model_name,
             name_tokenizer=self.name_tokenizer,
