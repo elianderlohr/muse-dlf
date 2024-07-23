@@ -29,6 +29,18 @@ class SLMUSESupervisedAlternative7(nn.Module):
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
+        # Adjust num_heads to be compatible with D_h
+        self.num_heads = min(num_heads, D_h)
+        while D_h % self.num_heads != 0:
+            self.num_heads -= 1
+
+        if self.num_heads == 0:
+            raise ValueError(
+                f"Cannot find compatible number of heads for dimension {D_h}"
+            )
+
+        self.logger.info(f"Using {self.num_heads} attention heads for dimension {D_h}")
+
         # New Transformer-based sentence encoder
         self.sentence_encoder = nn.TransformerEncoder(
             nn.TransformerEncoderLayer(
