@@ -2,15 +2,15 @@
 
 - [x] Test if balancing of unsupervised loss (e.g. divide by num sentences) is necessary/useful
   - Balacing by number of batch_size x num_sentences x num_args is necessary and useful
-- [ ] Test if adding frameaxis data to the supervised sentenced prediction is useful
+- [x] Test if adding frameaxis data to the supervised sentenced prediction is useful
 
 ## TODO FrameAxis
 
 - [x] Apply lemmatization to find words for microframe creation
-- [ ] FrameAxis Analysis:
-  - [ ] Analyse how only the microframe bias / intensity value for sentences annoated with span based document frame are placed in bias / intensity chart
-  - [ ] Show microframe bias and intensity shift per Word, e.g. identify how different words shift the bias based on the document frame
-  - [ ] Plot the bias and intensity per document instead of sentence
+- [x] FrameAxis Analysis:
+  - [x] Analyse how only the microframe bias / intensity value for sentences annoated with span based document frame are placed in bias / intensity chart
+  - [x] Show microframe bias and intensity shift per Word, e.g. identify how different words shift the bias based on the document frame
+  - [x] Plot the bias and intensity per document instead of sentence
 
 ## TODO SRL / MuSE-DLF
 

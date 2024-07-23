@@ -1,8 +1,8 @@
 import argparse
 import json
+import math
 import os
 import random
-from textwrap import indent
 
 import numpy as np
 
@@ -11,15 +11,14 @@ from model.muse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
-from transformers import (
-    BertTokenizer,
-    RobertaTokenizerFast,
-    get_linear_schedule_with_warmup,
-)
+import torch.nn.functional as F
+from transformers import BertTokenizer, RobertaTokenizerFast
 from torch.optim import Adam, AdamW
 from accelerate import Accelerator
 import warnings
 import wandb
+
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 from accelerate.utils import set_seed
 
@@ -226,6 +225,26 @@ def set_custom_seed(seed):
     except Exception as e:
         print(f"Error setting seed: {e}")
         raise
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=1, gamma=2, reduction="mean"):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        ce_loss = F.cross_entropy(inputs, targets, reduction="none")
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+
+        if self.reduction == "mean":
+            return focal_loss.mean()
+        elif self.reduction == "sum":
+            return focal_loss.sum()
+        else:
+            return focal_loss
 
 
 def main():
@@ -784,8 +803,17 @@ def main():
 
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
-            loss_function = nn.CrossEntropyLoss()
-            logger.info("Loss function set to CrossEntropyLoss")
+            # loss_function = nn.CrossEntropyLoss()
+            loss_function = FocalLoss(alpha=1.0, gamma=2.0)
+            # Modifying gamma and alpha for Focal Loss:
+            #    - gamma (focusing parameter): Usually ranges from 0 to 5. Start with 2 and adjust based on performance:
+            #       - Increase gamma if the model is struggling with hard examples (e.g., 2.5, 3.0).
+            #       - Decrease gamma if the model is overfitting or ignoring easy examples (e.g., 1.5, 1.0).
+            #    - alpha (balancing factor): Typically ranges from 0.25 to 0.75 for imbalanced datasets:
+            #       - If classes are balanced, keep it at 1.0.
+            #       - For imbalanced datasets, set alpha lower (e.g., 0.25, 0.5) to focus more on the majority class, or higher (e.g., 0.75) to focus on the minority class.
+            #    Good starting values are gamma=2.0 and alpha=1.0. Then adjust based on your model's performance.
+            logger.info("Loss function set to FocalLoss")
         else:
             loss_function = nn.BCEWithLogitsLoss()
             logger.info("Loss function set to BCEWithLogitsLoss")
@@ -808,30 +836,33 @@ def main():
                 amsgrad=args.ams_grad_options,
             )
 
-        # Calculate the number of training steps and warmup steps
-        num_training_steps = (
-            len(train_dataloader) * args.planned_epochs * accelerator.num_processes
+        # Prepare the scheduler
+        steps_per_epoch = math.ceil(
+            len(train_dataloader.dataset)
+            / (args.batch_size * accelerator.num_processes)
         )
-        num_warmup_steps = int(
-            0.1 * num_training_steps
-        )  # 10% of training steps for warmup
+        total_steps = steps_per_epoch * args.epochs
 
-        # Initialize the warmup scheduler
-        warmup_scheduler = get_linear_schedule_with_warmup(
-            optimizer,
-            num_warmup_steps=num_warmup_steps,
-            num_training_steps=num_training_steps,
+        T_0 = max(total_steps // 3, steps_per_epoch)
+
+        T_mult = 2
+
+        eta_min = lr / 100
+
+        scheduler = CosineAnnealingWarmRestarts(
+            optimizer, T_0=T_0, T_mult=T_mult, eta_min=eta_min
         )
 
         logger.info(f"Num GPUS: {accelerator.num_processes}")
         logger.info(f"Learning rate: {lr}")
-        logger.info(f"Number of training steps: {num_training_steps}")
-        logger.info(f"Number of warmup steps: {num_warmup_steps}")
+        logger.info(f"T_0: {T_0}")
+        logger.info(f"T_mult: {T_mult}")
+        logger.info(f"eta_min: {eta_min}")
 
         logger.info("Loss function and optimizer loaded successfully")
 
         # prepare optimizer and scheduler
-        optimizer, warmup_scheduler = accelerator.prepare(optimizer, warmup_scheduler)
+        optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
         logger.info("Log model using WANDB", main_process_only=True)
         logger.info("WANDB project name: %s", args.project_name, main_process_only=True)
@@ -852,7 +883,7 @@ def main():
             test_dataloader=test_dataloader,
             optimizer=optimizer,
             loss_function=loss_function,
-            warmup_scheduler=warmup_scheduler,
+            scheduler=scheduler,
             model_type=args.model_type,
             training_management="accelerate",
             tau_min=args.tau_min,
