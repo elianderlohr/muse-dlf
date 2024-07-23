@@ -20,7 +20,6 @@ class SLMUSESupervisedAlternative7(nn.Module):
     ):
         super(SLMUSESupervisedAlternative7, self).__init__()
 
-        # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
         self.embedding_dim = embedding_dim
@@ -29,23 +28,25 @@ class SLMUSESupervisedAlternative7(nn.Module):
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
-        # Adjust num_heads to be compatible with D_h
-        self.num_heads = min(num_heads, D_h)
-        while D_h % self.num_heads != 0:
-            self.num_heads -= 1
-
-        if self.num_heads == 0:
-            raise ValueError(
-                f"Cannot find compatible number of heads for dimension {D_h}"
+        # Ensure D_h is divisible by num_heads
+        self.num_heads = num_heads
+        self.adjusted_D_h = (D_h // self.num_heads) * self.num_heads
+        if self.adjusted_D_h != D_h:
+            self.logger.warning(
+                f"Adjusted D_h from {D_h} to {self.adjusted_D_h} to ensure divisibility by {self.num_heads} heads"
             )
 
-        self.logger.info(f"Using {self.num_heads} attention heads for dimension {D_h}")
+        # Add a linear layer to adjust the dimension if necessary
+        self.dim_adjuster = (
+            nn.Linear(D_h, self.adjusted_D_h)
+            if D_h != self.adjusted_D_h
+            else nn.Identity()
+        )
 
-        # New Transformer-based sentence encoder
         self.sentence_encoder = nn.TransformerEncoder(
             nn.TransformerEncoderLayer(
-                d_model=D_h,
-                nhead=num_heads,
+                d_model=self.adjusted_D_h,
+                nhead=self.num_heads,
                 dim_feedforward=hidden_dim,
                 dropout=dropout_prob,
                 activation="gelu",
@@ -53,20 +54,15 @@ class SLMUSESupervisedAlternative7(nn.Module):
             num_layers=num_layers,
         )
 
-        # New classifier for y_hat_s
         self.classifier = nn.Sequential(
-            nn.Linear(D_h, hidden_dim),
+            nn.Linear(self.adjusted_D_h, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout_prob),
             nn.Linear(hidden_dim, num_classes),
         )
 
-        # Flatten
-        self.flatten = nn.Flatten(start_dim=1)
-
         self.concat_frameaxis = concat_frameaxis
-
         self._debug = _debug
 
         # Debugging:
@@ -101,13 +97,11 @@ class SLMUSESupervisedAlternative7(nn.Module):
                 batch_size, num_sentences * num_args, embedding_dim
             )
 
-            # Create masks for non-padded elements
             mask_p = (d_p_flatten.abs().sum(dim=-1) != 0).float()
             mask_a0 = (d_a0_flatten.abs().sum(dim=-1) != 0).float()
             mask_a1 = (d_a1_flatten.abs().sum(dim=-1) != 0).float()
             mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
 
-            # Calculate the mean ignoring padded elements
             d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / torch.clamp(
                 mask_p.sum(dim=1, keepdim=True), min=1
             )
@@ -121,15 +115,18 @@ class SLMUSESupervisedAlternative7(nn.Module):
                 mask_fx.sum(dim=1, keepdim=True), min=1
             )
 
-            # Combine and normalize the final descriptor
             y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
             if self.concat_frameaxis:
                 vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-            # New calculation for y_hat_s using the Transformer encoder
-            vs_encoded = self.sentence_encoder(vs.transpose(0, 1)).transpose(0, 1)
-            vs_pooled = vs_encoded.mean(dim=1)  # Global average pooling
+            # Apply dimension adjustment if necessary
+            vs_adjusted = self.dim_adjuster(vs)
+
+            vs_encoded = self.sentence_encoder(vs_adjusted.transpose(0, 1)).transpose(
+                0, 1
+            )
+            vs_pooled = vs_encoded.mean(dim=1)
             y_hat_s = self.classifier(vs_pooled)
 
             combined = y_hat_u + y_hat_s
