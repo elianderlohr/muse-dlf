@@ -192,7 +192,7 @@ def initialize_wandb(
     wandb_api_key, project_name, tags, config, mixed_precision, run_name
 ):
     try:
-        wandb.login(key=wandb_api_key)
+        wandb.login(key=wandb_api_key, timeout=120)
         accelerator = Accelerator(log_with="wandb", mixed_precision=mixed_precision)
         accelerator.init_trackers(
             project_name,
@@ -248,6 +248,8 @@ class FocalLoss(nn.Module):
 
 
 def main():
+    os.environ["WANDB__SERVICE_WAIT"] = "300"
+
     parser = argparse.ArgumentParser(description="Train MUSE model")
 
     # Required arguments
