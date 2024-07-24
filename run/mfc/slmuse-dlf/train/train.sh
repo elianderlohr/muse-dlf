@@ -176,6 +176,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_num_layers 2 \
     --supervised_activation gelu \
     --adamw_weight_decay 0.001 \
+    --ams_grad_options True \
     --optimizer adamw \
     --sentence_pooling mean \
     --hidden_state second_to_last \
@@ -185,7 +186,6 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --mixed_precision fp16 \
     --accumulation_steps 1 \
     --alternative_supervised alt7 \
-    --ams_grad_options True \
     $DEBUG
 
 echo "______________________________________________________"
