@@ -18,6 +18,7 @@ class ArticleDataset(Dataset):
         max_arg_length=16,
         frameaxis_dim=20,
         train_mode=True,
+        tokenizer_padding_value=1,  # 0 for bert, 1 for roberta
     ):
         self.X = X
         self.X_srl = X_srl
@@ -33,6 +34,8 @@ class ArticleDataset(Dataset):
         self.frameaxis_dim = frameaxis_dim
 
         self.train_mode = train_mode
+
+        self.tokenizer_padding_value = tokenizer_padding_value
 
     def __len__(self):
         return len(self.X)
@@ -86,7 +89,7 @@ class ArticleDataset(Dataset):
 
         # Pad the token IDs and attention masks
         while len(token_ids) < max_length:
-            token_ids.append(0)
+            token_ids.append(self.tokenizer_padding_value)
             attention_masks.append(0)
 
         # Truncate the token IDs and attention masks
@@ -109,7 +112,7 @@ class ArticleDataset(Dataset):
         for sentence in sentences:
             encoded = self.tokenizer(
                 sentence,
-                add_special_tokens=True,
+                add_special_tokens=False,
                 max_length=self.max_sentence_length,
                 truncation=True,
                 padding="max_length",
@@ -121,7 +124,9 @@ class ArticleDataset(Dataset):
 
         # Padding for sentences if necessary
         while len(sentence_ids) < self.max_sentences_per_article:
-            sentence_ids.append([0] * self.max_sentence_length)
+            sentence_ids.append(
+                [self.tokenizer_padding_value] * self.max_sentence_length
+            )
             sentence_attention_masks.append([0] * self.max_sentence_length)
 
         sentence_ids = sentence_ids[: self.max_sentences_per_article]
@@ -193,9 +198,15 @@ class ArticleDataset(Dataset):
                 sentence_arg1_masks.append(arg1_attention_mask)
 
             for _ in range(self.max_sentences_per_article):
-                sentence_predicates.append([0] * self.max_arg_length)
-                sentence_arg0s.append([0] * self.max_arg_length)
-                sentence_arg1s.append([0] * self.max_arg_length)
+                sentence_predicates.append(
+                    [self.tokenizer_padding_value] * self.max_arg_length
+                )
+                sentence_arg0s.append(
+                    [self.tokenizer_padding_value] * self.max_arg_length
+                )
+                sentence_arg1s.append(
+                    [self.tokenizer_padding_value] * self.max_arg_length
+                )
 
                 sentence_predicate_masks.append([0] * self.max_arg_length)
                 sentence_arg0_masks.append([0] * self.max_arg_length)
@@ -213,9 +224,15 @@ class ArticleDataset(Dataset):
 
             # Padding for SRL elements
             for _ in range(self.max_args_per_sentence):
-                sentence_predicates.append([0] * self.max_arg_length)
-                sentence_arg0s.append([0] * self.max_arg_length)
-                sentence_arg1s.append([0] * self.max_arg_length)
+                sentence_predicates.append(
+                    [self.tokenizer_padding_value] * self.max_arg_length
+                )
+                sentence_arg0s.append(
+                    [self.tokenizer_padding_value] * self.max_arg_length
+                )
+                sentence_arg1s.append(
+                    [self.tokenizer_padding_value] * self.max_arg_length
+                )
 
                 sentence_predicate_masks.append([0] * self.max_arg_length)
                 sentence_arg0_masks.append([0] * self.max_arg_length)
@@ -253,7 +270,9 @@ class ArticleDataset(Dataset):
             arg1_attention_masks.append(sentence_arg1_masks)
 
         # Padding for SRL data
-        srl_padding = [[0] * self.max_arg_length] * self.max_args_per_sentence
+        srl_padding = [
+            [self.tokenizer_padding_value] * self.max_arg_length
+        ] * self.max_args_per_sentence
         mask_padding = [[0] * self.max_arg_length] * self.max_args_per_sentence
 
         predicates = (predicates + [srl_padding] * self.max_sentences_per_article)[

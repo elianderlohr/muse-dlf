@@ -12,6 +12,7 @@ class SLMUSEEmbeddings(nn.Module):
         model_type: str = "bert-base-uncased",
         hidden_state: str = "second_to_last",
         sentence_pooling: str = "mean",
+        tokenizer_pad_token_id: int = 1,
         _debug=False,
     ):
         super(SLMUSEEmbeddings, self).__init__()
@@ -54,6 +55,8 @@ class SLMUSEEmbeddings(nn.Module):
         self.sentence_pooling = sentence_pooling
 
         self.embedding_dim = self.model.config.hidden_size
+
+        self.tokenizer_pad_token_id = tokenizer_pad_token_id
 
         self._debug = _debug
 
@@ -198,25 +201,40 @@ class SLMUSEEmbeddings(nn.Module):
             dtype=sentence_embeddings.dtype,
         )
 
+        # loop over batches
         for batch_idx in range(batch_size):
+            # loop over sentences
             for sent_idx in range(num_sentences):
+                # loop over arguments
                 for arg_idx in range(num_args):
                     selected_embeddings = []
+                    # loop over tokens in argument
                     for token_idx in range(max_arg_length):
+                        # get token id
                         arg_token_id = arg_ids[
                             batch_idx, sent_idx, arg_idx, token_idx
                         ].item()
-                        if arg_token_id == 0:
+
+                        # skip padding tokens
+                        if arg_token_id == self.tokenizer_pad_token_id:
                             continue
+
                         match_indices = (
                             sentence_ids[batch_idx, sent_idx] == arg_token_id
                         ).nonzero(as_tuple=False)
+
+                        # skip if token not found in sentence
                         if match_indices.nelement() == 0:
                             continue
+
+                        # get indices of matching tokens
                         flat_indices = match_indices[:, 0]
+
+                        # get embeddings of matching tokens
                         selected_embeddings.append(
                             sentence_embeddings[batch_idx, sent_idx, flat_indices]
                         )
+
                     if selected_embeddings:
                         selected_embeddings = torch.cat(selected_embeddings, dim=0)
                         avg_embedding = selected_embeddings.mean(dim=0)
