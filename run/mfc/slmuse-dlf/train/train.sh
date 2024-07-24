@@ -92,8 +92,9 @@ clear_gpu_memory
 # NCCL configuration
 export NCCL_BLOCKING_WAIT=1
 export NCCL_ASYNC_ERROR_HANDLING=1
-export NCCL_DEBUG=INFO
-export NCCL_DEBUG_SUBSYS=ALL
+export TORCH_NCCL_BLOCKING_WAIT=1
+export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
+
 
 # Function to generate run name
 generate_run_name() {
@@ -142,8 +143,8 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 10 \
-    --planned_epochs 10 \
+    --epochs 30 \
+    --planned_epochs 30 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
