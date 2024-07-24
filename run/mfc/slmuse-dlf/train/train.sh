@@ -89,6 +89,12 @@ function clear_gpu_memory {
 # Clear GPU memory before starting
 clear_gpu_memory
 
+# NCCL configuration
+export NCCL_BLOCKING_WAIT=1
+export NCCL_ASYNC_ERROR_HANDLING=1
+export NCCL_DEBUG=INFO
+export NCCL_DEBUG_SUBSYS=ALL
+
 # Function to generate run name
 generate_run_name() {
     verbs=(
