@@ -158,10 +158,10 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dropout_prob 0.1 \
     --alpha 0.3 \
     --lambda_orthogonality 0.01 \
-    --lr 2e-5 \
+    --lr 1e-4 \
     --M 8 \
     --t 8 \
-    --batch_size 8 \
+    --batch_size 32 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
@@ -180,9 +180,9 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
     --supervised_activation gelu \
-    --adamw_weight_decay 0.001 \
-    --ams_grad_options True \
     --optimizer adamw \
+    --adamw_weight_decay 0.01 \
+    --ams_grad_options True \
     --sentence_pooling mean \
     --hidden_state second_to_last \
     --tau_decay 0.0005 \
