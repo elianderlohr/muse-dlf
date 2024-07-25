@@ -153,9 +153,9 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_base_path $SAVE_BASE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 1536 \
+    --hidden_dim 2048 \
     --num_classes 15 \
-    --dropout_prob 0.3 \
+    --dropout_prob 0.1 \
     --alpha 0.3 \
     --lambda_orthogonality 0.01 \
     --lr 2e-5 \

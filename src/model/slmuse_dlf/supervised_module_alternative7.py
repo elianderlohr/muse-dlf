@@ -1,18 +1,18 @@
 import torch
 import torch.nn as nn
-from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast
+from utils.logging_manager import LoggerManager
 
 
 class SLMUSESupervisedAlternative7(nn.Module):
     def __init__(
         self,
-        embedding_dim,
-        num_classes,
-        frameaxis_dim,
-        num_sentences,
-        hidden_dim,
-        dropout_prob=0.2,
+        embedding_dim=768,
+        num_classes=15,
+        frameaxis_dim=0,
+        num_sentences=24,
+        hidden_dim=2048,
+        dropout_prob=0.1,
         concat_frameaxis=False,
         num_heads=8,
         num_layers=2,
@@ -25,10 +25,10 @@ class SLMUSESupervisedAlternative7(nn.Module):
         self.embedding_dim = embedding_dim
         self.frameaxis_dim = frameaxis_dim
         self.num_classes = num_classes
+        self.num_sentences = num_sentences
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
-        # Ensure D_h is divisible by num_heads
         self.num_heads = num_heads
         self.adjusted_D_h = (D_h // self.num_heads) * self.num_heads
         if self.adjusted_D_h != D_h:
@@ -36,7 +36,6 @@ class SLMUSESupervisedAlternative7(nn.Module):
                 f"Adjusted D_h from {D_h} to {self.adjusted_D_h} to ensure divisibility by {self.num_heads} heads"
             )
 
-        # Add a linear layer to adjust the dimension if necessary
         self.dim_adjuster = (
             nn.Linear(D_h, self.adjusted_D_h)
             if D_h != self.adjusted_D_h
@@ -54,18 +53,26 @@ class SLMUSESupervisedAlternative7(nn.Module):
             num_layers=num_layers,
         )
 
-        self.classifier = nn.Sequential(
-            nn.Linear(self.adjusted_D_h, hidden_dim),
+        self.dim_reduction = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(self.adjusted_D_h * num_sentences, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout_prob),
-            nn.Linear(hidden_dim, num_classes),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.LayerNorm(hidden_dim // 2),
+            nn.GELU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(hidden_dim // 2, hidden_dim // 4),
+            nn.LayerNorm(hidden_dim // 4),
+            nn.GELU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(hidden_dim // 4, num_classes),  # No GELU here
         )
 
         self.concat_frameaxis = concat_frameaxis
         self._debug = _debug
 
-        # Debugging:
         self.logger.debug(f"✅ SLMUSESupervisedAlternative7 successfully initialized")
 
     def forward(
@@ -102,32 +109,23 @@ class SLMUSESupervisedAlternative7(nn.Module):
             mask_a1 = (d_a1_flatten.abs().sum(dim=-1) != 0).float()
             mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
 
-            d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_p.sum(dim=1, keepdim=True), min=1
-            )
-            d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_a0.sum(dim=1, keepdim=True), min=1
-            )
-            d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_a1.sum(dim=1, keepdim=True), min=1
-            )
-            d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_fx.sum(dim=1, keepdim=True), min=1
-            )
+            d_p_mean = self.weighted_mean(d_p_flatten, mask_p)
+            d_a0_mean = self.weighted_mean(d_a0_flatten, mask_a0)
+            d_a1_mean = self.weighted_mean(d_a1_flatten, mask_a1)
+            d_fx_mean = self.weighted_mean(d_fx, mask_fx)
 
             y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
             if self.concat_frameaxis:
                 vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-            # Apply dimension adjustment if necessary
             vs_adjusted = self.dim_adjuster(vs)
 
             vs_encoded = self.sentence_encoder(vs_adjusted.transpose(0, 1)).transpose(
                 0, 1
             )
-            vs_pooled = vs_encoded.mean(dim=1)
-            y_hat_s = self.classifier(vs_pooled)
+
+            y_hat_s = self.dim_reduction(vs_encoded)
 
             combined = y_hat_u + y_hat_s
 
@@ -139,3 +137,8 @@ class SLMUSESupervisedAlternative7(nn.Module):
             }
 
         return y_hat_u, y_hat_s, combined, other
+
+    def weighted_mean(self, tensor, mask):
+        return (tensor * mask.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+            mask.sum(dim=1, keepdim=True), min=1
+        )
