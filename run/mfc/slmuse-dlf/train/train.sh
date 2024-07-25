@@ -190,7 +190,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt7 \
+    --alternative_supervised alt6 \
     $DEBUG
 
 echo "______________________________________________________"
