@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.functional import log_softmax, softmax
 from utils.logging_manager import LoggerManager
-from torch.cuda.amp import autocast
 
 
 class SLMUSECombinedAutoencoder(nn.Module):
@@ -148,123 +147,99 @@ class SLMUSECombinedAutoencoder(nn.Module):
         mask_a1,
         v_sentence,
         tau,
-        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
+        h_p = self.process_through_shared(v_p, v_sentence, mask_p)
+        h_a0 = self.process_through_shared(v_a0, v_sentence, mask_a0)
+        h_a1 = self.process_through_shared(v_a1, v_sentence, mask_a1)
+
+        if torch.isnan(h_p).any() or torch.isnan(h_a0).any() or torch.isnan(h_a1).any():
+            self.logger.error("❌ NaNs detected in hidden states")
+            raise ValueError("NaNs detected in hidden states")
+
+        logits_p = self.feed_forward_unique["p"](h_p)
+        logits_a0 = self.feed_forward_unique["a0"](h_a0)
+        logits_a1 = self.feed_forward_unique["a1"](h_a1)
+
+        # Check for NaNs in logits
+        if (
+            torch.isnan(logits_p).any()
+            or torch.isnan(logits_a0).any()
+            or torch.isnan(logits_a1).any()
+        ):
+            self.logger.error("❌ NaNs detected in logits")
+            raise ValueError("NaNs detected in logits")
+
+        # Apply masks before softmax to avoid NaNs
+        logits_p = logits_p * mask_p.unsqueeze(-1).float()
+        logits_a0 = logits_a0 * mask_a0.unsqueeze(-1).float()
+        logits_a1 = logits_a1 * mask_a1.unsqueeze(-1).float()
+
+        # Ensure logits are not all zero by adding a small epsilon where mask is zero
+        epsilon = 1e-10
+        logits_p = logits_p + (1 - mask_p.unsqueeze(-1).float()) * epsilon
+        logits_a0 = logits_a0 + (1 - mask_a0.unsqueeze(-1).float()) * epsilon
+        logits_a1 = logits_a1 + (1 - mask_a1.unsqueeze(-1).float()) * epsilon
+
+        # Apply softmax
+        d_p = torch.softmax(logits_p, dim=1) * mask_p.unsqueeze(-1).float()
+        d_a0 = torch.softmax(logits_a0, dim=1) * mask_a0.unsqueeze(-1).float()
+        d_a1 = torch.softmax(logits_a1, dim=1) * mask_a1.unsqueeze(-1).float()
+
+        # Check for NaNs after softmax
+        if torch.isnan(d_p).any() or torch.isnan(d_a0).any() or torch.isnan(d_a1).any():
+            self.logger.error("❌ NaNs detected in d AFTER softmax")
+            raise ValueError("NaNs detected in d AFTER softmax")
+
+        g_p = (
+            self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
+            * mask_p.unsqueeze(-1).float()
+        )
+        g_a0 = (
+            self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
+            * mask_a0.unsqueeze(-1).float()
+        )
+        g_a1 = (
+            self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
+            * mask_a1.unsqueeze(-1).float()
         )
 
-        with autocast(
-            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
-        ):
-            h_p = self.process_through_shared(v_p, v_sentence, mask_p)
-            h_a0 = self.process_through_shared(v_a0, v_sentence, mask_a0)
-            h_a1 = self.process_through_shared(v_a1, v_sentence, mask_a1)
-
-            if (
-                torch.isnan(h_p).any()
-                or torch.isnan(h_a0).any()
-                or torch.isnan(h_a1).any()
-            ):
-                self.logger.error("❌ NaNs detected in hidden states")
-                raise ValueError("NaNs detected in hidden states")
-
-            logits_p = self.feed_forward_unique["p"](h_p)
-            logits_a0 = self.feed_forward_unique["a0"](h_a0)
-            logits_a1 = self.feed_forward_unique["a1"](h_a1)
-
-            # Check for NaNs in logits
-            if (
-                torch.isnan(logits_p).any()
-                or torch.isnan(logits_a0).any()
-                or torch.isnan(logits_a1).any()
-            ):
-                self.logger.error("❌ NaNs detected in logits")
-                raise ValueError("NaNs detected in logits")
-
-            # Apply masks before softmax to avoid NaNs
-            logits_p = logits_p * mask_p.unsqueeze(-1).float()
-            logits_a0 = logits_a0 * mask_a0.unsqueeze(-1).float()
-            logits_a1 = logits_a1 * mask_a1.unsqueeze(-1).float()
-
-            # Ensure logits are not all zero by adding a small epsilon where mask is zero
-            epsilon = 1e-10
-            logits_p = logits_p + (1 - mask_p.unsqueeze(-1).float()) * epsilon
-            logits_a0 = logits_a0 + (1 - mask_a0.unsqueeze(-1).float()) * epsilon
-            logits_a1 = logits_a1 + (1 - mask_a1.unsqueeze(-1).float()) * epsilon
-
-            # Apply softmax
-            d_p = torch.softmax(logits_p, dim=1) * mask_p.unsqueeze(-1).float()
-            d_a0 = torch.softmax(logits_a0, dim=1) * mask_a0.unsqueeze(-1).float()
-            d_a1 = torch.softmax(logits_a1, dim=1) * mask_a1.unsqueeze(-1).float()
-
-            # Check for NaNs after softmax
-            if (
-                torch.isnan(d_p).any()
-                or torch.isnan(d_a0).any()
-                or torch.isnan(d_a1).any()
-            ):
-                self.logger.error("❌ NaNs detected in d AFTER softmax")
-                raise ValueError("NaNs detected in d AFTER softmax")
-
-            g_p = (
-                self.custom_gumbel_softmax(d_p, tau=tau, hard=False, log=self.log)
-                * mask_p.unsqueeze(-1).float()
+        # Check for NaNs after gumbel softmax
+        if torch.isnan(g_p).any() or torch.isnan(g_a0).any() or torch.isnan(g_a1).any():
+            self.logger.error(
+                f"❌ NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {False}, log: {self.log}"
             )
-            g_a0 = (
-                self.custom_gumbel_softmax(d_a0, tau=tau, hard=False, log=self.log)
+            raise ValueError(
+                f"NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {False}, log: {self.log}"
+            )
+
+        if self.matmul_input == "d":
+            vhat_p = (
+                torch.matmul(d_p, self.F_matrices["p"]) * mask_p.unsqueeze(-1).float()
+            )
+            vhat_a0 = (
+                torch.matmul(d_a0, self.F_matrices["a0"])
                 * mask_a0.unsqueeze(-1).float()
             )
-            g_a1 = (
-                self.custom_gumbel_softmax(d_a1, tau=tau, hard=False, log=self.log)
+            vhat_a1 = (
+                torch.matmul(d_a1, self.F_matrices["a1"])
                 * mask_a1.unsqueeze(-1).float()
             )
-
-            # Check for NaNs after gumbel softmax
-            if (
-                torch.isnan(g_p).any()
-                or torch.isnan(g_a0).any()
-                or torch.isnan(g_a1).any()
-            ):
-                self.logger.error(
-                    f"❌ NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {False}, log: {self.log}"
-                )
-                raise ValueError(
-                    f"NaNs detected in g AFTER gumbel-softmax, tau: {tau}, hard: {False}, log: {self.log}"
-                )
-
-            if self.matmul_input == "d":
-                vhat_p = (
-                    torch.matmul(d_p, self.F_matrices["p"])
-                    * mask_p.unsqueeze(-1).float()
-                )
-                vhat_a0 = (
-                    torch.matmul(d_a0, self.F_matrices["a0"])
-                    * mask_a0.unsqueeze(-1).float()
-                )
-                vhat_a1 = (
-                    torch.matmul(d_a1, self.F_matrices["a1"])
-                    * mask_a1.unsqueeze(-1).float()
-                )
-            elif self.matmul_input == "g":
-                vhat_p = (
-                    torch.matmul(g_p, self.F_matrices["p"])
-                    * mask_p.unsqueeze(-1).float()
-                )
-                vhat_a0 = (
-                    torch.matmul(g_a0, self.F_matrices["a0"])
-                    * mask_a0.unsqueeze(-1).float()
-                )
-                vhat_a1 = (
-                    torch.matmul(g_a1, self.F_matrices["a1"])
-                    * mask_a1.unsqueeze(-1).float()
-                )
-            else:
-                raise ValueError(
-                    f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"
-                )
+        elif self.matmul_input == "g":
+            vhat_p = (
+                torch.matmul(g_p, self.F_matrices["p"]) * mask_p.unsqueeze(-1).float()
+            )
+            vhat_a0 = (
+                torch.matmul(g_a0, self.F_matrices["a0"])
+                * mask_a0.unsqueeze(-1).float()
+            )
+            vhat_a1 = (
+                torch.matmul(g_a1, self.F_matrices["a1"])
+                * mask_a1.unsqueeze(-1).float()
+            )
+        else:
+            raise ValueError(
+                f"matmul_input must be 'd' or 'g'. Got: {self.matmul_input}"
+            )
 
         if (
             torch.isnan(vhat_p).any()

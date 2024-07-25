@@ -1,5 +1,4 @@
 import torch
-from torch.cuda.amp import autocast
 from transformers import BertModel, RobertaModel
 import torch.nn as nn
 from utils.logging_manager import LoggerManager
@@ -96,9 +95,7 @@ class SLMUSEEmbeddings(nn.Module):
         if torch.isnan(tensor).any():
             self.logger.error(f"NaN values detected in {tensor_name}")
 
-    def get_sentence_embedding(
-        self, ids: torch.Tensor, attention_masks: torch.Tensor, mixed_precision="fp16"
-    ):
+    def get_sentence_embedding(self, ids: torch.Tensor, attention_masks: torch.Tensor):
         ids, attention_masks = ids.to(self.device), attention_masks.to(self.device)
         batch_size, num_sentences, max_sentence_length = ids.shape
 
@@ -109,32 +106,23 @@ class SLMUSEEmbeddings(nn.Module):
 
         del ids
 
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
-        )
-
         with torch.no_grad():
-            with autocast(
-                enabled=mixed_precision in ["fp16", "bf16", "fp32"],
-                dtype=precision_dtype,
-            ):
-                outputs = self.model(
-                    input_ids=ids_flat,
-                    attention_mask=attention_masks_flat,
-                    output_hidden_states=True,
-                )
 
-                del ids_flat, attention_masks_flat
-                torch.cuda.empty_cache()
+            outputs = self.model(
+                input_ids=ids_flat,
+                attention_mask=attention_masks_flat,
+                output_hidden_states=True,
+            )
 
-                if self.hidden_state == "last":
-                    second_to_last_hidden_state = outputs.last_hidden_state
-                elif self.hidden_state == "second_to_last":
-                    second_to_last_hidden_state = outputs.hidden_states[-2]
-                del outputs
-                torch.cuda.empty_cache()
+            del ids_flat, attention_masks_flat
+            torch.cuda.empty_cache()
+
+            if self.hidden_state == "last":
+                second_to_last_hidden_state = outputs.last_hidden_state
+            elif self.hidden_state == "second_to_last":
+                second_to_last_hidden_state = outputs.hidden_states[-2]
+            del outputs
+            torch.cuda.empty_cache()
 
             self.check_for_nans(
                 second_to_last_hidden_state, "second to last hidden state"
@@ -249,7 +237,6 @@ class SLMUSEEmbeddings(nn.Module):
         predicate_ids: torch.Tensor,
         arg0_ids: torch.Tensor,
         arg1_ids: torch.Tensor,
-        mixed_precision="fp16",
     ):
         sentence_ids, sentence_attention_masks, predicate_ids, arg0_ids, arg1_ids = (
             sentence_ids.to(self.device),
@@ -260,47 +247,33 @@ class SLMUSEEmbeddings(nn.Module):
         )
 
         with torch.no_grad():
-
-            precision_dtype = (
-                torch.float16
-                if mixed_precision == "fp16"
-                else torch.bfloat16 if mixed_precision == "bf16" else None
+            sentence_embeddings, sentence_embeddings_avg = self.get_sentence_embedding(
+                sentence_ids,
+                sentence_attention_masks,
             )
 
-            with autocast(
-                enabled=mixed_precision in ["fp16", "bf16", "fp32"],
-                dtype=precision_dtype,
-            ):  # Use autocast for mixed precision
-                sentence_embeddings, sentence_embeddings_avg = (
-                    self.get_sentence_embedding(
-                        sentence_ids,
-                        sentence_attention_masks,
-                        mixed_precision=mixed_precision,
-                    )
-                )
+            predicate_embeddings = self.get_arg_embedding(
+                predicate_ids, sentence_ids, sentence_embeddings
+            )
 
-                predicate_embeddings = self.get_arg_embedding(
-                    predicate_ids, sentence_ids, sentence_embeddings
-                )
+            arg0_embeddings = self.get_arg_embedding(
+                arg0_ids, sentence_ids, sentence_embeddings
+            )
 
-                arg0_embeddings = self.get_arg_embedding(
-                    arg0_ids, sentence_ids, sentence_embeddings
-                )
+            arg1_embeddings = self.get_arg_embedding(
+                arg1_ids, sentence_ids, sentence_embeddings
+            )
 
-                arg1_embeddings = self.get_arg_embedding(
-                    arg1_ids, sentence_ids, sentence_embeddings
-                )
-
-                # Delete intermediate tensors
-                del (
-                    sentence_ids,
-                    sentence_attention_masks,
-                    predicate_ids,
-                    arg0_ids,
-                    arg1_ids,
-                    sentence_embeddings,
-                )
-                torch.cuda.empty_cache()
+            # Delete intermediate tensors
+            del (
+                sentence_ids,
+                sentence_attention_masks,
+                predicate_ids,
+                arg0_ids,
+                arg1_ids,
+                sentence_embeddings,
+            )
+            torch.cuda.empty_cache()
 
         return (
             sentence_embeddings_avg,

@@ -5,8 +5,6 @@ from torch.nn.functional import log_softmax, softmax
 
 from utils.logging_manager import LoggerManager
 
-from torch.cuda.amp import autocast
-
 
 class SLMUSEFrameAxisAutoencoder(nn.Module):
     def __init__(
@@ -124,50 +122,40 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         mask,
         v_sentence,
         tau,
-        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
-        )
+        h = self.process_through_first(v_frameaxis, v_sentence, mask)
 
-        with autocast(
-            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
-        ):
-            h = self.process_through_first(v_frameaxis, v_sentence, mask)
+        if torch.isnan(h).any():
+            self.logger.error("❌ NaNs detected in h")
+            raise ValueError("NaNs detected in h")
 
-            if torch.isnan(h).any():
-                self.logger.error("❌ NaNs detected in h")
-                raise ValueError("NaNs detected in h")
+        logits = self.feed_forward_2(h) * mask.unsqueeze(-1).float()
 
-            logits = self.feed_forward_2(h) * mask.unsqueeze(-1).float()
+        epsilon = 1e-10
+        logits = logits + (1 - mask.unsqueeze(-1).float()) * epsilon
 
-            epsilon = 1e-10
-            logits = logits + (1 - mask.unsqueeze(-1).float()) * epsilon
-
-            if (logits == 0).all() or (logits.std() == 0):
-                self.logger.debug(
-                    f"❌ logits has mean {logits.mean().item()} or std {logits.std().item()}"
-                )
-
-            if torch.isnan(logits).any():
-                self.logger.error("❌ NaNs detected in logits")
-                raise ValueError("NaNs detected in logits")
-
-            d = torch.softmax(logits, dim=1) * mask.unsqueeze(-1).float()
-
-            g = (
-                self.custom_gumbel_softmax(d, tau=tau, hard=False, log=self.log)
-                * mask.unsqueeze(-1).float()
+        if (logits == 0).all() or (logits.std() == 0):
+            self.logger.debug(
+                f"❌ logits has mean {logits.mean().item()} or std {logits.std().item()}"
             )
 
-            if self.matmul_input == "d":
-                vhat = torch.matmul(d, self.F) * mask.unsqueeze(-1).float()
-            elif self.matmul_input == "g":
-                vhat = torch.matmul(g, self.F) * mask.unsqueeze(-1).float()
-            else:
-                raise ValueError("matmul_input must be 'd' or 'g'.")
+        if torch.isnan(logits).any():
+            self.logger.error("❌ NaNs detected in logits")
+            raise ValueError("NaNs detected in logits")
+
+        d = torch.softmax(logits, dim=1) * mask.unsqueeze(-1).float()
+
+        g = (
+            self.custom_gumbel_softmax(d, tau=tau, hard=False, log=self.log)
+            * mask.unsqueeze(-1).float()
+        )
+
+        if self.matmul_input == "d":
+            vhat = torch.matmul(d, self.F) * mask.unsqueeze(-1).float()
+        elif self.matmul_input == "g":
+            vhat = torch.matmul(g, self.F) * mask.unsqueeze(-1).float()
+        else:
+            raise ValueError("matmul_input must be 'd' or 'g'.")
 
         if torch.isnan(vhat).any():
             self.logger.error("❌ NaNs detected in vhat")

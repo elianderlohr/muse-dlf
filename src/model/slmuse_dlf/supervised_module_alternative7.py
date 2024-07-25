@@ -83,58 +83,43 @@ class SLMUSESupervisedAlternative7(nn.Module):
         d_fx,
         vs,
         frameaxis_data,
-        mixed_precision="fp16",
     ):
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
-        )
 
-        with autocast(
-            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
-        ):
-            batch_size, num_sentences, num_args, embedding_dim = d_p.shape
+        batch_size, num_sentences, num_args, embedding_dim = d_p.shape
 
-            d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
-            d_a0_flatten = d_a0.view(
-                batch_size, num_sentences * num_args, embedding_dim
-            )
-            d_a1_flatten = d_a1.view(
-                batch_size, num_sentences * num_args, embedding_dim
-            )
+        d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
+        d_a0_flatten = d_a0.view(batch_size, num_sentences * num_args, embedding_dim)
+        d_a1_flatten = d_a1.view(batch_size, num_sentences * num_args, embedding_dim)
 
-            mask_p = (d_p_flatten.abs().sum(dim=-1) != 0).float()
-            mask_a0 = (d_a0_flatten.abs().sum(dim=-1) != 0).float()
-            mask_a1 = (d_a1_flatten.abs().sum(dim=-1) != 0).float()
-            mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
+        mask_p = (d_p_flatten.abs().sum(dim=-1) != 0).float()
+        mask_a0 = (d_a0_flatten.abs().sum(dim=-1) != 0).float()
+        mask_a1 = (d_a1_flatten.abs().sum(dim=-1) != 0).float()
+        mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
 
-            d_p_mean = self.weighted_mean(d_p_flatten, mask_p)
-            d_a0_mean = self.weighted_mean(d_a0_flatten, mask_a0)
-            d_a1_mean = self.weighted_mean(d_a1_flatten, mask_a1)
-            d_fx_mean = self.weighted_mean(d_fx, mask_fx)
+        d_p_mean = self.weighted_mean(d_p_flatten, mask_p)
+        d_a0_mean = self.weighted_mean(d_a0_flatten, mask_a0)
+        d_a1_mean = self.weighted_mean(d_a1_flatten, mask_a1)
+        d_fx_mean = self.weighted_mean(d_fx, mask_fx)
 
-            y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
+        y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
-            if self.concat_frameaxis:
-                vs = torch.cat([vs, frameaxis_data], dim=-1)
+        if self.concat_frameaxis:
+            vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-            vs_adjusted = self.dim_adjuster(vs)
+        vs_adjusted = self.dim_adjuster(vs)
 
-            vs_encoded = self.sentence_encoder(vs_adjusted.transpose(0, 1)).transpose(
-                0, 1
-            )
+        vs_encoded = self.sentence_encoder(vs_adjusted.transpose(0, 1)).transpose(0, 1)
 
-            y_hat_s = self.dim_reduction(vs_encoded)
+        y_hat_s = self.dim_reduction(vs_encoded)
 
-            combined = y_hat_u + y_hat_s
+        combined = y_hat_u + y_hat_s
 
-            other = {
-                "predicate": d_p_mean,
-                "arg0": d_a0_mean,
-                "arg1": d_a1_mean,
-                "frameaxis": d_fx_mean,
-            }
+        other = {
+            "predicate": d_p_mean,
+            "arg0": d_a0_mean,
+            "arg1": d_a1_mean,
+            "frameaxis": d_fx_mean,
+        }
 
         return y_hat_u, y_hat_s, combined, other
 
