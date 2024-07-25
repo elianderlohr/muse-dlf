@@ -80,6 +80,7 @@ class PreProcessor:
             "Quality of Life",
             "Security and Defense",
         ],
+        num_workers=1,
     ):
         """
         Initializes the PreProcessor.
@@ -115,6 +116,8 @@ class PreProcessor:
         self.dim_names = dim_names
 
         self.class_column_names = class_column_names
+
+        self.num_workers = num_workers
 
     def _load_data(self, path, format):
         """
@@ -404,7 +407,7 @@ class PreProcessor:
             collate_fn=custom_collate_fn,
             drop_last=True,
             pin_memory=True,
-            num_workers=1,
+            num_workers=self.num_workers,
         )
 
         test_dataloader = DataLoader(
@@ -414,7 +417,7 @@ class PreProcessor:
             collate_fn=custom_collate_fn,
             drop_last=True,
             pin_memory=True,
-            num_workers=1,
+            num_workers=self.num_workers,
         )
 
         return train_dataset, test_dataset, train_dataloader, test_dataloader
@@ -502,7 +505,7 @@ class PreProcessor:
             collate_fn=custom_collate_fn,
             drop_last=False,
             pin_memory=True,
-            num_workers=1,
+            num_workers=self.num_workers,
         )
 
         return dataset, dataloader

@@ -777,6 +777,7 @@ def main():
             path_antonym_pairs=args.path_antonym_pairs,
             dim_names=dim_names,
             class_column_names=class_column_names,
+            num_workers=4,
         )
 
         logger.info("Preprocessor loaded successfully")

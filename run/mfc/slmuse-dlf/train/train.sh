@@ -6,6 +6,7 @@
 #SBATCH --job-name=mfc-slmuse-dlf-train-4
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
+#SBATCH --cpus-per-task=16
 
 echo "===================== Job Details ====================="
 # Display job settings
