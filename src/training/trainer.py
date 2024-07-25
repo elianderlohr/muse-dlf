@@ -310,26 +310,47 @@ class Trainer:
                     )
                     arg_max_labels = torch.argmax(labels, dim=1).long()
 
-            with autocast(
-                enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
-                dtype=precision_dtype,
-            ):
-                (
-                    unsupervised_loss,
-                    span_logits,
-                    sentence_logits,
-                    combined_logits,
-                    other,
-                ) = self.model(
-                    sentence_ids,
-                    sentence_attention_masks,
-                    predicate_ids,
-                    arg0_ids,
-                    arg1_ids,
-                    frameaxis_data,
-                    tau,
-                    mixed_precision=self.mixed_precision,
-                )
+            if self.training_management == "accelerate":
+                with self.accelerator.autocast():
+                    (
+                        unsupervised_loss,
+                        span_logits,
+                        sentence_logits,
+                        combined_logits,
+                        other,
+                    ) = self.model(
+                        sentence_ids,
+                        sentence_attention_masks,
+                        predicate_ids,
+                        arg0_ids,
+                        arg1_ids,
+                        frameaxis_data,
+                        tau,
+                        mixed_precision=self.mixed_precision,
+                    )
+
+            else:
+
+                with autocast(
+                    enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
+                    dtype=precision_dtype,
+                ):
+                    (
+                        unsupervised_loss,
+                        span_logits,
+                        sentence_logits,
+                        combined_logits,
+                        other,
+                    ) = self.model(
+                        sentence_ids,
+                        sentence_attention_masks,
+                        predicate_ids,
+                        arg0_ids,
+                        arg1_ids,
+                        frameaxis_data,
+                        tau,
+                        mixed_precision=self.mixed_precision,
+                    )
 
             # Delete tensors immediately after use
             del (
@@ -384,13 +405,12 @@ class Trainer:
                 continue
 
             if self.training_management == "accelerate":
-                self.accelerator.backward(combined_loss / self.accumulation_steps)
-                if (batch_idx + 1) % self.accumulation_steps == 0 or (
-                    batch_idx + 1
-                ) == len(train_dataloader):
-                    self.accelerator.clip_grad_norm_(
-                        self.model.parameters(), self.clip_value
-                    )
+                with self.accelerator.accumulate(self.model):
+                    self.accelerator.backward(combined_loss)
+                    if self.accelerator.sync_gradients:
+                        self.accelerator.clip_grad_norm_(
+                            self.model.parameters(), self.clip_value
+                        )
                     self.optimizer.step()
                     self.scheduler.step()
                     self.optimizer.zero_grad()
@@ -932,25 +952,45 @@ class Trainer:
                     arg_max_labels = torch.argmax(labels, dim=1).long()
 
             with torch.no_grad():
-                with autocast(
-                    enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
-                    dtype=precision_dtype,
-                ):
-                    (
-                        unsupervised_loss,
-                        span_logits,
-                        sentence_logits,
-                        combined_logits,
-                        other,
-                    ) = self.model(
-                        sentence_ids,
-                        sentence_attention_masks,
-                        predicate_ids,
-                        arg0_ids,
-                        arg1_ids,
-                        frameaxis_data,
-                        tau,
-                    )
+
+                if self.training_management == "accelerate":
+                    with self.accelerator.autocast():
+                        (
+                            unsupervised_loss,
+                            span_logits,
+                            sentence_logits,
+                            combined_logits,
+                            other,
+                        ) = self.model(
+                            sentence_ids,
+                            sentence_attention_masks,
+                            predicate_ids,
+                            arg0_ids,
+                            arg1_ids,
+                            frameaxis_data,
+                            tau,
+                        )
+
+                else:
+                    with autocast(
+                        enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
+                        dtype=precision_dtype,
+                    ):
+                        (
+                            unsupervised_loss,
+                            span_logits,
+                            sentence_logits,
+                            combined_logits,
+                            other,
+                        ) = self.model(
+                            sentence_ids,
+                            sentence_attention_masks,
+                            predicate_ids,
+                            arg0_ids,
+                            arg1_ids,
+                            frameaxis_data,
+                            tau,
+                        )
 
                 span_loss = self.loss_function(span_logits, arg_max_labels)
                 sentence_loss = self.loss_function(sentence_logits, arg_max_labels)

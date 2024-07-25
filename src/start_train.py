@@ -190,13 +190,22 @@ def setup_logging(debug):
 
 
 def initialize_wandb(
-    wandb_api_key, project_name, tags, config, mixed_precision, run_name
+    wandb_api_key,
+    project_name,
+    tags,
+    config,
+    mixed_precision,
+    accumulation_steps,
+    run_name,
 ):
     try:
         wandb.login(key=wandb_api_key, timeout=120)
         kwargs = InitProcessGroupKwargs(timeout=5400)
         accelerator = Accelerator(
-            log_with="wandb", mixed_precision=mixed_precision, kwargs_handlers=[kwargs]
+            log_with="wandb",
+            mixed_precision=mixed_precision,
+            gradient_accumulation_steps=accumulation_steps,
+            kwargs_handlers=[kwargs],
         )
         accelerator.init_trackers(
             project_name,
@@ -701,6 +710,7 @@ def main():
             args.tags,
             config,
             args.mixed_precision,
+            args.accumulation_steps,
             run_name,
         )
 
