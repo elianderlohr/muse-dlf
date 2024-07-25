@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from transformers import BertTokenizer, RobertaTokenizerFast
 from torch.optim import Adam, AdamW
 from accelerate import Accelerator
+from accelerate.utils import InitProcessGroupKwargs
 import warnings
 import wandb
 
@@ -193,7 +194,10 @@ def initialize_wandb(
 ):
     try:
         wandb.login(key=wandb_api_key, timeout=120)
-        accelerator = Accelerator(log_with="wandb", mixed_precision=mixed_precision)
+        kwargs = InitProcessGroupKwargs(timeout=5400)
+        accelerator = Accelerator(
+            log_with="wandb", mixed_precision=mixed_precision, kwargs_handlers=[kwargs]
+        )
         accelerator.init_trackers(
             project_name,
             config,
