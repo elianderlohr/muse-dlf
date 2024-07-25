@@ -1,4 +1,5 @@
 import argparse
+from datetime import timedelta
 import json
 import math
 import os
@@ -200,7 +201,7 @@ def initialize_wandb(
 ):
     try:
         wandb.login(key=wandb_api_key, timeout=120)
-        kwargs = InitProcessGroupKwargs(timeout=5400)
+        kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=5400))
         accelerator = Accelerator(
             log_with="wandb",
             mixed_precision=mixed_precision,
