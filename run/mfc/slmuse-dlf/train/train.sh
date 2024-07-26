@@ -156,7 +156,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --embedding_dim 768 \
     --hidden_dim 2048 \
     --num_classes 15 \
-    --dropout_prob 0.1 \
+    --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 0.01 \
     --lr 1e-4 \
@@ -182,7 +182,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_num_layers 2 \
     --supervised_activation gelu \
     --optimizer adamw \
-    --adamw_weight_decay 0.01 \
+    --adamw_weight_decay 0.00005 \
     --ams_grad_options True \
     --sentence_pooling mean \
     --hidden_state second_to_last \
@@ -191,7 +191,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt6 \
+    --alternative_supervised alt7 \
     $DEBUG
 
 echo "______________________________________________________"
