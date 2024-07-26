@@ -326,7 +326,6 @@ class Trainer:
                         arg1_ids,
                         frameaxis_data,
                         tau,
-                        mixed_precision=self.mixed_precision,
                     )
 
             else:
@@ -349,7 +348,6 @@ class Trainer:
                         arg1_ids,
                         frameaxis_data,
                         tau,
-                        mixed_precision=self.mixed_precision,
                     )
 
             # Delete tensors immediately after use
