@@ -35,7 +35,7 @@ class Trainer:
         training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
-        early_stop=30,
+        early_stopping_patience=30,
         mixed_precision="fp16",  # "fp16"
         clip_value=1.0,
         accumulation_steps=1,
@@ -58,7 +58,7 @@ class Trainer:
         self.run_name = run_name
         self.tau_min = tau_min
         self.tau_decay = tau_decay
-        self.early_stop = early_stop
+        self.early_stopping_patience = early_stopping_patience
 
         self.save_every_n_steps = save_every_n_steps
         self.save_threshold = save_threshold
@@ -767,7 +767,10 @@ class Trainer:
                         else:
                             early_stopping["early_stop"] += 1
 
-                            if early_stopping["early_stop"] >= self.early_stop:
+                            if (
+                                early_stopping["early_stop"]
+                                >= self.early_stopping_patience
+                            ):
                                 logger.info("Early stopping triggered.")
                                 early_stopping["early_stopped"] = True
                                 return tau, early_stopping
