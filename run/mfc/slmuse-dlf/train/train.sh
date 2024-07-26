@@ -196,6 +196,9 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
 
 echo "______________________________________________________"
 
+# call wandb cache clean
+wandb artifact cache cleanup 500m
+
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
 deactivate
