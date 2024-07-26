@@ -157,7 +157,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --hidden_dim 2048 \
     --num_classes 15 \
     --dropout_prob 0.1 \
-    --alpha 0.3 \
+    --alpha 0.5 \
     --lambda_orthogonality 0.01 \
     --lr 1e-4 \
     --M 8 \
