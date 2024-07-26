@@ -328,8 +328,15 @@ class Trainer:
                         tau,
                     )
 
+                    span_loss = self.loss_function(span_logits, arg_max_labels)
+                    sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
+                    supervised_loss = span_loss + sentence_loss
+                    sum_of_parameters = sum(p.sum() for p in self.model.parameters())
+                    zero_sum = sum_of_parameters * 0.0
+                    combined_loss = (
+                        alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                    ) + zero_sum
             else:
-
                 with autocast(
                     enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
                     dtype=precision_dtype,
@@ -349,6 +356,15 @@ class Trainer:
                         frameaxis_data,
                         tau,
                     )
+
+                    span_loss = self.loss_function(span_logits, arg_max_labels)
+                    sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
+                    supervised_loss = span_loss + sentence_loss
+                    sum_of_parameters = sum(p.sum() for p in self.model.parameters())
+                    zero_sum = sum_of_parameters * 0.0
+                    combined_loss = (
+                        alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                    ) + zero_sum
 
             # Delete tensors immediately after use
             del (
@@ -376,19 +392,6 @@ class Trainer:
                     f"{experiment_id} - {batch_idx} - NaNs detected in model outputs, skipping this batch."
                 )
                 continue
-
-            span_loss = 0.0
-            sentence_loss = 0.0
-
-            span_loss = self.loss_function(span_logits, arg_max_labels)
-            sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
-            supervised_loss = span_loss + sentence_loss
-
-            sum_of_parameters = sum(p.sum() for p in self.model.parameters())
-            zero_sum = sum_of_parameters * 0.0
-            combined_loss = (
-                alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-            ) + zero_sum
 
             with torch.no_grad():
                 predicate_loss = self.loss_function(other["predicate"], arg_max_labels)
