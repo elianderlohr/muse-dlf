@@ -35,7 +35,7 @@ class Trainer:
         training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
-        early_stop=20,
+        early_stop=30,
         mixed_precision="fp16",  # "fp16"
         clip_value=1.0,
         accumulation_steps=1,
@@ -755,7 +755,7 @@ class Trainer:
 
                         if (
                             eval_accuracy[self.save_metric]
-                            > early_stopping[f"best_{self.save_metric}"]
+                            >= early_stopping[f"best_{self.save_metric}"]
                         ):
                             early_stopping["best_accuracy"] = eval_accuracy["accuracy"]
                             early_stopping["best_micro_f1"] = eval_results_micro["f1"]
@@ -770,7 +770,7 @@ class Trainer:
                             if early_stopping["early_stop"] >= self.early_stop:
                                 logger.info("Early stopping triggered.")
                                 early_stopping["early_stopped"] = True
-                                return early_stopping
+                                return tau, early_stopping
 
             except Exception as e:
                 logger.error(f"Error during metric logging at step {global_steps}: {e}")
