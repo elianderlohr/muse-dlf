@@ -498,6 +498,24 @@ def main():
     training_params.add_argument(
         "--accumulation_steps", type=int, default=2, help="Gradient accumulation steps"
     )
+    # clip_value
+    training_params.add_argument(
+        "--clip_value", type=float, default=1, help="Clip value for the gradient"
+    )
+    # focal_loss_alpha
+    training_params.add_argument(
+        "--focal_loss_alpha",
+        type=float,
+        default=1.0,
+        help="Alpha parameter for the focal loss",
+    )
+    # focal_loss_gamma
+    training_params.add_argument(
+        "--focal_loss_gamma",
+        type=float,
+        default=2.0,
+        help="Gamma parameter for the focal loss",
+    )
 
     # save_every_n_steps
     training_params.add_argument(
@@ -822,7 +840,7 @@ def main():
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
             # loss_function = nn.CrossEntropyLoss()
-            loss_function = FocalLoss(alpha=1.0, gamma=2.0)
+            loss_function = FocalLoss(alpha=args.focal_loss_alpha, gamma=args.focal_loss_gamma)
             # Modifying gamma and alpha for Focal Loss:
             #    - gamma (focusing parameter): Usually ranges from 0 to 5. Start with 2 and adjust based on performance:
             #       - Increase gamma if the model is struggling with hard examples (e.g., 2.5, 3.0).
@@ -915,6 +933,7 @@ def main():
             save_threshold=args.save_threshold,
             save_metric=args.save_metric,
             model_config=config,
+            clip_value=args.clip_value,
         )
 
         trainer = accelerator.prepare(trainer)
