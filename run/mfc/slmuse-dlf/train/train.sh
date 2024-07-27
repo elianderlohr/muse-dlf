@@ -127,6 +127,11 @@ generate_run_name() {
 # Generate a run name
 RUN_NAME=$(generate_run_name)
 
+echo "Cleanup WANDB cache..."
+# call wandb cache clean
+wandb artifact cache cleanup 500m
+echo "WANDB cache cleanup complete."
+
 # Training Script Execution
 echo "=================== Training Start ==================="
 
@@ -199,8 +204,6 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
 
 echo "______________________________________________________"
 
-# call wandb cache clean
-wandb artifact cache cleanup 500m
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
