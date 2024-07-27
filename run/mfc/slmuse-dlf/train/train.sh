@@ -93,6 +93,7 @@ clear_gpu_memory
 # NCCL configuration
 export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
 export NCCL_P2P_DISABLE=1
+export NCCL_DEBUG=INFO
 
 # Function to generate run name
 generate_run_name() {
