@@ -810,7 +810,7 @@ def main():
             path_antonym_pairs=args.path_antonym_pairs,
             dim_names=dim_names,
             class_column_names=class_column_names,
-            num_workers=4,
+            num_workers=1,
         )
 
         logger.info("Preprocessor loaded successfully")
@@ -840,7 +840,9 @@ def main():
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
             # loss_function = nn.CrossEntropyLoss()
-            loss_function = FocalLoss(alpha=args.focal_loss_alpha, gamma=args.focal_loss_gamma)
+            loss_function = FocalLoss(
+                alpha=args.focal_loss_alpha, gamma=args.focal_loss_gamma
+            )
             # Modifying gamma and alpha for Focal Loss:
             #    - gamma (focusing parameter): Usually ranges from 0 to 5. Start with 2 and adjust based on performance:
             #       - Increase gamma if the model is struggling with hard examples (e.g., 2.5, 3.0).
