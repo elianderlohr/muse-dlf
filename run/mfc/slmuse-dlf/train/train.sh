@@ -6,7 +6,6 @@
 #SBATCH --job-name=mfc-slmuse-dlf-train-4
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
-#SBATCH --cpus-per-task=16
 
 echo "===================== Job Details ====================="
 # Display job settings
@@ -90,17 +89,17 @@ function clear_gpu_memory {
 # Clear GPU memory before starting
 clear_gpu_memory
 
-# NCCL configuration
-# export TORCH_NCCL_BLOCKING_WAIT=1
-# export TORCH_NCCL_DEBUG=INFO
-# export TORCH_NCCL_DEBUG_SUBSYS=ALL
-# export NCCL_DEBUG=INFO 
-# export NCCL_DEBUG_SUBSYS=ALL
-# export NCCL_P2P_DISABLE=1
-# export NCCL_TIMEOUT=1000
+# Identify network interface for NCCL
+NCCL_IFNAME=$(ip -o -4 addr show up primary scope global | awk '{print $2}' | head -n 1)
+echo "Using network interface: $NCCL_IFNAME"
 
-# Specify network interface for NCCL
-# export NCCL_SOCKET_IFNAME=eth0
+# NCCL configuration
+export NCCL_DEBUG=INFO 
+export NCCL_SOCKET_IFNAME=$NCCL_IFNAME
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
+export NCCL_NET_GDR_LEVEL=PHB
+export NCCL_TIMEOUT=1000
 
 # Function to generate run name
 generate_run_name() {

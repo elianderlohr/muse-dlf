@@ -496,7 +496,7 @@ def main():
         help="Decay parameter for the temperature",
     )
     training_params.add_argument(
-        "--accumulation_steps", type=int, default=2, help="Gradient accumulation steps"
+        "--accumulation_steps", type=int, default=1, help="Gradient accumulation steps"
     )
     # clip_value
     training_params.add_argument(
