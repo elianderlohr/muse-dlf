@@ -2,7 +2,7 @@ compute_environment: LOCAL_MACHINE
 deepspeed_config: {}
 distributed_type: MULTI_GPU
 fsdp_config: {}
-gpu_ids: ALL
+gpu_ids: all
 machine_rank: 0
 main_process_ip: null
 main_process_port: null
