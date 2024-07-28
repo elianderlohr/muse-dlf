@@ -96,8 +96,8 @@ do
         --class_column_names "Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense" \
         --dim_names virtue,vice \
         --save_base_path models/slmuse-dlf/ \
-        --embedding_dim 2056 \
-        --hidden_dim 768 \
+        --embedding_dim 768 \
+        --hidden_dim 1536 \
         --num_classes 15 \
         --dropout_prob \$dropout_prob \
         --focal_loss_alpha \$focal_alpha \
