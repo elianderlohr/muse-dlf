@@ -14,6 +14,7 @@ class SLMUSESupervisedAlternative6(nn.Module):
         hidden_dim,  # Hidden size of the feed-forward network
         dropout_prob=0.1,  # Dropout probability
         concat_frameaxis=False,  # Whether to concatenate frameaxis with sentence
+        activation_function="relu",  # Activation function
         _debug=False,
     ):
         super(SLMUSESupervisedAlternative6, self).__init__()
@@ -27,26 +28,37 @@ class SLMUSESupervisedAlternative6(nn.Module):
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
-        self.feed_foward_setence = nn.Sequential(
-            nn.Linear(D_h * num_sentences, embedding_dim * num_sentences),
-            nn.BatchNorm1d(embedding_dim * num_sentences),
-            nn.ReLU(),
+        self.flatten = nn.Flatten(start_dim=1)
+        self.concat_frameaxis = concat_frameaxis
+        self._debug = _debug
+
+        # Define feed-forward network for sentence embeddings with gradual dimensionality reduction
+        self.feed_forward_sentence = nn.Sequential(
+            nn.Linear(D_h * num_sentences, 4096),
+            nn.BatchNorm1d(4096),
+            nn.GELU(),
             nn.Dropout(dropout_prob),
-            nn.Linear(embedding_dim * num_sentences, hidden_dim),
-            nn.ReLU(),
+            nn.Linear(4096, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.GELU(),
             nn.Dropout(dropout_prob),
             nn.Linear(hidden_dim, num_classes),
         )
 
-        # Flatten
-        self.flatten = nn.Flatten(start_dim=1)
-
-        self.concat_frameaxis = concat_frameaxis
-
-        self._debug = _debug
+        self.initialize_parameters()
 
         # Debugging:
         self.logger.debug(f"✅ MUSESupervised successfully initialized")
+
+    def initialize_parameters(self):
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.xavier_uniform_(module.weight)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+            elif isinstance(module, nn.BatchNorm1d):
+                nn.init.ones_(module.weight)
+                nn.init.zeros_(module.bias)
 
     def get_activation(self, activation_function):
         if activation_function == "relu":
@@ -119,7 +131,7 @@ class SLMUSESupervisedAlternative6(nn.Module):
 
             flattened = self.flatten(vs)
 
-            y_hat_s = self.feed_foward_setence(flattened)
+            y_hat_s = self.feed_forward_sentence(flattened)
 
             combined = y_hat_u + y_hat_s
 
@@ -129,5 +141,17 @@ class SLMUSESupervisedAlternative6(nn.Module):
                 "arg1": d_a1_mean,
                 "frameaxis": d_fx_mean,
             }
+
+        # Debugging:
+        if self._debug:
+            self.logger.debug(
+                f"Forward pass debug info: batch_size={batch_size}, num_sentences={num_sentences}, embedding_dim={embedding_dim}"
+            )
+            self.logger.debug(
+                f"Shapes - d_p_mean: {d_p_mean.shape}, d_a0_mean: {d_a0_mean.shape}, d_a1_mean: {d_a1_mean.shape}, d_fx_mean: {d_fx_mean.shape}"
+            )
+            self.logger.debug(
+                f"Shapes - y_hat_u: {y_hat_u.shape}, flattened: {flattened.shape}, y_hat_s: {y_hat_s.shape}, combined: {combined.shape}"
+            )
 
         return y_hat_u, y_hat_s, combined, other

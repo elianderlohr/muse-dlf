@@ -14,8 +14,8 @@ do
 #SBATCH --job-name=mfc-slmuse-dlf-batch-${split_id}
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
-#SBATCH --time=00:10:00
-#SBATCH --partition=devel
+#SBATCH --time=48:00:00
+#SBATCH --partition=single
 
 echo "===================== Job Details ====================="
 echo "Job settings at start:"
@@ -66,11 +66,11 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # Iterate through combinations and run them sequentially
 index=0
-while read lr dropout_prob weight_decay batch_size ams_grad
+while read lr dropout_prob weight_decay batch_size ams_grad focal_alpha focal_gamma
 do
     index=\$((index + 1))
-    run_name="run-split${split_id}-idx\${index}-lr\${lr}-dropout\${dropout_prob}-wd\${weight_decay}-bs\${batch_size}-amsgrad\${ams_grad}"
-    TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},weight_decay=\${weight_decay},batch_size=\${batch_size},amsgrad=\${ams_grad}"
+    run_name="run-split${split_id}-idx\${index}-lr\${lr}-dropout\${dropout_prob}-wd\${weight_decay}-bs\${batch_size}-amsgrad\${ams_grad}-alpha\${focal_alpha}-gamma\${focal_gamma}"
+    TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},weight_decay=\${weight_decay},batch_size=\${batch_size},amsgrad=\${ams_grad},focal_alpha=\${focal_alpha},focal_gamma=\${focal_gamma}"
 
     echo "=================== Training Start ==================="
     echo "Launching training script with Accelerate..."
@@ -92,20 +92,21 @@ do
         --class_column_names "Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense" \
         --dim_names virtue,vice \
         --save_base_path models/slmuse-dlf/ \
-        --embedding_dim 768 \
+        --embedding_dim 2056 \
         --hidden_dim 768 \
         --num_classes 15 \
         --dropout_prob \$dropout_prob \
-        --alpha 0.3 \
-        --lambda_orthogonality 0.01 \
+        --alpha \$focal_alpha \
+        --gamma \$focal_gamma \
+        --lambda_orthogonality 1e-3 \
         --lr \$lr \
         --M 8 \
         --t 8 \
         --batch_size \$batch_size \
-        --num_sentences 32 \
-        --max_sentence_length 58 \
+        --num_sentences 24 \
+        --max_sentence_length 64 \
         --max_args_per_sentence 10 \
-        --max_arg_length 10 \
+        --max_arg_length 18 \
         --muse_unsupervised_num_layers 2 \
         --muse_unsupervised_activation relu \
         --muse_unsupervised_use_batch_norm True \
@@ -116,8 +117,8 @@ do
         --muse_frameaxis_unsupervised_use_batch_norm True \
         --muse_frameaxis_unsupervised_matmul_input g \
         --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-        --num_negatives 128 \
-        --supervised_concat_frameaxis false \
+        --num_negatives 32 \
+        --supervised_concat_frameaxis True \
         --supervised_num_layers 2 \
         --supervised_activation gelu \
         --optimizer adamw \
@@ -129,7 +130,7 @@ do
         --seed 42 \
         --mixed_precision fp16 \
         --accumulation_steps 1 \
-        --alternative_supervised alt5 \
+        --alternative_supervised alt6 \
         --ams_grad_options \$ams_grad \
         \$DEBUG
 
