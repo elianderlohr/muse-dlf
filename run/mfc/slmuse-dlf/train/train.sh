@@ -99,6 +99,9 @@ export NCCL_DEBUG_SUBSYS=ALL
 export NCCL_P2P_DISABLE=1
 export NCCL_TIMEOUT=1000
 
+# Specify network interface for NCCL
+export NCCL_SOCKET_IFNAME=eth0
+
 # Function to generate run name
 generate_run_name() {
     verbs=(
