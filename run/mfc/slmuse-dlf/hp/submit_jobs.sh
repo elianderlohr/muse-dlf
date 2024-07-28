@@ -72,6 +72,10 @@ do
     run_name="run-split${split_id}-idx\${index}-lr\${lr}-dropout\${dropout_prob}-wd\${weight_decay}-bs\${batch_size}-amsgrad\${ams_grad}-alpha\${focal_alpha}-gamma\${focal_gamma}"
     TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},weight_decay=\${weight_decay},batch_size=\${batch_size},amsgrad=\${ams_grad},focal_alpha=\${focal_alpha},focal_gamma=\${focal_gamma}"
 
+    echo "Cleanup WANDB cache..."
+    wandb artifact cache cleanup 500m
+    echo "WANDB cache cleanup complete."
+
     echo "=================== Training Start ==================="
     echo "Launching training script with Accelerate..."
     accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precision fp16 --config_file run/mfc/slmuse-dlf/train/accelerate_config.yaml src/start_train.py \
@@ -96,8 +100,8 @@ do
         --hidden_dim 768 \
         --num_classes 15 \
         --dropout_prob \$dropout_prob \
-        --alpha \$focal_alpha \
-        --gamma \$focal_gamma \
+        --focal_loss_alpha \$focal_alpha \
+        --focal_loss_gamma \$focal_gamma \
         --lambda_orthogonality 1e-3 \
         --lr \$lr \
         --M 8 \
