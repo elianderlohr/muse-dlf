@@ -12,9 +12,8 @@ class SLMUSESupervisedAlternative6(nn.Module):
         frameaxis_dim,  # Frameaxis dimension
         num_sentences,  # Number of sentences
         hidden_dim,  # Hidden size of the feed-forward network
-        dropout_prob=0.1,  # Dropout probability
+        dropout_prob=0.3,  # Dropout probability
         concat_frameaxis=False,  # Whether to concatenate frameaxis with sentence
-        activation_function="relu",  # Activation function
         _debug=False,
     ):
         super(SLMUSESupervisedAlternative6, self).__init__()
@@ -34,15 +33,17 @@ class SLMUSESupervisedAlternative6(nn.Module):
 
         # Define feed-forward network for sentence embeddings with gradual dimensionality reduction
         self.feed_forward_sentence = nn.Sequential(
-            nn.Linear(D_h * num_sentences, 4096),
-            nn.BatchNorm1d(4096),
-            nn.GELU(),
+            nn.Linear(D_h * num_sentences, 8192),  # Adjusted intermediate dimension
+            nn.BatchNorm1d(8192),
+            nn.GELU(),  # Use GELU for the upper layer
             nn.Dropout(dropout_prob),
-            nn.Linear(4096, hidden_dim),
+            nn.Linear(8192, hidden_dim),  # Further reduction to the hidden dimension
             nn.BatchNorm1d(hidden_dim),
-            nn.GELU(),
+            nn.GELU(),  # Use GELU for the later layer
             nn.Dropout(dropout_prob),
-            nn.Linear(hidden_dim, num_classes),
+            nn.Linear(
+                hidden_dim, num_classes
+            ),  # Final reduction to the number of classes
         )
 
         self.initialize_parameters()
@@ -59,20 +60,6 @@ class SLMUSESupervisedAlternative6(nn.Module):
             elif isinstance(module, nn.BatchNorm1d):
                 nn.init.ones_(module.weight)
                 nn.init.zeros_(module.bias)
-
-    def get_activation(self, activation_function):
-        if activation_function == "relu":
-            return nn.ReLU()
-        elif activation_function == "gelu":
-            return nn.GELU()
-        elif activation_function == "leaky_relu":
-            return nn.LeakyReLU()
-        elif activation_function == "elu":
-            return nn.ELU()
-        else:
-            raise ValueError(
-                f"Unsupported activation function. Use 'relu', 'gelu', 'leaky_relu' or 'elu'. Found: {activation_function}."
-            )
 
     def forward(
         self,
