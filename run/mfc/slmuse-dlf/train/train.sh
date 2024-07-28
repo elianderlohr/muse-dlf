@@ -91,16 +91,16 @@ function clear_gpu_memory {
 clear_gpu_memory
 
 # NCCL configuration
-export TORCH_NCCL_BLOCKING_WAIT=1
-export TORCH_NCCL_DEBUG=INFO
-export TORCH_NCCL_DEBUG_SUBSYS=ALL
-export NCCL_DEBUG=INFO 
-export NCCL_DEBUG_SUBSYS=ALL
-export NCCL_P2P_DISABLE=1
-export NCCL_TIMEOUT=1000
+# export TORCH_NCCL_BLOCKING_WAIT=1
+# export TORCH_NCCL_DEBUG=INFO
+# export TORCH_NCCL_DEBUG_SUBSYS=ALL
+# export NCCL_DEBUG=INFO 
+# export NCCL_DEBUG_SUBSYS=ALL
+# export NCCL_P2P_DISABLE=1
+# export NCCL_TIMEOUT=1000
 
 # Specify network interface for NCCL
-export NCCL_SOCKET_IFNAME=eth0
+# export NCCL_SOCKET_IFNAME=eth0
 
 # Function to generate run name
 generate_run_name() {
