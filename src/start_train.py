@@ -539,6 +539,14 @@ def main():
         help="Save the model based on the metric",
     )
 
+    # save_model true/false
+    training_params.add_argument(
+        "--save_model",
+        type=str2bool,
+        default=True,
+        help="Save the model",
+    )
+
     # Data Processing
     data_processing = parser.add_argument_group("Data Processing")
     data_processing.add_argument(
@@ -639,6 +647,7 @@ def main():
         "--sample_size", type=int, default=-1, help="Sample size"
     )
     advanced_settings.add_argument("--seed", type=int, default=42, help="Random seed")
+
     parser.add_argument("--debug", type=str2bool, default=False, help="Debug mode")
     parser.add_argument(
         "--detect_anomaly",
@@ -936,6 +945,7 @@ def main():
             save_metric=args.save_metric,
             model_config=config,
             clip_value=args.clip_value,
+            save_model=args.save_model,
         )
 
         trainer = accelerator.prepare(trainer)

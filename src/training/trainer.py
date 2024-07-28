@@ -43,6 +43,7 @@ class Trainer:
         save_threshold=0.5,
         save_metric="accuracy",
         model_config={},
+        save_model=True,
         **kwargs,
     ):
         self.model = model.to(device)
@@ -65,6 +66,8 @@ class Trainer:
         self.save_metric = save_metric
 
         self.model_config = model_config
+
+        self.save_model = save_model
 
         # Initialize the mixed precision
         logger.info(
@@ -1225,6 +1228,10 @@ class Trainer:
 
     def _save_model(self, epoch_step=None):
         logger.info("Starting to save the model.")
+
+        if self.save_model == False:
+            logger.info("Model saving is disabled.")
+            return
 
         if (
             self.training_management == "accelerate"

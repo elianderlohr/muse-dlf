@@ -14,8 +14,8 @@ do
 #SBATCH --job-name=mfc-slmuse-dlf-batch-${split_id}
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
-#SBATCH --time=00:10:00
-#SBATCH --partition=dev_gpu_4
+#SBATCH --time=48:00:00
+#SBATCH --partition=gpu_4
 
 echo "===================== Job Details ====================="
 echo "Job settings at start:"
@@ -136,6 +136,7 @@ do
         --accumulation_steps 1 \
         --alternative_supervised alt6 \
         --ams_grad_options \$ams_grad \
+        --save_model False \
         \$DEBUG
 
     # Clear GPU memory after each run
