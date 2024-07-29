@@ -15,7 +15,7 @@ do
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
 #SBATCH --time=48:00:00
-#SBATCH --partition=simple
+#SBATCH --partition=single
 
 echo "===================== Job Details ====================="
 echo "Job settings at start:"
