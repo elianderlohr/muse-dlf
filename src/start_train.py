@@ -861,7 +861,7 @@ def main():
             alpha_normalized = alpha / alpha.sum()
 
             loss_function = FocalLoss(
-                alpha=alpha_normalized, gamma=args.focal_loss_gamma
+                alpha=alpha_normalized, gamma=args.focal_loss_gamma, reduction="sum"
             )
 
             logger.info("Loss function set to FocalLoss")
