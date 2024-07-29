@@ -58,6 +58,11 @@ class FocalLoss(nn.Module):
         return f"{type(self).__name__}({arg_str})"
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
+        # Ensure alpha is on the same device as input tensors
+        if self.alpha is not None:
+            self.alpha = self.alpha.to(x.device)
+            self.nll_loss.weight = self.alpha
+
         if x.ndim > 2:
             # (N, C, d1, d2, ..., dK) --> (N * d1 * ... * dK, C)
             c = x.shape[1]
@@ -68,7 +73,7 @@ class FocalLoss(nn.Module):
         unignored_mask = y != self.ignore_index
         y = y[unignored_mask]
         if len(y) == 0:
-            return torch.tensor(0.0)
+            return torch.tensor(0.0, device=x.device)
         x = x[unignored_mask]
 
         # compute weighted cross entropy term: -alpha * log(pt)
@@ -77,7 +82,7 @@ class FocalLoss(nn.Module):
         ce = self.nll_loss(log_p, y)
 
         # get true class column from each row
-        all_rows = torch.arange(len(x))
+        all_rows = torch.arange(len(x), device=x.device)
         log_pt = log_p[all_rows, y]
 
         # compute focal term: (1 - pt)^gamma
