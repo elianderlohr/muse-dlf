@@ -240,6 +240,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=True,
+        random_state=42,
         device=-1,
     ):
         """
@@ -269,7 +270,7 @@ class PreProcessor:
         if train_mode:
             # Split the merged DataFrame into train and test sets
             train_df, test_df = train_test_split(
-                merged_df, test_size=self.test_size, random_state=42
+                merged_df, test_size=self.test_size, random_state=random_state
             )
 
             # Reset indices for train and test DataFrames
@@ -351,7 +352,7 @@ class PreProcessor:
                 train_mode=train_mode,
             )
 
-            return train_dataset, test_dataset
+            return train_dataset, test_dataset, train_df, test_df
         else:
             X_text = merged_df["text"]
 
@@ -372,7 +373,44 @@ class PreProcessor:
                 train_mode=train_mode,
             )
 
-            return dataset
+            return dataset, merged_df
+
+    def get_dataframe(
+        self,
+        path,
+        format,
+        dataframe_path={
+            "srl": "data/srls/mfc/srls.pkl",
+            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+            "frameaxis_microframe": "data/frameaxis/mfc/frameaxis_microframes.pkl",
+        },
+        force_recalculate={
+            "srl": False,
+            "frameaxis": False,
+        },
+        train_mode=True,
+        random_state=42,
+    ):
+        if train_mode:
+            _, _, train_df, test_df = self.get_dataset(
+                path,
+                format,
+                dataframe_path,
+                force_recalculate,
+                train_mode=train_mode,
+                random_state=random_state,
+            )
+            return train_df, test_df
+        else:
+            _, df = self.get_dataset(
+                path,
+                format,
+                dataframe_path,
+                force_recalculate,
+                train_mode=train_mode,
+                random_state=random_state,
+            )
+            return df
 
     def get_dataloader(
         self,
@@ -387,9 +425,15 @@ class PreProcessor:
             "frameaxis": False,
         },
         sample_size=None,
+        random_state=42,
     ):
-        train_dataset, test_dataset = self.get_dataset(
-            path, format, dataframe_path, force_recalculate, train_mode=True
+        train_dataset, test_dataset, _, _ = self.get_dataset(
+            path,
+            format,
+            dataframe_path,
+            force_recalculate,
+            train_mode=True,
+            random_state=random_state,
         )
 
         if sample_size > 0:

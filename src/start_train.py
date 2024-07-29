@@ -28,6 +28,7 @@ from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
 from utils.wandb_utils import save_model_to_wandb
+from utils.focal_loss import FocalLoss
 
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
@@ -239,26 +240,6 @@ def set_custom_seed(seed):
     except Exception as e:
         print(f"Error setting seed: {e}")
         raise
-
-
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2, reduction="mean"):
-        super(FocalLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.reduction = reduction
-
-    def forward(self, inputs, targets):
-        ce_loss = F.cross_entropy(inputs, targets, reduction="none")
-        pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
-
-        if self.reduction == "mean":
-            return focal_loss.mean()
-        elif self.reduction == "sum":
-            return focal_loss.sum()
-        else:
-            return focal_loss
 
 
 def main():
@@ -848,18 +829,41 @@ def main():
 
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
-            # loss_function = nn.CrossEntropyLoss()
+            # Create a dictionary of label names and their frequencies
+            class_freq_dict = {
+                "Capacity and Resources": 0.035401,
+                "Crime and Punishment": 0.135367,
+                "Cultural Identity": 0.093729,
+                "Economic": 0.069791,
+                "External Regulation and Reputation": 0.022252,
+                "Fairness and Equality": 0.026129,
+                "Health and Safety": 0.040290,
+                "Legality, Constitutionality, Jurisdiction": 0.161328,
+                "Morality": 0.012812,
+                "Other": 0.001517,
+                "Policy Prescription and Evaluation": 0.079737,
+                "Political": 0.163351,
+                "Public Sentiment": 0.040964,
+                "Quality of Life": 0.069117,
+                "Security and Defense": 0.048213,
+            }
+
+            # Convert the dictionary values to a list
+            class_freq_list = list(class_freq_dict.values())
+
+            # Create a PyTorch tensor from the list
+            class_freq_tensor = torch.tensor(class_freq_list)
+
+            # Calculate alpha values (inverse of frequencies)
+            alpha = 1 / class_freq_tensor
+
+            # Normalize alpha values so they sum to 1
+            alpha_normalized = alpha / alpha.sum()
+
             loss_function = FocalLoss(
-                alpha=args.focal_loss_alpha, gamma=args.focal_loss_gamma
+                alpha=alpha_normalized, gamma=args.focal_loss_gamma
             )
-            # Modifying gamma and alpha for Focal Loss:
-            #    - gamma (focusing parameter): Usually ranges from 0 to 5. Start with 2 and adjust based on performance:
-            #       - Increase gamma if the model is struggling with hard examples (e.g., 2.5, 3.0).
-            #       - Decrease gamma if the model is overfitting or ignoring easy examples (e.g., 1.5, 1.0).
-            #    - alpha (balancing factor): Typically ranges from 0.25 to 0.75 for imbalanced datasets:
-            #       - If classes are balanced, keep it at 1.0.
-            #       - For imbalanced datasets, set alpha lower (e.g., 0.25, 0.5) to focus more on the majority class, or higher (e.g., 0.75) to focus on the minority class.
-            #    Good starting values are gamma=2.0 and alpha=1.0. Then adjust based on your model's performance.
+
             logger.info("Loss function set to FocalLoss")
         else:
             loss_function = nn.BCEWithLogitsLoss()
