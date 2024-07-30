@@ -405,26 +405,15 @@ class SLMUSEDLF(nn.Module):
             frameaxis_data, num_negatives=self.num_negatives
         )
 
-        valid_counts = torch.zeros(
-            (sentence_embeddings.size(0),), device=sentence_embeddings.device
-        )
-
-        sentence_loss_p = torch.zeros(
-            (sentence_embeddings.size(0),), device=sentence_embeddings.device
-        )
-        sentence_loss_a0 = torch.zeros(
-            (sentence_embeddings.size(0),), device=sentence_embeddings.device
-        )
-        sentence_loss_a1 = torch.zeros(
-            (sentence_embeddings.size(0),), device=sentence_embeddings.device
-        )
-        sentence_loss_fx = torch.zeros(
-            (sentence_embeddings.size(0),), device=sentence_embeddings.device
-        )
+        # Initialize per-batch tracking
+        valid_counts = torch.zeros(batch_size, device=sentence_embeddings.device)
+        losses_p = torch.zeros(batch_size, device=sentence_embeddings.device)
+        losses_a0 = torch.zeros(batch_size, device=sentence_embeddings.device)
+        losses_a1 = torch.zeros(batch_size, device=sentence_embeddings.device)
+        losses_fx = torch.zeros(batch_size, device=sentence_embeddings.device)
 
         # Process each sentence
         for sentence_idx in range(sentence_embeddings.size(1)):
-
             self.logger.debug(f"###################################")
             self.logger.debug(f"Processing sentence: {sentence_idx}")
 
@@ -437,7 +426,6 @@ class SLMUSEDLF(nn.Module):
 
             # run if sentence embedding is not all zeros
             if not torch.all(s_sentence_span == 0):
-
                 # Process each span
                 for span_idx in range(predicate_embeddings.size(2)):
                     v_p_span = predicate_embeddings[:, sentence_idx, span_idx, :]
@@ -481,19 +469,13 @@ class SLMUSEDLF(nn.Module):
                             tau,
                         )
 
-                        sentence_loss_p += (
-                            unsupervised_results["loss_p"] * (mask_p).float()
-                        )
-                        sentence_loss_a0 += (
-                            unsupervised_results["loss_a0"] * (mask_a0).float()
-                        )
-                        sentence_loss_a1 += (
-                            unsupervised_results["loss_a1"] * (mask_a1).float()
-                        )
+                        losses_p += unsupervised_results["loss_p"] * mask_p.float()
+                        losses_a0 += unsupervised_results["loss_a0"] * mask_a0.float()
+                        losses_a1 += unsupervised_results["loss_a1"] * mask_a1.float()
 
-                        valid_counts += (mask_p).float()
-                        valid_counts += (mask_a0).float()
-                        valid_counts += (mask_a1).float()
+                        valid_counts += (
+                            mask_p.float() + mask_a0.float() + mask_a1.float()
+                        )
 
                         # Use the vhat (reconstructed embeddings) for supervised predictions
                         d_p_sentence_list.append(unsupervised_results["p"]["d"])
@@ -550,8 +532,8 @@ class SLMUSEDLF(nn.Module):
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
 
                 # Add the loss to the unsupervised losses
-                sentence_loss_fx += unsupervised_fx_results["loss"] * (mask_fx).float()
-                valid_counts += (mask_fx).float()
+                losses_fx += unsupervised_fx_results["loss"] * mask_fx.float()
+                valid_counts += mask_fx.float()
 
                 # Delete unsupervised_fx_results to free memory
                 del unsupervised_fx_results, mask_fx
@@ -562,7 +544,6 @@ class SLMUSEDLF(nn.Module):
                 )
 
                 for span_idx in range(predicate_embeddings.size(2)):
-
                     d_p_sentence_list.append(
                         torch.zeros(
                             (
@@ -635,90 +616,81 @@ class SLMUSEDLF(nn.Module):
             del d_p_sentence_list, d_a0_sentence_list, d_a1_sentence_list
             torch.cuda.empty_cache()
 
-            # Aggregating across all sentences
-            if len(d_p_list) > 0:
-                max_dim = max(d.shape[-1] for d in d_p_list)
-                d_p_list = [
-                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
-                    for d in d_p_list
-                ]
-            if len(d_a0_list) > 0:
-                max_dim = max(d.shape[-1] for d in d_a0_list)
-                d_a0_list = [
-                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
-                    for d in d_a0_list
-                ]
-            if len(d_a1_list) > 0:
-                max_dim = max(d.shape[-1] for d in d_a1_list)
-                d_a1_list = [
-                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
-                    for d in d_a1_list
-                ]
-            if len(d_fx_list) > 0:
-                max_dim = max(d.shape[-1] for d in d_fx_list)
-                d_fx_list = [
-                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
-                    for d in d_fx_list
-                ]
+        # Aggregating across all sentences
+        if len(d_p_list) > 0:
+            max_dim = max(d.shape[-1] for d in d_p_list)
+            d_p_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1])) for d in d_p_list
+            ]
+        if len(d_a0_list) > 0:
+            max_dim = max(d.shape[-1] for d in d_a0_list)
+            d_a0_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                for d in d_a0_list
+            ]
+        if len(d_a1_list) > 0:
+            max_dim = max(d.shape[-1] for d in d_a1_list)
+            d_a1_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                for d in d_a1_list
+            ]
+        if len(d_fx_list) > 0:
+            max_dim = max(d.shape[-1] for d in d_fx_list)
+            d_fx_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                for d in d_fx_list
+            ]
 
-            d_p_aggregated = (
-                torch.stack(d_p_list, dim=1)
-                if d_p_list
-                else torch.tensor([], device=sentence_embeddings.device)
-            )
-            d_a0_aggregated = (
-                torch.stack(d_a0_list, dim=1)
-                if d_a0_list
-                else torch.tensor([], device=sentence_embeddings.device)
-            )
-            d_a1_aggregated = (
-                torch.stack(d_a1_list, dim=1)
-                if d_a1_list
-                else torch.tensor([], device=sentence_embeddings.device)
-            )
-            d_fx_aggregated = (
-                torch.stack(d_fx_list, dim=1)
-                if d_fx_list
-                else torch.tensor([], device=sentence_embeddings.device)
-            )
+        d_p_aggregated = (
+            torch.stack(d_p_list, dim=1)
+            if d_p_list
+            else torch.tensor([], device=sentence_embeddings.device)
+        )
+        d_a0_aggregated = (
+            torch.stack(d_a0_list, dim=1)
+            if d_a0_list
+            else torch.tensor([], device=sentence_embeddings.device)
+        )
+        d_a1_aggregated = (
+            torch.stack(d_a1_list, dim=1)
+            if d_a1_list
+            else torch.tensor([], device=sentence_embeddings.device)
+        )
+        d_fx_aggregated = (
+            torch.stack(d_fx_list, dim=1)
+            if d_fx_list
+            else torch.tensor([], device=sentence_embeddings.device)
+        )
 
-            # Supervised predictions
-            span_pred, sentence_pred, combined_pred, other = self.supervised(
-                d_p_aggregated,
-                d_a0_aggregated,
-                d_a1_aggregated,
-                d_fx_aggregated,
-                sentence_embeddings,
-                frameaxis_data,
-            )
+        # Supervised predictions
+        span_pred, sentence_pred, combined_pred, other = self.supervised(
+            d_p_aggregated,
+            d_a0_aggregated,
+            d_a1_aggregated,
+            d_fx_aggregated,
+            sentence_embeddings,
+            frameaxis_data,
+        )
 
-            # finalize unsupervised loss calc
-            self.logger.debug(f"sentence_loss_p.sum(): {sentence_loss_p.sum()}")
-            self.logger.debug(f"sentence_loss_a0.sum(): {sentence_loss_a0.sum()}")
-            self.logger.debug(f"sentence_loss_a1.sum(): {sentence_loss_a1.sum()}")
-            self.logger.debug(f"sentence_loss_fx.sum(): {sentence_loss_fx.sum()}")
+        # Calculate mean losses per batch
+        mean_loss_p = losses_p.sum() / valid_counts
+        mean_loss_a0 = losses_a0.sum() / valid_counts
+        mean_loss_a1 = losses_a1.sum() / valid_counts
+        mean_loss_fx = losses_fx.sum() / valid_counts
 
-            self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
+        # Calculate mean unsupervised loss across all batches
+        unsupervised_loss = (
+            mean_loss_p + mean_loss_a0 + mean_loss_a1 + mean_loss_fx
+        ).mean()
 
-            denominator = batch_size  # valid_counts.sum() * batch_size
+        self.logger.debug(f"Mean loss_p: {mean_loss_p.mean()}")
+        self.logger.debug(f"Mean loss_a0: {mean_loss_a0.mean()}")
+        self.logger.debug(f"Mean loss_a1: {mean_loss_a1.mean()}")
+        self.logger.debug(f"Mean loss_fx: {mean_loss_fx.mean()}")
+        self.logger.debug(f"Unsupervised loss: {unsupervised_loss}")
 
-            # add ortho term to each unsupervised loss
-            span_p_loss = sentence_loss_p.sum()
-            span_a0_loss = sentence_loss_a0.sum()
-            span_a1_loss = sentence_loss_a1.sum()
-            span_fx_loss = sentence_loss_fx.sum()
+        # Delete aggregated tensors after use
+        del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
+        torch.cuda.empty_cache()
 
-            # sum span losses
-            unsupervised_loss = (
-                span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss
-            ) / denominator
-
-            self.logger.debug(
-                f"unsupervised_loss: {span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss} / {denominator} = {unsupervised_loss}"
-            )
-
-            # Delete aggregated tensors after use
-            del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
-            torch.cuda.empty_cache()
-
-            return unsupervised_loss, span_pred, sentence_pred, combined_pred, other
+        return unsupervised_loss, span_pred, sentence_pred, combined_pred, other
