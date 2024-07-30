@@ -82,9 +82,8 @@ class SLMUSEEmbeddings(nn.Module):
         test_attention_masks = torch.ones_like(test_ids)
 
         with torch.no_grad():
-            with autocast():
-                outputs = model(input_ids=test_ids, attention_mask=test_attention_masks)
-                embeddings = outputs.last_hidden_state
+            outputs = model(input_ids=test_ids, attention_mask=test_attention_masks)
+            embeddings = outputs.last_hidden_state
 
         if torch.isnan(embeddings).any():
             raise ValueError("NaNs found in test embeddings after loading the model")
