@@ -700,7 +700,7 @@ class SLMUSEDLF(nn.Module):
 
             self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
 
-            denominator = valid_counts.sum() * batch_size
+            denominator = batch_size  # valid_counts.sum() * batch_size
 
             # add ortho term to each unsupervised loss
             span_p_loss = sentence_loss_p.sum()
