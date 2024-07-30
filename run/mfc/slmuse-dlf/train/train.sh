@@ -204,8 +204,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --accumulation_steps 1 \
     --alternative_supervised alt6 \
     --clip_value 1 \
-    --focal_loss_alpha 0.85 \
-    --focal_loss_gamma 2.5 \
+    --focal_loss_gamma 2 \
     $DEBUG
 
 echo "______________________________________________________"

@@ -858,7 +858,7 @@ def main():
             loss_function = FocalLoss(
                 alpha=alpha_inverse,
                 gamma=args.focal_loss_gamma,
-                reduction="sum",
+                reduction="mean",
             )
 
             logger.info("Loss function set to FocalLoss")
