@@ -682,7 +682,9 @@ class SLMUSEDLF(nn.Module):
         batch_loss_fx = losses_fx / valid_counts_fx.clamp(min=1)
 
         # Average the losses across p, a0, a1, and fx for each batch
-        batch_unsupervised_loss = (batch_loss_p + batch_loss_a0 + batch_loss_a1 + batch_loss_fx) / 4
+        batch_unsupervised_loss = (
+            batch_loss_p + batch_loss_a0 + batch_loss_a1 + batch_loss_fx
+        ) / 4
 
         # Calculate mean unsupervised loss across all batches
         unsupervised_loss = batch_unsupervised_loss.mean()
@@ -691,7 +693,7 @@ class SLMUSEDLF(nn.Module):
         self.logger.debug(f"Mean loss_a0: {batch_loss_a0.mean()}")
         self.logger.debug(f"Mean loss_a1: {batch_loss_a1.mean()}")
         self.logger.debug(f"Mean loss_fx: {batch_loss_fx.mean()}")
-        self.logger.debug(f"Average loss per batch: {batch_unsupervised_loss.mean()}")
+        self.logger.debug(f"Average loss per batch: {batch_unsupervised_loss}")
         self.logger.debug(f"Final unsupervised loss: {unsupervised_loss}")
 
         # Delete aggregated tensors after use
