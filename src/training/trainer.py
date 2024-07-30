@@ -336,7 +336,7 @@ class Trainer:
                     span_loss = self.loss_function(span_logits, arg_max_labels)
                     sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
                     supervised_loss = (supervised_alpha * span_loss) + (
-                        1 - supervised_alpha * sentence_loss
+                        (1 - supervised_alpha) * sentence_loss
                     )
                     sum_of_parameters = sum(p.sum() for p in self.model.parameters())
                     zero_sum = sum_of_parameters * 0.0
