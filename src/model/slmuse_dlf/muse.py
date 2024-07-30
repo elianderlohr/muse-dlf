@@ -700,7 +700,7 @@ class SLMUSEDLF(nn.Module):
 
             self.logger.debug(f"valid_counts.sum(): {valid_counts.sum()}")
 
-            denominator = valid_counts.sum()  #  * batch_size
+            denominator = valid_counts.sum() * batch_size
 
             # add ortho term to each unsupervised loss
             span_p_loss = sentence_loss_p.sum()
@@ -711,7 +711,7 @@ class SLMUSEDLF(nn.Module):
             # sum span losses
             unsupervised_loss = (
                 span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss
-            ) / (denominator)
+            ) / denominator
 
             self.logger.debug(
                 f"unsupervised_loss: {span_p_loss + span_a0_loss + span_a1_loss + span_fx_loss} / {denominator} = {unsupervised_loss}"

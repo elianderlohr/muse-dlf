@@ -848,20 +848,17 @@ def main():
                 "Security and Defense": 0.048213,
             }
 
-            # Convert the dictionary values to a list
-            class_freq_list = list(class_freq_dict.values())
-
-            # Create a PyTorch tensor from the list
-            class_freq_tensor = torch.tensor(class_freq_list)
-
-            # Calculate alpha values (inverse of frequencies)
-            alpha = 1 / class_freq_tensor
+            class_freqs = list(class_freq_dict.values())
 
             # Normalize alpha values so they sum to 1
-            alpha_normalized = alpha / alpha.sum()
+            alpha_inverse = torch.tensor(
+                [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
+            ).to(accelerator.device)
 
             loss_function = FocalLoss(
-                alpha=alpha_normalized, gamma=args.focal_loss_gamma, reduction="sum"
+                alpha=alpha_inverse,
+                gamma=args.focal_loss_gamma,
+                reduction="sum",
             )
 
             logger.info("Loss function set to FocalLoss")
