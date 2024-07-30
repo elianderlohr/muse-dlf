@@ -405,8 +405,11 @@ class SLMUSEDLF(nn.Module):
             frameaxis_data, num_negatives=self.num_negatives
         )
 
-        # Initialize per-batch tracking
-        valid_counts = torch.zeros(batch_size, device=sentence_embeddings.device)
+        # Initialize per-batch tracking with separate valid counts
+        valid_counts_p = torch.zeros(batch_size, device=sentence_embeddings.device)
+        valid_counts_a0 = torch.zeros(batch_size, device=sentence_embeddings.device)
+        valid_counts_a1 = torch.zeros(batch_size, device=sentence_embeddings.device)
+        valid_counts_fx = torch.zeros(batch_size, device=sentence_embeddings.device)
         losses_p = torch.zeros(batch_size, device=sentence_embeddings.device)
         losses_a0 = torch.zeros(batch_size, device=sentence_embeddings.device)
         losses_a1 = torch.zeros(batch_size, device=sentence_embeddings.device)
@@ -473,9 +476,9 @@ class SLMUSEDLF(nn.Module):
                         losses_a0 += unsupervised_results["loss_a0"] * mask_a0.float()
                         losses_a1 += unsupervised_results["loss_a1"] * mask_a1.float()
 
-                        valid_counts += (
-                            mask_p.float() + mask_a0.float() + mask_a1.float()
-                        )
+                        valid_counts_p += mask_p.float()
+                        valid_counts_a0 += mask_a0.float()
+                        valid_counts_a1 += mask_a1.float()
 
                         # Use the vhat (reconstructed embeddings) for supervised predictions
                         d_p_sentence_list.append(unsupervised_results["p"]["d"])
@@ -533,7 +536,7 @@ class SLMUSEDLF(nn.Module):
 
                 # Add the loss to the unsupervised losses
                 losses_fx += unsupervised_fx_results["loss"] * mask_fx.float()
-                valid_counts += mask_fx.float()
+                valid_counts_fx += mask_fx.float()
 
                 # Delete unsupervised_fx_results to free memory
                 del unsupervised_fx_results, mask_fx
@@ -672,22 +675,24 @@ class SLMUSEDLF(nn.Module):
             frameaxis_data,
         )
 
-        # Calculate mean losses per batch
-        mean_loss_p = losses_p.sum() / valid_counts
-        mean_loss_a0 = losses_a0.sum() / valid_counts
-        mean_loss_a1 = losses_a1.sum() / valid_counts
-        mean_loss_fx = losses_fx.sum() / valid_counts
+        # Calculate mean losses per batch for each argument type
+        batch_loss_p = losses_p / valid_counts_p.clamp(min=1)
+        batch_loss_a0 = losses_a0 / valid_counts_a0.clamp(min=1)
+        batch_loss_a1 = losses_a1 / valid_counts_a1.clamp(min=1)
+        batch_loss_fx = losses_fx / valid_counts_fx.clamp(min=1)
+
+        # Average the losses across p, a0, a1, and fx for each batch
+        batch_unsupervised_loss = (batch_loss_p + batch_loss_a0 + batch_loss_a1 + batch_loss_fx) / 4
 
         # Calculate mean unsupervised loss across all batches
-        unsupervised_loss = (
-            mean_loss_p + mean_loss_a0 + mean_loss_a1 + mean_loss_fx
-        ).mean()
+        unsupervised_loss = batch_unsupervised_loss.mean()
 
-        self.logger.debug(f"Mean loss_p: {mean_loss_p.mean()}")
-        self.logger.debug(f"Mean loss_a0: {mean_loss_a0.mean()}")
-        self.logger.debug(f"Mean loss_a1: {mean_loss_a1.mean()}")
-        self.logger.debug(f"Mean loss_fx: {mean_loss_fx.mean()}")
-        self.logger.debug(f"Unsupervised loss: {unsupervised_loss}")
+        self.logger.debug(f"Mean loss_p: {batch_loss_p.mean()}")
+        self.logger.debug(f"Mean loss_a0: {batch_loss_a0.mean()}")
+        self.logger.debug(f"Mean loss_a1: {batch_loss_a1.mean()}")
+        self.logger.debug(f"Mean loss_fx: {batch_loss_fx.mean()}")
+        self.logger.debug(f"Average loss per batch: {batch_unsupervised_loss.mean()}")
+        self.logger.debug(f"Final unsupervised loss: {unsupervised_loss}")
 
         # Delete aggregated tensors after use
         del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
