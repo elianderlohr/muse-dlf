@@ -768,11 +768,17 @@ class Trainer:
                             combined_labels_np, combined_pred_np, output_dict=True
                         )
 
-                        # Print the classification report
-                        print("\nPer-class metrics for training data:")
-                        print(
-                            classification_report(combined_labels_np, combined_pred_np)
-                        )
+                        if (
+                            self.training_management == "accelerate"
+                            and self.accelerator.is_main_process
+                        ) or (self.training_management != "accelerate"):
+                            # Print the classification report
+                            logger.info("\nPer-class metrics for training data:")
+                            logger.info(
+                                classification_report(
+                                    combined_labels_np, combined_pred_np
+                                )
+                            )
 
                         # Log per-class metrics
                         for class_name, metrics in class_report.items():
@@ -1208,11 +1214,17 @@ class Trainer:
         all_combined_labels = torch.cat(all_combined_labels).numpy()
 
         # Generate classification report
-        class_report = classification_report(all_combined_labels, all_combined_preds, output_dict=True)
+        class_report = classification_report(
+            all_combined_labels, all_combined_preds, output_dict=True
+        )
 
-        # Print the classification report
-        print("\nPer-class metrics for evaluation data:")
-        print(classification_report(all_combined_labels, all_combined_preds))
+        if (
+            self.training_management == "accelerate"
+            and self.accelerator.is_main_process
+        ) or (self.training_management != "accelerate"):
+            # Print the classification report
+            logger.info("\nPer-class metrics for evaluation data:")
+            logger.info(classification_report(all_combined_labels, all_combined_preds))
 
         # Micro F1
         eval_results_micro = f1_metric_micro.compute(average="micro")
@@ -1283,12 +1295,18 @@ class Trainer:
 
         # Add per-class metrics to the metrics dictionary
         for class_name, class_metrics in class_report.items():
-            if isinstance(class_metrics, dict):  # Skip 'accuracy', 'macro avg', 'weighted avg'
-                metrics.update({
-                    f"eval_precision_class_{class_name}": class_metrics['precision'],
-                    f"eval_recall_class_{class_name}": class_metrics['recall'],
-                    f"eval_f1_class_{class_name}": class_metrics['f1-score'],
-                })
+            if isinstance(
+                class_metrics, dict
+            ):  # Skip 'accuracy', 'macro avg', 'weighted avg'
+                metrics.update(
+                    {
+                        f"eval_precision_class_{class_name}": class_metrics[
+                            "precision"
+                        ],
+                        f"eval_recall_class_{class_name}": class_metrics["recall"],
+                        f"eval_f1_class_{class_name}": class_metrics["f1-score"],
+                    }
+                )
 
         self._log_metrics(metrics)
 
