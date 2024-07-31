@@ -7,69 +7,51 @@ from torch.cuda.amp import autocast
 class SLMUSESupervisedAlternative6(nn.Module):
     def __init__(
         self,
-        embedding_dim,  # Embedding dimension (e.g. RoBERTa 768)
-        num_classes,  # Number of classes to predict
-        frameaxis_dim,  # Frameaxis dimension
-        num_sentences,  # Number of sentences
-        hidden_dim,  # Hidden size of the feed-forward network
-        dropout_prob=0.3,  # Dropout probability
-        concat_frameaxis=False,  # Whether to concatenate frameaxis with sentence
+        embedding_dim,
+        num_classes,
+        frameaxis_dim,
+        num_sentences,
+        hidden_dim,
+        dropout_prob=0.3,
+        concat_frameaxis=False,
         _debug=False,
     ):
         super(SLMUSESupervisedAlternative6, self).__init__()
 
-        # init logger
         self.logger = LoggerManager.get_logger(__name__)
-
         self.embedding_dim = embedding_dim
         self.frameaxis_dim = frameaxis_dim
         self.num_classes = num_classes
+        self.concat_frameaxis = concat_frameaxis
+        self._debug = _debug
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
         self.flatten = nn.Flatten(start_dim=1)
-        self.concat_frameaxis = concat_frameaxis
-        self._debug = _debug
 
-        # Define feed-forward network for sentence embeddings with gradual dimensionality reduction
+        # Define feed-forward network for sentence embeddings
         self.feed_forward_sentence = nn.Sequential(
-            nn.Linear(D_h * num_sentences, 8192),  # Adjusted intermediate dimension
-            nn.BatchNorm1d(8192),
-            nn.GELU(),  # Use GELU for the upper layer
-            nn.Dropout(dropout_prob),
-            nn.Linear(8192, hidden_dim),  # Further reduction to the hidden dimension
-            nn.BatchNorm1d(hidden_dim),
-            nn.GELU(),  # Use GELU for the later layer
+            nn.Linear(D_h * num_sentences, embedding_dim * num_sentences),
+            nn.BatchNorm1d(embedding_dim * num_sentences),
+            nn.GELU(),
             nn.Dropout(dropout_prob),
             nn.Linear(
-                hidden_dim, num_classes
-            ),  # Final reduction to the number of classes
+                embedding_dim * num_sentences, embedding_dim * (num_sentences // 2)
+            ),
+            nn.BatchNorm1d(embedding_dim * (num_sentences // 2)),
+            nn.GELU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(embedding_dim * (num_sentences // 2), hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(hidden_dim, num_classes),
         )
 
-        self.initialize_parameters()
-
-        # Debugging:
-        self.logger.debug(f"✅ MUSESupervised successfully initialized")
-
-    def initialize_parameters(self):
-        for module in self.modules():
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.zeros_(module.bias)
-            elif isinstance(module, nn.BatchNorm1d):
-                nn.init.ones_(module.weight)
-                nn.init.zeros_(module.bias)
+        self.logger.debug("✅ SLMUSESupervisedAlternative6 successfully initialized")
 
     def forward(
-        self,
-        d_p,
-        d_a0,
-        d_a1,
-        d_fx,
-        vs,
-        frameaxis_data,
-        mixed_precision="fp16",  # mixed precision as a parameter
+        self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data, mixed_precision="fp16"
     ):
         precision_dtype = (
             torch.float16
@@ -117,9 +99,7 @@ class SLMUSESupervisedAlternative6(nn.Module):
                 vs = torch.cat([vs, frameaxis_data], dim=-1)
 
             flattened = self.flatten(vs)
-
             y_hat_s = self.feed_forward_sentence(flattened)
-
             combined = y_hat_u + y_hat_s
 
             other = {
@@ -129,7 +109,6 @@ class SLMUSESupervisedAlternative6(nn.Module):
                 "frameaxis": d_fx_mean,
             }
 
-        # Debugging:
         if self._debug:
             self.logger.debug(
                 f"Forward pass debug info: batch_size={batch_size}, num_sentences={num_sentences}, embedding_dim={embedding_dim}"
