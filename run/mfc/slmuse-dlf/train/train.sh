@@ -165,25 +165,25 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dim_names virtue,vice \
     --save_base_path $SAVE_BASE_PATH \
     --embedding_dim 768 \
-    --hidden_dim 2056 \
+    --hidden_dim 768 \
     --num_classes 15 \
     --dropout_prob 0.3 \
-    --alpha 0.7 \
+    --alpha 0.5 \
     --lambda_orthogonality 1e-3 \
-    --lr 2e-5 \
+    --lr 2e-4 \
     --M 8 \
     --t 8 \
-    --batch_size 32 \
+    --batch_size 64 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
     --max_arg_length 18 \
-    --muse_unsupervised_num_layers 3 \
+    --muse_unsupervised_num_layers 1 \
     --muse_unsupervised_activation gelu \
     --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
     --muse_unsupervised_gumbel_softmax_log False \
-    --muse_frameaxis_unsupervised_num_layers 3 \
+    --muse_frameaxis_unsupervised_num_layers 1 \
     --muse_frameaxis_unsupervised_activation gelu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
@@ -193,7 +193,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_num_layers 2 \
     --supervised_activation gelu \
     --optimizer adamw \
-    --adamw_weight_decay 5e-5 \
+    --adamw_weight_decay 5e-7 \
     --ams_grad_options True \
     --sentence_pooling mean \
     --hidden_state second_to_last \
