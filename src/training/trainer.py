@@ -9,6 +9,7 @@ import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast, GradScaler
+from sklearn.metrics import classification_report
 
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
@@ -554,6 +555,10 @@ class Trainer:
                             arg1_labels = labels
                             frameaxis_labels = labels
 
+                        # Add per-class evaluation
+                        combined_pred_np = combined_pred.cpu().numpy()
+                        combined_labels_np = combined_labels.cpu().numpy()
+
                         # Transform from one-hot to class index
                         combined_pred = combined_pred.argmax(dim=1)
                         span_pred = span_pred.argmax(dim=1)
@@ -758,6 +763,39 @@ class Trainer:
 
                         self._log_metrics(metrics)
 
+                        # Generate classification report
+                        class_report = classification_report(
+                            combined_labels_np, combined_pred_np, output_dict=True
+                        )
+
+                        # Print the classification report
+                        print("\nPer-class metrics for training data:")
+                        print(
+                            classification_report(combined_labels_np, combined_pred_np)
+                        )
+
+                        # Log per-class metrics
+                        for class_name, metrics in class_report.items():
+                            if isinstance(
+                                metrics, dict
+                            ):  # Skip 'accuracy', 'macro avg', 'weighted avg'
+                                self._log_metrics(
+                                    {
+                                        f"train_precision_class_{class_name}": metrics[
+                                            "precision"
+                                        ],
+                                        f"train_recall_class_{class_name}": metrics[
+                                            "recall"
+                                        ],
+                                        f"train_f1_class_{class_name}": metrics[
+                                            "f1-score"
+                                        ],
+                                        "epoch": epoch,
+                                        "batch": global_steps,
+                                        "global_steps": global_steps,
+                                    }
+                                )
+
                         if (
                             eval_accuracy[self.save_metric]
                             >= early_stopping[f"best_{self.save_metric}"]
@@ -906,6 +944,9 @@ class Trainer:
             if self.mixed_precision == "fp16"
             else torch.bfloat16 if self.mixed_precision == "bf16" else torch.float32
         )
+
+        all_combined_preds = []
+        all_combined_labels = []
 
         for batch_idx, batch in enumerate(
             tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}")
@@ -1064,6 +1105,9 @@ class Trainer:
                 arg1_labels = arg1_labels.argmax(dim=1)
                 frameaxis_labels = frameaxis_labels.argmax(dim=1)
 
+                all_combined_preds.append(combined_pred.cpu())
+                all_combined_labels.append(combined_labels.cpu())
+
                 # Macro F1
                 f1_metric_macro.add_batch(
                     predictions=combined_pred.cpu().numpy(),
@@ -1159,6 +1203,17 @@ class Trainer:
 
         avg_val_loss = total_val_loss / len(test_dataloader)
 
+        # Concatenate all predictions and labels
+        all_combined_preds = torch.cat(all_combined_preds).numpy()
+        all_combined_labels = torch.cat(all_combined_labels).numpy()
+
+        # Generate classification report
+        class_report = classification_report(all_combined_labels, all_combined_preds, output_dict=True)
+
+        # Print the classification report
+        print("\nPer-class metrics for evaluation data:")
+        print(classification_report(all_combined_labels, all_combined_preds))
+
         # Micro F1
         eval_results_micro = f1_metric_micro.compute(average="micro")
         eval_results_micro_span = f1_metric_micro_span.compute(average="micro")
@@ -1223,6 +1278,17 @@ class Trainer:
             "epoch": epoch,
             "val_loss": avg_val_loss,  # Add the average validation loss to metrics
         }
+
+        self._log_metrics(metrics)
+
+        # Add per-class metrics to the metrics dictionary
+        for class_name, class_metrics in class_report.items():
+            if isinstance(class_metrics, dict):  # Skip 'accuracy', 'macro avg', 'weighted avg'
+                metrics.update({
+                    f"eval_precision_class_{class_name}": class_metrics['precision'],
+                    f"eval_recall_class_{class_name}": class_metrics['recall'],
+                    f"eval_f1_class_{class_name}": class_metrics['f1-score'],
+                })
 
         self._log_metrics(metrics)
 
