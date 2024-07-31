@@ -4,7 +4,7 @@
 combination_files_path="run/mfc/slmuse-dlf/hp"
 
 # Submit jobs for each combination file
-for file in ${combination_files_path}/new_combinations_*
+for file in ${combination_files_path}/hyperparameter_combinations_*
 do
     split_id=${file##*_} # Extract the split identifier
     sbatch <<EOT
@@ -14,8 +14,8 @@ do
 #SBATCH --job-name=mfc-slmuse-dlf-batch-${split_id}
 #SBATCH --gres=gpu:4
 #SBATCH --mem=48G
-#SBATCH --time=48:00:00
-#SBATCH --partition=single
+#SBATCH --time=00:10:00
+#SBATCH --partition=devel
 
 echo "===================== Job Details ====================="
 echo "Job settings at start:"
@@ -66,11 +66,11 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # Iterate through combinations and run them sequentially
 index=0
-while read lr dropout_prob weight_decay batch_size ams_grad focal_alpha focal_gamma
+while read lr dropout_prob weight_decay clip_value batch_size focal_gamma
 do
     index=\$((index + 1))
-    run_name="run-split${split_id}-idx\${index}-lr\${lr}-dropout\${dropout_prob}-wd\${weight_decay}-bs\${batch_size}-amsgrad\${ams_grad}-alpha\${focal_alpha}-gamma\${focal_gamma}"
-    TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},weight_decay=\${weight_decay},batch_size=\${batch_size},amsgrad=\${ams_grad},focal_alpha=\${focal_alpha},focal_gamma=\${focal_gamma}"
+    run_name="run-split${split_id}-idx\${index}"
+    TAGS="split=${split_id},index=\${index},lr=\${lr},dropout_prob=\${dropout_prob},weight_decay=\${weight_decay},clip_value=\${clip_value},batch_size=\${batch_size},focal_gamma=\${focal_gamma}"
 
     echo "Cleanup WANDB cache..."
     wandb artifact cache cleanup 500m
@@ -85,8 +85,8 @@ do
         --tags \$TAGS \
         --wandb_api_key \$WANDB_API_KEY \
         --path_data data/mfc/immigration_labeled_preprocessed.json \
-        --epochs 4 \
-        --planned_epochs 10 \
+        --epochs 20 \
+        --planned_epochs 20 \
         --frameaxis_dim 10 \
         --name_tokenizer roberta-base \
         --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -97,10 +97,9 @@ do
         --dim_names virtue,vice \
         --save_base_path models/slmuse-dlf/ \
         --embedding_dim 768 \
-        --hidden_dim 1536 \
+        --hidden_dim 768 \
         --num_classes 15 \
         --dropout_prob \$dropout_prob \
-        --focal_loss_alpha \$focal_alpha \
         --focal_loss_gamma \$focal_gamma \
         --lambda_orthogonality 1e-3 \
         --lr \$lr \
@@ -121,7 +120,7 @@ do
         --muse_frameaxis_unsupervised_use_batch_norm True \
         --muse_frameaxis_unsupervised_matmul_input g \
         --muse_frameaxis_unsupervised_gumbel_softmax_log False \
-        --num_negatives 32 \
+        --num_negatives 64 \
         --supervised_concat_frameaxis True \
         --supervised_num_layers 2 \
         --supervised_activation gelu \
@@ -135,7 +134,7 @@ do
         --mixed_precision fp16 \
         --accumulation_steps 1 \
         --alternative_supervised alt6 \
-        --ams_grad_options \$ams_grad \
+        --clip_value \$clip_value \
         --save_model False \
         \$DEBUG
 
