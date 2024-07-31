@@ -9,21 +9,20 @@ from utils.logging_manager import LoggerManager
 class SLMUSEFrameAxisAutoencoder(nn.Module):
     def __init__(
         self,
-        embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
-        frameaxis_dim,  # frameaxis dimension
-        hidden_dim,  # hidden dimension
-        num_classes,  # number of classes to predict
-        num_layers=2,  # number of layers in the encoder
-        dropout_prob=0.3,  # dropout probability
-        activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
-        use_batch_norm=True,  # whether to use batch normalization
-        matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        log=False,  # whether to use log gumbel softmax
+        embedding_dim,
+        frameaxis_dim,
+        hidden_dim,
+        num_classes,
+        num_layers=2,
+        dropout_prob=0.3,
+        activation="relu",
+        use_batch_norm=True,
+        matmul_input="g",
+        log=False,
         _debug=False,
     ):
         super(SLMUSEFrameAxisAutoencoder, self).__init__()
 
-        # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
         self.num_classes = num_classes
@@ -32,34 +31,38 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         self.matmul_input = matmul_input
         self.log = log
 
-        # Initialize activation function
         self.activation_func = self._get_activation(activation)
 
-        # Determine input dimension based on whether to concatenate frameaxis with sentence
         input_dim = embedding_dim + frameaxis_dim
 
-        # Initialize the layers for the encoder
-        self.encoder = nn.ModuleList()
-        self.batch_norms_encoder = nn.ModuleList()
+        # Shared layer components
+        self.dropout1 = nn.Dropout(dropout_prob)
+        self.feed_forward_shared = nn.Linear(input_dim, hidden_dim)
+        self.batch_norm = (
+            nn.BatchNorm1d(hidden_dim) if use_batch_norm else nn.Identity()
+        )
+        self.activation = self.activation_func
+        self.dropout2 = nn.Dropout(dropout_prob)
 
-        for i in range(num_layers):
-            self.encoder.append(nn.Linear(input_dim, hidden_dim))
-            if use_batch_norm:
-                self.batch_norms_encoder.append(nn.BatchNorm1d(hidden_dim))
-            input_dim = hidden_dim
-
-        # Unique feed-forward layers for each view
-        self.feed_forward_2 = nn.Linear(hidden_dim, num_classes)
+        # Combined individual and output layers
+        layers = []
+        for _ in range(num_layers):
+            layers.extend(
+                [
+                    nn.Linear(hidden_dim, hidden_dim),
+                    nn.BatchNorm1d(hidden_dim) if use_batch_norm else nn.Identity(),
+                    self.activation_func,
+                    nn.Dropout(dropout_prob),
+                ]
+            )
+        layers.append(nn.Linear(hidden_dim, num_classes))
+        self.feed_forward_combined = nn.Sequential(*layers)
 
         self.F = nn.Parameter(torch.Tensor(num_classes, frameaxis_dim))
         nn.init.xavier_uniform_(self.F.data, gain=nn.init.calculate_gain("relu"))
 
-        # Additional layers and parameters
-        self.dropout = nn.Dropout(dropout_prob)
-
         self._debug = _debug
 
-        # Debugging
         self.logger.debug(f"✅ FrameAxisAutoencoder successfully initialized")
 
     def _get_activation(self, activation):
@@ -116,6 +119,20 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
             return y_hard
         return y
 
+    def process_through_shared(self, v_z, v_sentence):
+        # Concatenating v_z with the sentence embedding
+        concatenated = torch.cat((v_z, v_sentence), dim=-1)
+        # Applying dropout
+        dropped = self.dropout1(concatenated)
+        # Passing through the shared linear layer
+        h_shared = self.feed_forward_shared(dropped)
+        # Applying batch normalization and ReLU activation
+        h_shared = self.batch_norm(h_shared)
+        h_shared = self.activation(h_shared)
+        # Applying dropout again
+        h_shared = self.dropout2(h_shared)
+        return h_shared
+
     def forward(
         self,
         v_frameaxis,
@@ -123,13 +140,14 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         v_sentence,
         tau,
     ):
-        h = self.process_through_first(v_frameaxis, v_sentence, mask)
+        h = self.process_through_shared(v_frameaxis, v_sentence)
 
         if torch.isnan(h).any():
             self.logger.error("❌ NaNs detected in h")
             raise ValueError("NaNs detected in h")
 
-        logits = self.feed_forward_2(h) * mask.unsqueeze(-1).float()
+        # Pass through combined individual and output layers
+        logits = self.feed_forward_combined(h) * mask.unsqueeze(-1).float()
 
         epsilon = 1e-10
         logits = logits + (1 - mask.unsqueeze(-1).float()) * epsilon
@@ -165,18 +183,3 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         torch.cuda.empty_cache()
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
-
-    def process_through_first(self, v_z, v_sentence, mask):
-        x = torch.cat((v_z, v_sentence), dim=-1)
-
-        # Passing through the encoder layers
-        for i in range(self.num_layers):
-            x = self.encoder[i](x)
-            x = self.activation_func(x)
-            if self.use_batch_norm:
-                x = self.batch_norms_encoder[i](x)
-            x = self.dropout(x)
-
-        x = x * mask.unsqueeze(-1).float()
-
-        return x

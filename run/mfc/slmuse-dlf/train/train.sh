@@ -173,17 +173,17 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --lr 2e-4 \
     --M 8 \
     --t 8 \
-    --batch_size 64 \
+    --batch_size 32 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
     --max_arg_length 18 \
-    --muse_unsupervised_num_layers 1 \
+    --muse_unsupervised_num_layers 2 \
     --muse_unsupervised_activation gelu \
     --muse_unsupervised_use_batch_norm True \
     --muse_unsupervised_matmul_input g \
     --muse_unsupervised_gumbel_softmax_log False \
-    --muse_frameaxis_unsupervised_num_layers 1 \
+    --muse_frameaxis_unsupervised_num_layers 2 \
     --muse_frameaxis_unsupervised_activation gelu \
     --muse_frameaxis_unsupervised_use_batch_norm True \
     --muse_frameaxis_unsupervised_matmul_input g \
@@ -202,7 +202,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt6 \
+    --alternative_supervised alt7 \
     --clip_value 1 \
     --focal_loss_gamma 2 \
     $DEBUG

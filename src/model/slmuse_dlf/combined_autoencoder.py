@@ -8,20 +8,19 @@ from utils.logging_manager import LoggerManager
 class SLMUSECombinedAutoencoder(nn.Module):
     def __init__(
         self,
-        embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
-        hidden_dim,  # hidden dimension
-        num_classes,  # number of classes to predict
-        num_layers=2,  # number of layers in the encoder
-        dropout_prob=0.3,  # dropout probability
-        activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
-        use_batch_norm=True,  # whether to use batch normalization
-        matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
-        log=False,  # whether to use log gumbel softmax
+        embedding_dim,
+        hidden_dim,
+        num_classes,
+        num_layers=2,
+        dropout_prob=0.3,
+        activation="relu",
+        use_batch_norm=True,
+        matmul_input="g",
+        log=False,
         _debug=False,
     ):
         super(SLMUSECombinedAutoencoder, self).__init__()
 
-        # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
         self.hidden_dim = hidden_dim
@@ -31,29 +30,34 @@ class SLMUSECombinedAutoencoder(nn.Module):
         self.matmul_input = matmul_input
         self.log = log
 
-        # Initialize activation function
         self.activation_func = self._get_activation(activation)
 
         input_dim = 2 * embedding_dim
 
-        # Initialize the layers for the shared encoder
-        self.encoder_shared = nn.ModuleList()
-        self.batch_norms_shared = nn.ModuleList()
-
-        for i in range(num_layers):
-            self.encoder_shared.append(nn.Linear(input_dim, hidden_dim))
-            if use_batch_norm:
-                self.batch_norms_shared.append(nn.BatchNorm1d(hidden_dim))
-            input_dim = hidden_dim
-
-        # Unique feed-forward layers for each view
-        self.feed_forward_unique = nn.ModuleDict(
-            {
-                "a0": nn.Linear(hidden_dim, num_classes),
-                "p": nn.Linear(hidden_dim, num_classes),
-                "a1": nn.Linear(hidden_dim, num_classes),
-            }
+        # Shared layer components
+        self.dropout1 = nn.Dropout(dropout_prob)
+        self.feed_forward_shared = nn.Linear(input_dim, hidden_dim)
+        self.batch_norm = (
+            nn.BatchNorm1d(hidden_dim) if use_batch_norm else nn.Identity()
         )
+        self.activation = self.activation_func
+        self.dropout2 = nn.Dropout(dropout_prob)
+
+        # Combined individual and unique layers for each view
+        self.feed_forward_unique = nn.ModuleDict()
+        for view in ["p", "a0", "a1"]:
+            layers = []
+            for i in range(num_layers):
+                layers.extend(
+                    [
+                        nn.Linear(hidden_dim, hidden_dim),
+                        nn.BatchNorm1d(hidden_dim) if use_batch_norm else nn.Identity(),
+                        self.activation_func,
+                        nn.Dropout(dropout_prob),
+                    ]
+                )
+            layers.append(nn.Linear(hidden_dim, num_classes))
+            self.feed_forward_unique[view] = nn.Sequential(*layers)
 
         # Initializing F matrices for each view
         self.F_matrices = nn.ParameterDict(
@@ -70,9 +74,6 @@ class SLMUSECombinedAutoencoder(nn.Module):
 
         # Apply weight initialization to feed_forward_unique layers
         self.feed_forward_unique.apply(self.initialize_weights)
-
-        # Additional layers and parameters
-        self.dropout = nn.Dropout(dropout_prob)
 
         self._debug = _debug
 
@@ -137,6 +138,20 @@ class SLMUSECombinedAutoencoder(nn.Module):
             return y_hard
         return y
 
+    def process_through_shared(self, v_z, v_sentence):
+        # Concatenating v_z with the sentence embedding
+        concatenated = torch.cat((v_z, v_sentence), dim=-1)
+        # Applying dropout
+        dropped = self.dropout1(concatenated)
+        # Passing through the shared linear layer
+        h_shared = self.feed_forward_shared(dropped)
+        # Applying batch normalization and ReLU activation
+        h_shared = self.batch_norm(h_shared)
+        h_shared = self.activation(h_shared)
+        # Applying dropout again
+        h_shared = self.dropout2(h_shared)
+        return h_shared
+
     def forward(
         self,
         v_p,
@@ -148,19 +163,15 @@ class SLMUSECombinedAutoencoder(nn.Module):
         v_sentence,
         tau,
     ):
-        h_p = self.process_through_shared(v_p, v_sentence, mask_p)
-        h_a0 = self.process_through_shared(v_a0, v_sentence, mask_a0)
-        h_a1 = self.process_through_shared(v_a1, v_sentence, mask_a1)
+        h_p = self.process_through_shared(v_p, v_sentence)
+        h_a0 = self.process_through_shared(v_a0, v_sentence)
+        h_a1 = self.process_through_shared(v_a1, v_sentence)
 
-        if torch.isnan(h_p).any() or torch.isnan(h_a0).any() or torch.isnan(h_a1).any():
-            self.logger.error("❌ NaNs detected in hidden states")
-            raise ValueError("NaNs detected in hidden states")
-
+        # Pass through combined individual and unique layers
         logits_p = self.feed_forward_unique["p"](h_p)
         logits_a0 = self.feed_forward_unique["a0"](h_a0)
         logits_a1 = self.feed_forward_unique["a1"](h_a1)
 
-        # Check for NaNs in logits
         if (
             torch.isnan(logits_p).any()
             or torch.isnan(logits_a0).any()
@@ -249,78 +260,8 @@ class SLMUSECombinedAutoencoder(nn.Module):
             self.logger.error("❌ NaNs detected in vhat")
             raise ValueError("NaNs detected in vhat")
 
-        # Clear intermediate tensors
-        del (
-            h_p,
-            h_a0,
-            h_a1,
-            logits_p,
-            logits_a0,
-            logits_a1,
-        )
-        torch.cuda.empty_cache()
-
         return {
             "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
             "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},
             "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
         }
-
-    def process_through_shared(self, v_z, v_sentence, mask):
-        if torch.isnan(v_z).any():
-            self.logger.error("❌ NaNs detected in input v_z")
-            raise ValueError("NaNs detected in input v_z")
-
-        if torch.isnan(v_sentence).any():
-            self.logger.error("❌ NaNs detected in input v_sentence")
-            raise ValueError("NaNs detected in input v_sentence")
-
-        x = torch.cat((v_z, v_sentence), dim=-1)
-
-        for i in range(self.num_layers):
-            if torch.isnan(x).any():
-                self.logger.error(f"❌ NaNs detected in input to layer {i}")
-                raise ValueError(f"NaNs detected in input to layer {i}")
-
-            x = self.encoder_shared[i](x)
-            if torch.isnan(x).any():
-                self.logger.error(
-                    f"❌ NaNs detected in output of layer {i} before activation"
-                )
-                raise ValueError(
-                    f"NaNs detected in output of layer {i} before activation"
-                )
-
-            x = self.activation_func(x)
-            if torch.isnan(x).any():
-                self.logger.error(
-                    f"❌ NaNs detected in output of layer {i} after activation"
-                )
-                raise ValueError(
-                    f"NaNs detected in output of layer {i} after activation"
-                )
-
-            if self.use_batch_norm:
-                if torch.isnan(x).any():
-                    self.logger.error(
-                        f"❌ NaNs detected in batch normalization input at layer {i}"
-                    )
-                    raise ValueError(
-                        f"NaNs detected in batch normalization input at layer {i}"
-                    )
-                x = self.batch_norms_shared[i](x)
-
-            x = self.dropout(x)
-            if torch.isnan(x).any():
-                self.logger.error(
-                    f"❌ NaNs detected in output of layer {i} after dropout"
-                )
-                raise ValueError(f"NaNs detected in output of layer {i} after dropout")
-
-        x = x * mask.unsqueeze(-1).float()
-
-        if torch.isnan(x).any():
-            self.logger.error("❌ NaNs detected after processing through shared layers")
-            raise ValueError("NaNs detected after processing through shared layers")
-
-        return x
