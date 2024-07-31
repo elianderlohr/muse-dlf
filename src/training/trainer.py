@@ -40,7 +40,7 @@ class Trainer:
         mixed_precision="fp16",  # "fp16"
         clip_value=1.0,
         accumulation_steps=1,
-        save_every_n_steps=50,
+        test_every_n_batches=50,
         save_threshold=0.5,
         save_metric="accuracy",
         model_config={},
@@ -62,7 +62,7 @@ class Trainer:
         self.tau_decay = tau_decay
         self.early_stopping_patience = early_stopping_patience
 
-        self.save_every_n_steps = save_every_n_steps
+        self.test_every_n_batches = test_every_n_batches
         self.save_threshold = save_threshold
         self.save_metric = save_metric
 
@@ -493,7 +493,7 @@ class Trainer:
             try:
                 with torch.no_grad():
                     # Check train metrics every 50 steps
-                    if global_steps % self.save_every_n_steps == 0:
+                    if global_steps % self.test_every_n_batches == 0:
                         logger.info(
                             f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                         )
@@ -1529,7 +1529,7 @@ class Trainer:
                 )
                 break
 
-            if epoch > 4 and metrics["accuracy"] < 0.3:
+            if epoch >= 4 and metrics["accuracy"] < 0.3:
                 logger.info("Accuracy is below 0.3. Stopping training.")
                 early_stopping["early_stopped"] = True
                 early_stopping["stopping_code"] = 102

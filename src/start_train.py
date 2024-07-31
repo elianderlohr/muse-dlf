@@ -498,9 +498,9 @@ def main():
         help="Gamma parameter for the focal loss",
     )
 
-    # save_every_n_steps
+    # test_every_n_batches
     training_params.add_argument(
-        "--save_every_n_steps",
+        "--test_every_n_batches",
         type=int,
         default=50,
         help="Save the model every n steps",
@@ -925,6 +925,22 @@ def main():
         with open(f"{save_path}/config.json", "w") as json_file:
             json.dump(config, json_file, indent=4)
 
+        # Calculate the number of batches per epoch
+        batches_per_epoch = math.ceil(
+            len(train_dataloader.dataset)
+            / (args.batch_size * accelerator.num_processes)
+        )
+
+        # Set test_every_n_batches to ~1/4 of an epoch
+        test_every_n_batches = max(1, batches_per_epoch // 4)
+
+        # Set early_stopping_patience to ~2.5 epochs worth of batches
+        early_stopping_patience = batches_per_epoch * 5 // 2
+
+        logger.info(f"Batches per epoch: {batches_per_epoch}")
+        logger.info(f"Testing every {test_every_n_batches} batches")
+        logger.info(f"Early stopping patience: {early_stopping_patience} batches")
+
         # Train the model
         trainer = Trainer(
             model=model,
@@ -942,12 +958,13 @@ def main():
             accelerator_instance=accelerator,
             mixed_precision=args.mixed_precision,
             accumulation_steps=args.accumulation_steps,
-            save_every_n_steps=args.save_every_n_steps,
+            test_every_n_batches=test_every_n_batches,
             save_threshold=args.save_threshold,
             save_metric=args.save_metric,
             model_config=config,
             clip_value=args.clip_value,
             save_model=args.save_model,
+            early_stopping_patience=early_stopping_patience,
         )
 
         trainer = accelerator.prepare(trainer)
