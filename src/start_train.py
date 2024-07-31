@@ -818,6 +818,7 @@ def main():
                 "frameaxis": args.force_recalculate_frameaxis,
             },
             sample_size=args.sample_size,
+            apply_stratify_split=True,
         )
 
         logger.info("Data loaded successfully")

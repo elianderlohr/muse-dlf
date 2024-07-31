@@ -241,6 +241,7 @@ class PreProcessor:
         },
         train_mode=True,
         random_state=42,
+        apply_stratify_split=True,
         device=-1,
     ):
         """
@@ -268,14 +269,29 @@ class PreProcessor:
             )
 
         if train_mode:
-            # Split the merged DataFrame into train and test sets
-            train_df, test_df = train_test_split(
-                merged_df, test_size=self.test_size, random_state=random_state
-            )
+            if apply_stratify_split:
+                y_stratify = merged_df["encoded_values"].apply(lambda x: x[0].index(1))
+
+                train_df, test_df = train_test_split(
+                    merged_df,
+                    test_size=self.test_size,
+                    random_state=random_state,
+                    stratify=y_stratify,
+                )
+            else:
+                # Original split if apply_stratify_split is not provided
+                train_df, test_df = train_test_split(
+                    merged_df, test_size=self.test_size, random_state=random_state
+                )
 
             # Reset indices for train and test DataFrames
             train_df = train_df.reset_index(drop=True)
             test_df = test_df.reset_index(drop=True)
+
+            # Remove 'class_index' column if it was added
+            if "class_index" in train_df.columns:
+                train_df = train_df.drop("class_index", axis=1)
+                test_df = test_df.drop("class_index", axis=1)
 
             # Extract relevant columns for training and testing
             X_train = train_df["text"]
@@ -389,6 +405,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=True,
+        apply_stratify_split=True,
         random_state=42,
     ):
         if train_mode:
@@ -399,6 +416,7 @@ class PreProcessor:
                 force_recalculate,
                 train_mode=train_mode,
                 random_state=random_state,
+                apply_stratify_split=apply_stratify_split,
             )
             return train_df, test_df
         else:
@@ -426,6 +444,7 @@ class PreProcessor:
         },
         sample_size=None,
         random_state=42,
+        apply_stratify_split=True,
     ):
         train_dataset, test_dataset, _, _ = self.get_dataset(
             path,
@@ -434,6 +453,7 @@ class PreProcessor:
             force_recalculate,
             train_mode=True,
             random_state=random_state,
+            apply_stratify_split=apply_stratify_split,
         )
 
         if sample_size > 0:
