@@ -132,7 +132,7 @@ do
         --tau_min 0.5 \
         --seed 42 \
         --mixed_precision fp16 \
-        --accumulation_steps 1 \
+        --accumulation_steps 4 \
         --alternative_supervised alt6 \
         --clip_value \$clip_value \
         --save_model False \
