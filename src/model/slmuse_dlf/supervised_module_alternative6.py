@@ -34,13 +34,13 @@ class SLMUSESupervisedAlternative6(nn.Module):
             nn.BatchNorm1d(embedding_dim * num_sentences),
             nn.GELU(),
             nn.Dropout(dropout_prob),
-            nn.Linear(
-                embedding_dim * num_sentences, embedding_dim * (num_sentences // 2)
-            ),
-            nn.BatchNorm1d(embedding_dim * (num_sentences // 2)),
-            nn.GELU(),
-            nn.Dropout(dropout_prob),
-            nn.Linear(embedding_dim * (num_sentences // 2), hidden_dim),
+            # nn.Linear(
+            #    embedding_dim * num_sentences, embedding_dim * (num_sentences // 2)
+            # ),
+            # nn.BatchNorm1d(embedding_dim * (num_sentences // 2)),
+            # nn.GELU(),
+            # nn.Dropout(dropout_prob),
+            nn.Linear(embedding_dim * num_sentences, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout_prob),
