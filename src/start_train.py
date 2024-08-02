@@ -78,7 +78,7 @@ def load_model(
         logger.info("Try to load model of type: %s", model_type)
 
         if model_type == "slmuse-dlf":
-            logger.info("Loading SLMUSE-DLF model")
+            logger.info("Loading SLMuSE-DLF model")
             model = SLMUSEDLF(
                 embedding_dim=embedding_dim,
                 frameaxis_dim=frameaxis_dim,
@@ -112,7 +112,7 @@ def load_model(
                 _detect_anomaly=_detect_anomaly,
             )
         else:
-            logger.info("Loading MUSE-DLF model")
+            logger.info("Loading MuSE-DLF model")
             try:
                 model = MUSEDLF(
                     embedding_dim=embedding_dim,
@@ -142,11 +142,12 @@ def load_model(
                     supervised_concat_frameaxis=supervised_concat_frameaxis,
                     supervised_num_layers=supervised_num_layers,
                     supervised_activation=supervised_activation,
+                    alternative_supervised=alternative_supervised,
                     _debug=_debug,
                     _detect_anomaly=_detect_anomaly,
                 )
             except Exception as e:
-                logger.error(f"Error loading MUSE-DLF model: {e}")
+                logger.error(f"Error loading MuSE-DLF model: {e}")
                 raise
 
         logger.info("Model loaded successfully, move to device: %s", device)
@@ -645,9 +646,9 @@ def main():
         logger.info(
             """#####################################################
 #                                                   #
-#              Welcome to MUSE-DLF TRAIN!           #
+#              Welcome to MuSE-DLF TRAIN!           #
 #                                                   #
-# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #
+# MuSE-DLF: Multi-View-Semantic Enhanced Dictionary #
 #          Learning for Frame Classification        #
 #                                                   #
 #####################################################"""

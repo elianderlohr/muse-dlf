@@ -34,9 +34,9 @@ def welcome_message():
     print(
         "#####################################################\n"
         "#                                                   #\n"
-        "#              Welcome to MUSE-DLF SWEEP!                     #\n"
+        "#              Welcome to MuSE-DLF SWEEP!                     #\n"
         "#                                                   #\n"
-        "# MUSE-DLF: Multi-View-Semantic Enhanced Dictionary #\n"
+        "# MuSE-DLF: Multi-View-Semantic Enhanced Dictionary #\n"
         "#          Learning for Frame Classification        #\n"
         "#                                                   #\n"
         "#####################################################"
