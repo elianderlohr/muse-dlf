@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
+# softmax
+import torch.nn.functional as F
+
 
 class SLMuSESupervisedAlternative6(nn.Module):
     def __init__(
@@ -85,11 +88,9 @@ class SLMuSESupervisedAlternative6(nn.Module):
 
         flattened = self.flatten(vs)
         y_hat_sent = self.feed_forward_sentence(flattened)
-        combined = y_hat_span + y_hat_sent
+        y_hat_sent = F.softmax(y_hat_sent, dim=-1)
 
-        # Debug y_hat values of first batch
-        self.logger.debug(f"y_hat_span: {y_hat_span[0]}")
-        self.logger.debug(f"y_hat_sent: {y_hat_sent[0]}")
+        combined = y_hat_span + y_hat_sent
 
         other = {
             "predicate": d_p_mean,

@@ -318,9 +318,9 @@ class Trainer:
                 with self.accelerator.autocast():
                     (
                         unsupervised_loss,
-                        span_logits,
-                        sentence_logits,
-                        combined_logits,
+                        span_probs,
+                        sent_probs,
+                        combined_probs,
                         other,
                     ) = self.model(
                         sentence_ids,
@@ -332,12 +332,16 @@ class Trainer:
                         tau,
                     )
 
-                    span_loss = self.loss_function(span_logits, arg_max_labels)
-                    sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
+                    span_loss = self.loss_function(
+                        span_probs, arg_max_labels, input_type="probabilities"
+                    )
+                    sentence_loss = self.loss_function(
+                        sent_probs, arg_max_labels, input_type="probabilities"
+                    )
                     # supervised_loss = span_loss + sentence_loss
 
                     supervised_loss = self.loss_function(
-                        combined_logits, arg_max_labels
+                        combined_probs, arg_max_labels, input_type="probabilities"
                     )
 
                     sum_of_parameters = sum(p.sum() for p in self.model.parameters())
@@ -352,9 +356,9 @@ class Trainer:
                 ):
                     (
                         unsupervised_loss,
-                        span_logits,
-                        sentence_logits,
-                        combined_logits,
+                        span_probs,
+                        sent_probs,
+                        combined_probs,
                         other,
                     ) = self.model(
                         sentence_ids,
@@ -366,8 +370,12 @@ class Trainer:
                         tau,
                     )
 
-                    span_loss = self.loss_function(span_logits, arg_max_labels)
-                    sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
+                    span_loss = self.loss_function(
+                        span_probs, arg_max_labels, input_type="probabilities"
+                    )
+                    sentence_loss = self.loss_function(
+                        sent_probs, arg_max_labels, input_type="probabilities"
+                    )
                     supervised_loss = span_loss + sentence_loss
 
                     sum_of_parameters = sum(p.sum() for p in self.model.parameters())
@@ -390,9 +398,9 @@ class Trainer:
             # Check for NaNs in model outputs
             if (
                 self.check_for_nans(unsupervised_loss, "unsupervised_loss")
-                or self.check_for_nans(span_logits, "span_logits")
-                or self.check_for_nans(sentence_logits, "sentence_logits")
-                or self.check_for_nans(combined_logits, "combined_logits")
+                or self.check_for_nans(span_probs, "span_probs")
+                or self.check_for_nans(sent_probs, "sent_probs")
+                or self.check_for_nans(combined_probs, "combined_probs")
                 or self.check_for_nans(other["predicate"], "other['predicate']")
                 or self.check_for_nans(other["arg0"], "other['arg0']")
                 or self.check_for_nans(other["arg1"], "other['arg1']")
@@ -404,10 +412,18 @@ class Trainer:
                 continue
 
             with torch.no_grad():
-                predicate_loss = self.loss_function(other["predicate"], arg_max_labels)
-                arg0_loss = self.loss_function(other["arg0"], arg_max_labels)
-                arg1_loss = self.loss_function(other["arg1"], arg_max_labels)
-                frameaxis_loss = self.loss_function(other["frameaxis"], arg_max_labels)
+                predicate_loss = self.loss_function(
+                    other["predicate"], arg_max_labels, input_type="probabilities"
+                )
+                arg0_loss = self.loss_function(
+                    other["arg0"], arg_max_labels, input_type="probabilities"
+                )
+                arg1_loss = self.loss_function(
+                    other["arg1"], arg_max_labels, input_type="probabilities"
+                )
+                frameaxis_loss = self.loss_function(
+                    other["frameaxis"], arg_max_labels, input_type="probabilities"
+                )
 
             if self.check_for_nans(combined_loss, "combined_loss"):
                 logger.error(
@@ -502,23 +518,15 @@ class Trainer:
                             f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                         )
 
-                        combined_pred = self.get_activation_function(
-                            combined_logits
-                        ).int()
-                        span_pred = self.get_activation_function(span_logits).int()
-                        sentence_pred = self.get_activation_function(
-                            sentence_logits
-                        ).int()
+                        combined_pred = (combined_probs > 0.5).int()
+                        span_pred = (span_probs > 0.5).int()
+                        sentence_pred = (sent_probs > 0.5).int()
 
                         # predicate, arg0, arg1, frameaxis
-                        predicate_pred = self.get_activation_function(
-                            other["predicate"]
-                        ).int()
-                        arg0_pred = self.get_activation_function(other["arg0"]).int()
-                        arg1_pred = self.get_activation_function(other["arg1"]).int()
-                        frameaxis_pred = self.get_activation_function(
-                            other["frameaxis"]
-                        ).int()
+                        predicate_pred = (other["predicate"] > 0.5).int()
+                        arg0_pred = (other["arg0"] > 0.5).int()
+                        arg1_pred = (other["arg1"] > 0.5).int()
+                        frameaxis_pred = (other["frameaxis"] > 0.5).int()
 
                         if self.training_management == "accelerate":
                             combined_pred, combined_labels = (
@@ -869,7 +877,7 @@ class Trainer:
 
         return tau, early_stopping
 
-    def _evaluate(self, epoch, test_dataloader, device, tau, experiment_id):
+    def _evaluate(self, epoch, test_dataloader, device, tau, alpha, experiment_id):
         self.model.eval()
 
         total_val_loss = 0.0
@@ -1011,9 +1019,9 @@ class Trainer:
                     with self.accelerator.autocast():
                         (
                             unsupervised_loss,
-                            span_logits,
-                            sentence_logits,
-                            combined_logits,
+                            span_probs,
+                            sent_probs,
+                            combined_probs,
                             other,
                         ) = self.model(
                             sentence_ids,
@@ -1032,9 +1040,9 @@ class Trainer:
                     ):
                         (
                             unsupervised_loss,
-                            span_logits,
-                            sentence_logits,
-                            combined_logits,
+                            span_probs,
+                            sent_probs,
+                            combined_probs,
                             other,
                         ) = self.model(
                             sentence_ids,
@@ -1046,22 +1054,31 @@ class Trainer:
                             tau,
                         )
 
-                span_loss = self.loss_function(span_logits, arg_max_labels)
-                sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
-                supervised_loss = span_loss + sentence_loss
-                combined_loss = 0.5 * supervised_loss + 0.5 * unsupervised_loss
+                span_loss = self.loss_function(
+                    span_probs, arg_max_labels, input_type="probabilities"
+                )
+                sentence_loss = self.loss_function(
+                    sent_probs, arg_max_labels, input_type="probabilities"
+                )
+                supervised_loss = self.loss_function(
+                    combined_probs, arg_max_labels, input_type="probabilities"
+                )
+
+                combined_loss = (
+                    alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                )
 
                 total_val_loss += combined_loss.item()
 
-                combined_pred = self.get_activation_function(combined_logits).int()
-                span_pred = self.get_activation_function(span_logits).int()
-                sentence_pred = self.get_activation_function(sentence_logits).int()
+                combined_pred = (combined_probs > 0.5).int()
+                span_pred = (span_probs > 0.5).int()
+                sentence_pred = (sent_probs > 0.5).int()
 
                 # predicate, arg0, arg1, frameaxis
-                predicate_pred = self.get_activation_function(other["predicate"]).int()
-                arg0_pred = self.get_activation_function(other["arg0"]).int()
-                arg1_pred = self.get_activation_function(other["arg1"]).int()
-                frameaxis_pred = self.get_activation_function(other["frameaxis"]).int()
+                predicate_pred = (other["predicate"] > 0.5).int()
+                arg0_pred = (other["arg0"] > 0.5).int()
+                arg1_pred = (other["arg1"] > 0.5).int()
+                frameaxis_pred = (other["frameaxis"] > 0.5).int()
 
                 if self.training_management == "accelerate":
                     combined_pred, combined_labels = (
@@ -1500,7 +1517,7 @@ class Trainer:
 
             try:
                 metrics = self._evaluate(
-                    epoch, self.test_dataloader, self.device, tau, experiment_id
+                    epoch, self.test_dataloader, self.device, tau, alpha, experiment_id
                 )
             except Exception as e:
                 logger.error(
