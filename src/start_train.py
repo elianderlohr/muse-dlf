@@ -870,7 +870,7 @@ def main():
             loss_function = FocalLoss(
                 alpha=alpha,
                 gamma=args.focal_loss_gamma,
-                reduction="mean",
+                reduction="sum",
             )
 
             # loss_function = nn.CrossEntropyLoss()
@@ -908,7 +908,7 @@ def main():
             loss_function = MultiLabelFocalLoss(
                 alpha=alpha,
                 gamma=args.focal_loss_gamma,
-                reduction="mean",
+                reduction="sum",
             )
             logger.info("Loss function set to Focal Loss")
 
