@@ -332,9 +332,13 @@ class Trainer:
                         tau,
                     )
 
-                    span_loss = self.loss_function(span_logits, arg_max_labels)
-                    sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
-                    supervised_loss = span_loss + sentence_loss
+                    # span_loss = self.loss_function(span_logits, arg_max_labels)
+                    # sentence_loss = self.loss_function(sentence_logits, arg_max_labels)
+                    # supervised_loss = span_loss + sentence_loss
+
+                    supervised_loss = self.loss_function(
+                        combined_logits, arg_max_labels
+                    )
 
                     sum_of_parameters = sum(p.sum() for p in self.model.parameters())
                     zero_sum = sum_of_parameters * 0.0
