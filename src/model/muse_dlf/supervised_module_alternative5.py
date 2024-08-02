@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from utils.logging_manager import LoggerManager
-from torch.cuda.amp import autocast
 
 
 class MUSESupervisedAlternative5(nn.Module):
@@ -75,90 +74,74 @@ class MUSESupervisedAlternative5(nn.Module):
         d_fx,
         vs,
         frameaxis_data,
-        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
+        batch_size, num_sentences, num_args, embedding_dim = d_p.shape
+
+        d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
+        d_a0_flatten = d_a0.view(batch_size, num_sentences * num_args, embedding_dim)
+        d_a1_flatten = d_a1.view(batch_size, num_sentences * num_args, embedding_dim)
+
+        # Create masks for non-padded elements
+        mask_p = (d_p_flatten.abs().sum(dim=-1) != 0).float()
+        mask_a0 = (d_a0_flatten.abs().sum(dim=-1) != 0).float()
+        mask_a1 = (d_a1_flatten.abs().sum(dim=-1) != 0).float()
+        mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
+
+        # Calculate the mean ignoring padded elements
+        d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+            mask_p.sum(dim=1, keepdim=True), min=1
+        )
+        d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+            mask_a0.sum(dim=1, keepdim=True), min=1
+        )
+        d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+            mask_a1.sum(dim=1, keepdim=True), min=1
+        )
+        d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+            mask_fx.sum(dim=1, keepdim=True), min=1
         )
 
-        with autocast(
-            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
-        ):
-            batch_size, num_sentences, num_args, embedding_dim = d_p.shape
+        # Combine and normalize the final descriptor
+        y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
-            d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
-            d_a0_flatten = d_a0.view(
-                batch_size, num_sentences * num_args, embedding_dim
-            )
-            d_a1_flatten = d_a1.view(
-                batch_size, num_sentences * num_args, embedding_dim
-            )
+        if self.concat_frameaxis:
+            vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-            # Create masks for non-padded elements
-            mask_p = (d_p_flatten.abs().sum(dim=-1) != 0).float()
-            mask_a0 = (d_a0_flatten.abs().sum(dim=-1) != 0).float()
-            mask_a1 = (d_a1_flatten.abs().sum(dim=-1) != 0).float()
-            mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
+        # Layer 1
+        vs = self.dropout_1(vs)
+        vs = self.Wr(vs)
+        vs = self.activation_first(vs)
 
-            # Calculate the mean ignoring padded elements
-            d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_p.sum(dim=1, keepdim=True), min=1
-            )
-            d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_a0.sum(dim=1, keepdim=True), min=1
-            )
-            d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_a1.sum(dim=1, keepdim=True), min=1
-            )
-            d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_fx.sum(dim=1, keepdim=True), min=1
-            )
+        # Apply batch normalization along the embedding dimension
+        vs = vs.view(-1, vs.size(-1))  # Flatten batch and sentence dimensions
+        vs = self.batch_norm_1(vs)
+        vs = vs.view(batch_size, num_sentences, -1)  # Restore the original dimensions
 
-            # Combine and normalize the final descriptor
-            y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
+        # Average predictions across sentences but ignore padded elements (all zeros)
+        mask_vs = (vs.abs().sum(dim=-1) != 0).float()
+        vs = (vs * mask_vs.unsqueeze(-1)).sum(dim=1) / torch.clamp(
+            mask_vs.sum(dim=1, keepdim=True), min=1
+        )
 
-            if self.concat_frameaxis:
-                vs = torch.cat([vs, frameaxis_data], dim=-1)
+        # Layer 2
+        vs = self.dropout_2(vs)
+        vs = self.Wt(vs)
+        vs = self.activation_last(vs)
 
-            # Layer 1
-            vs = self.dropout_1(vs)
-            vs = self.Wr(vs)
-            vs = self.activation_first(vs)
+        # Apply second batch normalization
+        vs = self.batch_norm_2(vs)
 
-            # Apply batch normalization along the embedding dimension
-            vs = vs.view(-1, vs.size(-1))  # Flatten batch and sentence dimensions
-            vs = self.batch_norm_1(vs)
-            vs = vs.view(
-                batch_size, num_sentences, -1
-            )  # Restore the original dimensions
+        # Layer 3
+        vs = self.dropout_3(vs)
+        vs = self.Wo(vs)
 
-            # Average predictions across sentences but ignore padded elements (all zeros)
-            mask_vs = (vs.abs().sum(dim=-1) != 0).float()
-            vs = (vs * mask_vs.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-                mask_vs.sum(dim=1, keepdim=True), min=1
-            )
+        y_hat_s = vs
 
-            # Layer 2
-            vs = self.dropout_2(vs)
-            vs = self.Wt(vs)
-            vs = self.activation_last(vs)
-
-            # Apply second batch normalization
-            vs = self.batch_norm_2(vs)
-
-            # Layer 3
-            vs = self.dropout_3(vs)
-            vs = self.Wo(vs)
-
-            y_hat_s = vs
-
-            other = {
-                "predicate": d_p_mean,
-                "arg0": d_a0_mean,
-                "arg1": d_a1_mean,
-                "frameaxis": d_fx_mean,
-            }
+        other = {
+            "predicate": d_p_mean,
+            "arg0": d_a0_mean,
+            "arg1": d_a1_mean,
+            "frameaxis": d_fx_mean,
+        }
 
         return y_hat_u, y_hat_s, y_hat_u + y_hat_s, other

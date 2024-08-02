@@ -9,6 +9,9 @@ import pickle
 from sklearn.model_selection import train_test_split
 from nltk.tokenize import sent_tokenize
 import re
+import numpy as np
+from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
+
 
 from utils.logging_manager import LoggerManager
 
@@ -241,7 +244,7 @@ class PreProcessor:
         },
         train_mode=True,
         random_state=42,
-        apply_stratify_split=True,
+        statification=None,  # None, "single", "multi"
         device=-1,
     ):
         """
@@ -269,7 +272,7 @@ class PreProcessor:
             )
 
         if train_mode:
-            if apply_stratify_split:
+            if statification == "single":
                 y_stratify = merged_df["encoded_values"].apply(lambda x: x[0].index(1))
 
                 train_df, test_df = train_test_split(
@@ -278,8 +281,22 @@ class PreProcessor:
                     random_state=random_state,
                     stratify=y_stratify,
                 )
+            elif statification == "multi":
+                # Extracting the multi-label data
+                y_multi = np.array(merged_df["encoded_values"].tolist())
+
+                # Initialize the stratified k-fold splitter
+                mskf = MultilabelStratifiedKFold(
+                    n_splits=int(1 / self.test_size), random_state=random_state
+                )
+
+                # Perform the split
+                for train_index, test_index in mskf.split(merged_df, y_multi):
+                    train_df = merged_df.iloc[train_index]
+                    test_df = merged_df.iloc[test_index]
+                    break
             else:
-                # Original split if apply_stratify_split is not provided
+                # Original split if statification is set to None
                 train_df, test_df = train_test_split(
                     merged_df, test_size=self.test_size, random_state=random_state
                 )
@@ -405,7 +422,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=True,
-        apply_stratify_split=True,
+        statification=None,  # None, "single", "multi"
         random_state=42,
     ):
         if train_mode:
@@ -416,7 +433,7 @@ class PreProcessor:
                 force_recalculate,
                 train_mode=train_mode,
                 random_state=random_state,
-                apply_stratify_split=apply_stratify_split,
+                statification=statification,
             )
             return train_df, test_df
         else:
@@ -444,7 +461,7 @@ class PreProcessor:
         },
         sample_size=None,
         random_state=42,
-        apply_stratify_split=True,
+        statification=None,  # None, "single", "multi"
     ):
         train_dataset, test_dataset, _, _ = self.get_dataset(
             path,
@@ -453,7 +470,7 @@ class PreProcessor:
             force_recalculate,
             train_mode=True,
             random_state=random_state,
-            apply_stratify_split=apply_stratify_split,
+            statification=statification,
         )
 
         if sample_size > 0:

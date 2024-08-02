@@ -6,8 +6,6 @@ from model.muse_dlf.loss_module import MUSELossModule
 
 from utils.logging_manager import LoggerManager
 
-from torch.cuda.amp import autocast
-
 
 class MUSEFrameAxisUnsupervised(nn.Module):
     def __init__(
@@ -62,33 +60,25 @@ class MUSEFrameAxisUnsupervised(nn.Module):
         v_sentence,
         fx_negatives,
         tau,
-        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
+        outputs_fx = self.frameaxis_autoencoder(
+            v_fx,
+            mask,
+            v_sentence,
+            tau,
         )
 
-        with autocast(
-            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
-        ):
-            outputs_fx = self.frameaxis_autoencoder(
-                v_fx, mask, v_sentence, tau, mixed_precision
-            )
+        outputs_fx["v"] = v_fx
 
-            outputs_fx["v"] = v_fx
+        loss = self.loss_fn(
+            outputs_fx,
+            fx_negatives,
+            mask,
+        )
 
-            loss = self.loss_fn(
-                outputs_fx,
-                fx_negatives,
-                mask,
-                mixed_precision=mixed_precision,
-            )
-
-            results = {
-                "loss": loss,
-                "fx": outputs_fx,
-            }
+        results = {
+            "loss": loss,
+            "fx": outputs_fx,
+        }
 
         return results

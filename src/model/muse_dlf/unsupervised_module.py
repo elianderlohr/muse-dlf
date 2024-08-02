@@ -6,8 +6,6 @@ from model.muse_dlf.loss_module import MUSELossModule
 
 from utils.logging_manager import LoggerManager
 
-from torch.cuda.amp import autocast
-
 
 class MUSEUnsupervised(nn.Module):
     def __init__(
@@ -66,71 +64,57 @@ class MUSEUnsupervised(nn.Module):
         a0_negatives,
         a1_negatives,
         tau,
-        mixed_precision="fp16",  # mixed precision as a parameter
     ):
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
+        # outputs = {
+        # "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
+        # "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},
+        # "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
+        # }
+        outputs = self.combined_autoencoder(
+            v_p,
+            v_a0,
+            v_a1,
+            mask_p,
+            mask_a0,
+            mask_a1,
+            v_sentence,
+            tau,
         )
 
-        with autocast(
-            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
-        ):
-            # outputs = {
-            # "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
-            # "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},
-            # "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
-            # }
-            outputs = self.combined_autoencoder(
-                v_p,
-                v_a0,
-                v_a1,
-                mask_p,
-                mask_a0,
-                mask_a1,
-                v_sentence,
-                tau,
-                mixed_precision,
-            )
+        outputs_p = outputs["p"]
+        outputs_p["v"] = v_p
 
-            outputs_p = outputs["p"]
-            outputs_p["v"] = v_p
+        outputs_a0 = outputs["a0"]
+        outputs_a0["v"] = v_a0
 
-            outputs_a0 = outputs["a0"]
-            outputs_a0["v"] = v_a0
+        outputs_a1 = outputs["a1"]
+        outputs_a1["v"] = v_a1
 
-            outputs_a1 = outputs["a1"]
-            outputs_a1["v"] = v_a1
+        loss_p = self.loss_fn(
+            outputs_p,
+            p_negatives,
+            mask_p,
+        )
 
-            loss_p = self.loss_fn(
-                outputs_p,
-                p_negatives,
-                mask_p,
-                mixed_precision=mixed_precision,
-            )
+        loss_a0 = self.loss_fn(
+            outputs_a0,
+            a0_negatives,
+            mask_a0,
+        )
 
-            loss_a0 = self.loss_fn(
-                outputs_a0,
-                a0_negatives,
-                mask_a0,
-                mixed_precision=mixed_precision,
-            )
+        loss_a1 = self.loss_fn(
+            outputs_a1,
+            a1_negatives,
+            mask_a1,
+        )
 
-            loss_a1 = self.loss_fn(
-                outputs_a1,
-                a1_negatives,
-                mask_a1,
-                mixed_precision=mixed_precision,
-            )
-
-            results = {
-                "loss_p": loss_p,
-                "loss_a0": loss_a0,
-                "loss_a1": loss_a1,
-                "p": outputs["p"],
-                "a0": outputs["a0"],
-                "a1": outputs["a1"],
-            }
+        results = {
+            "loss_p": loss_p,
+            "loss_a0": loss_a0,
+            "loss_a1": loss_a1,
+            "p": outputs["p"],
+            "a0": outputs["a0"],
+            "a1": outputs["a1"],
+        }
 
         return results

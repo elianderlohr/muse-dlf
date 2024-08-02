@@ -119,7 +119,7 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
             return y_hard
         return y
 
-    def process_through_shared(self, v_z, v_sentence):
+    def process_through_first(self, v_z, v_sentence):
         # Concatenating v_z with the sentence embedding
         concatenated = torch.cat((v_z, v_sentence), dim=-1)
         # Applying dropout
@@ -140,7 +140,7 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         v_sentence,
         tau,
     ):
-        h = self.process_through_shared(v_frameaxis, v_sentence)
+        h = self.process_through_first(v_frameaxis, v_sentence)
 
         if torch.isnan(h).any():
             self.logger.error("❌ NaNs detected in h")

@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from utils.logging_manager import LoggerManager
-from torch.cuda.amp import autocast
 
 
 class MUSELossModule(nn.Module):
@@ -76,23 +75,13 @@ class MUSELossModule(nn.Module):
         c,
         negatives,
         mask,
-        mixed_precision="fp16",
     ):
         if mask.sum() == 0:
             return torch.tensor(0.0, device=mask.device)
 
-        precision_dtype = (
-            torch.float16
-            if mixed_precision == "fp16"
-            else torch.bfloat16 if mixed_precision == "bf16" else torch.float32
-        )
-
-        with autocast(
-            enabled=mixed_precision in ["fp16", "bf16", "fp32"], dtype=precision_dtype
-        ):
-            v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
-            Ju = self.contrastive_loss(v, vhat, negatives, mask)
-            Jt = self.focal_triplet_loss(v, vhat, g, F, mask)
-            Jz = Ju + Jt + self.orthogonality_term(F, self.lambda_orthogonality)
+        v, vhat, d, g, F = c["v"], c["vhat"], c["d"], c["g"], c["F"]
+        Ju = self.contrastive_loss(v, vhat, negatives, mask)
+        Jt = self.focal_triplet_loss(v, vhat, g, F, mask)
+        Jz = Ju + Jt + self.orthogonality_term(F, self.lambda_orthogonality)
 
         return Jz
