@@ -837,7 +837,7 @@ def main():
 
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
-            # Create a dictionary of label names and their frequencies
+            min_freq = 0.05  # Use a minimum frequency of 0.05 = 5%
             class_freq_dict = {
                 "Capacity and Resources": 0.035401,
                 "Crime and Punishment": 0.135367,
@@ -856,18 +856,18 @@ def main():
                 "Security and Defense": 0.048213,
             }
 
-            class_freqs = list(class_freq_dict.values())
+            adjusted_freqs = {k: max(v, min_freq) for k, v in class_freq_dict.items()}
+            total = sum(adjusted_freqs.values())
+            adjusted_freqs = {k: v / total for k, v in adjusted_freqs.items()}
 
-            # make class_freqs a tensor
-            alpha = torch.tensor(class_freqs).to(accelerator.device)
+            inverse_freqs = {k: 1 / v for k, v in adjusted_freqs.items()}
+            total_inverse = sum(inverse_freqs.values())
+            alpha_dict = {k: v / total_inverse for k, v in inverse_freqs.items()}
 
-            # Normalize alpha values so they sum to 1
-            alpha_inverse = torch.tensor(
-                [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
-            ).to(accelerator.device)
+            alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 
             loss_function = FocalLoss(
-                # alpha=alpha,  # alpha_inverse,
+                alpha=alpha,
                 gamma=args.focal_loss_gamma,
                 reduction="mean",
             )
@@ -876,6 +876,7 @@ def main():
 
             logger.info("Loss function set to FocalLoss")
         else:
+            min_freq = 0.05
             class_freq_dict = {
                 "Capacity_and_resources": 0.0180,
                 "Crime_and_punishment": 0.1406,
@@ -893,21 +894,18 @@ def main():
                 "Security_and_defense": 0.1158,
             }
 
-            class_freqs = list(class_freq_dict.values())
+            adjusted_freqs = {k: max(v, min_freq) for k, v in class_freq_dict.items()}
+            total = sum(adjusted_freqs.values())
+            adjusted_freqs = {k: v / total for k, v in adjusted_freqs.items()}
 
-            # make class_freqs a tensor
-            alpha = torch.tensor(class_freqs).to(accelerator.device)
+            inverse_freqs = {k: 1 / v for k, v in adjusted_freqs.items()}
+            total_inverse = sum(inverse_freqs.values())
+            alpha_dict = {k: v / total_inverse for k, v in inverse_freqs.items()}
 
-            # multiply by 100
-            alpha = alpha * 100
-
-            # Normalize alpha values so they sum to 1
-            alpha_inverse = torch.tensor(
-                [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
-            ).to(accelerator.device)
+            alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 
             loss_function = MultiLabelFocalLoss(
-                alpha=alpha,  # alpha_inverse,
+                alpha=alpha,
                 gamma=args.focal_loss_gamma,
                 reduction="mean",
             )
