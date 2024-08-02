@@ -27,7 +27,7 @@ from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
 from utils.focal_loss import FocalLoss
-from .utils.multi_label_focal_loss import MultiLabelFocalLoss
+from utils.multi_label_focal_loss import MultiLabelFocalLoss
 
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
