@@ -283,7 +283,13 @@ class PreProcessor:
                 )
             elif statification == "multi":
                 # Extracting the multi-label data
-                y_multi = np.array(merged_df["encoded_values"].tolist())
+                y_multi = (
+                    merged_df.groupby("article_id")["encoded_values"]
+                    .first()
+                    .apply(np.array)
+                    .tolist()
+                )
+                y_multi = np.array(y_multi)
 
                 # Initialize the stratified k-fold splitter
                 mskf = MultilabelStratifiedKFold(
