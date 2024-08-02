@@ -1018,7 +1018,8 @@ def main():
 
         trainer = accelerator.prepare(trainer)
 
-        trainer.run_training(epochs=args.epochs, alpha=args.alpha)
+        with accelerator.autocast():
+            trainer.run_training(epochs=args.epochs, alpha=args.alpha)
 
         logger.info("Training completed successfully")
 
