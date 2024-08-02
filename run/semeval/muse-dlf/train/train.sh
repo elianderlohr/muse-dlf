@@ -90,6 +90,18 @@ function clear_gpu_memory {
 # Clear GPU memory before starting
 clear_gpu_memory
 
+# Identify network interface for NCCL
+NCCL_IFNAME=$(ip -o -4 addr show up primary scope global | awk '{print $2}' | head -n 1)
+echo "Using network interface: $NCCL_IFNAME"
+
+# NCCL configuration
+export NCCL_DEBUG=INFO 
+export NCCL_SOCKET_IFNAME=$NCCL_IFNAME
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
+export NCCL_NET_GDR_LEVEL=PHB
+export NCCL_TIMEOUT=1000
+
 # Function to generate run name
 generate_run_name() {
     verbs=(
@@ -122,6 +134,11 @@ generate_run_name() {
 # Generate a run name
 RUN_NAME=$(generate_run_name)
 
+echo "Cleanup WANDB cache..."
+# call wandb cache clean
+wandb artifact cache cleanup 500m
+echo "WANDB cache cleanup complete."
+
 # Training Script Execution
 echo "=================== Training Start ==================="
 
@@ -137,7 +154,8 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 10 \
+    --epochs 20 \
+    --planned_epochs 20 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922 \
@@ -151,16 +169,16 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --hidden_dim 768 \
     --num_classes 14 \
     --dropout_prob 0.3 \
-    --alpha 0.9 \
-    --lambda_orthogonality 0.003 \
-    --lr 0.0005 \
+    --alpha 0.5 \
+    --lambda_orthogonality 1e-3 \
+    --lr 0.0001 \
     --M 8 \
     --t 8 \
     --batch_size 8 \
-    --num_sentences 32 \
-    --max_sentence_length 40 \
-    --max_args_per_sentence 21 \
-    --max_arg_length 21 \
+    --num_sentences 64 \
+    --max_sentence_length 64 \
+    --max_args_per_sentence 13 \
+    --max_arg_length 18 \
     --muse_unsupervised_num_layers 2 \
     --muse_unsupervised_activation gelu \
     --muse_unsupervised_use_batch_norm True \
@@ -172,24 +190,26 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --muse_frameaxis_unsupervised_matmul_input g \
     --muse_frameaxis_unsupervised_gumbel_softmax_log False \
     --num_negatives 128 \
-    --supervised_concat_frameaxis False \
+    --supervised_concat_frameaxis True \
     --supervised_num_layers 2 \
     --supervised_activation gelu \
-    --adamw_weight_decay 0.0001 \
     --optimizer adamw \
-    --sentence_pooling cls \
+    --adamw_weight_decay 0.000001 \
+    --ams_grad_options True \
+    --sentence_pooling mean \
     --hidden_state second_to_last \
-    --tau_decay 0.0005 \
+    --tau_decay 5e-4 \
     --tau_min 0.5 \
     --seed 42 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --save_metric micro_f1 \
-    --save_threshold 0.2 \
-    --alternative_supervised alt5 \
+    --alternative_supervised alt6 \
+    --clip_value 1 \
+    --focal_loss_gamma 2 \
     $DEBUG
 
 echo "______________________________________________________"
+
 
 # Cleanup and Closeout
 echo "Deactivating virtual environment..."
