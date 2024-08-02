@@ -23,16 +23,31 @@ class SLMUSESupervisedAlternative6(nn.Module):
         self.num_classes = num_classes
         self.concat_frameaxis = concat_frameaxis
         self._debug = _debug
-        self.num_sentences = num_sentences
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
         self.flatten = nn.Flatten(start_dim=1)
 
-        # Define new layers for sentence embeddings
-        self.sentence_linear1 = nn.Linear(D_h, hidden_dim)
-        self.relu = nn.ReLU()
-        self.sentence_linear2 = nn.Linear(hidden_dim, num_classes)
+        # Define feed-forward network for sentence embeddings
+        self.feed_forward_sentence = nn.Sequential(
+            nn.Linear(D_h * num_sentences, embedding_dim * num_sentences),
+            nn.BatchNorm1d(embedding_dim * num_sentences),
+            nn.GELU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(
+                embedding_dim * num_sentences, embedding_dim * (num_sentences // 2)
+            ),
+            nn.BatchNorm1d(embedding_dim * (num_sentences // 2)),
+            nn.GELU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(embedding_dim * (num_sentences // 2), hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout_prob),
+            nn.Linear(hidden_dim, num_classes),
+        )
+
+        self.logger.debug("✅ SLMUSESupervisedAlternative6 successfully initialized")
 
     def forward(self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data):
 
@@ -68,14 +83,8 @@ class SLMUSESupervisedAlternative6(nn.Module):
         if self.concat_frameaxis:
             vs = torch.cat([vs, frameaxis_data], dim=-1)
 
-        # New implementation for y_hat_s calculation
-        vs_reshaped = vs.view(batch_size * self.num_sentences, -1)
-        h = self.sentence_linear1(vs_reshaped)
-        h = self.relu(h)
-        h = self.sentence_linear2(h)
-        h = h.view(batch_size, self.num_sentences, -1)
-        y_hat_s = torch.mean(h, dim=1)
-
+        flattened = self.flatten(vs)
+        y_hat_s = self.feed_forward_sentence(flattened)
         combined = y_hat_u + y_hat_s
 
         other = {
@@ -93,7 +102,7 @@ class SLMUSESupervisedAlternative6(nn.Module):
                 f"Shapes - d_p_mean: {d_p_mean.shape}, d_a0_mean: {d_a0_mean.shape}, d_a1_mean: {d_a1_mean.shape}, d_fx_mean: {d_fx_mean.shape}"
             )
             self.logger.debug(
-                f"Shapes - y_hat_u: {y_hat_u.shape}, y_hat_s: {y_hat_s.shape}, combined: {combined.shape}"
+                f"Shapes - y_hat_u: {y_hat_u.shape}, flattened: {flattened.shape}, y_hat_s: {y_hat_s.shape}, combined: {combined.shape}"
             )
 
         return y_hat_u, y_hat_s, combined, other
