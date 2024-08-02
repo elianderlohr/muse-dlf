@@ -12,7 +12,6 @@ from model.muse_dlf.muse import MUSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from transformers import BertTokenizer, RobertaTokenizerFast
 from torch.optim import Adam, AdamW
 from accelerate import Accelerator
@@ -27,8 +26,8 @@ from accelerate.utils import set_seed
 from training.trainer import Trainer
 from utils.logging_manager import LoggerManager
 
-from utils.wandb_utils import save_model_to_wandb
 from utils.focal_loss import FocalLoss
+from .utils.multi_label_focal_loss import MultiLabelFocalLoss
 
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
@@ -877,8 +876,39 @@ def main():
 
             logger.info("Loss function set to FocalLoss")
         else:
-            loss_function = nn.BCEWithLogitsLoss()
-            logger.info("Loss function set to BCEWithLogitsLoss")
+            class_freq_dict = {
+                "Capacity_and_resources": 0.0180,
+                "Crime_and_punishment": 0.1406,
+                "Cultural_identity": 0.0192,
+                "Economic": 0.0173,
+                "External_regulation_and_reputation": 0.0749,
+                "Fairness_and_equality": 0.0712,
+                "Health_and_safety": 0.0378,
+                "Legality_Constitutionality_and_jurisprudence": 0.1257,
+                "Morality": 0.1257,
+                "Policy_prescription_and_evaluation": 0.0402,
+                "Political": 0.1455,
+                "Public_opinion": 0.0142,
+                "Quality_of_life": 0.0539,
+                "Security_and_defense": 0.1158,
+            }
+
+            class_freqs = list(class_freq_dict.values())
+
+            # make class_freqs a tensor
+            alpha = torch.tensor(class_freqs).to(accelerator.device)
+
+            # Normalize alpha values so they sum to 1
+            alpha_inverse = torch.tensor(
+                [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
+            ).to(accelerator.device)
+
+            loss_function = MultiLabelFocalLoss(
+                alpha=alpha,  # alpha_inverse,
+                gamma=args.focal_loss_gamma,
+                reduction="mean",
+            )
+            logger.info("Loss function set to Focal Loss")
 
         lr = args.lr
 
