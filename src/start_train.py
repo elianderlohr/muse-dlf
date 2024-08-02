@@ -851,13 +851,16 @@ def main():
 
             class_freqs = list(class_freq_dict.values())
 
+            # make class_freqs a tensor
+            alpha = torch.tensor(class_freqs).to(accelerator.device)
+
             # Normalize alpha values so they sum to 1
             alpha_inverse = torch.tensor(
                 [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
             ).to(accelerator.device)
 
             loss_function = FocalLoss(
-                alpha=class_freqs,  # alpha_inverse,
+                alpha=alpha,  # alpha_inverse,
                 gamma=args.focal_loss_gamma,
                 reduction="mean",
             )
