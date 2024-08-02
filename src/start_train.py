@@ -863,14 +863,16 @@ def main():
 
             inverse_freqs = {k: 1 / v for k, v in adjusted_freqs.items()}
             total_inverse = sum(inverse_freqs.values())
-            alpha_dict = {k: v / total_inverse for k, v in inverse_freqs.items()}
+            alpha_dict = {
+                k: (v / total_inverse) * 100 for k, v in inverse_freqs.items()
+            }
 
             alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 
             loss_function = FocalLoss(
                 alpha=alpha,
                 gamma=args.focal_loss_gamma,
-                reduction="sum",
+                reduction="mean",
             )
 
             # loss_function = nn.CrossEntropyLoss()
@@ -901,7 +903,9 @@ def main():
 
             inverse_freqs = {k: 1 / v for k, v in adjusted_freqs.items()}
             total_inverse = sum(inverse_freqs.values())
-            alpha_dict = {k: v / total_inverse for k, v in inverse_freqs.items()}
+            alpha_dict = {
+                k: (v / total_inverse) * 100 for k, v in inverse_freqs.items()
+            }
 
             alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 

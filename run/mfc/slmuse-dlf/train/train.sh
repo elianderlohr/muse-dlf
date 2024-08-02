@@ -193,7 +193,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_num_layers 2 \
     --supervised_activation gelu \
     --optimizer adamw \
-    --adamw_weight_decay 0.000001 \
+    --adamw_weight_decay 0.0001 \
     --ams_grad_options True \
     --sentence_pooling mean \
     --hidden_state second_to_last \
