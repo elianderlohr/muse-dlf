@@ -898,8 +898,8 @@ def main():
             # make class_freqs a tensor
             alpha = torch.tensor(class_freqs).to(accelerator.device)
 
-            # multiply by 10
-            alpha = alpha * 10
+            # multiply by 100
+            alpha = alpha * 100
 
             # Normalize alpha values so they sum to 1
             alpha_inverse = torch.tensor(
