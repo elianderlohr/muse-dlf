@@ -2,15 +2,15 @@ import torch
 import torch.nn as nn
 
 from model.oldmuse.srl_embeddings import SRLEmbeddings
-from model.oldmuse.supervised_module import MUSESupervised
-from model.oldmuse.unsupervised_module import MUSEUnsupervised
-from model.oldmuse.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
+from model.oldmuse.supervised_module import MuSESupervised
+from model.oldmuse.unsupervised_module import MuSEUnsupervised
+from model.oldmuse.unsupervised_frameaxis_module import MuSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
 logger = LoggerManager.get_logger(__name__)
 
 
-class MUSE(nn.Module):
+class MuSE(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -27,13 +27,13 @@ class MUSE(nn.Module):
         bert_model_name_or_path="",
         supervised_sentence_prediction_method="friss",  # friss or custom
     ):
-        super(MUSE, self).__init__()
+        super(MuSE, self).__init__()
 
         # Aggregation layer replaced with SRL_Embeddings
         self.aggregation = SRLEmbeddings(bert_model_name, bert_model_name_or_path)
 
         # Unsupervised training module
-        self.unsupervised = MUSEUnsupervised(
+        self.unsupervised = MuSEUnsupervised(
             embedding_dim,
             D_h,
             K,
@@ -43,7 +43,7 @@ class MUSE(nn.Module):
             dropout_prob=dropout_prob,
         )
 
-        self.unsupervised_fx = MUSEFrameAxisUnsupervised(
+        self.unsupervised_fx = MuSEFrameAxisUnsupervised(
             embedding_dim,
             D_h,
             K,
@@ -55,7 +55,7 @@ class MUSE(nn.Module):
         )
 
         # Supervised training module
-        self.supervised = MUSESupervised(
+        self.supervised = MuSESupervised(
             embedding_dim,
             K,
             num_frames,

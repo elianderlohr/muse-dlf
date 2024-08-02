@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.slmuse_dlf.frameaxis_autoencoder import SLMUSEFrameAxisAutoencoder
-from model.slmuse_dlf.loss_module import SLMUSELossModule
+from model.slmuse_dlf.frameaxis_autoencoder import SLMuSEFrameAxisAutoencoder
+from model.slmuse_dlf.loss_module import SLMuSELossModule
 
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSEFrameAxisUnsupervised(nn.Module):
+class SLMuSEFrameAxisUnsupervised(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -27,14 +27,14 @@ class SLMUSEFrameAxisUnsupervised(nn.Module):
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(SLMUSEFrameAxisUnsupervised, self).__init__()
+        super(SLMuSEFrameAxisUnsupervised, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.loss_fn = SLMUSELossModule(lambda_orthogonality, M, t, _debug=_debug)
+        self.loss_fn = SLMuSELossModule(lambda_orthogonality, M, t, _debug=_debug)
 
-        self.frameaxis_autoencoder = SLMUSEFrameAxisAutoencoder(
+        self.frameaxis_autoencoder = SLMuSEFrameAxisAutoencoder(
             embedding_dim=embedding_dim,
             frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,
@@ -51,7 +51,7 @@ class SLMUSEFrameAxisUnsupervised(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        self.logger.debug(f"✅ MUSEFrameAxisUnsupervised successfully initialized")
+        self.logger.debug(f"✅ MuSEFrameAxisUnsupervised successfully initialized")
 
     def forward(
         self,

@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.muse_dlf.combined_autoencoder import MUSECombinedAutoencoder
-from model.muse_dlf.loss_module import MUSELossModule
+from model.muse_dlf.combined_autoencoder import MuSECombinedAutoencoder
+from model.muse_dlf.loss_module import MuSELossModule
 
 from utils.logging_manager import LoggerManager
 
 
-class MUSEUnsupervised(nn.Module):
+class MuSEUnsupervised(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -26,12 +26,12 @@ class MUSEUnsupervised(nn.Module):
         gumbel_softmax_log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(MUSEUnsupervised, self).__init__()
+        super(MuSEUnsupervised, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
-        self.combined_autoencoder = MUSECombinedAutoencoder(
+        self.combined_autoencoder = MuSECombinedAutoencoder(
             embedding_dim=embedding_dim,
             hidden_dim=hidden_dim,
             num_classes=num_classes,
@@ -44,12 +44,12 @@ class MUSEUnsupervised(nn.Module):
             _debug=_debug,
         )
 
-        self.loss_fn = MUSELossModule(lambda_orthogonality, M, t, _debug=_debug)
+        self.loss_fn = MuSELossModule(lambda_orthogonality, M, t, _debug=_debug)
 
         self._debug = _debug
 
         # Debugging:
-        self.logger.debug(f"✅ MUSEUnsupervised successfully initialized")
+        self.logger.debug(f"✅ MuSEUnsupervised successfully initialized")
 
     def forward(
         self,

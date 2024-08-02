@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import torch
-from model.slmuse_dlf.muse import SLMUSEDLF
+from model.slmuse_dlf.muse import SLMuSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
@@ -70,7 +70,7 @@ def load_model(
     device="cuda",
     _debug=False,
 ):
-    model = SLMUSEDLF(
+    model = SLMuSEDLF(
         embedding_dim=embedding_dim,
         frameaxis_dim=frameaxis_dim,
         hidden_dim=hidden_dim,

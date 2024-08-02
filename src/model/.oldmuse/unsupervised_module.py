@@ -9,7 +9,7 @@ from model.oldmuse.loss_module import LossModule
 # Assuming you have already defined CombinedAutoencoder and its methods as provided earlier.
 
 
-class MUSEUnsupervised(nn.Module):
+class MuSEUnsupervised(nn.Module):
     def __init__(
         self,
         D_w,
@@ -20,7 +20,7 @@ class MUSEUnsupervised(nn.Module):
         t,
         dropout_prob=0.3,
     ):
-        super(MUSEUnsupervised, self).__init__()
+        super(MuSEUnsupervised, self).__init__()
 
         self.loss_fn = LossModule(lambda_orthogonality, M, t)
 

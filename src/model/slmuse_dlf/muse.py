@@ -1,22 +1,22 @@
 import torch
 import torch.nn as nn
 
-from model.slmuse_dlf.embeddings import SLMUSEEmbeddings
-from model.slmuse_dlf.supervised_module import SLMUSESupervised
-from model.slmuse_dlf.supervised_module_alternative import SLMUSESupervisedAlternative
-from model.slmuse_dlf.supervised_module_alternative1 import SLMUSESupervisedAlternative1
-from model.slmuse_dlf.supervised_module_alternative2 import SLMUSESupervisedAlternative2
-from model.slmuse_dlf.supervised_module_alternative3 import SLMUSESupervisedAlternative3
-from model.slmuse_dlf.supervised_module_alternative4 import SLMUSESupervisedAlternative4
-from model.slmuse_dlf.supervised_module_alternative5 import SLMUSESupervisedAlternative5
-from model.slmuse_dlf.supervised_module_alternative6 import SLMUSESupervisedAlternative6
-from model.slmuse_dlf.supervised_module_alternative7 import SLMUSESupervisedAlternative7
-from model.slmuse_dlf.unsupervised_module import SLMUSEUnsupervised
-from model.slmuse_dlf.unsupervised_frameaxis_module import SLMUSEFrameAxisUnsupervised
+from model.slmuse_dlf.embeddings import SLMuSEEmbeddings
+from model.slmuse_dlf.supervised_module import SLMuSESupervised
+from model.slmuse_dlf.supervised_module_alternative import SLMuSESupervisedAlternative
+from model.slmuse_dlf.supervised_module_alternative1 import SLMuSESupervisedAlternative1
+from model.slmuse_dlf.supervised_module_alternative2 import SLMuSESupervisedAlternative2
+from model.slmuse_dlf.supervised_module_alternative3 import SLMuSESupervisedAlternative3
+from model.slmuse_dlf.supervised_module_alternative4 import SLMuSESupervisedAlternative4
+from model.slmuse_dlf.supervised_module_alternative5 import SLMuSESupervisedAlternative5
+from model.slmuse_dlf.supervised_module_alternative6 import SLMuSESupervisedAlternative6
+from model.slmuse_dlf.supervised_module_alternative7 import SLMuSESupervisedAlternative7
+from model.slmuse_dlf.unsupervised_module import SLMuSEUnsupervised
+from model.slmuse_dlf.unsupervised_frameaxis_module import SLMuSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSEDLF(nn.Module):
+class SLMuSEDLF(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -35,19 +35,19 @@ class SLMUSEDLF(nn.Module):
         lambda_orthogonality=1e-3,  # lambda for orthogonality loss
         M=8,  # M total margin budget for triplet loss
         t=8,  # t number of negatives for triplet loss (select t descriptors in Fz with smallest weights in gz)
-        # MUSEUnsupervised Parameters
+        # MuSEUnsupervised Parameters
         muse_unsupervised_num_layers=2,  # Number of layers in the encoder
         muse_unsupervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         muse_unsupervised_use_batch_norm=True,  # Whether to use batch normalization
         muse_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         muse_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
-        # MUSEFrameAxisUnsupervised Parameters
+        # MuSEFrameAxisUnsupervised Parameters
         muse_frameaxis_unsupervised_num_layers=2,  # Number of layers in the encoder
         muse_frameaxis_unsupervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         muse_frameaxis_unsupervised_use_batch_norm=True,  # Whether to use batch normalization
         muse_frameaxis_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         muse_frameaxis_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
-        # MUSEUnsupervised & MUSEFrameAxisUnsupervised Parameters
+        # MuSEUnsupervised & MuSEFrameAxisUnsupervised Parameters
         num_negatives=-1,  # Number of negative samples to use for triplet loss
         # SupervisedModule Parameters
         supervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
@@ -58,7 +58,7 @@ class SLMUSEDLF(nn.Module):
         _debug=False,
         _detect_anomaly=False,
     ):
-        super(SLMUSEDLF, self).__init__()
+        super(SLMuSEDLF, self).__init__()
 
         self.model_type = "slmuse-dlf"
 
@@ -77,7 +77,7 @@ class SLMUSEDLF(nn.Module):
                 )
 
         # Aggregation layer replaced with SRL_Embeddings
-        self.aggregation = SLMUSEEmbeddings(
+        self.aggregation = SLMuSEEmbeddings(
             model_name_or_path=bert_model_name_or_path,
             model_type=bert_model_name,
             hidden_state=hidden_state,
@@ -86,7 +86,7 @@ class SLMUSEDLF(nn.Module):
         )
 
         # Unsupervised training module
-        self.unsupervised = SLMUSEUnsupervised(
+        self.unsupervised = SLMuSEUnsupervised(
             embedding_dim=embedding_dim,
             hidden_dim=hidden_dim,
             num_classes=num_classes,
@@ -102,7 +102,7 @@ class SLMUSEDLF(nn.Module):
             _debug=_debug,
         )
 
-        self.unsupervised_fx = SLMUSEFrameAxisUnsupervised(
+        self.unsupervised_fx = SLMuSEFrameAxisUnsupervised(
             embedding_dim=embedding_dim,
             frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,
@@ -122,7 +122,7 @@ class SLMUSEDLF(nn.Module):
         if alternative_supervised == "alt":
             self.logger.info("🔄 Using alternative supervised module")
             # Supervised training module
-            self.supervised = SLMUSESupervisedAlternative(
+            self.supervised = SLMuSESupervisedAlternative(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -135,7 +135,7 @@ class SLMUSEDLF(nn.Module):
             )
         elif alternative_supervised == "alt1":
             self.logger.info("🔄 Using alternative supervised module 1")
-            self.supervised = SLMUSESupervisedAlternative1(
+            self.supervised = SLMuSESupervisedAlternative1(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -148,7 +148,7 @@ class SLMUSEDLF(nn.Module):
             )
         elif alternative_supervised == "alt2":
             self.logger.info("🔄 Using alternative supervised module 2")
-            self.supervised = SLMUSESupervisedAlternative2(
+            self.supervised = SLMuSESupervisedAlternative2(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -161,7 +161,7 @@ class SLMUSEDLF(nn.Module):
             )
         elif alternative_supervised == "alt3":
             self.logger.info("🔄 Using alternative supervised module 3")
-            self.supervised = SLMUSESupervisedAlternative3(
+            self.supervised = SLMuSESupervisedAlternative3(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -171,7 +171,7 @@ class SLMUSEDLF(nn.Module):
             )
         elif alternative_supervised == "alt4":
             self.logger.info("🔄 Using alternative supervised module 4")
-            self.supervised = SLMUSESupervisedAlternative4(
+            self.supervised = SLMuSESupervisedAlternative4(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -181,7 +181,7 @@ class SLMUSEDLF(nn.Module):
             )
         elif alternative_supervised == "alt5":
             self.logger.info("🔄 Using alternative supervised module 5")
-            self.supervised = SLMUSESupervisedAlternative5(
+            self.supervised = SLMuSESupervisedAlternative5(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -193,7 +193,7 @@ class SLMUSEDLF(nn.Module):
             )
         elif alternative_supervised == "alt6":
             self.logger.info("🔄 Using alternative supervised module 6")
-            self.supervised = SLMUSESupervisedAlternative6(
+            self.supervised = SLMuSESupervisedAlternative6(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -205,7 +205,7 @@ class SLMUSEDLF(nn.Module):
             )
         elif alternative_supervised == "alt7":
             self.logger.info("🔄 Using alternative supervised module 7")
-            self.supervised = SLMUSESupervisedAlternative7(
+            self.supervised = SLMuSESupervisedAlternative7(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -219,7 +219,7 @@ class SLMUSEDLF(nn.Module):
             self.logger.info("🔄 Using default supervised module")
 
             # Supervised training module
-            self.supervised = SLMUSESupervised(
+            self.supervised = SLMuSESupervised(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -269,7 +269,7 @@ class SLMUSEDLF(nn.Module):
         }
 
         # Debugging:
-        self.logger.debug(f"✅ MUSEDLF successfully initialized")
+        self.logger.debug(f"✅ MuSEDLF successfully initialized")
 
     def set_log_level(self, log_level):
         LoggerManager.set_log_level(log_level)

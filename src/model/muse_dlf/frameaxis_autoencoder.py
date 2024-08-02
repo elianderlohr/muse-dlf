@@ -4,7 +4,7 @@ from model.muse_dlf.helper import custom_gumbel_sigmoid
 from utils.logging_manager import LoggerManager
 
 
-class MUSEFrameAxisAutoencoder(nn.Module):
+class MuSEFrameAxisAutoencoder(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -19,7 +19,7 @@ class MUSEFrameAxisAutoencoder(nn.Module):
         log=False,  # whether to use log gumbel sigmoid
         _debug=False,
     ):
-        super(MUSEFrameAxisAutoencoder, self).__init__()
+        super(MuSEFrameAxisAutoencoder, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)

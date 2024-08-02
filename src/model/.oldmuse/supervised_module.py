@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class MUSESupervised(nn.Module):
+class MuSESupervised(nn.Module):
     def __init__(
         self,
         D_w,
@@ -14,7 +14,7 @@ class MUSESupervised(nn.Module):
         dropout_prob=0.3,
         sentence_prediction_method="friss",  # friss or custom
     ):
-        super(MUSESupervised, self).__init__()
+        super(MuSESupervised, self).__init__()
 
         self.D_w = D_w
         self.frameaxis_dim = frameaxis_dim

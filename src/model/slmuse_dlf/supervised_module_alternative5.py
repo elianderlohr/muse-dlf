@@ -3,7 +3,7 @@ import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSESupervisedAlternative5(nn.Module):
+class SLMuSESupervisedAlternative5(nn.Module):
     def __init__(
         self,
         embedding_dim,  # Embedding dimension (e.g. RoBERTa 768)
@@ -18,7 +18,7 @@ class SLMUSESupervisedAlternative5(nn.Module):
         ),  # Tuple of activation functions: first and last
         _debug=False,
     ):
-        super(SLMUSESupervisedAlternative5, self).__init__()
+        super(SLMuSESupervisedAlternative5, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
@@ -49,7 +49,7 @@ class SLMUSESupervisedAlternative5(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        self.logger.debug(f"✅ MUSESupervised successfully initialized")
+        self.logger.debug(f"✅ MuSESupervised successfully initialized")
 
     def get_activation(self, activation_function):
         if activation_function == "relu":

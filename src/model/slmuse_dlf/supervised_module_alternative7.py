@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSESupervisedAlternative7(nn.Module):
+class SLMuSESupervisedAlternative7(nn.Module):
     def __init__(
         self,
         embedding_dim=768,
@@ -18,7 +18,7 @@ class SLMUSESupervisedAlternative7(nn.Module):
         num_layers=2,
         _debug=False,
     ):
-        super(SLMUSESupervisedAlternative7, self).__init__()
+        super(SLMuSESupervisedAlternative7, self).__init__()
 
         self.logger = LoggerManager.get_logger(__name__)
 
@@ -66,7 +66,7 @@ class SLMUSESupervisedAlternative7(nn.Module):
             else nn.Identity()
         )
 
-        self.logger.debug(f"✅ SLMUSESupervisedAlternative7 successfully initialized")
+        self.logger.debug(f"✅ SLMuSESupervisedAlternative7 successfully initialized")
 
     @staticmethod
     def adjust_dim(dim, num_heads):

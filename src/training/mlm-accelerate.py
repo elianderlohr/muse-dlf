@@ -99,7 +99,7 @@ def main():
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    parser = argparse.ArgumentParser(description="Train MUSE model")
+    parser = argparse.ArgumentParser(description="Train MuSE model")
 
     parser.add_argument(
         "--model_name", type=str, default="roberta-base", help="Model name"

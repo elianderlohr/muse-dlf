@@ -4,7 +4,7 @@ import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
 
-class MUSEEmbeddings(nn.Module):
+class MuSEEmbeddings(nn.Module):
     def __init__(
         self,
         model_name_or_path: str,
@@ -14,7 +14,7 @@ class MUSEEmbeddings(nn.Module):
         tokenizer_pad_token_id: int = 1,
         _debug=False,
     ):
-        super(MUSEEmbeddings, self).__init__()
+        super(MuSEEmbeddings, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)

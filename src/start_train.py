@@ -7,8 +7,8 @@ import random
 
 import numpy as np
 
-from model.slmuse_dlf.muse import SLMUSEDLF
-from model.muse_dlf.muse import MUSEDLF
+from model.slmuse_dlf.muse import SLMuSEDLF
+from model.muse_dlf.muse import MuSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
 import torch.nn as nn
@@ -79,7 +79,7 @@ def load_model(
 
         if model_type == "slmuse-dlf":
             logger.info("Loading SLMuSE-DLF model")
-            model = SLMUSEDLF(
+            model = SLMuSEDLF(
                 embedding_dim=embedding_dim,
                 frameaxis_dim=frameaxis_dim,
                 hidden_dim=hidden_dim,
@@ -114,7 +114,7 @@ def load_model(
         else:
             logger.info("Loading MuSE-DLF model")
             try:
-                model = MUSEDLF(
+                model = MuSEDLF(
                     embedding_dim=embedding_dim,
                     frameaxis_dim=frameaxis_dim,
                     hidden_dim=hidden_dim,
@@ -245,7 +245,7 @@ def set_custom_seed(seed):
 def main():
     os.environ["WANDB__SERVICE_WAIT"] = "300"
 
-    parser = argparse.ArgumentParser(description="Train MUSE model")
+    parser = argparse.ArgumentParser(description="Train MuSE model")
 
     # Required arguments
     required_args = parser.add_argument_group("Required Arguments")
@@ -276,7 +276,7 @@ def main():
     parser.add_argument(
         "--tags",
         type=str,
-        default="MUSE, Frame Classification, FrameAxis",
+        default="MuSE, Frame Classification, FrameAxis",
         help="Tags to describe the model",
     )
 
@@ -322,61 +322,61 @@ def main():
         "--muse_unsupervised_num_layers",
         type=int,
         default=2,
-        help="Number of layers in the MUSE unsupervised encoder",
+        help="Number of layers in the MuSE unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_unsupervised_activation",
         type=str,
         default="relu",
-        help="Activation function in the MUSE unsupervised encoder",
+        help="Activation function in the MuSE unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_unsupervised_use_batch_norm",
         type=str2bool,
         default=True,
-        help="Use batch normalization in the MUSE unsupervised encoder",
+        help="Use batch normalization in the MuSE unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_unsupervised_matmul_input",
         type=str,
         default="g",
-        help="Input type for matmul in the MUSE unsupervised encoder",
+        help="Input type for matmul in the MuSE unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_unsupervised_gumbel_softmax_log",
         type=str2bool,
         default=False,
-        help="Use log gumbel softmax in the MUSE unsupervised encoder",
+        help="Use log gumbel softmax in the MuSE unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_num_layers",
         type=int,
         default=2,
-        help="Number of layers in the MUSE frameaxis unsupervised encoder",
+        help="Number of layers in the MuSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_activation",
         type=str,
         default="relu",
-        help="Activation function in the MUSE frameaxis unsupervised encoder",
+        help="Activation function in the MuSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_use_batch_norm",
         type=str2bool,
         default=True,
-        help="Use batch normalization in the MUSE frameaxis unsupervised encoder",
+        help="Use batch normalization in the MuSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_matmul_input",
         type=str,
         default="g",
-        help="Input type for matmul in the MUSE frameaxis unsupervised encoder",
+        help="Input type for matmul in the MuSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--muse_frameaxis_unsupervised_gumbel_softmax_log",
         type=str2bool,
         default=False,
-        help="Use log gumbel softmax in the MUSE frameaxis unsupervised encoder",
+        help="Use log gumbel softmax in the MuSE frameaxis unsupervised encoder",
     )
     model_config.add_argument(
         "--num_negatives",

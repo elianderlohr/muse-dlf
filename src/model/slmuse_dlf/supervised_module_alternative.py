@@ -4,7 +4,7 @@ from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast
 
 
-class SLMUSESupervisedAlternative(nn.Module):
+class SLMuSESupervisedAlternative(nn.Module):
     def __init__(
         self,
         embedding_dim,  # Embedding dimension (e.g. RoBERTa 768)
@@ -17,7 +17,7 @@ class SLMUSESupervisedAlternative(nn.Module):
         activation_function="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         _debug=False,
     ):
-        super(SLMUSESupervisedAlternative, self).__init__()
+        super(SLMuSESupervisedAlternative, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)
@@ -69,7 +69,7 @@ class SLMUSESupervisedAlternative(nn.Module):
         self._debug = _debug
 
         # Debugging:
-        self.logger.debug(f"✅ MUSESupervised successfully initialized")
+        self.logger.debug(f"✅ MuSESupervised successfully initialized")
 
     def forward(
         self,

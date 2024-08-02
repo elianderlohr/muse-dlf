@@ -3,8 +3,8 @@ from venv import logger
 from charset_normalizer import detect
 import numpy as np
 import torch
-from model.slmuse_dlf.muse import SLMUSEDLF
-from model.muse_dlf.muse import MUSEDLF
+from model.slmuse_dlf.muse import SLMuSEDLF
+from model.muse_dlf.muse import MuSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch.nn as nn
 
@@ -79,7 +79,7 @@ def load_model(
     logger.info("Loading model of type: %s", model_type)
 
     if model_type == "slmuse-dlf":
-        model = SLMUSEDLF(
+        model = SLMuSEDLF(
             embedding_dim=embedding_dim,
             frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,
@@ -110,7 +110,7 @@ def load_model(
             _detect_anomaly=_detect_anomaly,
         )
     else:
-        model = MUSEDLF(
+        model = MuSEDLF(
             embedding_dim=embedding_dim,
             frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,

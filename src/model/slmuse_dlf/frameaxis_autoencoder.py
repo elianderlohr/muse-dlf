@@ -6,7 +6,7 @@ from torch.nn.functional import log_softmax, softmax
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSEFrameAxisAutoencoder(nn.Module):
+class SLMuSEFrameAxisAutoencoder(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -21,7 +21,7 @@ class SLMUSEFrameAxisAutoencoder(nn.Module):
         log=False,
         _debug=False,
     ):
-        super(SLMUSEFrameAxisAutoencoder, self).__init__()
+        super(SLMuSEFrameAxisAutoencoder, self).__init__()
 
         self.logger = LoggerManager.get_logger(__name__)
 

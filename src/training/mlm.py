@@ -177,7 +177,7 @@ class RoBERTaMLM:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train MUSE model")
+    parser = argparse.ArgumentParser(description="Train MuSE model")
 
     parser.add_argument(
         "--model_name", type=str, default="roberta-base", help="Model name"

@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
 
-from model.muse_dlf.embeddings import MUSEEmbeddings
-from model.muse_dlf.supervised_module import MUSESupervised
-from model.muse_dlf.supervised_module_alternative5 import MUSESupervisedAlternative5
-from model.muse_dlf.supervised_module_alternative6 import MUSESupervisedAlternative6
-from model.muse_dlf.unsupervised_module import MUSEUnsupervised
-from model.muse_dlf.unsupervised_frameaxis_module import MUSEFrameAxisUnsupervised
+from model.muse_dlf.embeddings import MuSEEmbeddings
+from model.muse_dlf.supervised_module import MuSESupervised
+from model.muse_dlf.supervised_module_alternative5 import MuSESupervisedAlternative5
+from model.muse_dlf.supervised_module_alternative6 import MuSESupervisedAlternative6
+from model.muse_dlf.unsupervised_module import MuSEUnsupervised
+from model.muse_dlf.unsupervised_frameaxis_module import MuSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
 
 
-class MUSEDLF(nn.Module):
+class MuSEDLF(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -29,19 +29,19 @@ class MUSEDLF(nn.Module):
         lambda_orthogonality=1e-3,  # lambda for orthogonality loss
         M=8,  # M total margin budget for triplet loss
         t=8,  # t number of negatives for triplet loss (select t descriptors in Fz with smallest weights in gz)
-        # MUSEUnsupervised Parameters
+        # MuSEUnsupervised Parameters
         muse_unsupervised_num_layers=2,  # Number of layers in the encoder
         muse_unsupervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         muse_unsupervised_use_batch_norm=True,  # Whether to use batch normalization
         muse_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         muse_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
-        # MUSEFrameAxisUnsupervised Parameters
+        # MuSEFrameAxisUnsupervised Parameters
         muse_frameaxis_unsupervised_num_layers=2,  # Number of layers in the encoder
         muse_frameaxis_unsupervised_activation="relu",  # Activation function: "relu", "gelu", "leaky_relu", "elu"
         muse_frameaxis_unsupervised_use_batch_norm=True,  # Whether to use batch normalization
         muse_frameaxis_unsupervised_matmul_input="g",  # g or d (g = gumbel-softmax, d = softmax)
         muse_frameaxis_unsupervised_gumbel_softmax_log=False,  # Whether to use log gumbel softmax
-        # MUSEUnsupervised & MUSEFrameAxisUnsupervised Parameters
+        # MuSEUnsupervised & MuSEFrameAxisUnsupervised Parameters
         num_negatives=-1,  # Number of negative samples to use for triplet loss
         # SupervisedModule Parameters
         supervised_concat_frameaxis=True,  # Whether to concatenate frameaxis with sentence
@@ -52,7 +52,7 @@ class MUSEDLF(nn.Module):
         _debug=False,
         _detect_anomaly=False,
     ):
-        super(MUSEDLF, self).__init__()
+        super(MuSEDLF, self).__init__()
 
         self.model_type = "muse-dlf"
 
@@ -70,7 +70,7 @@ class MUSEDLF(nn.Module):
                 )
 
         # Aggregation layer replaced with SRL_Embeddings
-        self.aggregation = MUSEEmbeddings(
+        self.aggregation = MuSEEmbeddings(
             model_name_or_path=bert_model_name_or_path,
             model_type=bert_model_name,
             hidden_state=hidden_state,
@@ -79,7 +79,7 @@ class MUSEDLF(nn.Module):
         )
 
         # Unsupervised training module
-        self.unsupervised = MUSEUnsupervised(
+        self.unsupervised = MuSEUnsupervised(
             embedding_dim=embedding_dim,
             hidden_dim=hidden_dim,
             num_classes=num_classes,
@@ -95,7 +95,7 @@ class MUSEDLF(nn.Module):
             _debug=_debug,
         )
 
-        self.unsupervised_fx = MUSEFrameAxisUnsupervised(
+        self.unsupervised_fx = MuSEFrameAxisUnsupervised(
             embedding_dim=embedding_dim,
             frameaxis_dim=frameaxis_dim,
             hidden_dim=hidden_dim,
@@ -115,7 +115,7 @@ class MUSEDLF(nn.Module):
         if alternative_supervised == "alt5":
             self.logger.debug("🚦 Using alternative supervised module: alt5")
             # Supervised training module
-            self.supervised = MUSESupervisedAlternative5(
+            self.supervised = MuSESupervisedAlternative5(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -127,7 +127,7 @@ class MUSEDLF(nn.Module):
         elif alternative_supervised == "alt6":
             self.logger.debug("🚦 Using alternative supervised module: alt6")
             # Supervised training module
-            self.supervised = MUSESupervisedAlternative6(
+            self.supervised = MuSESupervisedAlternative6(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -140,7 +140,7 @@ class MUSEDLF(nn.Module):
         else:
             self.logger.debug("🚦 Using default supervised module")
             # Supervised training module
-            self.supervised = MUSESupervised(
+            self.supervised = MuSESupervised(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -190,7 +190,7 @@ class MUSEDLF(nn.Module):
         }
 
         # Debugging:
-        self.logger.debug(f"✅ MUSEDLF successfully initialized")
+        self.logger.debug(f"✅ MuSEDLF successfully initialized")
 
     def set_log_level(self, log_level):
         LoggerManager.set_log_level(log_level)

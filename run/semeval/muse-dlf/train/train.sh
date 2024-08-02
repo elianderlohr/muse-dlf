@@ -4,8 +4,8 @@
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --job-name=semeval-muse-dlf-train-4
-#SBATCH --mem=32G
 #SBATCH --gres=gpu:4
+#SBATCH --mem=48G
 
 echo "===================== Job Details ====================="
 # Display job settings
@@ -47,7 +47,7 @@ else
     echo "WANDB_API_KEY successfully loaded."
 fi
 
-# parse arguments
+# Parse arguments
 for arg in "$@"
 do
     case $arg in
@@ -175,10 +175,10 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --M 8 \
     --t 8 \
     --batch_size 8 \
-    --num_sentences 64 \
-    --max_sentence_length 64 \
-    --max_args_per_sentence 13 \
-    --max_arg_length 18 \
+    --num_sentences 57 \
+    --max_sentence_length 40 \
+    --max_args_per_sentence 21 \
+    --max_arg_length 21 \
     --muse_unsupervised_num_layers 2 \
     --muse_unsupervised_activation gelu \
     --muse_unsupervised_use_batch_norm True \

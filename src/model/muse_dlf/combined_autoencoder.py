@@ -4,7 +4,7 @@ from model.muse_dlf.helper import custom_gumbel_sigmoid
 from utils.logging_manager import LoggerManager
 
 
-class MUSECombinedAutoencoder(nn.Module):
+class MuSECombinedAutoencoder(nn.Module):
     def __init__(
         self,
         embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
@@ -18,7 +18,7 @@ class MUSECombinedAutoencoder(nn.Module):
         log=False,  # whether to use log gumbel softmax
         _debug=False,
     ):
-        super(MUSECombinedAutoencoder, self).__init__()
+        super(MuSECombinedAutoencoder, self).__init__()
 
         # init logger
         self.logger = LoggerManager.get_logger(__name__)

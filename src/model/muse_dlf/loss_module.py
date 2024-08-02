@@ -3,9 +3,9 @@ import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
 
-class MUSELossModule(nn.Module):
+class MuSELossModule(nn.Module):
     def __init__(self, lambda_orthogonality, M, t, _debug=False):
-        super(MUSELossModule, self).__init__()
+        super(MuSELossModule, self).__init__()
         self.logger = LoggerManager.get_logger(__name__)
         self.lambda_orthogonality = lambda_orthogonality
         self.M = M

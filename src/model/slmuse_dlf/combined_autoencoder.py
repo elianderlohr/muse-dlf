@@ -5,7 +5,7 @@ from torch.nn.functional import log_softmax, softmax
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSECombinedAutoencoder(nn.Module):
+class SLMuSECombinedAutoencoder(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -19,7 +19,7 @@ class SLMUSECombinedAutoencoder(nn.Module):
         log=False,
         _debug=False,
     ):
-        super(SLMUSECombinedAutoencoder, self).__init__()
+        super(SLMuSECombinedAutoencoder, self).__init__()
 
         self.logger = LoggerManager.get_logger(__name__)
 

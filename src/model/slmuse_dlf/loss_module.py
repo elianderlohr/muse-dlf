@@ -3,7 +3,7 @@ import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
 
-class SLMUSELossModule(nn.Module):
+class SLMuSELossModule(nn.Module):
     def __init__(self, lambda_orthogonality, M, t, _debug=False):
         super().__init__()
         self.logger = LoggerManager.get_logger(__name__)
