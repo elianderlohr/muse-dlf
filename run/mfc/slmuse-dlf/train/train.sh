@@ -167,13 +167,13 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --embedding_dim 768 \
     --hidden_dim 768 \
     --num_classes 15 \
-    --dropout_prob 0.5 \
+    --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 1e-3 \
     --lr 0.0001 \
     --M 8 \
     --t 8 \
-    --batch_size 64 \
+    --batch_size 8 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \

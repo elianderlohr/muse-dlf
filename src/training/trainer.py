@@ -756,9 +756,6 @@ class Trainer:
                             "train_accuracy_frameaxis": eval_accuracy_frameaxis[
                                 "accuracy"
                             ],
-                            "epoch": epoch,
-                            "batch": global_steps,
-                            "global_steps": global_steps,
                         }
 
                         self._log_metrics(metrics)
@@ -796,9 +793,6 @@ class Trainer:
                                         f"train_f1_class_{class_name}": metrics[
                                             "f1-score"
                                         ],
-                                        "epoch": epoch,
-                                        "batch": global_steps,
-                                        "global_steps": global_steps,
                                     }
                                 )
 
@@ -1298,7 +1292,7 @@ class Trainer:
             if isinstance(
                 class_metrics, dict
             ):  # Skip 'accuracy', 'macro avg', 'weighted avg'
-                metrics.update(
+                self._log_metrics(
                     {
                         f"eval_precision_class_{class_name}": class_metrics[
                             "precision"
@@ -1307,8 +1301,6 @@ class Trainer:
                         f"eval_f1_class_{class_name}": class_metrics["f1-score"],
                     }
                 )
-
-        self._log_metrics(metrics)
 
         return metrics
 
