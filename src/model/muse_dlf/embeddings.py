@@ -31,6 +31,8 @@ class MuSEEmbeddings(nn.Module):
                 f"Unsupported model_type. Choose either 'bert-base-uncased' or 'roberta-base'. Found: {model_type}"
             )
 
+        self.logger.info(f"Model loaded: {model_name_or_path}")
+
         # Set model to evaluation mode
         self.model.eval()
 

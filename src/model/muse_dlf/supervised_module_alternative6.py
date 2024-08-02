@@ -47,7 +47,7 @@ class MuSESupervisedAlternative6(nn.Module):
             nn.Linear(hidden_dim, num_classes),
         )
 
-        self.logger.debug("✅ SLMuSESupervisedAlternative6 successfully initialized")
+        self.logger.debug("✅ MuSESupervisedAlternative6 successfully initialized")
 
     def forward(self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data):
 
