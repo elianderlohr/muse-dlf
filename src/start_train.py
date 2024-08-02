@@ -831,38 +831,38 @@ def main():
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
             # Create a dictionary of label names and their frequencies
-            # class_freq_dict = {
-            #     "Capacity and Resources": 0.035401,
-            #     "Crime and Punishment": 0.135367,
-            #     "Cultural Identity": 0.093729,
-            #     "Economic": 0.069791,
-            #     "External Regulation and Reputation": 0.022252,
-            #     "Fairness and Equality": 0.026129,
-            #     "Health and Safety": 0.040290,
-            #     "Legality, Constitutionality, Jurisdiction": 0.161328,
-            #     "Morality": 0.012812,
-            #     "Other": 0.001517,
-            #     "Policy Prescription and Evaluation": 0.079737,
-            #     "Political": 0.163351,
-            #     "Public Sentiment": 0.040964,
-            #     "Quality of Life": 0.069117,
-            #     "Security and Defense": 0.048213,
-            # }
+            class_freq_dict = {
+                "Capacity and Resources": 0.035401,
+                "Crime and Punishment": 0.135367,
+                "Cultural Identity": 0.093729,
+                "Economic": 0.069791,
+                "External Regulation and Reputation": 0.022252,
+                "Fairness and Equality": 0.026129,
+                "Health and Safety": 0.040290,
+                "Legality, Constitutionality, Jurisdiction": 0.161328,
+                "Morality": 0.012812,
+                "Other": 0.001517,
+                "Policy Prescription and Evaluation": 0.079737,
+                "Political": 0.163351,
+                "Public Sentiment": 0.040964,
+                "Quality of Life": 0.069117,
+                "Security and Defense": 0.048213,
+            }
 
-            # class_freqs = list(class_freq_dict.values())
+            class_freqs = list(class_freq_dict.values())
 
-            # # Normalize alpha values so they sum to 1
-            # alpha_inverse = torch.tensor(
-            #     [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
-            # ).to(accelerator.device)
+            # Normalize alpha values so they sum to 1
+            alpha_inverse = torch.tensor(
+                [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
+            ).to(accelerator.device)
 
-            # loss_function = FocalLoss(
-            #     alpha=alpha_inverse,
-            #     gamma=args.focal_loss_gamma,
-            #     reduction="mean",
-            # )
+            loss_function = FocalLoss(
+                alpha=class_freqs,  # alpha_inverse,
+                gamma=args.focal_loss_gamma,
+                reduction="mean",
+            )
 
-            loss_function = nn.CrossEntropyLoss()
+            # loss_function = nn.CrossEntropyLoss()
 
             logger.info("Loss function set to FocalLoss")
         else:
