@@ -338,11 +338,11 @@ class Trainer:
                     sentence_loss = self.loss_function(
                         sent_probs, arg_max_labels, input_type="probabilities"
                     )
-                    # supervised_loss = span_loss + sentence_loss
+                    supervised_loss = span_loss + sentence_loss
 
-                    supervised_loss = self.loss_function(
-                        combined_probs, arg_max_labels, input_type="probabilities"
-                    )
+                    # supervised_loss = self.loss_function(
+                    #    combined_probs, arg_max_labels, input_type="probabilities"
+                    # )
 
                     sum_of_parameters = sum(p.sum() for p in self.model.parameters())
                     zero_sum = sum_of_parameters * 0.0
@@ -1060,9 +1060,11 @@ class Trainer:
                 sentence_loss = self.loss_function(
                     sent_probs, arg_max_labels, input_type="probabilities"
                 )
-                supervised_loss = self.loss_function(
-                    combined_probs, arg_max_labels, input_type="probabilities"
-                )
+                # supervised_loss = self.loss_function(
+                #    combined_probs, arg_max_labels, input_type="probabilities"
+                # )
+
+                supervised_loss = span_loss + sentence_loss
 
                 combined_loss = (
                     alpha * supervised_loss + (1 - alpha) * unsupervised_loss
