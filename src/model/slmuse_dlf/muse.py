@@ -512,6 +512,10 @@ class SLMuSEDLF(nn.Module):
                         valid_counts_a0 += mask_a0.float()
                         valid_counts_a1 += mask_a1.float()
 
+                        self.logger.debug(
+                            "Unsupervised results keys:", unsupervised_results.keys()
+                        )
+
                         # Use the vhat (reconstructed embeddings) for supervised predictions
                         d_p_sentence_list.append(unsupervised_results["p"]["d"])
                         d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
@@ -603,6 +607,10 @@ class SLMuSEDLF(nn.Module):
                     tau,
                 )
 
+                self.logger.debug(
+                    "Unsupervised fx results keys:", unsupervised_fx_results.keys()
+                )
+
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
                 logits_fx_list.append(unsupervised_fx_results["fx"]["logits"])
 
@@ -638,6 +646,34 @@ class SLMuSEDLF(nn.Module):
                         )
                     )
                     d_a1_sentence_list.append(
+                        torch.zeros(
+                            (
+                                predicate_embeddings.size(0),
+                                self.num_classes,
+                            ),
+                            device=predicate_embeddings.device,
+                        )
+                    )
+                    # Logits for the supervised module
+                    logits_p_sentence_list.append(
+                        torch.zeros(
+                            (
+                                predicate_embeddings.size(0),
+                                self.num_classes,
+                            ),
+                            device=predicate_embeddings.device,
+                        )
+                    )
+                    logits_a0_sentence_list.append(
+                        torch.zeros(
+                            (
+                                predicate_embeddings.size(0),
+                                self.num_classes,
+                            ),
+                            device=predicate_embeddings.device,
+                        )
+                    )
+                    logits_a1_sentence_list.append(
                         torch.zeros(
                             (
                                 predicate_embeddings.size(0),
