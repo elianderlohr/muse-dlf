@@ -88,7 +88,6 @@ class SLMuSESupervisedAlternative6(nn.Module):
 
         flattened = self.flatten(vs)
         y_hat_sent = self.feed_forward_sentence(flattened)
-        y_hat_sent = F.softmax(y_hat_sent, dim=-1)
 
         combined = y_hat_span + y_hat_sent
 

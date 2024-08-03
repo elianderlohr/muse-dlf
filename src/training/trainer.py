@@ -333,15 +333,15 @@ class Trainer:
                     )
 
                     span_loss = self.loss_function(
-                        span_probs, arg_max_labels, input_type="probabilities"
+                        span_probs, arg_max_labels, input_type="logits"
                     )
                     sentence_loss = self.loss_function(
-                        sent_probs, arg_max_labels, input_type="probabilities"
+                        sent_probs, arg_max_labels, input_type="logits"
                     )
                     supervised_loss = span_loss + sentence_loss
 
                     # supervised_loss = self.loss_function(
-                    #    combined_probs, arg_max_labels, input_type="probabilities"
+                    #    combined_probs, arg_max_labels, input_type="logits"
                     # )
 
                     sum_of_parameters = sum(p.sum() for p in self.model.parameters())
@@ -371,10 +371,10 @@ class Trainer:
                     )
 
                     span_loss = self.loss_function(
-                        span_probs, arg_max_labels, input_type="probabilities"
+                        span_probs, arg_max_labels, input_type="logits"
                     )
                     sentence_loss = self.loss_function(
-                        sent_probs, arg_max_labels, input_type="probabilities"
+                        sent_probs, arg_max_labels, input_type="logits"
                     )
                     supervised_loss = span_loss + sentence_loss
 
@@ -413,16 +413,16 @@ class Trainer:
 
             with torch.no_grad():
                 predicate_loss = self.loss_function(
-                    other["predicate"], arg_max_labels, input_type="probabilities"
+                    other["predicate"], arg_max_labels, input_type="logits"
                 )
                 arg0_loss = self.loss_function(
-                    other["arg0"], arg_max_labels, input_type="probabilities"
+                    other["arg0"], arg_max_labels, input_type="logits"
                 )
                 arg1_loss = self.loss_function(
-                    other["arg1"], arg_max_labels, input_type="probabilities"
+                    other["arg1"], arg_max_labels, input_type="logits"
                 )
                 frameaxis_loss = self.loss_function(
-                    other["frameaxis"], arg_max_labels, input_type="probabilities"
+                    other["frameaxis"], arg_max_labels, input_type="logits"
                 )
 
             if self.check_for_nans(combined_loss, "combined_loss"):
@@ -1055,13 +1055,13 @@ class Trainer:
                         )
 
                 span_loss = self.loss_function(
-                    span_probs, arg_max_labels, input_type="probabilities"
+                    span_probs, arg_max_labels, input_type="logits"
                 )
                 sentence_loss = self.loss_function(
-                    sent_probs, arg_max_labels, input_type="probabilities"
+                    sent_probs, arg_max_labels, input_type="logits"
                 )
                 # supervised_loss = self.loss_function(
-                #    combined_probs, arg_max_labels, input_type="probabilities"
+                #    combined_probs, arg_max_labels, input_type="logits"
                 # )
 
                 supervised_loss = span_loss + sentence_loss
