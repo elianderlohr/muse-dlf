@@ -109,6 +109,10 @@ class SLMuSESupervisedAlternative8(nn.Module):
             "frameaxis": d_fx_article,
         }
 
+        # print first batch of y_hat_span and y_hat_sent
+        self.logger.debug(f"y_hat_span: {y_hat_span[0]}")
+        self.logger.debug(f"y_hat_sent: {y_hat_sent[0]}")
+
         if self._debug:
             self.logger.debug(
                 f"Forward pass debug info: batch_size={batch_size}, num_sentences={num_sentences}, embedding_dim={embedding_dim}"
