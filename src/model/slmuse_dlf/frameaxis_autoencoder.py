@@ -179,7 +179,7 @@ class SLMuSEFrameAxisAutoencoder(nn.Module):
             self.logger.error("❌ NaNs detected in vhat")
             raise ValueError("NaNs detected in vhat")
 
-        del h, logits
+        del h
         torch.cuda.empty_cache()
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F, "logits": logits}
