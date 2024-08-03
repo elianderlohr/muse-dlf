@@ -65,9 +65,9 @@ class SLMuSESupervisedAlternative8(nn.Module):
         d_a1_sent = (d_a1 * mask_a1.unsqueeze(-1)).sum(dim=2) / mask_a1.sum(
             dim=2, keepdim=True
         ).clamp(min=1)
-        d_fx_sent = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / mask_fx.sum(
-            dim=1, keepdim=True
-        ).clamp(min=1)
+
+        # Handle d_fx differently as it has a different shape
+        d_fx_sent = d_fx  # d_fx is already at the sentence level
 
         # Create sentence-level mask (True if any argument in the sentence is non-padded)
         sent_mask = (
