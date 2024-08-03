@@ -2,9 +2,6 @@ import torch
 import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
-# softmax
-import torch.nn.functional as F
-
 
 class SLMuSESupervisedAlternative6(nn.Module):
     def __init__(

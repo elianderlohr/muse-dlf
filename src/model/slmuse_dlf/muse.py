@@ -11,6 +11,7 @@ from model.slmuse_dlf.supervised_module_alternative4 import SLMuSESupervisedAlte
 from model.slmuse_dlf.supervised_module_alternative5 import SLMuSESupervisedAlternative5
 from model.slmuse_dlf.supervised_module_alternative6 import SLMuSESupervisedAlternative6
 from model.slmuse_dlf.supervised_module_alternative7 import SLMuSESupervisedAlternative7
+from model.slmuse_dlf.supervised_module_alternative8 import SLMuSESupervisedAlternative8
 from model.slmuse_dlf.unsupervised_module import SLMuSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import SLMuSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -206,6 +207,18 @@ class SLMuSEDLF(nn.Module):
         elif alternative_supervised == "alt7":
             self.logger.info("🔄 Using alternative supervised module 7")
             self.supervised = SLMuSESupervisedAlternative7(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                hidden_dim=hidden_dim,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt8":
+            self.logger.info("🔄 Using alternative supervised module 8")
+            self.supervised = SLMuSESupervisedAlternative8(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
