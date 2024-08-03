@@ -182,4 +182,4 @@ class SLMuSEFrameAxisAutoencoder(nn.Module):
         del h, logits
         torch.cuda.empty_cache()
 
-        return {"vhat": vhat, "d": d, "g": g, "F": self.F}
+        return {"vhat": vhat, "d": d, "g": g, "F": self.F, "logits": logits}

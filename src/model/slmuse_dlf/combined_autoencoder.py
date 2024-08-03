@@ -261,7 +261,25 @@ class SLMuSECombinedAutoencoder(nn.Module):
             raise ValueError("NaNs detected in vhat")
 
         return {
-            "p": {"vhat": vhat_p, "d": d_p, "g": g_p, "F": self.F_matrices["p"]},
-            "a0": {"vhat": vhat_a0, "d": d_a0, "g": g_a0, "F": self.F_matrices["a0"]},
-            "a1": {"vhat": vhat_a1, "d": d_a1, "g": g_a1, "F": self.F_matrices["a1"]},
+            "p": {
+                "vhat": vhat_p,
+                "d": d_p,
+                "g": g_p,
+                "F": self.F_matrices["p"],
+                "logits": logits_p,
+            },
+            "a0": {
+                "vhat": vhat_a0,
+                "d": d_a0,
+                "g": g_a0,
+                "F": self.F_matrices["a0"],
+                "logits": logits_a0,
+            },
+            "a1": {
+                "vhat": vhat_a1,
+                "d": d_a1,
+                "g": g_a1,
+                "F": self.F_matrices["a1"],
+                "logits": logits_a1,
+            },
         }

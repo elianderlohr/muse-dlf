@@ -12,6 +12,7 @@ from model.slmuse_dlf.supervised_module_alternative5 import SLMuSESupervisedAlte
 from model.slmuse_dlf.supervised_module_alternative6 import SLMuSESupervisedAlternative6
 from model.slmuse_dlf.supervised_module_alternative7 import SLMuSESupervisedAlternative7
 from model.slmuse_dlf.supervised_module_alternative8 import SLMuSESupervisedAlternative8
+from model.slmuse_dlf.supervised_module_alternative9 import SLMuSESupervisedAlternative9
 from model.slmuse_dlf.unsupervised_module import SLMuSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import SLMuSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -120,6 +121,7 @@ class SLMuSEDLF(nn.Module):
             _debug=_debug,
         )
 
+        self.alternative_supervised = alternative_supervised
         if alternative_supervised == "alt":
             self.logger.info("🔄 Using alternative supervised module")
             # Supervised training module
@@ -219,6 +221,18 @@ class SLMuSEDLF(nn.Module):
         elif alternative_supervised == "alt8":
             self.logger.info("🔄 Using alternative supervised module 8")
             self.supervised = SLMuSESupervisedAlternative8(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                hidden_dim=hidden_dim,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt9":
+            self.logger.info("🔄 Using alternative supervised module 9")
+            self.supervised = SLMuSESupervisedAlternative9(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -403,6 +417,7 @@ class SLMuSEDLF(nn.Module):
 
         # Creating storage for aggregated d tensors
         d_p_list, d_a0_list, d_a1_list, d_fx_list = [], [], [], []
+        logits_p_list, logits_a0_list, logits_a1_list, logits_fx_list = [], [], [], []
 
         negatives_p = self.negative_sampling(
             predicate_embeddings, num_negatives=self.num_negatives
@@ -439,6 +454,10 @@ class SLMuSEDLF(nn.Module):
             d_p_sentence_list = []
             d_a0_sentence_list = []
             d_a1_sentence_list = []
+
+            logits_p_sentence_list = []
+            logits_a0_sentence_list = []
+            logits_a1_sentence_list = []
 
             # run if sentence embedding is not all zeros
             if not torch.all(s_sentence_span == 0):
@@ -498,6 +517,17 @@ class SLMuSEDLF(nn.Module):
                         d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
                         d_a1_sentence_list.append(unsupervised_results["a1"]["d"])
 
+                        # Logits for the supervised module
+                        logits_p_sentence_list.append(
+                            unsupervised_results["p"]["logits"]
+                        )
+                        logits_a0_sentence_list.append(
+                            unsupervised_results["a0"]["logits"]
+                        )
+                        logits_a1_sentence_list.append(
+                            unsupervised_results["a1"]["logits"]
+                        )
+
                         # Delete unsupervised_results to free memory
                         del unsupervised_results
                         torch.cuda.empty_cache()
@@ -529,6 +559,34 @@ class SLMuSEDLF(nn.Module):
                                 device=predicate_embeddings.device,
                             )
                         )
+                        # Logits for the supervised module
+                        logits_p_sentence_list.append(
+                            torch.zeros(
+                                (
+                                    predicate_embeddings.size(0),
+                                    self.num_classes,
+                                ),
+                                device=predicate_embeddings.device,
+                            )
+                        )
+                        logits_a0_sentence_list.append(
+                            torch.zeros(
+                                (
+                                    predicate_embeddings.size(0),
+                                    self.num_classes,
+                                ),
+                                device=predicate_embeddings.device,
+                            )
+                        )
+                        logits_a1_sentence_list.append(
+                            torch.zeros(
+                                (
+                                    predicate_embeddings.size(0),
+                                    self.num_classes,
+                                ),
+                                device=predicate_embeddings.device,
+                            )
+                        )
 
                     # Delete span-related tensors after use
                     del v_p_span, v_a0_span, v_a1_span, mask_p, mask_a0, mask_a1
@@ -546,6 +604,7 @@ class SLMuSEDLF(nn.Module):
                 )
 
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
+                logits_fx_list.append(unsupervised_fx_results["fx"]["logits"])
 
                 # Add the loss to the unsupervised losses
                 losses_fx += unsupervised_fx_results["loss"] * mask_fx.float()
@@ -597,6 +656,15 @@ class SLMuSEDLF(nn.Module):
                         device=predicate_embeddings.device,
                     )
                 )
+                logits_fx_list.append(
+                    torch.zeros(
+                        (
+                            predicate_embeddings.size(0),
+                            self.num_classes,
+                        ),
+                        device=predicate_embeddings.device,
+                    )
+                )
 
             del s_sentence_span, v_fx
 
@@ -628,8 +696,43 @@ class SLMuSEDLF(nn.Module):
             d_a0_list.append(d_a0_sentence)
             d_a1_list.append(d_a1_sentence)
 
+            # logits
+            if len(logits_p_sentence_list) > 0:
+                max_dim = max(d.shape[-1] for d in logits_p_sentence_list)
+                logits_p_sentence_list = [
+                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                    for d in logits_p_sentence_list
+                ]
+            if len(logits_a0_sentence_list) > 0:
+                max_dim = max(d.shape[-1] for d in logits_a0_sentence_list)
+                logits_a0_sentence_list = [
+                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                    for d in logits_a0_sentence_list
+                ]
+            if len(logits_a1_sentence_list) > 0:
+                max_dim = max(d.shape[-1] for d in logits_a1_sentence_list)
+                logits_a1_sentence_list = [
+                    torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                    for d in logits_a1_sentence_list
+                ]
+
+            logits_p_sentence = torch.stack(logits_p_sentence_list, dim=1)
+            logits_a0_sentence = torch.stack(logits_a0_sentence_list, dim=1)
+            logits_a1_sentence = torch.stack(logits_a1_sentence_list, dim=1)
+
+            logits_p_list.append(logits_p_sentence)
+            logits_a0_list.append(logits_a0_sentence)
+            logits_a1_list.append(logits_a1_sentence)
+
             # Delete sentence-related tensors after use
-            del d_p_sentence_list, d_a0_sentence_list, d_a1_sentence_list
+            del (
+                d_p_sentence_list,
+                d_a0_sentence_list,
+                d_a1_sentence_list,
+                logits_p_sentence_list,
+                logits_a0_sentence_list,
+                logits_a1_sentence_list,
+            )
             torch.cuda.empty_cache()
 
         # Aggregating across all sentences
@@ -638,11 +741,23 @@ class SLMuSEDLF(nn.Module):
             d_p_list = [
                 torch.nn.functional.pad(d, (0, max_dim - d.shape[-1])) for d in d_p_list
             ]
+        if len(logits_p_list) > 0:
+            max_dim = max(d.shape[-1] for d in logits_p_list)
+            logits_p_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                for d in logits_p_list
+            ]
         if len(d_a0_list) > 0:
             max_dim = max(d.shape[-1] for d in d_a0_list)
             d_a0_list = [
                 torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
                 for d in d_a0_list
+            ]
+        if len(logits_a0_list) > 0:
+            max_dim = max(d.shape[-1] for d in logits_a0_list)
+            logits_a0_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                for d in logits_a0_list
             ]
         if len(d_a1_list) > 0:
             max_dim = max(d.shape[-1] for d in d_a1_list)
@@ -650,11 +765,23 @@ class SLMuSEDLF(nn.Module):
                 torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
                 for d in d_a1_list
             ]
+        if len(logits_a1_list) > 0:
+            max_dim = max(d.shape[-1] for d in logits_a1_list)
+            logits_a1_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                for d in logits_a1_list
+            ]
         if len(d_fx_list) > 0:
             max_dim = max(d.shape[-1] for d in d_fx_list)
             d_fx_list = [
                 torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
                 for d in d_fx_list
+            ]
+        if len(logits_fx_list) > 0:
+            max_dim = max(d.shape[-1] for d in logits_fx_list)
+            logits_fx_list = [
+                torch.nn.functional.pad(d, (0, max_dim - d.shape[-1]))
+                for d in logits_fx_list
             ]
 
         d_p_aggregated = (
@@ -662,9 +789,19 @@ class SLMuSEDLF(nn.Module):
             if d_p_list
             else torch.tensor([], device=sentence_embeddings.device)
         )
+        logits_p_aggregated = (
+            torch.stack(logits_p_list, dim=1)
+            if logits_p_list
+            else torch.tensor([], device=sentence_embeddings.device)
+        )
         d_a0_aggregated = (
             torch.stack(d_a0_list, dim=1)
             if d_a0_list
+            else torch.tensor([], device=sentence_embeddings.device)
+        )
+        logits_a0_aggregated = (
+            torch.stack(logits_a0_list, dim=1)
+            if logits_a0_list
             else torch.tensor([], device=sentence_embeddings.device)
         )
         d_a1_aggregated = (
@@ -672,21 +809,41 @@ class SLMuSEDLF(nn.Module):
             if d_a1_list
             else torch.tensor([], device=sentence_embeddings.device)
         )
+        logits_a1_aggregated = (
+            torch.stack(logits_a1_list, dim=1)
+            if logits_a1_list
+            else torch.tensor([], device=sentence_embeddings.device)
+        )
         d_fx_aggregated = (
             torch.stack(d_fx_list, dim=1)
             if d_fx_list
             else torch.tensor([], device=sentence_embeddings.device)
         )
-
-        # Supervised predictions
-        span_pred, sentence_pred, combined_pred, other = self.supervised(
-            d_p_aggregated,
-            d_a0_aggregated,
-            d_a1_aggregated,
-            d_fx_aggregated,
-            sentence_embeddings,
-            frameaxis_data,
+        logits_fx_aggregated = (
+            torch.stack(logits_fx_list, dim=1)
+            if logits_fx_list
+            else torch.tensor([], device=sentence_embeddings.device)
         )
+
+        if self.alternative_supervised == "alt9":
+            # Supervised predictions
+            span_pred, sentence_pred, combined_pred, other = self.supervised(
+                logits_p_aggregated,
+                logits_a0_aggregated,
+                logits_a1_aggregated,
+                logits_fx_aggregated,
+                sentence_embeddings,
+                frameaxis_data,
+            )
+        else:
+            span_pred, sentence_pred, combined_pred, other = self.supervised(
+                d_p_aggregated,
+                d_a0_aggregated,
+                d_a1_aggregated,
+                d_fx_aggregated,
+                sentence_embeddings,
+                frameaxis_data,
+            )
 
         # Calculate mean losses per batch for each argument type
         batch_loss_p = losses_p / valid_counts_p.clamp(min=1)
