@@ -603,10 +603,6 @@ class SLMuSEDLF(nn.Module):
                     tau,
                 )
 
-                self.logger.debug(
-                    "Unsupervised fx results keys:", unsupervised_fx_results.keys()
-                )
-
                 d_fx_list.append(unsupervised_fx_results["fx"]["d"])
                 logits_fx_list.append(unsupervised_fx_results["fx"]["logits"])
 
