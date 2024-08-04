@@ -59,11 +59,19 @@ class SLMuSEEmbeddings(nn.Module):
 
         self._debug = _debug
 
+        # Freeze the RoBERTa model
+        for param in self.model.parameters():
+            param.requires_grad = False
+
         if self._debug:
             self.verify_model_loading()
 
         # Debugging:
         self.logger.debug(f"✅ SRLEmbeddings successfully initialized")
+
+    def unfreeze_bert(self):
+        for param in self.model.parameters():
+            param.requires_grad = True
 
     def verify_model_loading(self):
         if self.model_type == "bert-base-uncased":

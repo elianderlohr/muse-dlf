@@ -935,11 +935,15 @@ def main():
         optimizer_type = args.optimizer
         if optimizer_type == "adam":
             weight_decay = args.adam_weight_decay
-            optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+            optimizer = Adam(
+                filter(lambda p: p.requires_grad, model.parameters()),
+                lr=lr,
+                weight_decay=weight_decay,
+            )
         elif optimizer_type == "adamw":
             weight_decay = args.adamw_weight_decay
             optimizer = AdamW(
-                model.parameters(),
+                filter(lambda p: p.requires_grad, model.parameters()),
                 lr=lr,
                 weight_decay=weight_decay,
                 amsgrad=args.ams_grad_options,
