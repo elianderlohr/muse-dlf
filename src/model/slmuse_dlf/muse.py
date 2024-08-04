@@ -862,7 +862,6 @@ class SLMuSEDLF(nn.Module):
         )
 
         if self.alternative_supervised == "alt9":
-            # Supervised predictions
             span_pred, sentence_pred, combined_pred, other = self.supervised(
                 logits_p_aggregated,
                 logits_a0_aggregated,

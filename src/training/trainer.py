@@ -149,9 +149,9 @@ class Trainer:
 
     def get_activation_function(self, logits):
         if self.model_type == "muse-dlf":
-            return torch.sigmoid(logits) > 0.5
+            return (torch.sigmoid(logits) > 0.5).int()
         elif self.model_type == "slmuse-dlf":
-            return torch.softmax(logits, dim=1) > 0.5
+            return (torch.softmax(logits, dim=1) > 0.5).int()
         else:
             raise ValueError(
                 f"Model type {self.model_type} not supported: only muse-dlf and slmuse-dlf are supported."
@@ -518,15 +518,19 @@ class Trainer:
                             f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                         )
 
-                        combined_pred = (combined_probs > 0.5).int()
-                        span_pred = (span_probs > 0.5).int()
-                        sentence_pred = (sent_probs > 0.5).int()
+                        combined_pred = self.get_activation_function(combined_probs)
+                        span_pred = self.get_activation_function(span_probs)
+                        sentence_pred = self.get_activation_function(sent_probs)
 
                         # predicate, arg0, arg1, frameaxis
-                        predicate_pred = (other["predicate"] > 0.5).int()
-                        arg0_pred = (other["arg0"] > 0.5).int()
-                        arg1_pred = (other["arg1"] > 0.5).int()
-                        frameaxis_pred = (other["frameaxis"] > 0.5).int()
+                        predicate_pred = self.get_activation_function(
+                            other["predicate"]
+                        )
+                        arg0_pred = self.get_activation_function(other["arg0"])
+                        arg1_pred = self.get_activation_function(other["arg1"])
+                        frameaxis_pred = self.get_activation_function(
+                            other["frameaxis"]
+                        )
 
                         if self.training_management == "accelerate":
                             combined_pred, combined_labels = (
@@ -1072,15 +1076,15 @@ class Trainer:
 
                 total_val_loss += combined_loss.item()
 
-                combined_pred = (combined_probs > 0.5).int()
-                span_pred = (span_probs > 0.5).int()
-                sentence_pred = (sent_probs > 0.5).int()
+                combined_pred = self.get_activation_function(combined_probs)
+                span_pred = self.get_activation_function(span_probs)
+                sentence_pred = self.get_activation_function(sent_probs)
 
                 # predicate, arg0, arg1, frameaxis
-                predicate_pred = (other["predicate"] > 0.5).int()
-                arg0_pred = (other["arg0"] > 0.5).int()
-                arg1_pred = (other["arg1"] > 0.5).int()
-                frameaxis_pred = (other["frameaxis"] > 0.5).int()
+                predicate_pred = self.get_activation_function(other["predicate"])
+                arg0_pred = self.get_activation_function(other["arg0"])
+                arg1_pred = self.get_activation_function(other["arg1"])
+                frameaxis_pred = self.get_activation_function(other["frameaxis"])
 
                 if self.training_management == "accelerate":
                     combined_pred, combined_labels = (
