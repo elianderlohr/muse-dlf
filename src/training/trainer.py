@@ -189,11 +189,10 @@ class Trainer:
             else:
                 preds = model_outputs["other_outputs"][f"{pred_type}_logits"]
 
-            if self.model_type == "muse-dlf":
-                preds = (torch.sigmoid(preds) > 0.5).float()
-            elif self.model_type == "slmuse-dlf":
-                preds = preds.argmax(dim=1)
+            # Apply activation function
+            preds = self.get_activation_function(preds)
 
+            # Gather predictions if using Accelerate
             if self.training_management == "accelerate":
                 preds, labels_gathered = self.accelerator.gather_for_metrics(
                     (preds, labels)
@@ -211,33 +210,30 @@ class Trainer:
         predictions: Dict[str, Tuple[torch.Tensor, torch.Tensor]],
     ):
         for pred_type, (preds, labels) in predictions.items():
-            preds_np = preds.cpu().numpy()
-            labels_np = labels.cpu().numpy()
-
             if self.model_type == "muse-dlf":
                 # Multi-label case
                 metrics[f"f1_metric_micro_{pred_type}"].add_batch(
-                    predictions=preds_np, references=labels_np
+                    predictions=preds, references=labels
                 )
                 metrics[f"f1_metric_macro_{pred_type}"].add_batch(
-                    predictions=preds_np, references=labels_np
+                    predictions=preds, references=labels
                 )
                 metrics[f"accuracy_metric_{pred_type}"].add_batch(
-                    predictions=preds_np, references=labels_np
+                    predictions=preds, references=labels
                 )
             elif self.model_type == "slmuse-dlf":
+                preds = preds.argmax(dim=1)
+                labels = labels.argmax(dim=1)
+
                 # Single-label case
                 metrics[f"f1_metric_micro_{pred_type}"].add_batch(
-                    predictions=preds_np,
-                    references=labels_np.argmax(dim=1).cpu().numpy(),
+                    predictions=preds, references=labels
                 )
                 metrics[f"f1_metric_macro_{pred_type}"].add_batch(
-                    predictions=preds_np,
-                    references=labels_np.argmax(dim=1).cpu().numpy(),
+                    predictions=preds, references=labels
                 )
                 metrics[f"accuracy_metric_{pred_type}"].add_batch(
-                    predictions=preds_np,
-                    references=labels_np.argmax(dim=1).cpu().numpy(),
+                    predictions=preds, references=labels
                 )
 
     def compute_metrics(self, metrics: Dict[str, object]) -> Dict[str, float]:
