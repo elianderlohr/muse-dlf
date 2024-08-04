@@ -330,6 +330,18 @@ class Trainer:
                 for k, v in batch.items()
                 if k != "labels"
             }
+
+            # Extract necessary items
+            model_inputs = {
+                "sentence_ids": inputs["sentence_ids"],
+                "sentence_attention_masks": inputs["sentence_attention_masks"],
+                "predicate_ids": inputs["predicate_ids"],
+                "arg0_ids": inputs["arg0_ids"],
+                "arg1_ids": inputs["arg1_ids"],
+                "frameaxis_data": inputs["frameaxis"],
+                "tau": tau,
+            }
+
             labels = (
                 batch["labels"].to(device)
                 if self.training_management != "accelerate"
@@ -339,7 +351,7 @@ class Trainer:
             # Forward pass
             if self.training_management == "accelerate":
                 with self.accelerator.autocast():
-                    outputs = self.model(**inputs, tau=tau)
+                    outputs = self.model(**model_inputs)
                     unsupervised_loss = outputs["unsupervised_loss"]
                     span_loss = self.loss_function(
                         outputs["span_probs"], labels, input_type="logits"
@@ -356,7 +368,7 @@ class Trainer:
                     enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
                     dtype=precision_dtype,
                 ):
-                    outputs = self.model(**inputs, tau=tau)
+                    outputs = self.model(**model_inputs)
                     unsupervised_loss = outputs["unsupervised_loss"]
                     span_loss = self.loss_function(
                         outputs["span_probs"], labels, input_type="logits"
@@ -560,6 +572,17 @@ class Trainer:
                 for k, v in batch.items()
                 if k != "labels"
             }
+        
+            model_inputs = {
+                "sentence_ids": inputs["sentence_ids"],
+                "sentence_attention_masks": inputs["sentence_attention_masks"],
+                "predicate_ids": inputs["predicate_ids"],
+                "arg0_ids": inputs["arg0_ids"],
+                "arg1_ids": inputs["arg1_ids"],
+                "frameaxis_data": inputs["frameaxis"],
+                "tau": tau
+            }
+            
             labels = (
                 batch["labels"].to(device)
                 if self.training_management != "accelerate"
@@ -569,13 +592,13 @@ class Trainer:
             with torch.no_grad():
                 if self.training_management == "accelerate":
                     with self.accelerator.autocast():
-                        outputs = self.model(**inputs, tau=tau)
+                        outputs = self.model(**model_inputs)
                 else:
                     with autocast(
                         enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
                         dtype=precision_dtype,
                     ):
-                        outputs = self.model(**inputs, tau=tau)
+                        outputs = self.model(**model_inputs)
 
                 unsupervised_loss = outputs["unsupervised_loss"]
                 span_loss = self.loss_function(
