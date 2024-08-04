@@ -267,12 +267,20 @@ class Trainer:
 
                 preds, labels = value
 
+                # print shapes:
+
+                logger.info(f"before: {metrics_name} - preds shape: {preds.shape}")
+                logger.info(f"before: {metrics_name} - labels shape: {labels.shape}")
+
                 if self.model_type == "muse-dlf":
                     preds = preds.float()
                     labels = labels.int()
                 elif self.model_type == "slmuse-dlf":
                     preds = preds.argmax(dim=1)
                     labels = labels.argmax(dim=1)
+
+                logger.info(f"after: {metrics_name} - preds shape: {preds.shape}")
+                logger.info(f"after: {metrics_name} - labels shape: {labels.shape}")
 
                 metrics[metric][metrics_name].add_batch(
                     predictions=preds, references=labels
