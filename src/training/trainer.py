@@ -251,11 +251,14 @@ class Trainer:
     def _prepare_logits(self, outputs: Dict, labels, keys=[]):
         logits = {}
         for key in keys:
+            logger.info(f"1. _prepare_logits: {outputs[key].shape}")
             pred = self.get_activation_function(outputs[key])
-
+            logger.info(f"2. _prepare_logits: {pred.shape}")
             if self.training_management == "accelerate":
                 pred, labels = self.accelerator.gather_for_metrics((pred, labels))
 
+            logger.info(f"3. pred: {pred.shape}")
+            logger.info(f"3. labels: {labels.shape}")
             logits[key] = (pred, labels)
 
         return logits
