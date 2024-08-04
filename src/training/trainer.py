@@ -290,8 +290,8 @@ class Trainer:
     def _metrics_calculate(self, metrics, prefix="train"):
         results = {}
 
-        for metric in metrics:
-            for key, evaluator in metric.items():
+        for metric, value in metrics.items():
+            for key, evaluator in value.items():
                 if metric == "accuracy":
                     result = evaluator.compute()
                 elif metric == "f1_micro":
