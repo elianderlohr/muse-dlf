@@ -522,7 +522,10 @@ class Trainer:
                             early_stopping["best_macro_f1"] = metrics["train_f1_macro"]
                             early_stopping["early_stop"] = 0
 
-                            if metrics[self.save_metric] > self.save_threshold:
+                            if (
+                                metrics[f"train_{self.save_metric}"]
+                                > self.save_threshold
+                            ):
                                 self._save_model()
                         else:
                             early_stopping["early_stop"] += 1
