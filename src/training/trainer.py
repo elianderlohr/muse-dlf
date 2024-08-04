@@ -274,10 +274,6 @@ class Trainer:
                     preds = preds.argmax(dim=1)
                     labels = labels.argmax(dim=1)
 
-                # move to numpy
-                preds = preds.cpu().numpy()
-                labels = labels.cpu().numpy()
-
                 metrics[metric][metrics_name].add_batch(
                     predictions=preds, references=labels
                 )
@@ -475,6 +471,10 @@ class Trainer:
                     logger.info(
                         f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                     )
+
+                    # print shape of logits 
+                    logger.info(f"span_logits shape: {outputs['outputs'].shape}")
+                    logger.info(f"labels shape: {labels.shape}")
 
                     # Prepare Logits --> e.g. gather for accelerate
                     prepared_logits = self._prepare_logits(
