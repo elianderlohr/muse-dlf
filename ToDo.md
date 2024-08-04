@@ -20,17 +20,17 @@
 
 - [x] Update frameaxis preparation chapter --> with irgnoring words etc.
 - [x] Add SLMuSE-DLF chapter
-- [ ] Update MuSE-DLF chapter --> restructure with more info
+- [x] Update MuSE-DLF chapter --> restructure with more info
 - [ ] Explainability:
   - [ ] SRL Explainability
-    - [ ] Extract dict
-    - [ ] Add example sentence with annotations
+    - [x] Extract dict
+    - [x] Add example sentence with annotations
   - [ ] FrameAxis Explainability
     - [ ] Generate Graph for FrameAxis
 - [ ] Experiment 1:
-  - [ ] Continue hyperparameter tuning chapter
-  - [ ] Add results of hyperparameter tuning
-  - [ ] Add results of the final model
+  - [1/2] Continue hyperparameter tuning chapter
+  - [1/2] Add results of hyperparameter tuning
+  - [1/2] Add results of the final model
 - [ ] Experiment 2:
   - [ ] Write hyperparameter tuning chapter
   - [ ] Add results of hyperparameter tuning

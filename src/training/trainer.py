@@ -513,7 +513,7 @@ class Trainer:
                         self._log_metrics(metrics)
 
                         supervised_pred, supervised_labels = prepared_logits[
-                            "supervised"
+                            "supervised_logits"
                         ]
                         self._log_classification_report(
                             supervised_pred, supervised_labels
