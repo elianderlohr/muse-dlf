@@ -908,13 +908,15 @@ class SLMuSEDLF(nn.Module):
         )
         torch.cuda.empty_cache()
 
-        return {
-            "unsupervised_loss": unsupervised_loss,
-            "span_logits": span_logits,
-            "sent_logits": sent_logits,
-            "supervised_logits": supervised_logits,
-            "predicate_logits": other["predicate"],
-            "arg0_logits": other["arg0"],
-            "arg1_logits": other["arg1"],
-            "frameaxis_logits": other["frameaxis"],
-        }
+        # return {
+        #    "unsupervised_loss": unsupervised_loss,
+        #    "span_logits": span_logits,
+        #    "sent_logits": sent_logits,
+        #    "supervised_logits": supervised_logits,
+        #    "predicate_logits": other["predicate"],
+        #    "arg0_logits": other["arg0"],
+        #    "arg1_logits": other["arg1"],
+        #    "frameaxis_logits": other["frameaxis"],
+        # }
+
+        return unsupervised_loss, span_logits, sent_logits, supervised_logits, other
