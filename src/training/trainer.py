@@ -288,7 +288,7 @@ class Trainer:
         # Initialize metrics
         metric_types = ["f1_metric_micro", "f1_metric_macro", "accuracy_metric"]
         prediction_types = [
-            "combined",
+            "supervised",
             "span",
             "sentence",
             "predicate",
@@ -465,7 +465,7 @@ class Trainer:
                     )
 
                     # Generate and log per-class metrics for combined predictions
-                    combined_pred, combined_labels = predictions["combined"]
+                    combined_pred, combined_labels = predictions["supervised"]
                     class_report = classification_report(
                         combined_labels.cpu().numpy(),
                         combined_pred.cpu().numpy(),
@@ -541,7 +541,7 @@ class Trainer:
         # Initialize metrics
         metric_types = ["f1_metric_micro", "f1_metric_macro", "accuracy_metric"]
         prediction_types = [
-            "combined",
+            "supervised",
             "span",
             "sentence",
             "predicate",
@@ -638,7 +638,7 @@ class Trainer:
                 )
                 self.add_batch_to_metrics(metrics, predictions)
 
-                combined_pred, combined_labels = predictions["combined"]
+                combined_pred, combined_labels = predictions["supervised"]
                 all_combined_preds.append(combined_pred.cpu())
                 all_combined_labels.append(combined_labels.cpu())
 

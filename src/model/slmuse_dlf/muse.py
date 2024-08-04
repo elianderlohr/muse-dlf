@@ -512,10 +512,6 @@ class SLMuSEDLF(nn.Module):
                         valid_counts_a0 += mask_a0.float()
                         valid_counts_a1 += mask_a1.float()
 
-                        self.logger.debug(
-                            "Unsupervised results keys:", unsupervised_results.keys()
-                        )
-
                         # Use the vhat (reconstructed embeddings) for supervised predictions
                         d_p_sentence_list.append(unsupervised_results["p"]["d"])
                         d_a0_sentence_list.append(unsupervised_results["a0"]["d"])
@@ -907,9 +903,9 @@ class SLMuSEDLF(nn.Module):
 
         return {
             "unsupervised_loss": unsupervised_loss,
-            "span_logits": span_logits,  # or span_logits if it's pre-activation
-            "sent_logits": sent_logits,  # or sentence_logits if it's pre-activation
-            "supervised_logits": supervised_logits,  # or combined_logits if it's pre-activation
+            "span_logits": span_logits,
+            "sent_logits": sent_logits,
+            "supervised_logits": supervised_logits,
             "other_outputs": {
                 "predicate_logits": other["predicate"],
                 "arg0_logits": other["arg0"],

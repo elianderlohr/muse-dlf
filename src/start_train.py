@@ -519,6 +519,13 @@ def main():
         default="accuracy",
         help="Save the model based on the metric",
     )
+    # early_stopping_patience
+    training_params.add_argument(
+        "--early_stopping_patience",
+        type=int,
+        default=20,
+        help="Early stopping patience",
+    )
 
     # save_model true/false
     training_params.add_argument(
@@ -983,12 +990,8 @@ def main():
         # Set test_every_n_batches to ~1/4 of an epoch
         test_every_n_batches = max(1, batches_per_epoch // 4)
 
-        # Set early_stopping_patience to ~2.5 epochs worth of batches
-        early_stopping_patience = batches_per_epoch * 5 // 2
-
         logger.info(f"Batches per epoch: {batches_per_epoch}")
         logger.info(f"Testing every {test_every_n_batches} batches")
-        logger.info(f"Early stopping patience: {early_stopping_patience} batches")
 
         # Train the model
         trainer = Trainer(
