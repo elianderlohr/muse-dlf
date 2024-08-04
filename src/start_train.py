@@ -16,8 +16,11 @@ from transformers import BertTokenizer, RobertaTokenizerFast
 from torch.optim import Adam, AdamW
 from accelerate import Accelerator
 from accelerate.utils import InitProcessGroupKwargs
+from accelerate import DistributedDataParallelKwargs
 import warnings
 import wandb
+
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
@@ -203,11 +206,12 @@ def initialize_wandb(
     try:
         wandb.login(key=wandb_api_key, timeout=120)
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=5400))
+        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
         accelerator = Accelerator(
             log_with="wandb",
             mixed_precision=mixed_precision,
             gradient_accumulation_steps=accumulation_steps,
-            kwargs_handlers=[kwargs],
+            kwargs_handlers=[kwargs, ddp_kwargs],
         )
         accelerator.init_trackers(
             project_name,
