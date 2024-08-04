@@ -350,7 +350,11 @@ class Trainer:
         )
 
         for batch_idx, batch in enumerate(
-            tqdm(train_dataloader, desc=f"Train - Epoch {epoch}", disable=not self.accelerator.is_main_process)
+            tqdm(
+                train_dataloader,
+                desc=f"Train - Epoch {epoch}",
+                disable=not self.accelerator.is_main_process,
+            )
         ):
             global global_steps
             global_steps += 1
@@ -378,7 +382,9 @@ class Trainer:
                 prepared_labels = labels.float()
             elif self.model_type == "slmuse-dlf":
                 if labels.dim() == 2:
-                    logger.debug("Labels are one-hot encoded, converting to class index.")
+                    logger.debug(
+                        "Labels are one-hot encoded, converting to class index."
+                    )
                     prepared_labels = torch.argmax(labels, dim=1).long()
 
             # Forward pass and loss calculation
@@ -411,27 +417,43 @@ class Trainer:
                     self.optimizer.zero_grad()
             else:
                 if self.scaler is not None:
-                    self.scaler.scale(current_total_loss / self.accumulation_steps).backward()
-                    if (batch_idx + 1) % self.accumulation_steps == 0 or (batch_idx + 1) == len(train_dataloader):
+                    self.scaler.scale(
+                        current_total_loss / self.accumulation_steps
+                    ).backward()
+                    if (batch_idx + 1) % self.accumulation_steps == 0 or (
+                        batch_idx + 1
+                    ) == len(train_dataloader):
                         self.scaler.unscale_(self.optimizer)
-                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_value)
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(), self.clip_value
+                        )
                         self.scaler.step(self.optimizer)
                         self.scaler.update()
                         self.scheduler.step()
                         self.optimizer.zero_grad()
                 else:
                     (current_total_loss / self.accumulation_steps).backward()
-                    if (batch_idx + 1) % self.accumulation_steps == 0 or (batch_idx + 1) == len(train_dataloader):
-                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_value)
+                    if (batch_idx + 1) % self.accumulation_steps == 0 or (
+                        batch_idx + 1
+                    ) == len(train_dataloader):
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(), self.clip_value
+                        )
                         self.optimizer.step()
                         self.scheduler.step()
                         self.optimizer.zero_grad()
 
             # Update loss statistics
             if self.training_management == "accelerate":
-                total_loss += self.accelerator.gather(loss_dict["combined_loss"]).sum().item()
-                supervised_total_loss += self.accelerator.gather(loss_dict["supervised_loss"]).sum().item()
-                unsupervised_total_loss += self.accelerator.gather(loss_dict["unsupervised_loss"]).sum().item()
+                total_loss += (
+                    self.accelerator.gather(loss_dict["combined_loss"]).sum().item()
+                )
+                supervised_total_loss += (
+                    self.accelerator.gather(loss_dict["supervised_loss"]).sum().item()
+                )
+                unsupervised_total_loss += (
+                    self.accelerator.gather(loss_dict["unsupervised_loss"]).sum().item()
+                )
             else:
                 total_loss += loss_dict["combined_loss"].item()
                 supervised_total_loss += loss_dict["supervised_loss"].item()
@@ -447,7 +469,9 @@ class Trainer:
                         "batch_supervised_loss": loss_dict["supervised_loss"].item(),
                         "batch_span_loss": loss_dict["span_loss"].item(),
                         "batch_sentence_loss": loss_dict["sentence_loss"].item(),
-                        "batch_unsupervised_loss": loss_dict["unsupervised_loss"].item(),
+                        "batch_unsupervised_loss": loss_dict[
+                            "unsupervised_loss"
+                        ].item(),
                         "batch_predicate_loss": loss_dict["predicate_loss"].item(),
                         "batch_arg0_loss": loss_dict["arg0_loss"].item(),
                         "batch_arg1_loss": loss_dict["arg1_loss"].item(),
@@ -469,7 +493,9 @@ class Trainer:
                         labels = self.accelerator.gather(labels)
 
                     if self.accelerator.is_main_process:
-                        logger.info(f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}")
+                        logger.info(
+                            f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
+                        )
 
                         prepared_logits = self._prepare_logits(
                             outputs,
@@ -485,19 +511,28 @@ class Trainer:
                             ],
                         )
 
-                        metrics_dict = self._metrics_add_batch(metrics_dict, prepared_logits)
+                        metrics_dict = self._metrics_add_batch(
+                            metrics_dict, prepared_logits
+                        )
                         metrics = self._metrics_calculate(metrics_dict, prefix="train")
                         self._log_metrics(metrics)
 
-                        supervised_pred, supervised_labels = prepared_logits["supervised"]
-                        self._log_classification_report(supervised_pred, supervised_labels)
+                        supervised_pred, supervised_labels = prepared_logits[
+                            "supervised"
+                        ]
+                        self._log_classification_report(
+                            supervised_pred, supervised_labels
+                        )
 
                         logger.info(
                             f"[TRAIN] Epoch {epoch}, Step {global_steps}: Micro F1: {metrics['train_f1_micro']}, "
                             f"Macro F1: {metrics['train_f1_macro']}, Accuracy: {metrics['train_accuracy']}"
                         )
 
-                        if metrics[f"train_{self.save_metric}"] >= early_stopping[f"best_{self.save_metric}"]:
+                        if (
+                            metrics[f"train_{self.save_metric}"]
+                            >= early_stopping[f"best_{self.save_metric}"]
+                        ):
                             early_stopping["best_accuracy"] = metrics["train_accuracy"]
                             early_stopping["best_micro_f1"] = metrics["train_f1_micro"]
                             early_stopping["best_macro_f1"] = metrics["train_f1_macro"]
@@ -508,7 +543,10 @@ class Trainer:
                         else:
                             early_stopping["early_stop"] += 1
 
-                            if early_stopping["early_stop"] >= self.early_stopping_patience:
+                            if (
+                                early_stopping["early_stop"]
+                                >= self.early_stopping_patience
+                            ):
                                 logger.info("Early stopping triggered.")
                                 early_stopping["early_stopped"] = True
 
@@ -524,10 +562,6 @@ class Trainer:
                             ],
                             experiment_id,
                         )
-
-                # Broadcast early stopping status
-                if self.training_management == "accelerate":
-                    early_stopping = self.accelerator.broadcast_object(early_stopping)
 
                 if early_stopping["early_stopped"]:
                     return tau, early_stopping
@@ -586,7 +620,11 @@ class Trainer:
         all_supervised_labels = []
 
         for batch_idx, batch in enumerate(
-            tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}", disable=not self.accelerator.is_main_process)
+            tqdm(
+                test_dataloader,
+                desc=f"Evaluate - Epoch {epoch}",
+                disable=not self.accelerator.is_main_process,
+            )
         ):
             # Prepare inputs
             inputs = {k: v for k, v in batch.items() if k != "labels"}
@@ -634,12 +672,21 @@ class Trainer:
                     labels = self.accelerator.gather(labels)
 
                 # Process metrics only on the main process
-                if self.training_management != "accelerate" or self.accelerator.is_main_process:
-                    all_supervised_preds.append(prepared_logits["supervised_logits"][0])  # predictions
-                    all_supervised_labels.append(prepared_logits["supervised_logits"][1])  # labels
+                if (
+                    self.training_management != "accelerate"
+                    or self.accelerator.is_main_process
+                ):
+                    all_supervised_preds.append(
+                        prepared_logits["supervised_logits"][0]
+                    )  # predictions
+                    all_supervised_labels.append(
+                        prepared_logits["supervised_logits"][1]
+                    )  # labels
 
                     # Add batch to metrics
-                    metrics_dict = self._metrics_add_batch(metrics_dict, prepared_logits)
+                    metrics_dict = self._metrics_add_batch(
+                        metrics_dict, prepared_logits
+                    )
 
                 del labels, prepared_logits, outputs
                 torch.cuda.empty_cache()
@@ -661,10 +708,6 @@ class Trainer:
             )
         else:
             metrics = None
-
-        # Broadcast the metrics to all processes
-        if self.training_management == "accelerate":
-            metrics = self.accelerator.broadcast_object(metrics)
 
         return metrics
 
