@@ -167,7 +167,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --embedding_dim 768 \
     --hidden_dim 768 \
     --num_classes 15 \
-    --dropout_prob 0.5 \
+    --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 1e-3 \
     --lr 5e-4 \
@@ -201,7 +201,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tau_min 0.5 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt9 \
+    --alternative_supervised alt6 \
     --clip_value 1 \
     --focal_loss_gamma 2 \
     $DEBUG
