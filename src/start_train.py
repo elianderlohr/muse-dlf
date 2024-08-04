@@ -206,12 +206,12 @@ def initialize_wandb(
     try:
         wandb.login(key=wandb_api_key, timeout=120)
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=5400))
-        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+        # ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
         accelerator = Accelerator(
             log_with="wandb",
             mixed_precision=mixed_precision,
             gradient_accumulation_steps=accumulation_steps,
-            kwargs_handlers=[kwargs, ddp_kwargs],
+            kwargs_handlers=[kwargs],  # ddp_kwargs],
         )
         accelerator.init_trackers(
             project_name,
