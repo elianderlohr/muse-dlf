@@ -1016,7 +1016,7 @@ def main():
             model_config=config,
             clip_value=args.clip_value,
             save_model=args.save_model,
-            early_stopping_patience=early_stopping_patience,
+            early_stopping_patience=args.early_stopping_patience,
         )
 
         trainer = accelerator.prepare(trainer)
