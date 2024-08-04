@@ -902,10 +902,8 @@ class SLMuSEDLF(nn.Module):
             "span_logits": span_logits,
             "sent_logits": sent_logits,
             "supervised_logits": supervised_logits,
-            "other_outputs": {
-                "predicate_logits": other["predicate"],
-                "arg0_logits": other["arg0"],
-                "arg1_logits": other["arg1"],
-                "frameaxis_logits": other["frameaxis"],
-            },
+            "predicate_logits": other["predicate"],
+            "arg0_logits": other["arg0"],
+            "arg1_logits": other["arg1"],
+            "frameaxis_logits": other["frameaxis"],
         }
