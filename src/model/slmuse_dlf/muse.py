@@ -862,7 +862,7 @@ class SLMuSEDLF(nn.Module):
         )
 
         if self.alternative_supervised == "alt9":
-            span_pred, sentence_pred, combined_pred, other = self.supervised(
+            span_logits, sent_logits, supervised_logits, other = self.supervised(
                 logits_p_aggregated,
                 logits_a0_aggregated,
                 logits_a1_aggregated,
@@ -871,7 +871,7 @@ class SLMuSEDLF(nn.Module):
                 frameaxis_data,
             )
         else:
-            span_pred, sentence_pred, combined_pred, other = self.supervised(
+            span_logits, sent_logits, supervised_logits, other = self.supervised(
                 d_p_aggregated,
                 d_a0_aggregated,
                 d_a1_aggregated,
@@ -905,4 +905,15 @@ class SLMuSEDLF(nn.Module):
         del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
         torch.cuda.empty_cache()
 
-        return unsupervised_loss, span_pred, sentence_pred, combined_pred, other
+        return {
+            "unsupervised_loss": unsupervised_loss,
+            "span_logits": span_logits,  # or span_logits if it's pre-activation
+            "sent_logits": sent_logits,  # or sentence_logits if it's pre-activation
+            "supervised_logits": supervised_logits,  # or combined_logits if it's pre-activation
+            "other_outputs": {
+                "predicate_logits": other["predicate"],
+                "arg0_logits": other["arg0"],
+                "arg1_logits": other["arg1"],
+                "frameaxis_logits": other["frameaxis"],
+            },
+        }

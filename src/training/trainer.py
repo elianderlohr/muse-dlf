@@ -171,7 +171,7 @@ class Trainer:
         labels: torch.Tensor,
     ) -> Dict[str, Tuple[torch.Tensor, torch.Tensor]]:
         prediction_types = [
-            "combined",
+            "supervised",
             "span",
             "sentence",
             "predicate",
@@ -182,12 +182,12 @@ class Trainer:
         results = {}
 
         for pred_type in prediction_types:
-            if pred_type == "combined":
-                preds = model_outputs["combined_probs"]
+            if pred_type == "supervised":
+                preds = model_outputs["supervised_logits"]
             elif pred_type in ["span", "sentence"]:
-                preds = model_outputs[f"{pred_type}_probs"]
+                preds = model_outputs[f"{pred_type}_logits"]
             else:
-                preds = model_outputs["other"][pred_type]
+                preds = model_outputs["other_outputs"][f"{pred_type}_logits"]
 
             if self.model_type == "muse-dlf":
                 preds = (torch.sigmoid(preds) > 0.5).float()
@@ -352,12 +352,14 @@ class Trainer:
             if self.training_management == "accelerate":
                 with self.accelerator.autocast():
                     outputs = self.model(**model_inputs)
+
+                    # Calculate losses
                     unsupervised_loss = outputs["unsupervised_loss"]
                     span_loss = self.loss_function(
-                        outputs["span_probs"], labels, input_type="logits"
+                        outputs["span_logits"], labels, input_type="logits"
                     )
                     sentence_loss = self.loss_function(
-                        outputs["sent_probs"], labels, input_type="logits"
+                        outputs["sent_logits"], labels, input_type="logits"
                     )
                     supervised_loss = span_loss + sentence_loss
                     combined_loss = (
@@ -369,12 +371,14 @@ class Trainer:
                     dtype=precision_dtype,
                 ):
                     outputs = self.model(**model_inputs)
+
+                    # Calculate losses
                     unsupervised_loss = outputs["unsupervised_loss"]
                     span_loss = self.loss_function(
-                        outputs["span_probs"], labels, input_type="logits"
+                        outputs["span_logits"], labels, input_type="logits"
                     )
                     sentence_loss = self.loss_function(
-                        outputs["sent_probs"], labels, input_type="logits"
+                        outputs["sent_logits"], labels, input_type="logits"
                     )
                     supervised_loss = span_loss + sentence_loss
                     combined_loss = (
@@ -572,7 +576,7 @@ class Trainer:
                 for k, v in batch.items()
                 if k != "labels"
             }
-        
+
             model_inputs = {
                 "sentence_ids": inputs["sentence_ids"],
                 "sentence_attention_masks": inputs["sentence_attention_masks"],
@@ -580,9 +584,9 @@ class Trainer:
                 "arg0_ids": inputs["arg0_ids"],
                 "arg1_ids": inputs["arg1_ids"],
                 "frameaxis_data": inputs["frameaxis"],
-                "tau": tau
+                "tau": tau,
             }
-            
+
             labels = (
                 batch["labels"].to(device)
                 if self.training_management != "accelerate"
@@ -593,6 +597,19 @@ class Trainer:
                 if self.training_management == "accelerate":
                     with self.accelerator.autocast():
                         outputs = self.model(**model_inputs)
+
+                        # Calculate losses
+                        unsupervised_loss = outputs["unsupervised_loss"]
+                        span_loss = self.loss_function(
+                            outputs["span_logits"], labels, input_type="logits"
+                        )
+                        sentence_loss = self.loss_function(
+                            outputs["sent_logits"], labels, input_type="logits"
+                        )
+                        supervised_loss = span_loss + sentence_loss
+                        combined_loss = (
+                            alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                        )
                 else:
                     with autocast(
                         enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
@@ -600,17 +617,18 @@ class Trainer:
                     ):
                         outputs = self.model(**model_inputs)
 
-                unsupervised_loss = outputs["unsupervised_loss"]
-                span_loss = self.loss_function(
-                    outputs["span_probs"], labels, input_type="logits"
-                )
-                sentence_loss = self.loss_function(
-                    outputs["sent_probs"], labels, input_type="logits"
-                )
-                supervised_loss = span_loss + sentence_loss
-                combined_loss = (
-                    alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-                )
+                        # Calculate losses
+                        unsupervised_loss = outputs["unsupervised_loss"]
+                        span_loss = self.loss_function(
+                            outputs["span_logits"], labels, input_type="logits"
+                        )
+                        sentence_loss = self.loss_function(
+                            outputs["sent_logits"], labels, input_type="logits"
+                        )
+                        supervised_loss = span_loss + sentence_loss
+                        combined_loss = (
+                            alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                        )
 
                 total_val_loss += combined_loss.item()
 
