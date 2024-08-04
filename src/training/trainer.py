@@ -173,7 +173,7 @@ class Trainer:
         prediction_types = [
             "supervised",
             "span",
-            "sentence",
+            "sent",
             "predicate",
             "arg0",
             "arg1",
@@ -184,7 +184,7 @@ class Trainer:
         for pred_type in prediction_types:
             if pred_type == "supervised":
                 preds = model_outputs["supervised_logits"]
-            elif pred_type in ["span", "sentence"]:
+            elif pred_type in ["span", "sent"]:
                 preds = model_outputs[f"{pred_type}_logits"]
             else:
                 preds = model_outputs["other_outputs"][f"{pred_type}_logits"]
@@ -265,6 +265,33 @@ class Trainer:
                         f"{prefix}_f1_class_{class_name}": metrics["f1-score"],
                     }
                 )
+
+    def calculate_loss(self, outputs, labels, alpha):
+        unsupervised_loss = outputs["unsupervised_loss"]
+        span_loss = self.loss_function(
+            outputs["span_logits"], labels, input_type="logits"
+        )
+        sentence_loss = self.loss_function(
+            outputs["sent_logits"], labels, input_type="logits"
+        )
+
+        supervised_loss = span_loss + sentence_loss
+        combined_loss = alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+
+        # Add dummy losses for unused outputs
+        dummy_losses = 0
+        dummy_losses += 0 * outputs["supervised_logits"].sum()
+        for key, value in outputs["other_outputs"].items():
+            dummy_losses += 0 * value.sum()
+
+        total_loss = combined_loss + dummy_losses
+        return total_loss, {
+            "unsupervised_loss": unsupervised_loss,
+            "span_loss": span_loss,
+            "sentence_loss": sentence_loss,
+            "supervised_loss": supervised_loss,
+            "combined_loss": combined_loss,
+        }
 
     def _train(
         self,
@@ -361,18 +388,8 @@ class Trainer:
             if self.training_management == "accelerate":
                 with self.accelerator.autocast():
                     outputs = self.model(**model_inputs)
-
-                    # Calculate losses
-                    unsupervised_loss = outputs["unsupervised_loss"]
-                    span_loss = self.loss_function(
-                        outputs["span_logits"], prepared_labels, input_type="logits"
-                    )
-                    sentence_loss = self.loss_function(
-                        outputs["sent_logits"], prepared_labels, input_type="logits"
-                    )
-                    supervised_loss = span_loss + sentence_loss
-                    combined_loss = (
-                        alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                    total_loss, loss_dict = self.calculate_loss(
+                        outputs, prepared_labels, alpha
                     )
             else:
                 with autocast(
@@ -380,24 +397,14 @@ class Trainer:
                     dtype=precision_dtype,
                 ):
                     outputs = self.model(**model_inputs)
-
-                    # Calculate losses
-                    unsupervised_loss = outputs["unsupervised_loss"]
-                    span_loss = self.loss_function(
-                        outputs["span_logits"], prepared_labels, input_type="logits"
-                    )
-                    sentence_loss = self.loss_function(
-                        outputs["sent_logits"], prepared_labels, input_type="logits"
-                    )
-                    supervised_loss = span_loss + sentence_loss
-                    combined_loss = (
-                        alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+                    total_loss, loss_dict = self.calculate_loss(
+                        outputs, prepared_labels, alpha
                     )
 
             # Backward pass and optimization
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
-                    self.accelerator.backward(combined_loss)
+                    self.accelerator.backward(total_loss)
                     if self.accelerator.sync_gradients:
                         self.accelerator.clip_grad_norm_(
                             self.model.parameters(), self.clip_value
@@ -407,9 +414,7 @@ class Trainer:
                     self.optimizer.zero_grad()
             else:
                 if self.scaler is not None:
-                    self.scaler.scale(
-                        combined_loss / self.accumulation_steps
-                    ).backward()
+                    self.scaler.scale(total_loss / self.accumulation_steps).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
                         batch_idx + 1
                     ) == len(train_dataloader):
@@ -422,7 +427,7 @@ class Trainer:
                         self.scheduler.step()
                         self.optimizer.zero_grad()
                 else:
-                    (combined_loss / self.accumulation_steps).backward()
+                    (total_loss / self.accumulation_steps).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
                         batch_idx + 1
                     ) == len(train_dataloader):
@@ -433,19 +438,19 @@ class Trainer:
                         self.scheduler.step()
                         self.optimizer.zero_grad()
 
-            total_loss += combined_loss.item()
-            supervised_total_loss += supervised_loss.item()
-            unsupervised_total_loss += unsupervised_loss.item()
+            total_loss += loss_dict["combined_loss"].item()
+            supervised_total_loss += loss_dict["supervised_loss"].item()
+            unsupervised_total_loss += loss_dict["unsupervised_loss"].item()
 
             current_lr_scheduler = self.scheduler.get_last_lr()[0]
             current_lr_model = self.get_lr()
             self._log_metrics(
                 {
-                    "batch_combined_loss": combined_loss.item(),
-                    "batch_supervised_loss": supervised_loss.item(),
-                    "batch_span_loss": span_loss.item(),
-                    "batch_sentence_loss": sentence_loss.item(),
-                    "batch_unsupervised_loss": unsupervised_loss.item(),
+                    "batch_combined_loss": loss_dict["combined_loss"].item(),
+                    "batch_supervised_loss": loss_dict["supervised_loss"].item(),
+                    "batch_span_loss": loss_dict["span_loss"].item(),
+                    "batch_sentence_loss": loss_dict["sentence_loss"].item(),
+                    "batch_unsupervised_loss": loss_dict["unsupervised_loss"].item(),
                     "batch": batch_idx,
                     "global_steps": global_steps,
                     "tau": tau,
@@ -552,7 +557,7 @@ class Trainer:
         prediction_types = [
             "supervised",
             "span",
-            "sentence",
+            "sent",
             "predicate",
             "arg0",
             "arg1",
