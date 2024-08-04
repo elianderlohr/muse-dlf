@@ -992,7 +992,7 @@ def main():
         )
 
         # Set test_every_n_batches to ~1/4 of an epoch
-        test_every_n_batches = 2  # max(1, batches_per_epoch // 4)
+        test_every_n_batches = 1  # max(1, batches_per_epoch // 4)
 
         logger.info(f"Batches per epoch: {batches_per_epoch}")
         logger.info(f"Testing every {test_every_n_batches} batches")

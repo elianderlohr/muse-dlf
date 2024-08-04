@@ -261,23 +261,26 @@ class Trainer:
         return logits
 
     def _metrics_add_batch(self, metrics, logits):
-        for key, value in logits.items():
-            metrics_name = key.split("_")[0]
+        for metric in metrics.keys():
+            for key, value in logits.items():
+                metrics_name = key.split("_")[0]
 
-            preds, labels = value
+                preds, labels = value
 
-            if self.model_type == "muse-dlf":
-                preds = preds.float()
-                labels = labels.int()
-            elif self.model_type == "slmuse-dlf":
-                preds = preds.argmax(dim=1)
-                labels = labels.argmax(dim=1)
+                if self.model_type == "muse-dlf":
+                    preds = preds.float()
+                    labels = labels.int()
+                elif self.model_type == "slmuse-dlf":
+                    preds = preds.argmax(dim=1)
+                    labels = labels.argmax(dim=1)
 
-            # move to numpy
-            preds = preds.cpu().numpy()
-            labels = labels.cpu().numpy()
+                # move to numpy
+                preds = preds.cpu().numpy()
+                labels = labels.cpu().numpy()
 
-            metrics[metrics_name].add_batch(predictions=preds, references=labels)
+                metrics[metric][metrics_name].add_batch(
+                    predictions=preds, references=labels
+                )
 
         return metrics
 
@@ -285,7 +288,7 @@ class Trainer:
         results = {}
 
         for metric in metrics:
-            for key, evaluator in metrics.items():
+            for key, evaluator in metric.items():
                 if metric == "accuracy":
                     result = evaluator.compute()
                 elif metric == "f1_micro":
@@ -323,7 +326,7 @@ class Trainer:
             [
                 "supervised",
                 "span",
-                "sentence",
+                "sent",
                 "predicate",
                 "arg0",
                 "arg1",
@@ -530,7 +533,7 @@ class Trainer:
                         [
                             "supervised",
                             "span",
-                            "sentence",
+                            "sent",
                             "predicate",
                             "arg0",
                             "arg1",
@@ -571,7 +574,7 @@ class Trainer:
             [
                 "supervised",
                 "span",
-                "sentence",
+                "sent",
                 "predicate",
                 "arg0",
                 "arg1",
@@ -627,15 +630,19 @@ class Trainer:
                     ):
                         outputs = self.model(**model_inputs)
 
-                prepared_logits = self._prepare_logits(outputs, labels, keys=[
-                            "span_logits",
-                            "sent_logits",
-                            "supervised_logits",
-                            "predicate_logits",
-                            "arg0_logits",
-                            "arg1_logits",
-                            "frameaxis_logits",
-                        ],)
+                prepared_logits = self._prepare_logits(
+                    outputs,
+                    labels,
+                    keys=[
+                        "span_logits",
+                        "sent_logits",
+                        "supervised_logits",
+                        "predicate_logits",
+                        "arg0_logits",
+                        "arg1_logits",
+                        "frameaxis_logits",
+                    ],
+                )
 
                 all_supervised_preds.append(prepared_logits["supervised"])
                 all_supervised_labels.append(prepared_logits["supervised"])
