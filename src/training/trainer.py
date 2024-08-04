@@ -251,10 +251,7 @@ class Trainer:
     def _prepare_logits(self, outputs: Dict, labels, keys=[]):
         logits = {}
         for key in keys:
-            logger.info(f"1. _prepare_logits: {outputs[key].shape}")
             pred = self.get_activation_function(outputs[key])
-            logger.info(f"3. pred: {pred.shape}")
-            logger.info(f"3. labels: {labels.shape}")
             logits[key] = (pred, labels)
 
         return logits
@@ -266,20 +263,12 @@ class Trainer:
 
                 preds, labels = value
 
-                # print shapes:
-
-                logger.info(f"before: {metrics_name} - preds shape: {preds.shape}")
-                logger.info(f"before: {metrics_name} - labels shape: {labels.shape}")
-
                 if self.model_type == "muse-dlf":
                     preds = preds.float()
                     labels = labels.int()
                 elif self.model_type == "slmuse-dlf":
                     preds = preds.argmax(dim=1)
                     labels = labels.argmax(dim=1)
-
-                logger.info(f"after: {metrics_name} - preds shape: {preds.shape}")
-                logger.info(f"after: {metrics_name} - labels shape: {labels.shape}")
 
                 metrics[metric][metrics_name].add_batch(
                     predictions=preds, references=labels
@@ -293,11 +282,11 @@ class Trainer:
         for metric, value in metrics.items():
             for key, evaluator in value.items():
                 if metric == "accuracy":
-                    result = evaluator.compute()
+                    result = evaluator.compute()["accuracy"]
                 elif metric == "f1_micro":
-                    result = evaluator.compute(average="micro")
+                    result = evaluator.compute(average="micro")["f1"]
                 elif metric == "f1_macro":
-                    result = evaluator.compute(average="macro")
+                    result = evaluator.compute(average="macro")["f1"]
 
                 if key == "supervised":
                     results[f"{prefix}_{metric}"] = result
