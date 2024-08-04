@@ -248,11 +248,10 @@ class Trainer:
 
         return metrics_dict
 
-    def _prepare_logits(self, outputs: Dict, labels):
+    def _prepare_logits(self, outputs: Dict, labels, keys=[]):
         logits = {}
-        for key, value in outputs.items():
-            logger.info(f"Shape of {key}: {value.shape}")  # Debug print
-            pred = self.get_activation_function(value)
+        for key in keys:
+            pred = self.get_activation_function(outputs[key])
 
             if self.training_management == "accelerate":
                 pred, labels = self.accelerator.gather_for_metrics((pred, labels))
@@ -475,7 +474,19 @@ class Trainer:
                     )
 
                     # Prepare Logits --> e.g. gather for accelerate
-                    prepared_logits = self._prepare_logits(outputs, labels)
+                    prepared_logits = self._prepare_logits(
+                        outputs,
+                        labels,
+                        keys=[
+                            "span_logits",
+                            "sent_logits",
+                            "supervised_logits",
+                            "predicate_logits",
+                            "arg0_logits",
+                            "arg1_logits",
+                            "frameaxis_logits",
+                        ],
+                    )
 
                     # Add batch to metrics
                     metrics_dict = self._metrics_add_batch(
@@ -616,7 +627,15 @@ class Trainer:
                     ):
                         outputs = self.model(**model_inputs)
 
-                prepared_logits = self._prepare_logits(outputs, labels)
+                prepared_logits = self._prepare_logits(outputs, labels, keys=[
+                            "span_logits",
+                            "sent_logits",
+                            "supervised_logits",
+                            "predicate_logits",
+                            "arg0_logits",
+                            "arg1_logits",
+                            "frameaxis_logits",
+                        ],)
 
                 all_supervised_preds.append(prepared_logits["supervised"])
                 all_supervised_labels.append(prepared_logits["supervised"])
