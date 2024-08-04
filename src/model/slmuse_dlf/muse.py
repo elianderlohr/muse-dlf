@@ -853,14 +853,26 @@ class SLMuSEDLF(nn.Module):
             else torch.tensor([], device=sentence_embeddings.device)
         )
 
-        span_logits, sent_logits, supervised_logits, other = self.supervised(
-            d_p_aggregated,
-            d_a0_aggregated,
-            d_a1_aggregated,
-            d_fx_aggregated,
-            sentence_embeddings,
-            frameaxis_data,
-        )
+        if self.alternative_supervised == "alt9":
+            self.logger.debug(f"Using alternative supervised module 9")
+            span_logits, sent_logits, supervised_logits, other = self.supervised(
+                logits_p_aggregated,
+                logits_a0_aggregated,
+                logits_a1_aggregated,
+                logits_fx_aggregated,
+                sentence_embeddings,
+                frameaxis_data,
+            )
+        else:
+            self.logger.debug(f"Using default supervised module")
+            span_logits, sent_logits, supervised_logits, other = self.supervised(
+                d_p_aggregated,
+                d_a0_aggregated,
+                d_a1_aggregated,
+                d_fx_aggregated,
+                sentence_embeddings,
+                frameaxis_data,
+            )
 
         # Calculate mean losses per batch for each argument type
         batch_loss_p = losses_p / valid_counts_p.clamp(min=1)
