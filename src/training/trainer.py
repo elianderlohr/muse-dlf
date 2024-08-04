@@ -174,16 +174,16 @@ class Trainer:
 
         # predicate
         predicate_loss = self.loss_function(
-            outputs["other_outputs"]["predicate"], labels, input_type="logits"
+            outputs["predicate_logits"], labels, input_type="logits"
         )
         arg0_loss = self.loss_function(
-            outputs["other_outputs"]["arg0"], labels, input_type="logits"
+            outputs["arg0_logits"], labels, input_type="logits"
         )
         arg1_loss = self.loss_function(
-            outputs["other_outputs"]["arg1"], labels, input_type="logits"
+            outputs["arg1_logits"], labels, input_type="logits"
         )
         frameaxis_loss = self.loss_function(
-            outputs["other_outputs"]["frameaxis"], labels, input_type="logits"
+            outputs["frameaxis_logits"], labels, input_type="logits"
         )
 
         supervised_loss = span_loss + sentence_loss
