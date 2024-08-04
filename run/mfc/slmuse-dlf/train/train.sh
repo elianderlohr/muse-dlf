@@ -101,6 +101,10 @@ export NCCL_IB_DISABLE=1
 export NCCL_NET_GDR_LEVEL=PHB
 export NCCL_TIMEOUT=1000
 
+# TORCH DEBUG
+export TORCH_DISTRIBUTED_DEBUG=INFO
+export TORCH_DISTRIBUTED_DEBUG=DETAIL
+
 # Function to generate run name
 generate_run_name() {
     verbs=(
