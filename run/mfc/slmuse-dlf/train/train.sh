@@ -200,7 +200,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tau_decay 5e-4 \
     --tau_min 0.5 \
     --mixed_precision fp16 \
-    --accumulation_steps 4 \
+    --accumulation_steps 1 \
     --alternative_supervised alt6 \
     --clip_value 1 \
     --focal_loss_gamma 2 \
