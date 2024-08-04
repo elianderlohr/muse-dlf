@@ -172,29 +172,30 @@ class Trainer:
             outputs["sent_logits"], labels, input_type="logits"
         )
 
-        # predicate
-        predicate_loss = self.loss_function(
-            outputs["predicate_logits"], labels, input_type="logits"
-        )
-        arg0_loss = self.loss_function(
-            outputs["arg0_logits"], labels, input_type="logits"
-        )
-        arg1_loss = self.loss_function(
-            outputs["arg1_logits"], labels, input_type="logits"
-        )
-        frameaxis_loss = self.loss_function(
-            outputs["frameaxis_logits"], labels, input_type="logits"
-        )
+        # Additional losses for logging only
+        with torch.no_grad():  # Prevent gradient computation
+            predicate_loss = self.loss_function(
+                outputs["predicate_logits"], labels, input_type="logits"
+            )
+            arg0_loss = self.loss_function(
+                outputs["arg0_logits"], labels, input_type="logits"
+            )
+            arg1_loss = self.loss_function(
+                outputs["arg1_logits"], labels, input_type="logits"
+            )
+            frameaxis_loss = self.loss_function(
+                outputs["frameaxis_logits"], labels, input_type="logits"
+            )
 
         supervised_loss = span_loss + sentence_loss
         combined_loss = alpha * supervised_loss + (1 - alpha) * unsupervised_loss
 
         return combined_loss, {
+            "combined_loss": combined_loss,
             "unsupervised_loss": unsupervised_loss,
             "span_loss": span_loss,
             "sentence_loss": sentence_loss,
             "supervised_loss": supervised_loss,
-            "combined_loss": combined_loss,
             "predicate_loss": predicate_loss,
             "arg0_loss": arg0_loss,
             "arg1_loss": arg1_loss,
@@ -375,7 +376,7 @@ class Trainer:
             if self.training_management == "accelerate":
                 with self.accelerator.autocast():
                     outputs = self.model(**model_inputs)
-                    current_total_loss, loss_dict = self.calculate_loss(
+                    combined_loss, loss_dict = self.calculate_loss(
                         outputs, prepared_labels, alpha
                     )
             else:
@@ -384,14 +385,14 @@ class Trainer:
                     dtype=precision_dtype,
                 ):
                     outputs = self.model(**model_inputs)
-                    current_total_loss, loss_dict = self.calculate_loss(
+                    combined_loss, loss_dict = self.calculate_loss(
                         outputs, prepared_labels, alpha
                     )
 
             # Backward pass
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
-                    self.accelerator.backward(current_total_loss)
+                    self.accelerator.backward(combined_loss)
                     if self.accelerator.sync_gradients:
                         self.accelerator.clip_grad_norm_(
                             self.model.parameters(), self.clip_value
@@ -402,7 +403,7 @@ class Trainer:
             else:
                 if self.scaler is not None:
                     self.scaler.scale(
-                        current_total_loss / self.accumulation_steps
+                        combined_loss / self.accumulation_steps
                     ).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
                         batch_idx + 1
@@ -416,7 +417,7 @@ class Trainer:
                         self.scheduler.step()
                         self.optimizer.zero_grad()
                 else:
-                    (current_total_loss / self.accumulation_steps).backward()
+                    (combined_loss / self.accumulation_steps).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
                         batch_idx + 1
                     ) == len(train_dataloader):
