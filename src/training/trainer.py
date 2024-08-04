@@ -251,6 +251,7 @@ class Trainer:
     def _prepare_logits(self, outputs: Dict, labels):
         logits = {}
         for key, value in outputs.items():
+            print(f"Shape of {key}: {value.shape}")  # Debug print
             pred = self.get_activation_function(value)
 
             if self.training_management == "accelerate":
