@@ -348,6 +348,15 @@ class Trainer:
                 else batch["labels"]
             )
 
+            if self.model_type == "muse-dlf":
+                prepared_labels = labels.float()
+            elif self.model_type == "slmuse-dlf":
+                if labels.dim() == 2:
+                    logger.debug(
+                        "Labels are one-hot encoded, converting to class index."
+                    )
+                    prepared_labels = torch.argmax(labels, dim=1).long()
+
             # Forward pass
             if self.training_management == "accelerate":
                 with self.accelerator.autocast():
@@ -356,10 +365,10 @@ class Trainer:
                     # Calculate losses
                     unsupervised_loss = outputs["unsupervised_loss"]
                     span_loss = self.loss_function(
-                        outputs["span_logits"], labels, input_type="logits"
+                        outputs["span_logits"], prepared_labels, input_type="logits"
                     )
                     sentence_loss = self.loss_function(
-                        outputs["sent_logits"], labels, input_type="logits"
+                        outputs["sent_logits"], prepared_labels, input_type="logits"
                     )
                     supervised_loss = span_loss + sentence_loss
                     combined_loss = (
@@ -375,10 +384,10 @@ class Trainer:
                     # Calculate losses
                     unsupervised_loss = outputs["unsupervised_loss"]
                     span_loss = self.loss_function(
-                        outputs["span_logits"], labels, input_type="logits"
+                        outputs["span_logits"], prepared_labels, input_type="logits"
                     )
                     sentence_loss = self.loss_function(
-                        outputs["sent_logits"], labels, input_type="logits"
+                        outputs["sent_logits"], prepared_labels, input_type="logits"
                     )
                     supervised_loss = span_loss + sentence_loss
                     combined_loss = (
@@ -451,7 +460,7 @@ class Trainer:
                 logger.info(
                     f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                 )
-                self.model.eval()
+
                 with torch.no_grad():
                     predictions = self.prepare_predictions_and_labels(
                         outputs,
@@ -593,6 +602,15 @@ class Trainer:
                 else batch["labels"]
             )
 
+            if self.model_type == "muse-dlf":
+                prepared_labels = labels.float()
+            elif self.model_type == "slmuse-dlf":
+                if labels.dim() == 2:
+                    logger.debug(
+                        "Labels are one-hot encoded, converting to class index."
+                    )
+                    prepared_labels = torch.argmax(labels, dim=1).long()
+
             with torch.no_grad():
                 if self.training_management == "accelerate":
                     with self.accelerator.autocast():
@@ -601,10 +619,10 @@ class Trainer:
                         # Calculate losses
                         unsupervised_loss = outputs["unsupervised_loss"]
                         span_loss = self.loss_function(
-                            outputs["span_logits"], labels, input_type="logits"
+                            outputs["span_logits"], prepared_labels, input_type="logits"
                         )
                         sentence_loss = self.loss_function(
-                            outputs["sent_logits"], labels, input_type="logits"
+                            outputs["sent_logits"], prepared_labels, input_type="logits"
                         )
                         supervised_loss = span_loss + sentence_loss
                         combined_loss = (
@@ -620,10 +638,10 @@ class Trainer:
                         # Calculate losses
                         unsupervised_loss = outputs["unsupervised_loss"]
                         span_loss = self.loss_function(
-                            outputs["span_logits"], labels, input_type="logits"
+                            outputs["span_logits"], prepared_labels, input_type="logits"
                         )
                         sentence_loss = self.loss_function(
-                            outputs["sent_logits"], labels, input_type="logits"
+                            outputs["sent_logits"], prepared_labels, input_type="logits"
                         )
                         supervised_loss = span_loss + sentence_loss
                         combined_loss = (
