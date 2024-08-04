@@ -105,6 +105,8 @@ class SLMuSEEmbeddings(nn.Module):
 
         del ids
 
+        self.model.eval()
+
         with torch.no_grad():
 
             outputs = self.model(
