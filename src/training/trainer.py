@@ -472,8 +472,8 @@ class Trainer:
                         f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                     )
 
-                    # print shape of logits 
-                    logger.info(f"span_logits shape: {outputs['outputs'].shape}")
+                    # print shape of logits
+                    logger.info(f"span_logits shape: {outputs['span_logits'].shape}")
                     logger.info(f"labels shape: {labels.shape}")
 
                     # Prepare Logits --> e.g. gather for accelerate
