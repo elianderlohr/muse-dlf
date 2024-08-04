@@ -31,17 +31,23 @@ class SLMuSESupervisedAlternative6(nn.Module):
         # Define feed-forward network for sentence embeddings
         self.feed_forward_sentence = nn.Sequential(
             nn.Linear(D_h * num_sentences, embedding_dim * num_sentences),
-            nn.BatchNorm1d(embedding_dim * num_sentences),
+            nn.LayerNorm(
+                embedding_dim * num_sentences
+            ),  # TODO: revert back to BatchNorm1d if it doesn't work
             nn.GELU(),
             nn.Dropout(dropout_prob),
             nn.Linear(
                 embedding_dim * num_sentences, embedding_dim * (num_sentences // 2)
             ),
-            nn.BatchNorm1d(embedding_dim * (num_sentences // 2)),
+            nn.LayerNorm(
+                embedding_dim * (num_sentences // 2)
+            ),  # TODO: revert back to BatchNorm1d if it doesn't work
             nn.GELU(),
             nn.Dropout(dropout_prob),
             nn.Linear(embedding_dim * (num_sentences // 2), hidden_dim),
-            nn.BatchNorm1d(hidden_dim),
+            nn.LayerNorm(
+                hidden_dim
+            ),  # TODO: revert back to BatchNorm1d if it doesn't work
             nn.GELU(),
             nn.Dropout(dropout_prob),
             nn.Linear(hidden_dim, num_classes),
