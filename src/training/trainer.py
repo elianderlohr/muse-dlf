@@ -468,78 +468,66 @@ class Trainer:
                 }
             )
 
-            try:
-                with torch.no_grad():
-                    # Check train metrics every 50 steps
-                    if global_steps % self.test_every_n_batches == 0:
-                        logger.info(
-                            f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
-                        )
+            with torch.no_grad():
+                # Check train metrics every 50 steps
+                if global_steps % self.test_every_n_batches == 0:
+                    logger.info(
+                        f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
+                    )
 
-                        # Prepare Logits --> e.g. gather for accelerate
-                        prepared_logits = self._prepare_logits(outputs, labels)
+                    # Prepare Logits --> e.g. gather for accelerate
+                    prepared_logits = self._prepare_logits(outputs, labels)
 
-                        # Add batch to metrics
-                        metrics_dict = self._metrics_add_batch(
-                            metrics_dict, prepared_logits
-                        )
+                    # Add batch to metrics
+                    metrics_dict = self._metrics_add_batch(
+                        metrics_dict, prepared_logits
+                    )
 
-                        # Calculate metrics
-                        metrics = self._metrics_calculate(metrics_dict, prefix="train")
-                        self._log_metrics(metrics)
+                    # Calculate metrics
+                    metrics = self._metrics_calculate(metrics_dict, prefix="train")
+                    self._log_metrics(metrics)
 
-                        # Add per-class evaluation
-                        supervised_pred, supervised_labels = prepared_logits[
-                            "supervised"
-                        ]
-                        self._log_classification_report(
-                            supervised_pred, supervised_labels
-                        )
+                    # Add per-class evaluation
+                    supervised_pred, supervised_labels = prepared_logits["supervised"]
+                    self._log_classification_report(supervised_pred, supervised_labels)
 
-                        logger.info(
-                            f"[TRAIN] Epoch {epoch}, Step {global_steps}: Micro F1: {metrics['train_f1_micro']}, Macro F1: {metrics['train_f1_macro']}, Accuracy: {metrics['train_accuracy']}"
-                        )
+                    logger.info(
+                        f"[TRAIN] Epoch {epoch}, Step {global_steps}: Micro F1: {metrics['train_f1_micro']}, Macro F1: {metrics['train_f1_macro']}, Accuracy: {metrics['train_accuracy']}"
+                    )
 
-                        # Check for early stopping
-                        if (
-                            metrics[f"train_{self.save_metric}"]
-                            >= early_stopping[f"best_{self.save_metric}"]
-                        ):
-                            early_stopping["best_accuracy"] = metrics["train_accuracy"]
-                            early_stopping["best_micro_f1"] = metrics["train_f1_micro"]
-                            early_stopping["best_macro_f1"] = metrics["train_f1_macro"]
-                            early_stopping["early_stop"] = 0
+                    # Check for early stopping
+                    if (
+                        metrics[f"train_{self.save_metric}"]
+                        >= early_stopping[f"best_{self.save_metric}"]
+                    ):
+                        early_stopping["best_accuracy"] = metrics["train_accuracy"]
+                        early_stopping["best_micro_f1"] = metrics["train_f1_micro"]
+                        early_stopping["best_macro_f1"] = metrics["train_f1_macro"]
+                        early_stopping["early_stop"] = 0
 
-                            if metrics[self.save_metric] > self.save_threshold:
-                                self._save_model()
-                        else:
-                            early_stopping["early_stop"] += 1
+                        if metrics[self.save_metric] > self.save_threshold:
+                            self._save_model()
+                    else:
+                        early_stopping["early_stop"] += 1
 
-                            if (
-                                early_stopping["early_stop"]
-                                >= self.early_stopping_patience
-                            ):
-                                logger.info("Early stopping triggered.")
-                                early_stopping["early_stopped"] = True
-                                return tau, early_stopping
+                        if early_stopping["early_stop"] >= self.early_stopping_patience:
+                            logger.info("Early stopping triggered.")
+                            early_stopping["early_stopped"] = True
+                            return tau, early_stopping
 
-                        # Reset metrics_dict
-                        metrics_dict = self._create_metrics_dict(
-                            [
-                                "supervised",
-                                "span",
-                                "sentence",
-                                "predicate",
-                                "arg0",
-                                "arg1",
-                                "frameaxis",
-                            ],
-                            experiment_id,
-                        )
-
-            except Exception as e:
-                logger.error(f"Error during metric logging at step {global_steps}: {e}")
-                continue
+                    # Reset metrics_dict
+                    metrics_dict = self._create_metrics_dict(
+                        [
+                            "supervised",
+                            "span",
+                            "sentence",
+                            "predicate",
+                            "arg0",
+                            "arg1",
+                            "frameaxis",
+                        ],
+                        experiment_id,
+                    )
 
             # Delete tensors immediately after use
             del (outputs, labels, prepared_labels, loss_dict)
