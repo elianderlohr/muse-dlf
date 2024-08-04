@@ -278,14 +278,7 @@ class Trainer:
         supervised_loss = span_loss + sentence_loss
         combined_loss = alpha * supervised_loss + (1 - alpha) * unsupervised_loss
 
-        # Add dummy losses for unused outputs
-        dummy_losses = 0
-        dummy_losses += 0 * outputs["supervised_logits"].sum()
-        for key, value in outputs["other_outputs"].items():
-            dummy_losses += 0 * value.sum()
-
-        total_loss = combined_loss + dummy_losses
-        return total_loss, {
+        return combined_loss, {
             "unsupervised_loss": unsupervised_loss,
             "span_loss": span_loss,
             "sentence_loss": sentence_loss,
