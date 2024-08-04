@@ -1,6 +1,8 @@
+from ast import Dict
 from logging import config
 import os
 import time
+from typing import Literal
 import torch
 import json
 from tqdm import tqdm
@@ -10,8 +12,6 @@ from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast, GradScaler
 from sklearn.metrics import classification_report
-
-from typing import Dict, List, Literal, Tuple
 
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
@@ -35,9 +35,7 @@ class Trainer:
         device="cuda",
         save_path="../notebooks/",
         run_name="",
-        training_management: Literal[
-            "accelerate", "wandb", None
-        ] = None,  # 'accelerate', 'wandb', or None
+        training_management=None,  # 'accelerate', 'wandb', or None
         tau_min=1,
         tau_decay=0.95,
         early_stopping_patience=30,
@@ -165,103 +163,6 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             return param_group["lr"]
 
-    def prepare_predictions_and_labels(
-        self,
-        model_outputs: Dict[str, torch.Tensor],
-        labels: torch.Tensor,
-    ) -> Dict[str, Tuple[torch.Tensor, torch.Tensor]]:
-        prediction_types = [
-            "supervised",
-            "span",
-            "sent",
-            "predicate",
-            "arg0",
-            "arg1",
-            "frameaxis",
-        ]
-        results = {}
-
-        for pred_type in prediction_types:
-            if pred_type == "supervised":
-                preds = model_outputs["supervised_logits"]
-            elif pred_type in ["span", "sent"]:
-                preds = model_outputs[f"{pred_type}_logits"]
-            else:
-                preds = model_outputs["other_outputs"][f"{pred_type}_logits"]
-
-            # Apply activation function
-            preds = self.get_activation_function(preds)
-
-            # Gather predictions if using Accelerate
-            if self.training_management == "accelerate":
-                preds, labels_gathered = self.accelerator.gather_for_metrics(
-                    (preds, labels)
-                )
-            else:
-                labels_gathered = labels
-
-            results[pred_type] = (preds, labels_gathered)
-
-        return results
-
-    def add_batch_to_metrics(
-        self,
-        metrics: Dict[str, object],
-        predictions: Dict[str, Tuple[torch.Tensor, torch.Tensor]],
-    ):
-        for pred_type, (preds, labels) in predictions.items():
-            if self.model_type == "muse-dlf":
-                # Multi-label case
-                metrics[f"f1_metric_micro_{pred_type}"].add_batch(
-                    predictions=preds, references=labels
-                )
-                metrics[f"f1_metric_macro_{pred_type}"].add_batch(
-                    predictions=preds, references=labels
-                )
-                metrics[f"accuracy_metric_{pred_type}"].add_batch(
-                    predictions=preds, references=labels
-                )
-            elif self.model_type == "slmuse-dlf":
-                preds = preds.argmax(dim=1)
-                labels = labels.argmax(dim=1)
-
-                # Single-label case
-                metrics[f"f1_metric_micro_{pred_type}"].add_batch(
-                    predictions=preds, references=labels
-                )
-                metrics[f"f1_metric_macro_{pred_type}"].add_batch(
-                    predictions=preds, references=labels
-                )
-                metrics[f"accuracy_metric_{pred_type}"].add_batch(
-                    predictions=preds, references=labels
-                )
-
-    def compute_metrics(self, metrics: Dict[str, object]) -> Dict[str, float]:
-        results = {}
-        for metric_name, metric in metrics.items():
-            if "f1_metric_micro" in metric_name:
-                results[f"{metric_name.replace("f1_metric_micro_", "")}_micro_f1"] = metric.compute(
-                    average="micro"
-                )["f1"]
-            elif "f1_metric_macro" in metric_name:
-                results[f"{metric_name.replace("f1_metric_macro_", "")}_macro_f1"] = metric.compute(
-                    average="macro"
-                )["f1"]
-            elif "accuracy_metric" in metric_name:
-                results[f"{metric_name.replace("accuracy_metric_", "")}_accuracy"] = metric.compute()["accuracy"]
-        return results
-
-    def log_per_class_metrics(self, class_report: Dict, prefix="train"):
-        for class_name, metrics in class_report.items():
-            if isinstance(metrics, dict):
-                self._log_metrics(
-                    {
-                        f"{prefix}_precision_class_{class_name}": metrics["precision"],
-                        f"{prefix}_recall_class_{class_name}": metrics["recall"],
-                        f"{prefix}_f1_class_{class_name}": metrics["f1-score"],
-                    }
-                )
-
     def calculate_loss(self, outputs, labels, alpha):
         unsupervised_loss = outputs["unsupervised_loss"]
         span_loss = self.loss_function(
@@ -271,16 +172,129 @@ class Trainer:
             outputs["sent_logits"], labels, input_type="logits"
         )
 
+        # Additional losses for logging only
+        with torch.no_grad():  # Prevent gradient computation
+            predicate_loss = self.loss_function(
+                outputs["predicate_logits"], labels, input_type="logits"
+            )
+            arg0_loss = self.loss_function(
+                outputs["arg0_logits"], labels, input_type="logits"
+            )
+            arg1_loss = self.loss_function(
+                outputs["arg1_logits"], labels, input_type="logits"
+            )
+            frameaxis_loss = self.loss_function(
+                outputs["frameaxis_logits"], labels, input_type="logits"
+            )
+
         supervised_loss = span_loss + sentence_loss
         combined_loss = alpha * supervised_loss + (1 - alpha) * unsupervised_loss
 
         return combined_loss, {
+            "combined_loss": combined_loss,
             "unsupervised_loss": unsupervised_loss,
             "span_loss": span_loss,
             "sentence_loss": sentence_loss,
             "supervised_loss": supervised_loss,
-            "combined_loss": combined_loss,
+            "predicate_loss": predicate_loss,
+            "arg0_loss": arg0_loss,
+            "arg1_loss": arg1_loss,
+            "frameaxis_loss": frameaxis_loss,
         }
+
+    def _log_classification_report(self, logits, labels):
+        combined_pred_np = logits.cpu().numpy()
+        combined_labels_np = labels.cpu().numpy()
+
+        # Generate classification report
+        class_report = classification_report(
+            combined_labels_np, combined_pred_np, output_dict=True
+        )
+
+        if (
+            self.training_management == "accelerate"
+            and self.accelerator.is_main_process
+        ) or (self.training_management != "accelerate"):
+            # Print the classification report
+            logger.info("\nPer-class metrics for training data:")
+            logger.info(classification_report(combined_labels_np, combined_pred_np))
+
+        # Log per-class metrics
+        for class_name, metrics in class_report.items():
+            if isinstance(
+                metrics, dict
+            ):  # Skip 'accuracy', 'macro avg', 'weighted avg'
+                self._log_metrics(
+                    {
+                        f"train_precision_class_{class_name}": metrics["precision"],
+                        f"train_recall_class_{class_name}": metrics["recall"],
+                        f"train_f1_class_{class_name}": metrics["f1-score"],
+                    }
+                )
+
+    def _create_metrics_dict(self, vars_to_log, experiment_id):
+        metrics_dict = {}
+
+        metrics_dict["accuracy"] = {}
+        metrics_dict["f1_micro"] = {}
+        metrics_dict["f1_macro"] = {}
+
+        for metric in ["accuracy", "f1_micro", "f1_macro"]:
+            name = metric if "_" not in metric else metric.split("_")[0]
+            config = None if "_" not in metric else metric.split("_")[1]
+            for var in vars_to_log:
+                metrics_dict[metric][var] = evaluate.load(
+                    name, config_name=config, experiment_id=experiment_id
+                )
+
+        return metrics_dict
+
+    def _prepare_logits(self, outputs: Dict, labels, keys=[]):
+        logits = {}
+        for key in keys:
+            pred = self.get_activation_function(outputs[key])
+            logits[key] = (pred, labels)
+
+        return logits
+
+    def _metrics_add_batch(self, metrics, logits):
+        for metric in metrics.keys():
+            for key, value in logits.items():
+                metrics_name = key.split("_")[0]
+
+                preds, labels = value
+
+                if self.model_type == "muse-dlf":
+                    preds = preds.float()
+                    labels = labels.int()
+                elif self.model_type == "slmuse-dlf":
+                    preds = preds.argmax(dim=1)
+                    labels = labels.argmax(dim=1)
+
+                metrics[metric][metrics_name].add_batch(
+                    predictions=preds, references=labels
+                )
+
+        return metrics
+
+    def _metrics_calculate(self, metrics, prefix="train"):
+        results = {}
+
+        for metric, value in metrics.items():
+            for key, evaluator in value.items():
+                if metric == "accuracy":
+                    result = evaluator.compute()["accuracy"]
+                elif metric == "f1_micro":
+                    result = evaluator.compute(average="micro")["f1"]
+                elif metric == "f1_macro":
+                    result = evaluator.compute(average="macro")["f1"]
+
+                if key == "supervised":
+                    results[f"{prefix}_{metric}"] = result
+                else:
+                    results[f"{prefix}_{metric}_{key}"] = result
+
+        return results
 
     def _train(
         self,
@@ -301,28 +315,18 @@ class Trainer:
         self.model.train()
         total_loss, supervised_total_loss, unsupervised_total_loss = 0, 0, 0
 
-        # Initialize metrics
-        metric_types = ["f1_metric_micro", "f1_metric_macro", "accuracy_metric"]
-        prediction_types = [
-            "supervised",
-            "span",
-            "sentence",
-            "predicate",
-            "arg0",
-            "arg1",
-            "frameaxis",
-        ]
-        metrics = {
-            f"{metric}_{pred_type}": evaluate.load(
-                metric.split("_")[0],
-                config_name=(
-                    metric.split("_")[2] if len(metric.split("_")) > 2 else None
-                ),
-                experiment_id=experiment_id,
-            )
-            for metric in metric_types
-            for pred_type in prediction_types
-        }
+        metrics_dict = self._create_metrics_dict(
+            [
+                "supervised",
+                "span",
+                "sent",
+                "predicate",
+                "arg0",
+                "arg1",
+                "frameaxis",
+            ],
+            experiment_id,
+        )
 
         precision_dtype = (
             torch.float16
@@ -331,7 +335,11 @@ class Trainer:
         )
 
         for batch_idx, batch in enumerate(
-            tqdm(train_dataloader, desc=f"Train - Epoch {epoch}")
+            tqdm(
+                train_dataloader,
+                desc=f"Train - Epoch {epoch}",
+                disable=not self.accelerator.is_main_process,
+            )
         ):
             global global_steps
             global_steps += 1
@@ -341,11 +349,8 @@ class Trainer:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
 
             # Prepare inputs
-            inputs = {
-                k: v.to(device) if self.training_management != "accelerate" else v
-                for k, v in batch.items()
-                if k != "labels"
-            }
+            inputs = {k: v for k, v in batch.items() if k != "labels"}
+            labels = batch["labels"]
 
             # Extract necessary items
             model_inputs = {
@@ -358,12 +363,6 @@ class Trainer:
                 "tau": tau,
             }
 
-            labels = (
-                batch["labels"].to(device)
-                if self.training_management != "accelerate"
-                else batch["labels"]
-            )
-
             if self.model_type == "muse-dlf":
                 prepared_labels = labels.float()
             elif self.model_type == "slmuse-dlf":
@@ -373,11 +372,11 @@ class Trainer:
                     )
                     prepared_labels = torch.argmax(labels, dim=1).long()
 
-            # Forward pass
+            # Forward pass and loss calculation
             if self.training_management == "accelerate":
                 with self.accelerator.autocast():
                     outputs = self.model(**model_inputs)
-                    total_loss, loss_dict = self.calculate_loss(
+                    combined_loss, loss_dict = self.calculate_loss(
                         outputs, prepared_labels, alpha
                     )
             else:
@@ -386,14 +385,14 @@ class Trainer:
                     dtype=precision_dtype,
                 ):
                     outputs = self.model(**model_inputs)
-                    total_loss, loss_dict = self.calculate_loss(
+                    combined_loss, loss_dict = self.calculate_loss(
                         outputs, prepared_labels, alpha
                     )
 
-            # Backward pass and optimization
+            # Backward pass
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
-                    self.accelerator.backward(total_loss)
+                    self.accelerator.backward(combined_loss)
                     if self.accelerator.sync_gradients:
                         self.accelerator.clip_grad_norm_(
                             self.model.parameters(), self.clip_value
@@ -403,7 +402,9 @@ class Trainer:
                     self.optimizer.zero_grad()
             else:
                 if self.scaler is not None:
-                    self.scaler.scale(total_loss / self.accumulation_steps).backward()
+                    self.scaler.scale(
+                        combined_loss / self.accumulation_steps
+                    ).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
                         batch_idx + 1
                     ) == len(train_dataloader):
@@ -416,7 +417,7 @@ class Trainer:
                         self.scheduler.step()
                         self.optimizer.zero_grad()
                 else:
-                    (total_loss / self.accumulation_steps).backward()
+                    (combined_loss / self.accumulation_steps).backward()
                     if (batch_idx + 1) % self.accumulation_steps == 0 or (
                         batch_idx + 1
                     ) == len(train_dataloader):
@@ -427,142 +428,175 @@ class Trainer:
                         self.scheduler.step()
                         self.optimizer.zero_grad()
 
-            total_loss += loss_dict["combined_loss"].item()
-            supervised_total_loss += loss_dict["supervised_loss"].item()
-            unsupervised_total_loss += loss_dict["unsupervised_loss"].item()
+            # Update loss statistics
+            if self.training_management == "accelerate":
+                total_loss += (
+                    self.accelerator.gather(loss_dict["combined_loss"]).sum().item()
+                )
+                supervised_total_loss += (
+                    self.accelerator.gather(loss_dict["supervised_loss"]).sum().item()
+                )
+                unsupervised_total_loss += (
+                    self.accelerator.gather(loss_dict["unsupervised_loss"]).sum().item()
+                )
+            else:
+                total_loss += loss_dict["combined_loss"].item()
+                supervised_total_loss += loss_dict["supervised_loss"].item()
+                unsupervised_total_loss += loss_dict["unsupervised_loss"].item()
 
-            current_lr_scheduler = self.scheduler.get_last_lr()[0]
-            current_lr_model = self.get_lr()
+            # Log metrics
+            if self.accelerator.is_main_process:
+                current_lr_scheduler = self.scheduler.get_last_lr()[0]
+                current_lr_model = self.get_lr()
+                self._log_metrics(
+                    {
+                        "batch_combined_loss": loss_dict["combined_loss"].item(),
+                        "batch_supervised_loss": loss_dict["supervised_loss"].item(),
+                        "batch_span_loss": loss_dict["span_loss"].item(),
+                        "batch_sentence_loss": loss_dict["sentence_loss"].item(),
+                        "batch_unsupervised_loss": loss_dict[
+                            "unsupervised_loss"
+                        ].item(),
+                        "batch_predicate_loss": loss_dict["predicate_loss"].item(),
+                        "batch_arg0_loss": loss_dict["arg0_loss"].item(),
+                        "batch_arg1_loss": loss_dict["arg1_loss"].item(),
+                        "batch_frameaxis_loss": loss_dict["frameaxis_loss"].item(),
+                        "batch": batch_idx,
+                        "global_steps": global_steps,
+                        "tau": tau,
+                        "epoch": epoch,
+                        "learning_rate_scheduler": current_lr_scheduler,
+                        "learning_rate_model": current_lr_model,
+                    }
+                )
+
+            # Evaluation and early stopping check
+            if global_steps % self.test_every_n_batches == 0:
+                with torch.no_grad():
+                    if self.training_management == "accelerate":
+                        outputs = self.accelerator.gather(outputs)
+                        labels = self.accelerator.gather(labels)
+
+                    if self.accelerator.is_main_process:
+                        logger.info(
+                            f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
+                        )
+
+                        prepared_logits = self._prepare_logits(
+                            outputs,
+                            labels,
+                            keys=[
+                                "span_logits",
+                                "sent_logits",
+                                "supervised_logits",
+                                "predicate_logits",
+                                "arg0_logits",
+                                "arg1_logits",
+                                "frameaxis_logits",
+                            ],
+                        )
+
+                        metrics_dict = self._metrics_add_batch(
+                            metrics_dict, prepared_logits
+                        )
+                        metrics = self._metrics_calculate(metrics_dict, prefix="train")
+                        self._log_metrics(metrics)
+
+                        supervised_pred, supervised_labels = prepared_logits[
+                            "supervised_logits"
+                        ]
+                        self._log_classification_report(
+                            supervised_pred, supervised_labels
+                        )
+
+                        logger.info(
+                            f"[TRAIN] Epoch {epoch}, Step {global_steps}: Micro F1: {metrics['train_f1_micro']}, "
+                            f"Macro F1: {metrics['train_f1_macro']}, Accuracy: {metrics['train_accuracy']}"
+                        )
+
+                        if (
+                            metrics[f"train_{self.save_metric}"]
+                            >= early_stopping[f"best_{self.save_metric}"]
+                        ):
+                            early_stopping["best_accuracy"] = metrics["train_accuracy"]
+                            early_stopping["best_micro_f1"] = metrics["train_f1_micro"]
+                            early_stopping["best_macro_f1"] = metrics["train_f1_macro"]
+                            early_stopping["early_stop"] = 0
+
+                            if (
+                                metrics[f"train_{self.save_metric}"]
+                                > self.save_threshold
+                            ):
+                                self._save_model()
+                        else:
+                            early_stopping["early_stop"] += 1
+
+                            if (
+                                early_stopping["early_stop"]
+                                >= self.early_stopping_patience
+                            ):
+                                logger.info("Early stopping triggered.")
+                                early_stopping["early_stopped"] = True
+
+                        metrics_dict = self._create_metrics_dict(
+                            [
+                                "supervised",
+                                "span",
+                                "sent",
+                                "predicate",
+                                "arg0",
+                                "arg1",
+                                "frameaxis",
+                            ],
+                            experiment_id,
+                        )
+
+                if early_stopping["early_stopped"]:
+                    return tau, early_stopping
+
+            # Clean up
+            del outputs, labels, prepared_labels, loss_dict
+            torch.cuda.empty_cache()
+
+        # End of epoch logging
+        if self.accelerator.is_main_process:
+            avg_total_loss = total_loss / len(train_dataloader)
+            avg_supervised_loss = supervised_total_loss / len(train_dataloader)
+            avg_unsupervised_loss = unsupervised_total_loss / len(train_dataloader)
+
+            logger.info(
+                f"[TRAIN] Epoch {epoch}, Step {global_steps}: Avg Total Loss: {avg_total_loss}, "
+                f"Avg Supervised Loss: {avg_supervised_loss}, Avg Unsupervised Loss: {avg_unsupervised_loss}"
+            )
+
             self._log_metrics(
                 {
-                    "batch_combined_loss": loss_dict["combined_loss"].item(),
-                    "batch_supervised_loss": loss_dict["supervised_loss"].item(),
-                    "batch_span_loss": loss_dict["span_loss"].item(),
-                    "batch_sentence_loss": loss_dict["sentence_loss"].item(),
-                    "batch_unsupervised_loss": loss_dict["unsupervised_loss"].item(),
-                    "batch": batch_idx,
-                    "global_steps": global_steps,
-                    "tau": tau,
+                    "epoch_combined_loss": avg_total_loss,
+                    "epoch_supervised_loss": avg_supervised_loss,
+                    "epoch_unsupervised_loss": avg_unsupervised_loss,
                     "epoch": epoch,
-                    "learning_rate_scheduler": current_lr_scheduler,
-                    "learning_rate_model": current_lr_model,
                 }
             )
 
-            # Evaluate and log train metrics every test_every_n_batches steps
-            if global_steps % self.test_every_n_batches == 0:
-                logger.info(
-                    f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
-                )
-
-                with torch.no_grad():
-                    predictions = self.prepare_predictions_and_labels(
-                        outputs,
-                        labels,
-                    )
-                    self.add_batch_to_metrics(metrics, predictions)
-
-                    eval_results = self.compute_metrics(metrics)
-                    self._log_metrics(
-                        {f"train_{k}": v for k, v in eval_results.items()}
-                    )
-
-                    # Generate and log per-class metrics for combined predictions
-                    combined_pred, combined_labels = predictions["supervised"]
-                    class_report = classification_report(
-                        combined_labels.cpu().numpy(),
-                        combined_pred.cpu().numpy(),
-                        output_dict=True,
-                    )
-                    self.log_per_class_metrics(class_report, prefix="train")
-
-                    logger.info(
-                        f"[TRAIN] Epoch {epoch}, Step {global_steps}: "
-                        f"Micro F1: {eval_results['combined_micro_f1']}, "
-                        f"Macro F1: {eval_results['combined_macro_f1']}, "
-                        f"Accuracy: {eval_results['combined_accuracy']}"
-                    )
-
-                    if (
-                        eval_results[f"combined_{self.save_metric}"]
-                        >= early_stopping[f"best_{self.save_metric}"]
-                    ):
-                        early_stopping["best_accuracy"] = eval_results[
-                            "combined_accuracy"
-                        ]
-                        early_stopping["best_micro_f1"] = eval_results[
-                            "combined_micro_f1"
-                        ]
-                        early_stopping["best_macro_f1"] = eval_results[
-                            "combined_macro_f1"
-                        ]
-                        early_stopping["early_stop"] = 0
-
-                        if (
-                            eval_results[f"combined_{self.save_metric}"]
-                            > self.save_threshold
-                        ):
-                            self._save_model(f"step_{global_steps}")
-                    else:
-                        early_stopping["early_stop"] += 1
-
-                        if early_stopping["early_stop"] >= self.early_stopping_patience:
-                            logger.info("Early stopping triggered.")
-                            early_stopping["early_stopped"] = True
-                            return tau, early_stopping
-
-                self.model.train()
-
-        avg_total_loss = total_loss / len(train_dataloader)
-        avg_supervised_loss = supervised_total_loss / len(train_dataloader)
-        avg_unsupervised_loss = unsupervised_total_loss / len(train_dataloader)
-
-        logger.info(
-            f"[TRAIN] Epoch {epoch}, Step {global_steps}: "
-            f"Avg Total Loss: {avg_total_loss}, "
-            f"Avg Supervised Loss: {avg_supervised_loss}, "
-            f"Avg Unsupervised Loss: {avg_unsupervised_loss}"
-        )
-
-        self._log_metrics(
-            {
-                "epoch_combined_loss": avg_total_loss,
-                "epoch_supervised_loss": avg_supervised_loss,
-                "epoch_unsupervised_loss": avg_unsupervised_loss,
-                "epoch": epoch,
-            }
-        )
-
-        self._save_model(f"epoch_{epoch}")
+            self._save_model()
 
         return tau, early_stopping
 
     def _evaluate(self, epoch, test_dataloader, device, tau, alpha, experiment_id):
         self.model.eval()
-        total_val_loss = 0.0
 
-        # Initialize metrics
-        metric_types = ["f1_metric_micro", "f1_metric_macro", "accuracy_metric"]
-        prediction_types = [
-            "supervised",
-            "span",
-            "sent",
-            "predicate",
-            "arg0",
-            "arg1",
-            "frameaxis",
-        ]
-        metrics = {
-            f"{metric}_{pred_type}": evaluate.load(
-                metric.split("_")[0],
-                config_name=(
-                    metric.split("_")[2] if len(metric.split("_")) > 2 else None
-                ),
-                experiment_id=experiment_id,
-            )
-            for metric in metric_types
-            for pred_type in prediction_types
-        }
+        metrics_dict = self._create_metrics_dict(
+            [
+                "supervised",
+                "span",
+                "sent",
+                "predicate",
+                "arg0",
+                "arg1",
+                "frameaxis",
+            ],
+            experiment_id,
+        )
 
         precision_dtype = (
             torch.float16
@@ -570,16 +604,21 @@ class Trainer:
             else torch.bfloat16 if self.mixed_precision == "bf16" else torch.float32
         )
 
-        all_combined_preds = []
-        all_combined_labels = []
+        all_supervised_preds = []
+        all_supervised_labels = []
 
-        for batch in tqdm(test_dataloader, desc=f"Evaluate - Epoch {epoch}"):
-            inputs = {
-                k: v.to(device) if self.training_management != "accelerate" else v
-                for k, v in batch.items()
-                if k != "labels"
-            }
+        for batch_idx, batch in enumerate(
+            tqdm(
+                test_dataloader,
+                desc=f"Evaluate - Epoch {epoch}",
+                disable=not self.accelerator.is_main_process,
+            )
+        ):
+            # Prepare inputs
+            inputs = {k: v for k, v in batch.items() if k != "labels"}
+            labels = batch["labels"]
 
+            # Extract necessary items
             model_inputs = {
                 "sentence_ids": inputs["sentence_ids"],
                 "sentence_attention_masks": inputs["sentence_attention_masks"],
@@ -590,38 +629,10 @@ class Trainer:
                 "tau": tau,
             }
 
-            labels = (
-                batch["labels"].to(device)
-                if self.training_management != "accelerate"
-                else batch["labels"]
-            )
-
-            if self.model_type == "muse-dlf":
-                prepared_labels = labels.float()
-            elif self.model_type == "slmuse-dlf":
-                if labels.dim() == 2:
-                    logger.debug(
-                        "Labels are one-hot encoded, converting to class index."
-                    )
-                    prepared_labels = torch.argmax(labels, dim=1).long()
-
             with torch.no_grad():
                 if self.training_management == "accelerate":
                     with self.accelerator.autocast():
                         outputs = self.model(**model_inputs)
-
-                        # Calculate losses
-                        unsupervised_loss = outputs["unsupervised_loss"]
-                        span_loss = self.loss_function(
-                            outputs["span_logits"], prepared_labels, input_type="logits"
-                        )
-                        sentence_loss = self.loss_function(
-                            outputs["sent_logits"], prepared_labels, input_type="logits"
-                        )
-                        supervised_loss = span_loss + sentence_loss
-                        combined_loss = (
-                            alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-                        )
                 else:
                     with autocast(
                         enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
@@ -629,74 +640,66 @@ class Trainer:
                     ):
                         outputs = self.model(**model_inputs)
 
-                        # Calculate losses
-                        unsupervised_loss = outputs["unsupervised_loss"]
-                        span_loss = self.loss_function(
-                            outputs["span_logits"], prepared_labels, input_type="logits"
-                        )
-                        sentence_loss = self.loss_function(
-                            outputs["sent_logits"], prepared_labels, input_type="logits"
-                        )
-                        supervised_loss = span_loss + sentence_loss
-                        combined_loss = (
-                            alpha * supervised_loss + (1 - alpha) * unsupervised_loss
-                        )
-
-                total_val_loss += combined_loss.item()
-
-                predictions = self.prepare_predictions_and_labels(
+                prepared_logits = self._prepare_logits(
                     outputs,
                     labels,
+                    keys=[
+                        "span_logits",
+                        "sent_logits",
+                        "supervised_logits",
+                        "predicate_logits",
+                        "arg0_logits",
+                        "arg1_logits",
+                        "frameaxis_logits",
+                    ],
                 )
-                self.add_batch_to_metrics(metrics, predictions)
 
-                combined_pred, combined_labels = predictions["supervised"]
-                all_combined_preds.append(combined_pred.cpu())
-                all_combined_labels.append(combined_labels.cpu())
+                # Gather predictions and labels from all processes
+                if self.training_management == "accelerate":
+                    prepared_logits = self.accelerator.gather(prepared_logits)
+                    labels = self.accelerator.gather(labels)
 
-        avg_val_loss = total_val_loss / len(test_dataloader)
+                # Process metrics only on the main process
+                if (
+                    self.training_management != "accelerate"
+                    or self.accelerator.is_main_process
+                ):
+                    all_supervised_preds.append(
+                        prepared_logits["supervised_logits"][0]
+                    )  # predictions
+                    all_supervised_labels.append(
+                        prepared_logits["supervised_logits"][1]
+                    )  # labels
 
-        # Concatenate all predictions and labels
-        all_combined_preds = torch.cat(all_combined_preds).numpy()
-        all_combined_labels = torch.cat(all_combined_labels).numpy()
+                    # Add batch to metrics
+                    metrics_dict = self._metrics_add_batch(
+                        metrics_dict, prepared_logits
+                    )
 
-        # Generate classification report
-        class_report = classification_report(
-            all_combined_labels, all_combined_preds, output_dict=True
-        )
+                del labels, prepared_logits, outputs
+                torch.cuda.empty_cache()
 
-        if (
-            self.training_management == "accelerate"
-            and self.accelerator.is_main_process
-        ) or (self.training_management != "accelerate"):
-            logger.info("\nPer-class metrics for evaluation data:")
-            logger.info(classification_report(all_combined_labels, all_combined_preds))
+        # After the loop, process the accumulated data on the main process
+        if self.training_management != "accelerate" or self.accelerator.is_main_process:
+            all_supervised_preds = torch.cat(all_supervised_preds, dim=0)
+            all_supervised_labels = torch.cat(all_supervised_labels, dim=0)
 
-        # Compute all metrics
-        eval_results = self.compute_metrics(metrics)
+            # Calculate final metrics
+            metrics = self._metrics_calculate(metrics_dict, prefix="")
+            self._log_metrics(metrics)
 
-        logger.info(
-            f"[EVALUATE] Epoch {epoch}: "
-            f"Micro F1: {eval_results['combined_micro_f1']}, "
-            f"Macro F1: {eval_results['combined_macro_f1']}, "
-            f"Accuracy: {eval_results['combined_accuracy']}"
-        )
+            # Add per-class evaluation
+            self._log_classification_report(all_supervised_preds, all_supervised_labels)
 
-        # Prepare metrics dictionary
-        metrics_dict = {
-            **{f"{k}": v for k, v in eval_results.items()},
-            "epoch": epoch,
-            "val_loss": avg_val_loss,
-        }
+            logger.info(
+                f"[EVALUATE] Epoch {epoch}: Micro F1: {metrics['f1_micro']}, Macro F1: {metrics['f1_macro']}, Accuracy: {metrics['accuracy']}"
+            )
+        else:
+            metrics = None
 
-        self._log_metrics(metrics_dict)
+        return metrics
 
-        # Log per-class metrics
-        self.log_per_class_metrics(class_report, prefix="eval")
-
-        return metrics_dict
-
-    def _save_model(self, epoch_step=None):
+    def _save_model(self):
         logger.info("Starting to save the model.")
 
         if self.save_model == False:

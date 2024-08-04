@@ -38,7 +38,9 @@ class SLMuSECombinedAutoencoder(nn.Module):
         self.dropout1 = nn.Dropout(dropout_prob)
         self.feed_forward_shared = nn.Linear(input_dim, hidden_dim)
         self.batch_norm = (
-            nn.LayerNorm(hidden_dim) if use_batch_norm else nn.Identity() # Revert back to BatchNorm1d if it doesn't work
+            nn.BatchNorm1d(hidden_dim)
+            if use_batch_norm
+            else nn.Identity()  # Revert back to BatchNorm1d if it doesn't work
         )
         self.activation = self.activation_func
         self.dropout2 = nn.Dropout(dropout_prob)
@@ -51,7 +53,11 @@ class SLMuSECombinedAutoencoder(nn.Module):
                 layers.extend(
                     [
                         nn.Linear(hidden_dim, hidden_dim),
-                        nn.LayerNorm(hidden_dim) if use_batch_norm else nn.Identity(), # Revert back to BatchNorm1d if it doesn't work
+                        (
+                            nn.BatchNorm1d(hidden_dim)
+                            if use_batch_norm
+                            else nn.Identity()
+                        ),  # Revert back to BatchNorm1d if it doesn't work
                         self.activation_func,
                         nn.Dropout(dropout_prob),
                     ]

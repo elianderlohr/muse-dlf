@@ -854,6 +854,7 @@ class SLMuSEDLF(nn.Module):
         )
 
         if self.alternative_supervised == "alt9":
+            self.logger.debug(f"Using alternative supervised module 9")
             span_logits, sent_logits, supervised_logits, other = self.supervised(
                 logits_p_aggregated,
                 logits_a0_aggregated,
@@ -863,6 +864,7 @@ class SLMuSEDLF(nn.Module):
                 frameaxis_data,
             )
         else:
+            self.logger.debug(f"Using default supervised module")
             span_logits, sent_logits, supervised_logits, other = self.supervised(
                 d_p_aggregated,
                 d_a0_aggregated,
@@ -894,7 +896,16 @@ class SLMuSEDLF(nn.Module):
         self.logger.debug(f"Final unsupervised loss: {unsupervised_loss}")
 
         # Delete aggregated tensors after use
-        del d_p_aggregated, d_a0_aggregated, d_a1_aggregated, d_fx_aggregated
+        del (
+            d_p_aggregated,
+            d_a0_aggregated,
+            d_a1_aggregated,
+            d_fx_aggregated,
+            logits_p_aggregated,
+            logits_a0_aggregated,
+            logits_a1_aggregated,
+            logits_fx_aggregated,
+        )
         torch.cuda.empty_cache()
 
         return {
