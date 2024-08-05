@@ -289,7 +289,7 @@ class PreProcessor:
                     .apply(np.array)
                     .tolist()
                 )
-                y_multi = np.array(y_multi)
+                # y_multi = np.array(y_multi)
 
                 # Initialize the stratified k-fold splitter
                 mskf = MultilabelStratifiedKFold(
