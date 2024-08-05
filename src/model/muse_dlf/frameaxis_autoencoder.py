@@ -1,27 +1,27 @@
 import torch
 import torch.nn as nn
 from model.muse_dlf.helper import custom_gumbel_sigmoid
+
 from utils.logging_manager import LoggerManager
 
 
-class MuSEFrameAxisAutoencoder(nn.Module):
+class SLMuSEFrameAxisAutoencoder(nn.Module):
     def __init__(
         self,
-        embedding_dim,  # embedding dimension (e.g. RoBERTa 768)
-        frameaxis_dim,  # frameaxis dimension
-        hidden_dim,  # hidden dimension
-        num_classes,  # number of classes to predict
-        num_layers=2,  # number of layers in the encoder
-        dropout_prob=0.3,  # dropout probability
-        activation="relu",  # activation function (relu, gelu, leaky_relu, elu)
-        use_batch_norm=True,  # whether to use batch normalization
-        matmul_input="g",  # g or d (g = gumbel-sigmoid, d = sigmoid)
-        log=False,  # whether to use log gumbel sigmoid
+        embedding_dim,
+        frameaxis_dim,
+        hidden_dim,
+        num_classes,
+        num_layers=2,
+        dropout_prob=0.3,
+        activation="relu",
+        use_batch_norm=True,
+        matmul_input="g",
+        log=False,
         _debug=False,
     ):
-        super(MuSEFrameAxisAutoencoder, self).__init__()
+        super(SLMuSEFrameAxisAutoencoder, self).__init__()
 
-        # init logger
         self.logger = LoggerManager.get_logger(__name__)
 
         self.num_classes = num_classes
@@ -30,18 +30,17 @@ class MuSEFrameAxisAutoencoder(nn.Module):
         self.matmul_input = matmul_input
         self.log = log
 
-        # Initialize activation function
         self.activation_func = self._get_activation(activation)
 
-        # Determine input dimension based on whether to concatenate frameaxis with sentence
         input_dim = embedding_dim + frameaxis_dim
 
-        # Initialize the layers for the encoder
         # Shared layer components
         self.dropout1 = nn.Dropout(dropout_prob)
         self.feed_forward_shared = nn.Linear(input_dim, hidden_dim)
         self.batch_norm = (
-            nn.BatchNorm1d(hidden_dim) if use_batch_norm else nn.Identity()
+            nn.BatchNorm1d(hidden_dim)
+            if use_batch_norm
+            else nn.Identity()  # Revert back to BatchNorm1d if it doesn't work
         )
         self.activation = self.activation_func
         self.dropout2 = nn.Dropout(dropout_prob)
@@ -52,7 +51,9 @@ class MuSEFrameAxisAutoencoder(nn.Module):
             layers.extend(
                 [
                     nn.Linear(hidden_dim, hidden_dim),
-                    nn.BatchNorm1d(hidden_dim) if use_batch_norm else nn.Identity(),
+                    (
+                        nn.BatchNorm1d(hidden_dim) if use_batch_norm else nn.Identity()
+                    ),  # Revert back to BatchNorm1d if it doesn't work
                     self.activation_func,
                     nn.Dropout(dropout_prob),
                 ]
@@ -65,7 +66,6 @@ class MuSEFrameAxisAutoencoder(nn.Module):
 
         self._debug = _debug
 
-        # Debugging
         self.logger.debug(f"✅ FrameAxisAutoencoder successfully initialized")
 
     def _get_activation(self, activation):
@@ -107,7 +107,8 @@ class MuSEFrameAxisAutoencoder(nn.Module):
             self.logger.error("❌ NaNs detected in h")
             raise ValueError("NaNs detected in h")
 
-        logits = self.feed_forward_2(h) * mask.unsqueeze(-1).float()
+        # Pass through combined individual and output layers
+        logits = self.feed_forward_combined(h) * mask.unsqueeze(-1).float()
 
         epsilon = 1e-10
         logits = logits + (1 - mask.unsqueeze(-1).float()) * epsilon
@@ -122,6 +123,8 @@ class MuSEFrameAxisAutoencoder(nn.Module):
             raise ValueError("NaNs detected in logits")
 
         d = torch.sigmoid(logits) * mask.unsqueeze(-1).float()
+
+        del logits
 
         g = (
             custom_gumbel_sigmoid(d, tau=tau, hard=False, log=self.log)
@@ -139,7 +142,7 @@ class MuSEFrameAxisAutoencoder(nn.Module):
             self.logger.error("❌ NaNs detected in vhat")
             raise ValueError("NaNs detected in vhat")
 
-        del h, logits
+        del h
         torch.cuda.empty_cache()
 
         return {"vhat": vhat, "d": d, "g": g, "F": self.F}
