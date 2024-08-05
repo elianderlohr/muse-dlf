@@ -31,8 +31,6 @@ class MuSEEmbeddings(nn.Module):
                 f"Unsupported model_type. Choose either 'bert-base-uncased' or 'roberta-base'. Found: {model_type}"
             )
 
-        self.logger.info(f"Model loaded: {model_name_or_path}")
-
         # Set model to evaluation mode
         self.model.eval()
 
@@ -61,11 +59,19 @@ class MuSEEmbeddings(nn.Module):
 
         self._debug = _debug
 
+        # Freeze the RoBERTa model
+        for param in self.model.parameters():
+            param.requires_grad = False
+
         if self._debug:
             self.verify_model_loading()
 
         # Debugging:
         self.logger.debug(f"✅ SRLEmbeddings successfully initialized")
+
+    def unfreeze_bert(self):
+        for param in self.model.parameters():
+            param.requires_grad = True
 
     def verify_model_loading(self):
         if self.model_type == "bert-base-uncased":
@@ -106,6 +112,8 @@ class MuSEEmbeddings(nn.Module):
         )
 
         del ids
+
+        self.model.eval()
 
         with torch.no_grad():
 
