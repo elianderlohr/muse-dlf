@@ -171,13 +171,13 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --embedding_dim 768 \
     --hidden_dim 768 \
     --num_classes 15 \
-    --dropout_prob 0.3 \
+    --dropout_prob 0.5 \
     --alpha 0.5 \
     --lambda_orthogonality 1e-3 \
-    --lr 0.0001 \
+    --lr 1e-4 \
     --M 8 \
     --t 8 \
-    --batch_size 8 \
+    --batch_size 16 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
@@ -207,7 +207,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --accumulation_steps 4 \
     --alternative_supervised alt6 \
     --seed 42 \
-    --clip_value 1 \
+    --clip_value 2 \
     --focal_loss_gamma 2 \
     --early_stopping_patience 20 \
     $DEBUG

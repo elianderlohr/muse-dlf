@@ -11,7 +11,6 @@ from model.slmuse_dlf.muse import SLMuSEDLF
 from model.muse_dlf.muse import MuSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
-import torch.nn as nn
 from transformers import BertTokenizer, RobertaTokenizerFast
 from torch.optim import Adam, AdamW
 from accelerate import Accelerator
@@ -19,8 +18,6 @@ from accelerate.utils import InitProcessGroupKwargs
 from accelerate import DistributedDataParallelKwargs
 import warnings
 import wandb
-
-from torch.nn.parallel import DistributedDataParallel as DDP
 
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
