@@ -7,6 +7,8 @@ import torch
 import json
 from tqdm import tqdm
 import math
+
+from zmq import device
 import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
@@ -359,35 +361,29 @@ class Trainer:
                     )
                     prepared_labels = torch.argmax(labels, dim=1).long()
 
-            # Forward pass and loss calculation
-            if self.training_management == "accelerate":
-                with self.accelerator.autocast():
-                    outputs = self.model(**model_inputs)
-                    combined_loss, loss_dict = self.calculate_loss(
-                        outputs, prepared_labels, alpha
-                    )
-            else:
-                with autocast(
-                    enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
-                    dtype=precision_dtype,
-                ):
-                    outputs = self.model(**model_inputs)
-                    combined_loss, loss_dict = self.calculate_loss(
-                        outputs, prepared_labels, alpha
-                    )
-
-            # Backward pass
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
-                    self.accelerator.backward(combined_loss)
-                    if self.accelerator.sync_gradients:
-                        self.accelerator.clip_grad_norm_(
-                            self.model.parameters(), self.clip_value
+                    with self.accelerator.autocast():
+                        # Forward pass
+                        outputs = self.model(**model_inputs)
+                        combined_loss, loss_dict = self.calculate_loss(
+                            outputs, prepared_labels, alpha
                         )
-                    self.optimizer.step()
-                    self.scheduler.step()
-                    self.optimizer.zero_grad()
+                        # Backward pass
+                        self.accelerator.backward(combined_loss)
+                        if self.accelerator.sync_gradients:
+                            self.accelerator.clip_grad_norm_(
+                                self.model.parameters(), self.clip_value
+                            )
+                        self.optimizer.step()
+                        self.scheduler.step()
+                        self.optimizer.zero_grad()
             else:
+                outputs = self.model(**model_inputs)
+                combined_loss, loss_dict = self.calculate_loss(
+                    outputs, prepared_labels, alpha
+                )
+
                 if self.scaler is not None:
                     self.scaler.scale(
                         combined_loss / self.accumulation_steps
