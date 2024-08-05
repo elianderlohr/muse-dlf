@@ -174,7 +174,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 1e-3 \
-    --lr 5e-5 \
+    --lr 0.0001 \
     --M 8 \
     --t 8 \
     --batch_size 32 \
@@ -207,8 +207,8 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --accumulation_steps 2 \
     --alternative_supervised alt6 \
     --seed 42 \
-    --clip_value 0.5 \
-    --focal_loss_gamma 2 \
+    --clip_value 1 \
+    --focal_loss_gamma 1.5 \
     --early_stopping_patience 20 \
     $DEBUG
 

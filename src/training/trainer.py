@@ -375,27 +375,6 @@ class Trainer:
                         # Backward pass
                         self.accelerator.backward(combined_loss)
 
-                        # Add gradient norm monitoring here
-                        if self.accelerator.sync_gradients:
-                            grad_norm = self.accelerator.grad_norm(
-                                self.model.parameters()
-                            )
-                            if self.accelerator.is_main_process:
-                                self._log_metrics({"gradient_norm": grad_norm})
-
-                        # Add more detailed loss logging here
-                        if self.accelerator.is_main_process:
-                            gathered_losses = {
-                                k: self.accelerator.gather(v).mean().item()
-                                for k, v in loss_dict.items()
-                            }
-                            self._log_metrics(
-                                {
-                                    f"detailed_{k}_loss": v
-                                    for k, v in gathered_losses.items()
-                                }
-                            )
-
                         if self.accelerator.sync_gradients:
                             self.accelerator.clip_grad_norm_(
                                 self.model.parameters(), self.clip_value
