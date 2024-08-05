@@ -206,12 +206,11 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --mixed_precision fp16 \
     --accumulation_steps 1 \
     --alternative_supervised alt6 \
+    --seed 42 \
     --clip_value 1 \
     --focal_loss_gamma 2 \
     --early_stopping_patience 20 \
     $DEBUG
-
-#--seed 42 \
 
 echo "______________________________________________________"
 
