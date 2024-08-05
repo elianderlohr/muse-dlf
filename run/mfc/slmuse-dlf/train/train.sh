@@ -177,7 +177,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --lr 0.0001 \
     --M 8 \
     --t 8 \
-    --batch_size 32 \
+    --batch_size 8 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
@@ -205,7 +205,7 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tau_min 0.5 \
     --mixed_precision fp16 \
     --accumulation_steps 1 \
-    --alternative_supervised alt6 \
+    --alternative_supervised alt8 \
     --seed 42 \
     --clip_value 1 \
     --focal_loss_gamma 2 \
