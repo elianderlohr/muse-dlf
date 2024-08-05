@@ -151,9 +151,9 @@ class Trainer:
 
     def get_activation_function(self, logits):
         if self.model_type == "muse-dlf":
-            return (torch.sigmoid(logits) > 0.5).int()
+            return torch.sigmoid(logits)
         elif self.model_type == "slmuse-dlf":
-            return (torch.softmax(logits, dim=1) > 0.5).int()
+            return logits
         else:
             raise ValueError(
                 f"Model type {self.model_type} not supported: only muse-dlf and slmuse-dlf are supported."
@@ -252,8 +252,8 @@ class Trainer:
     def _prepare_logits(self, outputs: Dict, labels, keys=[]):
         logits = {}
         for key in keys:
-            # pred = self.get_activation_function(outputs[key])
-            logits[key] = (outputs[key], labels)
+            pred = self.get_activation_function(outputs[key])
+            logits[key] = (pred, labels)
 
         return logits
 
