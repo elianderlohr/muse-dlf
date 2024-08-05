@@ -167,6 +167,8 @@ class SLMuSEFrameAxisAutoencoder(nn.Module):
 
         d = torch.softmax(logits, dim=1) * mask.unsqueeze(-1).float()
 
+        del logits
+
         g = (
             self.custom_gumbel_softmax(d, tau=tau, hard=False, log=self.log)
             * mask.unsqueeze(-1).float()
@@ -186,4 +188,4 @@ class SLMuSEFrameAxisAutoencoder(nn.Module):
         del h
         torch.cuda.empty_cache()
 
-        return {"vhat": vhat, "d": d, "g": g, "F": self.F, "logits": logits}
+        return {"vhat": vhat, "d": d, "g": g, "F": self.F}

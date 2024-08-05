@@ -202,6 +202,8 @@ class SLMuSECombinedAutoencoder(nn.Module):
         d_a0 = torch.softmax(logits_a0, dim=1) * mask_a0.unsqueeze(-1).float()
         d_a1 = torch.softmax(logits_a1, dim=1) * mask_a1.unsqueeze(-1).float()
 
+        del logits_p, logits_a0, logits_a1
+
         # Check for NaNs after softmax
         if torch.isnan(d_p).any() or torch.isnan(d_a0).any() or torch.isnan(d_a1).any():
             self.logger.error("❌ NaNs detected in d AFTER softmax")
@@ -272,20 +274,17 @@ class SLMuSECombinedAutoencoder(nn.Module):
                 "d": d_p,
                 "g": g_p,
                 "F": self.F_matrices["p"],
-                "logits": logits_p,
             },
             "a0": {
                 "vhat": vhat_a0,
                 "d": d_a0,
                 "g": g_a0,
                 "F": self.F_matrices["a0"],
-                "logits": logits_a0,
             },
             "a1": {
                 "vhat": vhat_a1,
                 "d": d_a1,
                 "g": g_a1,
                 "F": self.F_matrices["a1"],
-                "logits": logits_a1,
             },
         }
