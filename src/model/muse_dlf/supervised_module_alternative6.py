@@ -78,14 +78,15 @@ class MuSESupervisedAlternative6(nn.Module):
         )
 
         # Combine and normalize the final descriptor
-        y_hat_u = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
+        y_hat_span = (d_p_mean + d_a0_mean + d_a1_mean + d_fx_mean) / 4
 
         if self.concat_frameaxis:
             vs = torch.cat([vs, frameaxis_data], dim=-1)
 
         flattened = self.flatten(vs)
-        y_hat_s = self.feed_forward_sentence(flattened)
-        combined = y_hat_u + y_hat_s
+        y_hat_sent = self.feed_forward_sentence(flattened)
+
+        combined = y_hat_span + y_hat_sent
 
         other = {
             "predicate": d_p_mean,
@@ -102,7 +103,7 @@ class MuSESupervisedAlternative6(nn.Module):
                 f"Shapes - d_p_mean: {d_p_mean.shape}, d_a0_mean: {d_a0_mean.shape}, d_a1_mean: {d_a1_mean.shape}, d_fx_mean: {d_fx_mean.shape}"
             )
             self.logger.debug(
-                f"Shapes - y_hat_u: {y_hat_u.shape}, flattened: {flattened.shape}, y_hat_s: {y_hat_s.shape}, combined: {combined.shape}"
+                f"Shapes - y_hat_span: {y_hat_span.shape}, flattened: {flattened.shape}, y_hat_sent: {y_hat_sent.shape}, combined: {combined.shape}"
             )
 
-        return y_hat_u, y_hat_s, combined, other
+        return y_hat_span, y_hat_sent, combined, other
