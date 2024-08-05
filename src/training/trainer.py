@@ -165,27 +165,15 @@ class Trainer:
 
     def calculate_loss(self, outputs, labels, alpha):
         unsupervised_loss = outputs["unsupervised_loss"]
-        span_loss = self.loss_function(
-            outputs["span_logits"], labels, input_type="logits"
-        )
-        sentence_loss = self.loss_function(
-            outputs["sent_logits"], labels, input_type="logits"
-        )
+        span_loss = self.loss_function(outputs["span_logits"], labels)
+        sentence_loss = self.loss_function(outputs["sent_logits"], labels)
 
         # Additional losses for logging only
         with torch.no_grad():  # Prevent gradient computation
-            predicate_loss = self.loss_function(
-                outputs["predicate_logits"], labels, input_type="logits"
-            )
-            arg0_loss = self.loss_function(
-                outputs["arg0_logits"], labels, input_type="logits"
-            )
-            arg1_loss = self.loss_function(
-                outputs["arg1_logits"], labels, input_type="logits"
-            )
-            frameaxis_loss = self.loss_function(
-                outputs["frameaxis_logits"], labels, input_type="logits"
-            )
+            predicate_loss = self.loss_function(outputs["predicate_logits"], labels)
+            arg0_loss = self.loss_function(outputs["arg0_logits"], labels)
+            arg1_loss = self.loss_function(outputs["arg1_logits"], labels)
+            frameaxis_loss = self.loss_function(outputs["frameaxis_logits"], labels)
 
         supervised_loss = span_loss + sentence_loss
         combined_loss = alpha * supervised_loss + (1 - alpha) * unsupervised_loss

@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Literal
+from typing import Optional, Sequence
 
 import torch
 from torch import Tensor
@@ -11,8 +11,7 @@ class FocalLoss(nn.Module):
 
     It is essentially an enhancement to cross entropy loss and is
     useful for classification tasks when there is a large class imbalance.
-    x is expected to contain either raw, unnormalized scores for each class
-    or probabilities from a softmax operation, as specified by the input_type parameter.
+    x is expected to contain raw, unnormalized scores for each class.
     y is expected to contain class labels.
 
     Shape:
@@ -58,23 +57,7 @@ class FocalLoss(nn.Module):
         arg_str = ", ".join(arg_strs)
         return f"{type(self).__name__}({arg_str})"
 
-    def forward(
-        self,
-        x: Tensor,
-        y: Tensor,
-        input_type: Literal["logits", "probabilities"] = "logits",
-    ) -> Tensor:
-        """
-        Forward pass of the FocalLoss.
-
-        Args:
-            x (Tensor): Input tensor. Either logits or probabilities based on input_type.
-            y (Tensor): Target tensor with class labels.
-            input_type (str): Specifies the type of input x. Either "logits" or "probabilities".
-
-        Returns:
-            Tensor: Computed loss.
-        """
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
         if x.ndim > 2:
             # (N, C, d1, d2, ..., dK) --> (N * d1 * ... * dK, C)
             c = x.shape[1]
@@ -88,24 +71,17 @@ class FocalLoss(nn.Module):
             return torch.tensor(0.0)
         x = x[unignored_mask]
 
-        if input_type == "probabilities":
-            p = x
-            log_p = torch.log(p + 1e-8)  # Add small epsilon to avoid log(0)
-        elif input_type == "logits":
-            log_p = F.log_softmax(x, dim=-1)
-            p = torch.exp(log_p)
-        else:
-            raise ValueError("input_type must be either 'logits' or 'probabilities'")
-
         # compute weighted cross entropy term: -alpha * log(pt)
         # (alpha is already part of self.nll_loss)
+        log_p = F.log_softmax(x, dim=-1)
         ce = self.nll_loss(log_p, y)
 
         # get true class column from each row
         all_rows = torch.arange(len(x))
-        pt = p[all_rows, y]
+        log_pt = log_p[all_rows, y]
 
         # compute focal term: (1 - pt)^gamma
+        pt = log_pt.exp()
         focal_term = (1 - pt) ** self.gamma
 
         # the full loss: -alpha * ((1 - pt)^gamma) * log(pt)
