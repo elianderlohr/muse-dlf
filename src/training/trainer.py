@@ -252,8 +252,8 @@ class Trainer:
     def _prepare_logits(self, outputs: Dict, labels, keys=[]):
         logits = {}
         for key in keys:
-            pred = self.get_activation_function(outputs[key])
-            logits[key] = (pred, labels)
+            # pred = self.get_activation_function(outputs[key])
+            logits[key] = (outputs[key], labels)
 
         return logits
 
@@ -263,10 +263,6 @@ class Trainer:
                 metrics_name = key.split("_")[0]
 
                 preds, labels = value
-
-                self._print(f"Metric: {metric}, Name: {metrics_name}")
-                self._print(f"Preview preds: {preds[:5]}")
-                self._print(f"Preview labels: {labels[:5]}")
 
                 if self.model_type == "muse-dlf":
                     preds = preds.float()
