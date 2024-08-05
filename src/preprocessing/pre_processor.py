@@ -313,8 +313,8 @@ class PreProcessor:
 
                 # Initialize the stratified k-fold splitter
                 mskf = MultilabelStratifiedKFold(
-                    n_splits=int(1 / 0.1),
-                    random_state=42,
+                    n_splits=int(1 / self.test_size),
+                    random_state=random_state,
                     shuffle=True,
                 )
 
