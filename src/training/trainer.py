@@ -177,7 +177,11 @@ class Trainer:
             frameaxis_loss = self.loss_function(outputs["frameaxis_logits"], labels)
 
         supervised_loss = span_loss + sentence_loss
-        combined_loss = alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+        sum_of_parameters = sum(p.sum() for p in self.model.parameters())
+        zero_sum = sum_of_parameters * 0.0
+        combined_loss = (
+            alpha * supervised_loss + (1 - alpha) * unsupervised_loss
+        ) + zero_sum
 
         return combined_loss, {
             "combined_loss": combined_loss,
