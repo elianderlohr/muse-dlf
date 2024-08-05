@@ -166,6 +166,14 @@ class Trainer:
             return param_group["lr"]
 
     def calculate_loss(self, outputs, labels, alpha):
+        # log outputs["span_logits"] and labels
+        logger.info(f"Span logits: {outputs['span_logits']}")
+        logger.info(f"Labels: {labels}")
+
+        logger.info(f"Sent logits: {outputs['sent_logits']}")
+        logger.info(f"Labels: {labels}")
+
+        # Calculate losses
         unsupervised_loss = outputs["unsupervised_loss"]
         span_loss = self.loss_function(outputs["span_logits"], labels)
         sentence_loss = self.loss_function(outputs["sent_logits"], labels)
