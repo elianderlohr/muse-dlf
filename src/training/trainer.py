@@ -163,6 +163,13 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             return param_group["lr"]
 
+    def _print(self, *args):
+        if self.training_management == "accelerate":
+            if self.accelerator.is_main_process:
+                self.accelerator.print(*args)
+        else:
+            print(*args)
+
     def calculate_loss(self, outputs, labels, alpha):
         # Calculate losses
         unsupervised_loss = outputs["unsupervised_loss"]
@@ -256,6 +263,10 @@ class Trainer:
                 metrics_name = key.split("_")[0]
 
                 preds, labels = value
+
+                self._print(f"Metric: {metric}, Name: {metrics_name}")
+                self._print(f"Preview preds: {preds[:5]}")
+                self._print(f"Preview labels: {labels[:5]}")
 
                 if self.model_type == "muse-dlf":
                     preds = preds.float()
