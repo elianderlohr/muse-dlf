@@ -101,7 +101,7 @@ class MuSEFrameAxisAutoencoder(nn.Module):
         v_sentence,
         tau,
     ):
-        h = self.process_through_first(v_frameaxis, v_sentence, mask)
+        h = self.process_through_first(v_frameaxis, v_sentence)
 
         if torch.isnan(h).any():
             self.logger.error("❌ NaNs detected in h")
