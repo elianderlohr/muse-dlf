@@ -885,7 +885,7 @@ def main():
             ).to(accelerator.device)
 
             loss_function = FocalLoss(
-                alpha=alpha_inverse,
+                alpha=alpha,
                 gamma=args.focal_loss_gamma,
                 reduction="mean",
             )
