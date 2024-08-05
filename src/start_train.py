@@ -11,6 +11,7 @@ from model.slmuse_dlf.muse import SLMuSEDLF
 from model.muse_dlf.muse import MuSEDLF
 from preprocessing.pre_processor import PreProcessor
 import torch
+import torch.nn as nn
 from transformers import BertTokenizer, RobertaTokenizerFast
 from torch.optim import Adam, AdamW
 from accelerate import Accelerator
@@ -884,13 +885,13 @@ def main():
                 [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
             ).to(accelerator.device)
 
-            loss_function = FocalLoss(
-                alpha=alpha,
-                gamma=args.focal_loss_gamma,
-                reduction="mean",
-            )
+            # loss_function = FocalLoss(
+            #    alpha=alpha,
+            #    gamma=args.focal_loss_gamma,
+            #    reduction="mean",
+            # )
 
-            # loss_function = nn.CrossEntropyLoss()
+            loss_function = nn.CrossEntropyLoss()
 
             logger.info("Loss function set to FocalLoss")
         else:
