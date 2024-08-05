@@ -157,8 +157,8 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --tags $TAGS \
     --wandb_api_key $WANDB_API_KEY \
     --path_data $DATA_PATH \
-    --epochs 20 \
-    --planned_epochs 20 \
+    --epochs 10 \
+    --planned_epochs 10 \
     --frameaxis_dim 10 \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482 \
@@ -174,10 +174,10 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 1e-3 \
-    --lr 0.001 \
+    --lr 0.0001 \
     --M 8 \
     --t 8 \
-    --batch_size 32 \
+    --batch_size 8 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
@@ -197,18 +197,18 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_num_layers 2 \
     --supervised_activation gelu \
     --optimizer adamw \
-    --adamw_weight_decay 5e-7 \
+    --adamw_weight_decay 0.000001 \
     --ams_grad_options True \
     --sentence_pooling mean \
     --hidden_state second_to_last \
     --tau_decay 5e-4 \
     --tau_min 0.5 \
     --mixed_precision fp16 \
-    --accumulation_steps 2 \
+    --accumulation_steps 1 \
     --alternative_supervised alt6 \
     --seed 42 \
     --clip_value 1 \
-    --focal_loss_gamma 1.5 \
+    --focal_loss_gamma 2 \
     --early_stopping_patience 20 \
     $DEBUG
 
