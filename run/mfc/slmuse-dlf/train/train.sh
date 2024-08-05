@@ -171,13 +171,13 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --embedding_dim 768 \
     --hidden_dim 768 \
     --num_classes 15 \
-    --dropout_prob 0.5 \
+    --dropout_prob 0.3 \
     --alpha 0.5 \
     --lambda_orthogonality 1e-3 \
-    --lr 1e-4 \
+    --lr 5e-5 \
     --M 8 \
     --t 8 \
-    --batch_size 16 \
+    --batch_size 32 \
     --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
@@ -197,17 +197,17 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --supervised_num_layers 2 \
     --supervised_activation gelu \
     --optimizer adamw \
-    --adamw_weight_decay 0.000001 \
+    --adamw_weight_decay 0.00001 \
     --ams_grad_options True \
     --sentence_pooling mean \
     --hidden_state second_to_last \
     --tau_decay 5e-4 \
     --tau_min 0.5 \
     --mixed_precision fp16 \
-    --accumulation_steps 1 \
+    --accumulation_steps 2 \
     --alternative_supervised alt9 \
     --seed 42 \
-    --clip_value 2 \
+    --clip_value 0.5 \
     --focal_loss_gamma 2 \
     --early_stopping_patience 20 \
     $DEBUG
