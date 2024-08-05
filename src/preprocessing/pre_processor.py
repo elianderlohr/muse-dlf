@@ -282,24 +282,48 @@ class PreProcessor:
                     stratify=y_stratify,
                 )
             elif statification == "multi":
-                # Extracting the multi-label data
+                # Extract the multi-label data
                 y_multi = (
-                    merged_df.groupby("article_id")["encoded_values"]
-                    .first()
-                    .apply(np.array)
-                    .tolist()
+                    merged_df.groupby("article_id")["encoded_values"].first().tolist()
                 )
-                # y_multi = np.array(y_multi)
+
+                # Function to flatten the complex structure
+                def flatten_labels(labels):
+                    flat = []
+                    for outer_list in labels:
+                        flat_inner = []
+                        for inner_list in outer_list:
+                            flat_inner.extend(inner_list)
+                        flat.append(flat_inner)
+                    return flat
+
+                # Flatten the labels
+                y_multi_flat = flatten_labels(y_multi)
+
+                # Find the maximum length after flattening
+                max_len = max(len(item) for item in y_multi_flat)
+
+                # Pad the flattened lists
+                y_multi_padded = [
+                    item + [0] * (max_len - len(item)) for item in y_multi_flat
+                ]
+
+                # Convert to numpy array
+                y_multi_array = np.array(y_multi_padded)
 
                 # Initialize the stratified k-fold splitter
                 mskf = MultilabelStratifiedKFold(
-                    n_splits=int(1 / self.test_size),
-                    random_state=random_state,
+                    n_splits=int(1 / 0.1),
+                    random_state=42,
                     shuffle=True,
                 )
 
                 # Perform the split
-                for train_index, test_index in mskf.split(merged_df, y_multi):
+                X = merged_df.index.to_numpy().reshape(
+                    -1, 1
+                )  # We need a 2D array for X
+
+                for train_index, test_index in mskf.split(X, y_multi_array):
                     train_df = merged_df.iloc[train_index]
                     test_df = merged_df.iloc[test_index]
                     break
