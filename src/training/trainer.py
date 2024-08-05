@@ -266,10 +266,10 @@ class Trainer:
 
                 if self.model_type == "muse-dlf":
                     preds = preds.float()
-                    labels = labels.int()
+                    labels = labels.long()
                 elif self.model_type == "slmuse-dlf":
-                    preds = preds.argmax(dim=1).int()
-                    labels = labels.argmax(dim=1).int()
+                    preds = preds.argmax(dim=1).long()
+                    labels = labels.argmax(dim=1).long()
 
                 metrics[metric][metrics_name].add_batch(
                     predictions=preds, references=labels
@@ -369,7 +369,7 @@ class Trainer:
                     logger.debug(
                         "Labels are one-hot encoded, converting to class index."
                     )
-                    prepared_labels = torch.argmax(labels, dim=1).int()
+                    prepared_labels = torch.argmax(labels, dim=1).long()
 
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
