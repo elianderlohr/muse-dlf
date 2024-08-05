@@ -170,7 +170,7 @@ class Trainer:
         sentence_loss = self.loss_function(outputs["sent_logits"], labels)
 
         # Additional losses for logging only
-        with torch.no_grad():  # Prevent gradient computation
+        with torch.no_grad():
             predicate_loss = self.loss_function(outputs["predicate_logits"], labels)
             arg0_loss = self.loss_function(outputs["arg0_logits"], labels)
             arg1_loss = self.loss_function(outputs["arg1_logits"], labels)
@@ -374,6 +374,28 @@ class Trainer:
                         )
                         # Backward pass
                         self.accelerator.backward(combined_loss)
+
+                        # Add gradient norm monitoring here
+                        if self.accelerator.sync_gradients:
+                            grad_norm = self.accelerator.grad_norm(
+                                self.model.parameters()
+                            )
+                            if self.accelerator.is_main_process:
+                                self._log_metrics({"gradient_norm": grad_norm})
+
+                        # Add more detailed loss logging here
+                        if self.accelerator.is_main_process:
+                            gathered_losses = {
+                                k: self.accelerator.gather(v).mean().item()
+                                for k, v in loss_dict.items()
+                            }
+                            self._log_metrics(
+                                {
+                                    f"detailed_{k}_loss": v
+                                    for k, v in gathered_losses.items()
+                                }
+                            )
+
                         if self.accelerator.sync_gradients:
                             self.accelerator.clip_grad_norm_(
                                 self.model.parameters(), self.clip_value
@@ -382,37 +404,41 @@ class Trainer:
                         self.scheduler.step()
                         self.optimizer.zero_grad()
             else:
-                outputs = self.model(**model_inputs)
-                combined_loss, loss_dict = self.calculate_loss(
-                    outputs, prepared_labels, alpha
-                )
+                with autocast(
+                    enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
+                    dtype=precision_dtype,
+                ):
+                    outputs = self.model(**model_inputs)
+                    combined_loss, loss_dict = self.calculate_loss(
+                        outputs, prepared_labels, alpha
+                    )
 
-                if self.scaler is not None:
-                    self.scaler.scale(
-                        combined_loss / self.accumulation_steps
-                    ).backward()
-                    if (batch_idx + 1) % self.accumulation_steps == 0 or (
-                        batch_idx + 1
-                    ) == len(train_dataloader):
-                        self.scaler.unscale_(self.optimizer)
-                        torch.nn.utils.clip_grad_norm_(
-                            self.model.parameters(), self.clip_value
-                        )
-                        self.scaler.step(self.optimizer)
-                        self.scaler.update()
-                        self.scheduler.step()
-                        self.optimizer.zero_grad()
-                else:
-                    (combined_loss / self.accumulation_steps).backward()
-                    if (batch_idx + 1) % self.accumulation_steps == 0 or (
-                        batch_idx + 1
-                    ) == len(train_dataloader):
-                        torch.nn.utils.clip_grad_norm_(
-                            self.model.parameters(), self.clip_value
-                        )
-                        self.optimizer.step()
-                        self.scheduler.step()
-                        self.optimizer.zero_grad()
+                    if self.scaler is not None:
+                        self.scaler.scale(
+                            combined_loss / self.accumulation_steps
+                        ).backward()
+                        if (batch_idx + 1) % self.accumulation_steps == 0 or (
+                            batch_idx + 1
+                        ) == len(train_dataloader):
+                            self.scaler.unscale_(self.optimizer)
+                            torch.nn.utils.clip_grad_norm_(
+                                self.model.parameters(), self.clip_value
+                            )
+                            self.scaler.step(self.optimizer)
+                            self.scaler.update()
+                            self.scheduler.step()
+                            self.optimizer.zero_grad()
+                    else:
+                        (combined_loss / self.accumulation_steps).backward()
+                        if (batch_idx + 1) % self.accumulation_steps == 0 or (
+                            batch_idx + 1
+                        ) == len(train_dataloader):
+                            torch.nn.utils.clip_grad_norm_(
+                                self.model.parameters(), self.clip_value
+                            )
+                            self.optimizer.step()
+                            self.scheduler.step()
+                            self.optimizer.zero_grad()
 
             # Update loss statistics
             if self.training_management == "accelerate":
