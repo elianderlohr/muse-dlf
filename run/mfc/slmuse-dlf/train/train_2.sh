@@ -47,132 +47,120 @@ else
     echo "WANDB_API_KEY successfully loaded."
 fi
 
+# Function to generate run name
+generate_run_name() {
+    verbs=(
+        "flowing" "running" "jumping" "flying" "glowing" "shining" "burning"
+        "exploding" "melting" "freezing" "crashing" "colliding" "breaking"
+        "building" "growing" "shrinking" "expanding" "contracting" "twisting"
+        "turning" "spinning" "rotating" "orbiting" "revolving" "circling"
+        "swirling" "whirling" "whipping" "flipping" "flopping" "flapping"
+        "fluttering" "flickering" "flaring" "blinking" "glinting" "gleaming"
+        "glimmering" "glittering" "sparkling" "shimmering"
+    )
+    nouns=(
+        "sound" "wave" "light" "shadow" "star" "planet" "house" "model" "car"
+        "boat" "plane" "train" "bus" "truck" "bike" "motorcycle" "scooter"
+        "skateboard" "surfboard" "snowboard" "skis" "helmet" "goggles" "gloves"
+        "jacket" "coat" "shirt" "pants" "shorts" "shoes" "boots" "socks" "hat"
+        "cap" "glasses" "watch" "ring" "necklace" "bracelet" "earrings" "belt"
+        "tie" "scarf" "gloves" "mittens" "umbrella" "bag" "backpack" "purse"
+        "wallet" "phone" "laptop"
+    )
+
+    random_verb=${verbs[$RANDOM % ${#verbs[@]}]}
+    random_noun=${nouns[$RANDOM % ${#nouns[@]}]}
+    random_num=$((1000 + RANDOM % 9000))
+
+    echo "${random_verb}-${random_noun}-${random_num}"
+}
+
+# Generate a run name
+RUN_NAME=$(generate_run_name)
+
 # Default parameters
 PARAMS=(
-    "--model_type slmuse-dlf"
-    "--project_name slmuse-dlf"
-    "--wandb_api_key $WANDB_API_KEY"
-    "--path_data data/mfc/immigration_labeled_preprocessed.json"
-    "--epochs 10"
-    "--planned_epochs 10"
-    "--frameaxis_dim 10"
-    "--name_tokenizer roberta-base"
-    "--path_name_bert_model models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
-    "--path_srls data/srls/mfc/mfc_labeled.pkl"
-    "--path_frameaxis data/frameaxis/mfc/frameaxis_mft.pkl"
-    "--path_antonym_pairs data/axis/mft.json"
-    "--class_column_names Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense"
-    "--dim_names virtue,vice"
-    "--save_base_path models/slmuse-dlf/"
-    "--embedding_dim 768"
-    "--hidden_dim 768"
-    "--num_classes 15"
-    "--dropout_prob 0.3"
-    "--alpha 0.5"
-    "--lambda_orthogonality 1e-3"
-    "--lr 0.0001"
-    "--M 8"
-    "--t 8"
-    "--batch_size 8"
-    "--num_sentences 24"
-    "--max_sentence_length 64"
-    "--max_args_per_sentence 10"
-    "--max_arg_length 18"
-    "--muse_unsupervised_num_layers 2"
-    "--muse_unsupervised_activation relu"
-    "--muse_unsupervised_use_batch_norm True"
-    "--muse_unsupervised_matmul_input g"
-    "--muse_unsupervised_gumbel_softmax_log False"
-    "--muse_frameaxis_unsupervised_num_layers 2"
-    "--muse_frameaxis_unsupervised_activation relu"
-    "--muse_frameaxis_unsupervised_use_batch_norm True"
-    "--muse_frameaxis_unsupervised_matmul_input g"
-    "--muse_frameaxis_unsupervised_gumbel_softmax_log False"
-    "--num_negatives 64"
-    "--supervised_concat_frameaxis True"
-    "--supervised_num_layers 2"
-    "--supervised_activation gelu"
-    "--optimizer adamw"
-    "--adamw_weight_decay 0.000001"
-    "--ams_grad_options True"
-    "--sentence_pooling mean"
-    "--hidden_state second_to_last"
-    "--tau_decay 5e-4"
-    "--tau_min 0.5"
-    "--mixed_precision fp16"
-    "--accumulation_steps 1"
-    "--alternative_supervised alt6"
-    "--seed 42"
-    "--clip_value 1"
-    "--focal_loss_gamma 2"
-    "--early_stopping_patience 20"
+    --path_data "data/mfc/immigration_labeled_preprocessed.json"
+    --wandb_api_key "$WANDB_API_KEY"
+    --project_name "slmuse-dlf"
+    --run_name "$RUN_NAME"
+    --model_type "slmuse-dlf"
+    --name_tokenizer "roberta-base"
+    --path_name_bert_model "models/roberta-base-finetune/roberta-base-finetune-2024-05-20_08-02-29-65707/checkpoint-16482"
+    --path_srls "data/srls/mfc/mfc_labeled.pkl"
+    --path_frameaxis "data/frameaxis/mfc/frameaxis_mft.pkl"
+    --path_antonym_pairs "data/axis/mft.json"
+    --save_base_path "models/slmuse-dlf/"
+    --class_column_names "Capacity and Resources;Crime and Punishment;Cultural Identity;Economic;External Regulation and Reputation;Fairness and Equality;Health and Safety;Legality, Constitutionality, Jurisdiction;Morality;Other;Policy Prescription and Evaluation;Political;Public Sentiment;Quality of Life;Security and Defense"
+    --epochs 10
+    --planned_epochs 10
+    --frameaxis_dim 10
+    --embedding_dim 768
+    --hidden_dim 768
+    --num_classes 15
+    --dropout_prob 0.3
+    --alpha 0.5
+    --lambda_orthogonality 1e-3
+    --lr 0.0001
+    --M 8
+    --t 8
+    --batch_size 8
+    --num_sentences 24
+    --max_sentence_length 64
+    --max_args_per_sentence 10
+    --max_arg_length 18
+    --muse_unsupervised_num_layers 2
+    --muse_unsupervised_activation "relu"
+    --muse_unsupervised_use_batch_norm "True"
+    --muse_unsupervised_matmul_input "g"
+    --muse_unsupervised_gumbel_softmax_log "False"
+    --muse_frameaxis_unsupervised_num_layers 2
+    --muse_frameaxis_unsupervised_activation "relu"
+    --muse_frameaxis_unsupervised_use_batch_norm "True"
+    --muse_frameaxis_unsupervised_matmul_input "g"
+    --muse_frameaxis_unsupervised_gumbel_softmax_log "False"
+    --num_negatives 64
+    --supervised_concat_frameaxis "True"
+    --supervised_num_layers 2
+    --supervised_activation "gelu"
+    --optimizer "adamw"
+    --adamw_weight_decay 0.000001
+    --ams_grad_options "True"
+    --sentence_pooling "mean"
+    --hidden_state "second_to_last"
+    --tau_decay 5e-4
+    --tau_min 0.5
+    --mixed_precision "fp16"
+    --accumulation_steps 1
+    --alternative_supervised "alt6"
+    --seed 42
+    --clip_value 1
+    --focal_loss_gamma 2
+    --early_stopping_patience 20
+    --dim_names "virtue,vice"
 )
-
-# Debug flag (default: false)
-DEBUG=false
-
-# Tags (default: empty)
-TAGS=""
-
-# Function to update or add a parameter
-update_param() {
-    local param="$1"
-    local value="$2"
-    local found=0
-    for i in "${!PARAMS[@]}"; do
-        if [[ ${PARAMS[i]} == "$param"* ]]; then
-            PARAMS[i]="$param $value"
-            found=1
-            break
-        fi
-    done
-    if [[ $found -eq 0 ]]; then
-        PARAMS+=("$param $value")
-    fi
-}
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --debug)
-            DEBUG=true
+            PARAMS+=(--debug "true")
             shift
             ;;
         --tags)
-            TAGS="$2"
+            PARAMS+=(--tags "$2")
             shift 2
             ;;
-        --*=*)
-            param="${1%%=*}"
-            value="${1#*=}"
-            update_param "$param" "$value"
-            shift
-            ;;
-        --*)
-            if [[ $2 == --* ]] || [[ $2 == "" ]]; then
-                update_param "$1" ""
-                shift
-            else
-                update_param "$1" "$2"
-                shift 2
-            fi
-            ;;
         *)
-            echo "Unknown parameter: $1"
-            exit 1
+            PARAMS+=("$1")
+            if [[ $2 != --* && $2 != "" ]]; then
+                PARAMS+=("$2")
+                shift
+            fi
+            shift
             ;;
     esac
 done
-
-# Add debug flag if set
-if [[ $DEBUG == true ]]; then
-    PARAMS+=("--debug true")
-fi
-
-# Add tags if set
-if [[ -n $TAGS ]]; then
-    update_param "--tags" "$TAGS"
-fi
 
 # GPU Setup and Verification
 echo "GPU status:"
@@ -205,39 +193,6 @@ export NCCL_TIMEOUT=1000
 # TORCH DEBUG
 export TORCH_DISTRIBUTED_DEBUG=INFO
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
-
-# Function to generate run name
-generate_run_name() {
-    verbs=(
-        "flowing" "running" "jumping" "flying" "glowing" "shining" "burning"
-        "exploding" "melting" "freezing" "crashing" "colliding" "breaking"
-        "building" "growing" "shrinking" "expanding" "contracting" "twisting"
-        "turning" "spinning" "rotating" "orbiting" "revolving" "circling"
-        "swirling" "whirling" "whipping" "flipping" "flopping" "flapping"
-        "fluttering" "flickering" "flaring" "blinking" "glinting" "gleaming"
-        "glimmering" "glittering" "sparkling" "shimmering"
-    )
-    nouns=(
-        "sound" "wave" "light" "shadow" "star" "planet" "house" "model" "car"
-        "boat" "plane" "train" "bus" "truck" "bike" "motorcycle" "scooter"
-        "skateboard" "surfboard" "snowboard" "skis" "helmet" "goggles" "gloves"
-        "jacket" "coat" "shirt" "pants" "shorts" "shoes" "boots" "socks" "hat"
-        "cap" "glasses" "watch" "ring" "necklace" "bracelet" "earrings" "belt"
-        "tie" "scarf" "gloves" "mittens" "umbrella" "bag" "backpack" "purse"
-        "wallet" "phone" "laptop"
-    )
-
-    random_verb=${verbs[$RANDOM % ${#verbs[@]}]}
-    random_noun=${nouns[$RANDOM % ${#nouns[@]}]}
-    random_num=$((1000 + RANDOM % 9000))
-
-    run_name="${random_verb}-${random_noun}-${random_num}"
-    echo "$run_name"
-}
-
-# Generate a run name
-RUN_NAME=$(generate_run_name)
-update_param "--run_name" "$RUN_NAME"
 
 echo "Cleanup WANDB cache..."
 # call wandb cache clean
