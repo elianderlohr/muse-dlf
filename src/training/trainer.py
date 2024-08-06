@@ -256,6 +256,9 @@ class Trainer:
         elif self.model_type == "slmuse-dlf":
             labels = labels.argmax(dim=1).long()
 
+        # detach and move to cpu
+        labels = labels.detach().cpu()
+
         logits = {}
         for key in keys:
             preds = self.get_activation_function(outputs[key])
@@ -264,6 +267,9 @@ class Trainer:
                 preds = preds.float()
             elif self.model_type == "slmuse-dlf":
                 preds = preds.argmax(dim=1).long()
+
+            # detach and move to cpu
+            preds = preds.detach().cpu()
 
             logits[key] = (preds, labels)
 
@@ -477,17 +483,18 @@ class Trainer:
             if global_steps % self.test_every_n_batches == 0:
                 with torch.no_grad():
                     if self.training_management == "accelerate":
-                        outputs = self.accelerator.gather(outputs)
-                        labels = self.accelerator.gather(labels)
+                        gathered_outputs = self.accelerator.gather(outputs)
+                        gathered_labels = self.accelerator.gather(labels)
 
                     if self.accelerator.is_main_process:
                         logger.info(
                             f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                         )
 
+                        # Prepare logits
                         prepared_logits = self._prepare_logits(
-                            outputs,
-                            labels,
+                            gathered_outputs,
+                            gathered_labels,
                             keys=[
                                 "span_logits",
                                 "sent_logits",
