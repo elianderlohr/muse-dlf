@@ -442,24 +442,47 @@ class Trainer:
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
                     with self.accelerator.autocast():
+                        # log for gpu num
+                        logger.debug(
+                            f"Process Index: {self.accelerator.process_index} - Start forward pass"
+                        )
                         # Forward pass
                         outputs = self.model(**model_inputs)
+
+                        logger.debug(
+                            f"Process Index: {self.accelerator.process_index} - End forward pass"
+                        )
 
                         combined_loss, loss_dict = self.calculate_loss(
                             outputs, prepared_labels, alpha
                         )
 
+                        logger.debug(
+                            f"Process Index: {self.accelerator.process_index} - Start Loss calculated, started backwards pass"
+                        )
                     # Backward pass
                     self.accelerator.backward(combined_loss)
+
+                    logger.debug(
+                        f"Process Index: {self.accelerator.process_index} - End backwards pass"
+                    )
 
                     if self.accelerator.sync_gradients:
                         self.accelerator.clip_grad_norm_(
                             self.model.parameters(), self.clip_value
                         )
 
+                    logger.debug(
+                        f"Process Index: {self.accelerator.process_index} - Start optimizer step"
+                    )
+
                     self.optimizer.step()
                     self.scheduler.step()
                     self.optimizer.zero_grad()
+
+                    logger.debug(
+                        f"Process Index: {self.accelerator.process_index} - End optimizer step"
+                    )
 
                 self.accelerator.wait_for_everyone()
             else:
@@ -499,6 +522,12 @@ class Trainer:
                             self.scheduler.step()
                             self.optimizer.zero_grad()
 
+            logger.debug(
+                f"Process Index: {self.accelerator.process_index} - Update loss statistics"
+            )
+
+            self.accelerator.wait_for_everyone()
+
             # Update loss statistics
             if self.training_management == "accelerate":
                 total_loss += (
@@ -514,6 +543,10 @@ class Trainer:
                 total_loss += loss_dict["combined_loss"].item()
                 supervised_total_loss += loss_dict["supervised_loss"].item()
                 unsupervised_total_loss += loss_dict["unsupervised_loss"].item()
+
+            logger.debug(
+                f"Process Index: {self.accelerator.process_index} - Update metrics"
+            )
 
             # Log metrics
             if self.accelerator.is_main_process:
