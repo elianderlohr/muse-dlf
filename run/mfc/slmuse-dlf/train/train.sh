@@ -210,7 +210,6 @@ accelerate launch --multi_gpu --num_processes 4 --num_machines 1 --mixed_precisi
     --clip_value 1 \
     --focal_loss_gamma 2 \
     --early_stopping_patience 20 \
-    --detect_anomaly True \
     $DEBUG
 
 echo "______________________________________________________"

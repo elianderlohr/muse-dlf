@@ -420,7 +420,6 @@ class SLMuSEDLF(nn.Module):
         frameaxis_data,
         tau,
     ):
-        self.logger.info("Starting forward pass")
         self.print_parameter_shapes()
 
         batch_size = sentence_ids.size(0)
@@ -792,8 +791,6 @@ class SLMuSEDLF(nn.Module):
             d_fx_aggregated,
         )
         torch.cuda.empty_cache()
-
-        self.logger.info("Completed forward pass")
 
         return {
             "unsupervised_loss": unsupervised_loss,
