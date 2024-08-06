@@ -1044,24 +1044,28 @@ class Trainer:
                 early_stopping["stopping_code"] = 104
                 break
 
-            if epoch >= 1 and metrics["accuracy"] < 0.2:
-                logger.info("Accuracy is below 0.2. Stopping training.")
-                early_stopping["early_stopped"] = True
-                early_stopping["stopping_code"] = 102
-                self._log_alert(
-                    title="Accuracy is below 0.2.",
-                    text="The model never surpassed 0.2 accuracy.",
-                )
-                break
+            if (
+                self.training_management != "accelerate"
+                or self.accelerator.is_main_process
+            ):
+                if epoch >= 1 and metrics["accuracy"] < 0.2:
+                    logger.info("Accuracy is below 0.2. Stopping training.")
+                    early_stopping["early_stopped"] = True
+                    early_stopping["stopping_code"] = 102
+                    self._log_alert(
+                        title="Accuracy is below 0.2.",
+                        text="The model never surpassed 0.2 accuracy.",
+                    )
+                    break
 
-            if epoch >= 2 and metrics["accuracy"] < 0.3:
-                logger.info("Accuracy is below 0.3. Stopping training.")
-                early_stopping["early_stopped"] = True
-                early_stopping["stopping_code"] = 102
-                self._log_alert(
-                    title="Accuracy is below 0.3.",
-                    text="The model never surpassed 0.3 accuracy.",
-                )
-                break
+                if epoch >= 2 and metrics["accuracy"] < 0.3:
+                    logger.info("Accuracy is below 0.3. Stopping training.")
+                    early_stopping["early_stopped"] = True
+                    early_stopping["stopping_code"] = 102
+                    self._log_alert(
+                        title="Accuracy is below 0.3.",
+                        text="The model never surpassed 0.3 accuracy.",
+                    )
+                    break
 
         return early_stopping
