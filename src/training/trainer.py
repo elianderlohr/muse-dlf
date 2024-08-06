@@ -387,11 +387,38 @@ class Trainer:
                     with self.accelerator.autocast():
                         # Forward pass
                         outputs = self.model(**model_inputs)
+                        # Log shapes of outputs
+                        if self.accelerator.is_main_process:
+                            for key, value in outputs.items():
+                                if isinstance(value, torch.Tensor):
+                                    logger.info(
+                                        f"Rank {self.accelerator.process_index}, Output {key} shape: {value.shape}"
+                                    )
+
                         combined_loss, loss_dict = self.calculate_loss(
                             outputs, prepared_labels, alpha
                         )
+
+                        # Log loss values
+                        if self.accelerator.is_main_process:
+                            logger.info(
+                                f"Rank {self.accelerator.process_index}, Combined loss: {combined_loss.item()}"
+                            )
+                            for key, value in loss_dict.items():
+                                logger.info(
+                                    f"Rank {self.accelerator.process_index}, {key}: {value.item()}"
+                                )
+
                         # Backward pass
                         self.accelerator.backward(combined_loss)
+
+                        # Log gradient norms
+                        if self.accelerator.is_main_process:
+                            for name, param in self.model.named_parameters():
+                                if param.grad is not None:
+                                    logger.info(
+                                        f"Rank {self.accelerator.process_index}, Gradient norm for {name}: {param.grad.norm().item()}"
+                                    )
 
                         if self.accelerator.sync_gradients:
                             self.accelerator.clip_grad_norm_(
