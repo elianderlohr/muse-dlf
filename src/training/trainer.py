@@ -407,8 +407,9 @@ class Trainer:
             global_steps += 1
 
             # Update tau every 50 steps
-            if global_steps % 50 == 0:
+            if global_steps % self.test_every_n_batches == 0:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
+                self.accelerator.wait_for_everyone()
 
             # Prepare inputs
             inputs = {
@@ -459,6 +460,8 @@ class Trainer:
                     self.optimizer.step()
                     self.scheduler.step()
                     self.optimizer.zero_grad()
+
+                self.accelerator.wait_for_everyone()
             else:
                 with autocast(
                     enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
@@ -495,10 +498,6 @@ class Trainer:
                             self.optimizer.step()
                             self.scheduler.step()
                             self.optimizer.zero_grad()
-
-            # Synchronize all processes here
-            logger.debug("Waiting for all processes to synchronize.")
-            self.accelerator.wait_for_everyone()
 
             # Update loss statistics
             if self.training_management == "accelerate":
@@ -544,6 +543,7 @@ class Trainer:
 
             # Evaluation and early stopping check
             if global_steps % self.test_every_n_batches == 0:
+                self.accelerator.wait_for_everyone()
                 with torch.no_grad():
                     if self.training_management == "accelerate":
                         gathered_outputs = self.accelerator.gather(outputs)
@@ -627,11 +627,14 @@ class Trainer:
                 if early_stopping["early_stopped"]:
                     return tau, early_stopping
 
+                self.accelerator.wait_for_everyone()
+
             # Clean up
             del outputs, labels, prepared_labels, loss_dict
             torch.cuda.empty_cache()
 
         # End of epoch logging
+        self.accelerator.wait_for_everyone()
         if self.accelerator.is_main_process:
             avg_total_loss = total_loss / len(train_dataloader)
             avg_supervised_loss = supervised_total_loss / len(train_dataloader)
