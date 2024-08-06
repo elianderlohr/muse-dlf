@@ -836,6 +836,7 @@ def main():
             },
             sample_size=args.sample_size,
             stratification=stratification,
+            random_state=args.seed if args.seed else None,
         )
 
         logger.info("Data loaded successfully")
