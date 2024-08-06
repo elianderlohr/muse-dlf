@@ -1,6 +1,6 @@
 import torch
-from transformers import BertModel, RobertaModel
 import torch.nn as nn
+from transformers import BertModel, RobertaModel
 from utils.logging_manager import LoggerManager
 
 
@@ -59,15 +59,18 @@ class MuSEEmbeddings(nn.Module):
 
         self._debug = _debug
 
-        # Freeze the RoBERTa model
-        for param in self.model.parameters():
-            param.requires_grad = False
+        # Freeze the BERT/RoBERTa model
+        self.freeze_bert()
 
         if self._debug:
             self.verify_model_loading()
 
         # Debugging:
-        self.logger.debug(f"✅ SRLEmbeddings successfully initialized")
+        self.logger.debug(f"✅ MuSEEmbeddings successfully initialized")
+
+    def freeze_bert(self):
+        for param in self.model.parameters():
+            param.requires_grad = False
 
     def unfreeze_bert(self):
         for param in self.model.parameters():
@@ -111,68 +114,40 @@ class MuSEEmbeddings(nn.Module):
             batch_size * num_sentences, max_sentence_length
         )
 
-        del ids
-
         self.model.eval()
 
         with torch.no_grad():
-
             outputs = self.model(
                 input_ids=ids_flat,
                 attention_mask=attention_masks_flat,
                 output_hidden_states=True,
             )
 
-            del ids_flat, attention_masks_flat
-            torch.cuda.empty_cache()
-
             if self.hidden_state == "last":
-                second_to_last_hidden_state = outputs.last_hidden_state
+                hidden_state = outputs.last_hidden_state
             elif self.hidden_state == "second_to_last":
-                second_to_last_hidden_state = outputs.hidden_states[-2]
-            del outputs
-            torch.cuda.empty_cache()
+                hidden_state = outputs.hidden_states[-2]
 
-            self.check_for_nans(
-                second_to_last_hidden_state, "second to last hidden state"
-            )
+            self.check_for_nans(hidden_state, "hidden state")
 
-            second_to_last_hidden_state = second_to_last_hidden_state.view(
+            hidden_state = hidden_state.view(
                 batch_size, num_sentences, max_sentence_length, self.embedding_dim
             )
 
             if self.sentence_pooling == "mean":
-                attention_masks_expanded = attention_masks.view(
-                    batch_size, num_sentences, max_sentence_length, 1
+                attention_masks_expanded = attention_masks.unsqueeze(-1).expand(
+                    hidden_state.size()
                 )
-                attention_masks_expanded = attention_masks_expanded.expand(
-                    second_to_last_hidden_state.size()
-                )
-                embeddings_masked = (
-                    second_to_last_hidden_state * attention_masks_expanded
-                )
+                embeddings_masked = hidden_state * attention_masks_expanded
                 sum_embeddings = torch.sum(embeddings_masked, dim=2)
-                token_counts = (
-                    attention_masks.view(batch_size, num_sentences, max_sentence_length)
-                    .sum(dim=2, keepdim=True)
-                    .clamp(min=1)
-                )
+                token_counts = attention_masks.sum(dim=2, keepdim=True).clamp(min=1)
                 embeddings_mean = sum_embeddings / token_counts
-
-                del (
-                    attention_masks,
-                    attention_masks_expanded,
-                    embeddings_masked,
-                    sum_embeddings,
-                    token_counts,
-                )
-                torch.cuda.empty_cache()
             elif self.sentence_pooling == "cls":
-                embeddings_mean = second_to_last_hidden_state[:, :, 0, :]
+                embeddings_mean = hidden_state[:, :, 0, :]
 
             self.check_for_nans(embeddings_mean, "embeddings_mean")
 
-        return second_to_last_hidden_state, embeddings_mean
+        return hidden_state, embeddings_mean
 
     def get_arg_embedding(
         self,
@@ -198,21 +173,15 @@ class MuSEEmbeddings(nn.Module):
             dtype=sentence_embeddings.dtype,
         )
 
-        # loop over batches
         for batch_idx in range(batch_size):
-            # loop over sentences
             for sent_idx in range(num_sentences):
-                # loop over arguments
                 for arg_idx in range(num_args):
                     selected_embeddings = []
-                    # loop over tokens in argument
                     for token_idx in range(max_arg_length):
-                        # get token id
                         arg_token_id = arg_ids[
                             batch_idx, sent_idx, arg_idx, token_idx
                         ].item()
 
-                        # skip padding tokens
                         if arg_token_id == self.tokenizer_pad_token_id:
                             continue
 
@@ -220,14 +189,10 @@ class MuSEEmbeddings(nn.Module):
                             sentence_ids[batch_idx, sent_idx] == arg_token_id
                         ).nonzero(as_tuple=False)
 
-                        # skip if token not found in sentence
                         if match_indices.nelement() == 0:
                             continue
 
-                        # get indices of matching tokens
                         flat_indices = match_indices[:, 0]
-
-                        # get embeddings of matching tokens
                         selected_embeddings.append(
                             sentence_embeddings[batch_idx, sent_idx, flat_indices]
                         )
@@ -247,14 +212,6 @@ class MuSEEmbeddings(nn.Module):
         arg0_ids: torch.Tensor,
         arg1_ids: torch.Tensor,
     ):
-        sentence_ids, sentence_attention_masks, predicate_ids, arg0_ids, arg1_ids = (
-            sentence_ids.to(self.device),
-            sentence_attention_masks.to(self.device),
-            predicate_ids.to(self.device),
-            arg0_ids.to(self.device),
-            arg1_ids.to(self.device),
-        )
-
         with torch.no_grad():
             sentence_embeddings, sentence_embeddings_avg = self.get_sentence_embedding(
                 sentence_ids,
@@ -272,17 +229,6 @@ class MuSEEmbeddings(nn.Module):
             arg1_embeddings = self.get_arg_embedding(
                 arg1_ids, sentence_ids, sentence_embeddings
             )
-
-            # Delete intermediate tensors
-            del (
-                sentence_ids,
-                sentence_attention_masks,
-                predicate_ids,
-                arg0_ids,
-                arg1_ids,
-                sentence_embeddings,
-            )
-            torch.cuda.empty_cache()
 
         return (
             sentence_embeddings_avg,
