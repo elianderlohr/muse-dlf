@@ -130,7 +130,7 @@ PARAMS=(
     --hidden_state "second_to_last"
     --tau_decay 5e-4
     --tau_min 0.5
-    --mixed_precision "fp16"
+    --mixed_precision "no"
     --accumulation_steps 1
     --alternative_supervised "alt6"
     --seed 42

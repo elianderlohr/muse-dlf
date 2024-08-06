@@ -33,7 +33,7 @@ class Trainer:
         optimizer,
         loss_function,
         scheduler,
-        model_type="muse-dlf",  # muse or slmuse
+        model_type: Literal["slmuse-dlf", "muse-dlf"] = "muse-dlf",  # muse or slmuse
         device="cuda",
         save_path="../notebooks/",
         run_name="",
@@ -126,7 +126,7 @@ class Trainer:
             self.accelerator = None
 
         # Get the model type
-        self.model_type = model_type
+        self.model_type: Literal["slmuse-dlf", "muse-dlf"] = model_type
 
         logger.info(f"Model type: {self.model_type}")
 
@@ -211,9 +211,17 @@ class Trainer:
         combined_pred_np = logits.cpu().numpy()
         combined_labels_np = labels.cpu().numpy()
 
+        if self.model_type == "muse-dlf":
+            # Convert continuous predictions to binary for muse-dlf
+            threshold = 0.5  # You may need to adjust this threshold
+            binary_predictions = (combined_pred_np > threshold).astype(int)
+        else:
+            # For other model types, assume the predictions are already in the correct format
+            binary_predictions = combined_pred_np
+
         # Generate classification report
         class_report = classification_report(
-            combined_labels_np, combined_pred_np, output_dict=True
+            combined_labels_np, binary_predictions, output_dict=True, zero_division=0
         )
 
         if (
@@ -222,7 +230,11 @@ class Trainer:
         ) or (self.training_management != "accelerate"):
             # Print the classification report
             logger.info("\nPer-class metrics for training data:")
-            logger.info(classification_report(combined_labels_np, combined_pred_np))
+            logger.info(
+                classification_report(
+                    combined_labels_np, binary_predictions, zero_division=0
+                )
+            )
 
         # Log per-class metrics
         for class_name, metrics in class_report.items():
@@ -460,7 +472,9 @@ class Trainer:
                         )
 
                         # print shape with process index
-                        logger.info(f"Process Index: {self.accelerator.process_index} - {combined_loss.item()}")
+                        logger.info(
+                            f"Process Index: {self.accelerator.process_index} - {combined_loss.item()}"
+                        )
 
                         self.accelerator.wait_for_everyone()
                         logger.debug(
