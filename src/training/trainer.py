@@ -2,6 +2,7 @@ from ast import Dict
 import os
 import time
 from typing import Literal
+import numpy as np
 import torch
 import json
 from tqdm import tqdm
@@ -258,24 +259,18 @@ class Trainer:
     def _prepare_logits(self, outputs: Dict, labels: torch.Tensor, keys=[]):
 
         if self.model_type == "muse-dlf":
-            labels = labels.long()
+            labels = labels.detach().cpu()
         elif self.model_type == "slmuse-dlf":
-            labels = labels.argmax(dim=1).long()
-
-        # detach and move to cpu
-        labels = labels.detach().cpu()
+            labels = labels.argmax(dim=1).long().detach().cpu()
 
         logits = {}
         for key in keys:
             preds = self.get_activation_function(outputs[key])
 
             if self.model_type == "muse-dlf":
-                preds = preds.float()
+                preds = preds.float().detach().cpu()
             elif self.model_type == "slmuse-dlf":
-                preds = preds.argmax(dim=1).long()
-
-            # detach and move to cpu
-            preds = preds.detach().cpu()
+                preds = preds.argmax(dim=1).long().detach().cpu()
 
             logits[key] = (preds, labels)
 
@@ -325,6 +320,9 @@ class Trainer:
                     for preds, labels in data_list:
                         all_preds.extend(preds.numpy())
                         all_labels.extend(labels.numpy())
+
+                    all_preds = np.array(all_preds)
+                    all_labels = np.array(all_labels)
 
                     if metric == "accuracy":
                         result = accuracy_score(all_labels, all_preds)
