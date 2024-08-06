@@ -167,6 +167,14 @@ def main():
         default="mfc-roberta-finetune_dataset",
         help="Artifact name",
     )
+    # statification multi, single or none
+    required_args.add_argument(
+        "--statification",
+        type=str,
+        default="multi",
+        help="statification the dataset",
+    )
+
     # train_mode
     required_args.add_argument(
         "--train_mode",
@@ -222,7 +230,7 @@ def main():
 
     if args.train_mode:
         # Load the data
-        train_dataset, test_dataset = preprocessor.get_dataset(
+        train_dataset, test_dataset, _, _ = preprocessor.get_dataset(
             args.path_data,
             "json",
             dataframe_path={
@@ -235,6 +243,8 @@ def main():
                 "frameaxis": args.force_recalculate_frameaxis,
             },
             train_mode=args.train_mode,
+            random_state=args.seed if args.seed else None,
+            statification=args.statification,
             device=0,
         )
 

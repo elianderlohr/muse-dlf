@@ -243,7 +243,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=True,
-        random_state=42,
+        random_state=None,
         statification=None,  # None, "single", "multi"
         device=-1,
     ):
@@ -455,7 +455,7 @@ class PreProcessor:
         },
         train_mode=True,
         statification=None,  # None, "single", "multi"
-        random_state=42,
+        random_state=None,
     ):
         if train_mode:
             _, _, train_df, test_df = self.get_dataset(
@@ -492,7 +492,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         sample_size=None,
-        random_state=42,
+        random_state=None,
         statification=None,  # None, "single", "multi"
     ):
         train_dataset, test_dataset, _, _ = self.get_dataset(

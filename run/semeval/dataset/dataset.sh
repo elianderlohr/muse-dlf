@@ -102,7 +102,8 @@ python src/create_dataset.py \
     --force_recalculate_frameaxis False \
     --artifact_name semeval-dataset \
     --train_mode True \
-    --path_frameaxis_microframe data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl
+    --path_frameaxis_microframe data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl \
+    --statification multi
 
 echo "______________________________________________________"
 

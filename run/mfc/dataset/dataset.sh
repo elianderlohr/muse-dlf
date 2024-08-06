@@ -94,12 +94,16 @@ python src/create_dataset.py \
     --path_antonym_pairs data/axis/mft.json \
     --class_column_names "$CLASS_COLUMN_NAMES" \
     --dim_names virtue,vice \
-    --num_sentences 32 \
+    --num_sentences 24 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
-    --max_arg_length 16 \
+    --max_arg_length 18 \
     --force_recalculate_srls False \
-    --force_recalculate_frameaxis False 
+    --force_recalculate_frameaxis False \
+    --statification single \
+    --path_frameaxis_microframe data/frameaxis/mfc/frameaxis_mft_microframes.pkl \
+    --train_mode True \
+    --artifact_name mfc-dataset
 
 echo "______________________________________________________"
 
