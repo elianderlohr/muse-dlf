@@ -83,7 +83,7 @@ class Trainer:
             GradScaler() if mixed_precision in ["fp16", "bf16", "fp32"] else None
         )
 
-        self.training_management = training_management
+        self.training_management: Literal["accelerate", "wandb"] = training_management
         if self.training_management == "accelerate":
             logger.info("Using Accelerate for training.")
             from accelerate import Accelerator
@@ -417,52 +417,60 @@ class Trainer:
 
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
-                    with self.accelerator.autocast():
-                        # Forward pass
-                        outputs = self.model(**model_inputs)
-                        # Log shapes of outputs
-                        if self.accelerator.is_main_process:
-                            for key, value in outputs.items():
-                                if isinstance(value, torch.Tensor):
-                                    logger.info(
-                                        f"Rank {self.accelerator.process_index}, Output {key} shape: {value.shape}"
-                                    )
+                    # Forward pass
+                    outputs = self.model(**model_inputs)
 
-                        combined_loss, loss_dict = self.calculate_loss(
-                            outputs, prepared_labels, alpha
+                    # Log shapes of outputs
+                    for key, value in outputs.items():
+                        if isinstance(value, torch.Tensor):
+                            logger.info(
+                                f"Before Loss Calc Rank {self.accelerator.process_index}, Output {key} shape: {value.shape}"
+                            )
+
+                    combined_loss, loss_dict = self.calculate_loss(
+                        outputs, prepared_labels, alpha
+                    )
+
+                    # return if loss is nan
+                    if self.check_for_nans(combined_loss, "combined_loss"):
+                        logger.info(
+                            f"Rank {self.accelerator.process_index}, Loss is NaN."
                         )
 
-                        # Log loss values
-                        if self.accelerator.is_main_process:
-                            logger.info(
-                                f"Rank {self.accelerator.process_index}, Combined loss: {combined_loss.item()}"
-                            )
-                            for key, value in loss_dict.items():
-                                logger.info(
-                                    f"Rank {self.accelerator.process_index}, {key}: {value.item()}"
-                                )
+                    # log shape of loss
+                    logger.info(
+                        f"Rank {self.accelerator.process_index}, Combined loss shape: {combined_loss.shape}"
+                    )
 
-                        # Backward pass
-                        self.accelerator.backward(combined_loss)
-                        if self.accelerator.is_main_process:
-                            logger.info(
-                                f"Rank {self.accelerator.process_index}, Backward pass completed"
-                            )
-                        # Log gradient norms
-                        if self.accelerator.is_main_process:
-                            for name, param in self.model.named_parameters():
-                                if param.grad is not None:
-                                    logger.info(
-                                        f"Rank {self.accelerator.process_index}, Gradient norm for {name}: {param.grad.norm().item()}"
-                                    )
+                    # Log loss values
+                    logger.info(
+                        f"Rank {self.accelerator.process_index}, Combined loss: {combined_loss.item()}"
+                    )
+                    for key, value in loss_dict.items():
+                        logger.info(
+                            f"Rank {self.accelerator.process_index}, {key}: {value.item()}"
+                        )
 
-                        if self.accelerator.sync_gradients:
-                            self.accelerator.clip_grad_norm_(
-                                self.model.parameters(), self.clip_value
+                    # Backward pass
+                    self.accelerator.backward(combined_loss)
+
+                    logger.info(
+                        f"Rank {self.accelerator.process_index}, Backward pass completed"
+                    )
+                    # Log gradient norms
+                    for name, param in self.model.named_parameters():
+                        if param.grad is not None:
+                            logger.info(
+                                f"Rank {self.accelerator.process_index}, Gradient norm for {name}: {param.grad.norm().item()}"
                             )
-                        self.optimizer.step()
-                        self.scheduler.step()
-                        self.optimizer.zero_grad()
+
+                    if self.accelerator.sync_gradients:
+                        self.accelerator.clip_grad_norm_(
+                            self.model.parameters(), self.clip_value
+                        )
+                    self.optimizer.step()
+                    self.scheduler.step()
+                    self.optimizer.zero_grad()
             else:
                 with autocast(
                     enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
