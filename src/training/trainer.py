@@ -446,6 +446,7 @@ class Trainer:
                         logger.debug(
                             f"Process Index: {self.accelerator.process_index} - Start forward pass"
                         )
+                        self.accelerator.wait_for_everyone()
                         # Forward pass
                         outputs = self.model(**model_inputs)
 
@@ -453,12 +454,17 @@ class Trainer:
                             f"Process Index: {self.accelerator.process_index} - End forward pass"
                         )
 
+                        self.accelerator.wait_for_everyone()
                         combined_loss, loss_dict = self.calculate_loss(
                             outputs, prepared_labels, alpha
                         )
 
+                        # print shape with process index
+                        logger.info(f"Process Index: {self.accelerator.process_index} - {combined_loss.item()}")
+
+                        self.accelerator.wait_for_everyone()
                         logger.debug(
-                            f"Process Index: {self.accelerator.process_index} - Start Loss calculated, started backwards pass"
+                            f"Process Index: {self.accelerator.process_index} - Loss calculated, started backwards pass"
                         )
                     # Backward pass
                     self.accelerator.backward(combined_loss)
