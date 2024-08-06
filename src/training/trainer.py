@@ -196,15 +196,15 @@ class Trainer:
         ) + zero_sum
 
         return combined_loss, {
-            "combined_loss": combined_loss,
-            "unsupervised_loss": unsupervised_loss,
-            "span_loss": span_loss,
-            "sentence_loss": sentence_loss,
-            "supervised_loss": supervised_loss,
-            "predicate_loss": predicate_loss,
-            "arg0_loss": arg0_loss,
-            "arg1_loss": arg1_loss,
-            "frameaxis_loss": frameaxis_loss,
+            "combined_loss": combined_loss.detach(),
+            "unsupervised_loss": unsupervised_loss.detach(),
+            "span_loss": span_loss.detach(),
+            "sentence_loss": sentence_loss.detach(),
+            "supervised_loss": supervised_loss.detach(),
+            "predicate_loss": predicate_loss.detach(),
+            "arg0_loss": arg0_loss.detach(),
+            "arg1_loss": arg1_loss.detach(),
+            "frameaxis_loss": frameaxis_loss.detach(),
         }
 
     def _log_classification_report(self, logits, labels):
@@ -411,8 +411,12 @@ class Trainer:
                 tau = max(self.tau_min, math.exp(-self.tau_decay * global_steps))
 
             # Prepare inputs
-            inputs = {k: v for k, v in batch.items() if k != "labels"}
-            labels = batch["labels"]
+            inputs = {
+                k: v.to(self.accelerator.device)
+                for k, v in batch.items()
+                if k != "labels"
+            }
+            labels = batch["labels"].to(self.accelerator.device)
 
             # Extract necessary items
             model_inputs = {
@@ -436,41 +440,13 @@ class Trainer:
 
             if self.training_management == "accelerate":
                 with self.accelerator.accumulate(self.model):
-                    # Forward pass
-                    outputs = self.model(**model_inputs)
+                    with self.accelerator.autocast():
+                        # Forward pass
+                        outputs = self.model(**model_inputs)
 
-                    if self._debug:
-                        # Log shapes of outputs
-                        for key, value in outputs.items():
-                            if isinstance(value, torch.Tensor):
-                                logger.debug(
-                                    f"Before Loss Calc Rank {self.accelerator.process_index}, Output {key} shape: {value.shape}"
-                                )
-
-                    combined_loss, loss_dict = self.calculate_loss(
-                        outputs, prepared_labels, alpha
-                    )
-
-                    if self._debug:
-                        # return if loss is nan
-                        if self.check_for_nans(combined_loss, "combined_loss"):
-                            logger.debug(
-                                f"Rank {self.accelerator.process_index}, Loss is NaN."
-                            )
-
-                        # log shape of loss
-                        logger.debug(
-                            f"Rank {self.accelerator.process_index}, Combined loss shape: {combined_loss.shape}"
+                        combined_loss, loss_dict = self.calculate_loss(
+                            outputs, prepared_labels, alpha
                         )
-
-                        # Log loss values
-                        logger.debug(
-                            f"Rank {self.accelerator.process_index}, Combined loss: {combined_loss.item()}"
-                        )
-                        for key, value in loss_dict.items():
-                            logger.debug(
-                                f"Rank {self.accelerator.process_index}, {key}: {value.item()}"
-                            )
 
                     # Backward pass
                     self.accelerator.backward(combined_loss)
@@ -479,6 +455,7 @@ class Trainer:
                         self.accelerator.clip_grad_norm_(
                             self.model.parameters(), self.clip_value
                         )
+
                     self.optimizer.step()
                     self.scheduler.step()
                     self.optimizer.zero_grad()
@@ -518,6 +495,10 @@ class Trainer:
                             self.optimizer.step()
                             self.scheduler.step()
                             self.optimizer.zero_grad()
+
+            # Synchronize all processes here
+            logger.debug("Waiting for all processes to synchronize.")
+            self.accelerator.wait_for_everyone()
 
             # Update loss statistics
             if self.training_management == "accelerate":
@@ -731,6 +712,10 @@ class Trainer:
                         dtype=precision_dtype,
                     ):
                         outputs = self.model(**model_inputs)
+
+                # Synchronize all processes here
+                logger.debug("Waiting for all processes to synchronize.")
+                self.accelerator.wait_for_everyone()
 
                 prepared_logits = self._prepare_logits(
                     outputs,
