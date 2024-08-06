@@ -380,8 +380,8 @@ class Trainer:
         experiment_id,
         early_stopping={
             "best_accuracy": 0,
-            "best_micro_f1": 0,
-            "best_macro_f1": 0,
+            "best_f1_micro": 0,
+            "best_f1_macro": 0,
             "early_stop": 0,
             "early_stopped": False,
         },
@@ -645,8 +645,8 @@ class Trainer:
                             >= early_stopping[f"best_{self.save_metric}"]
                         ):
                             early_stopping["best_accuracy"] = metrics["train_accuracy"]
-                            early_stopping["best_micro_f1"] = metrics["train_f1_micro"]
-                            early_stopping["best_macro_f1"] = metrics["train_f1_macro"]
+                            early_stopping["best_f1_micro"] = metrics["train_f1_micro"]
+                            early_stopping["best_f1_macro"] = metrics["train_f1_macro"]
                             early_stopping["early_stop"] = 0
 
                             if (
@@ -981,8 +981,8 @@ class Trainer:
 
         early_stopping = {
             "best_accuracy": 0,
-            "best_micro_f1": 0,
-            "best_macro_f1": 0,
+            "best_f1_micro": 0,
+            "best_f1_macro": 0,
             "early_stop": 0,
             "early_stopped": False,
             "stopping_code": 0,
