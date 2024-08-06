@@ -250,18 +250,20 @@ class Trainer:
         return metrics_dict
 
     def _prepare_logits(self, outputs: Dict, labels: torch.Tensor, keys=[]):
+
+        if self.model_type == "muse-dlf":
+            labels = labels.long()
+        elif self.model_type == "slmuse-dlf":
+            labels = labels.argmax(dim=1).long()
+
         logits = {}
         for key in keys:
             preds = self.get_activation_function(outputs[key])
 
-            logger.info(f"Shape: {preds.shape}, {labels.shape}")
-
             if self.model_type == "muse-dlf":
                 preds = preds.float()
-                labels = labels.long()
             elif self.model_type == "slmuse-dlf":
                 preds = preds.argmax(dim=1).long()
-                labels = labels.argmax(dim=1).long()
 
             logits[key] = (preds, labels)
 
