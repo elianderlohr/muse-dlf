@@ -101,7 +101,7 @@ PARAMS=(
     --dropout_prob 0.3
     --alpha 0.5
     --lambda_orthogonality 1e-3
-    --lr 0.0001
+    --lr 0.00005
     --M 8
     --t 8
     --batch_size 8

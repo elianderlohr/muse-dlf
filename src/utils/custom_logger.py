@@ -1,24 +1,29 @@
 import logging
+from accelerate import Accelerator
 
 
 class CustomLogger:
     def __init__(self, logger, accelerate_used):
         self.logger = logger
         self.accelerate_used = accelerate_used
+        if self.accelerate_used:
+            self.accelerator = Accelerator()
 
     def log(self, level, msg, *args, **kwargs):
-        if self.accelerate_used and "main_process_only" in kwargs:
-            main_process_only = kwargs.pop("main_process_only")
-            if hasattr(self.logger, level):
-                method = getattr(self.logger, level)
-                method(msg, *args, main_process_only=main_process_only)
-        else:
-            if hasattr(self.logger, level):
-                # remove main_process_only from kwargs if it exists
-                kwargs.pop("main_process_only", None)
+        main_process_only = kwargs.pop("main_process_only", False)
 
-                method = getattr(self.logger, level)
-                method(msg, *args, **kwargs)
+        if self.accelerate_used:
+            if main_process_only and not self.accelerator.is_main_process:
+                return
+
+            rank = self.accelerator.process_index
+            formatted_msg = f"Rank {rank}: {msg}"
+        else:
+            formatted_msg = msg
+
+        if hasattr(self.logger, level):
+            method = getattr(self.logger, level)
+            method(formatted_msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
         self.log("debug", msg, *args, **kwargs)
