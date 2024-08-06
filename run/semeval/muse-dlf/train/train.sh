@@ -47,16 +47,6 @@ else
     echo "WANDB_API_KEY successfully loaded."
 fi
 
-# Data and Output Configuration
-echo "Configuring paths..."
-DATA_PATH="data/semeval/muse-dlf/semeval_train.json"
-SAVE_BASE_PATH="models/muse-dlf/"
-echo "Data path: $DATA_PATH"
-echo "Output path: $SAVE_BASE_PATH"
-
-CLASS_COLUMN_NAMES="Capacity_and_resources;Crime_and_punishment;Cultural_identity;Economic;External_regulation_and_reputation;Fairness_and_equality;Health_and_safety;Legality_Constitutionality_and_jurisprudence;Morality;Policy_prescription_and_evaluation;Political;Public_opinion;Quality_of_life;Security_and_defense"
-echo "Class column names: $CLASS_COLUMN_NAMES"
-
 # Function to generate run name
 generate_run_name() {
     verbs=(
@@ -90,63 +80,62 @@ RUN_NAME=$(generate_run_name)
 
 # Default parameters
 PARAMS=(
-    --model_type muse-dlf
-    --project_name muse-dlf
-    --run_name "$RUN_NAME"
-    --tags ""
+    --path_data "data/semeval/muse-dlf/semeval_train.json"
     --wandb_api_key "$WANDB_API_KEY"
-    --path_data "$DATA_PATH"
-    --epochs 20
-    --planned_epochs 20
-    --frameaxis_dim 10
-    --name_tokenizer roberta-base
+    --project_name "muse-dlf"
+    --run_name "$RUN_NAME"
+    --model_type "muse-dlf"
+    --name_tokenizer "roberta-base"
     --path_name_bert_model "models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922"
     --path_srls "data/srls/semeval/semeval_train.pkl"
     --path_frameaxis "data/frameaxis/semeval/frameaxis_semeval_mft.pkl"
     --path_antonym_pairs "data/axis/mft.json"
-    --class_column_names "$CLASS_COLUMN_NAMES"
-    --dim_names virtue,vice
-    --save_base_path "$SAVE_BASE_PATH"
+    --save_base_path "models/muse-dlf/"
+    --class_column_names "Capacity_and_resources;Crime_and_punishment;Cultural_identity;Economic;External_regulation_and_reputation;Fairness_and_equality;Health_and_safety;Legality_Constitutionality_and_jurisprudence;Morality;Policy_prescription_and_evaluation;Political;Public_opinion;Quality_of_life;Security_and_defense"
+    --dim_names "virtue,vice"
+    --epochs 10
+    --planned_epochs 10
+    --frameaxis_dim 10
     --embedding_dim 768
     --hidden_dim 768
     --num_classes 14
     --dropout_prob 0.3
     --alpha 0.5
     --lambda_orthogonality 1e-3
-    --lr 5e-5
+    --lr 0.0001
     --M 8
     --t 8
     --batch_size 8
     --num_sentences 32
     --max_sentence_length 64
     --max_args_per_sentence 10
-    --max_arg_length 10
+    --max_arg_length 18
     --muse_unsupervised_num_layers 2
-    --muse_unsupervised_activation gelu
-    --muse_unsupervised_use_batch_norm True
-    --muse_unsupervised_matmul_input g
-    --muse_unsupervised_gumbel_softmax_log False
+    --muse_unsupervised_activation "relu"
+    --muse_unsupervised_use_batch_norm "True"
+    --muse_unsupervised_matmul_input "g"
+    --muse_unsupervised_gumbel_softmax_log "False"
     --muse_frameaxis_unsupervised_num_layers 2
-    --muse_frameaxis_unsupervised_activation gelu
-    --muse_frameaxis_unsupervised_use_batch_norm True
-    --muse_frameaxis_unsupervised_matmul_input g
-    --muse_frameaxis_unsupervised_gumbel_softmax_log False
-    --num_negatives 128
-    --supervised_concat_frameaxis True
+    --muse_frameaxis_unsupervised_activation "relu"
+    --muse_frameaxis_unsupervised_use_batch_norm "True"
+    --muse_frameaxis_unsupervised_matmul_input "g"
+    --muse_frameaxis_unsupervised_gumbel_softmax_log "False"
+    --num_negatives 64
+    --supervised_concat_frameaxis "True"
     --supervised_num_layers 2
-    --supervised_activation gelu
-    --optimizer adamw
-    --adamw_weight_decay 0.00001
-    --ams_grad_options True
-    --sentence_pooling mean
-    --hidden_state second_to_last
+    --supervised_activation "gelu"
+    --optimizer "adamw"
+    --adamw_weight_decay 0.000001
+    --ams_grad_options "True"
+    --sentence_pooling "mean"
+    --hidden_state "second_to_last"
     --tau_decay 5e-4
     --tau_min 0.5
-    --mixed_precision fp16
-    --accumulation_steps 2
-    --alternative_supervised alt6
+    --mixed_precision "fp16"
+    --accumulation_steps 1
+    --alternative_supervised "alt6"
     --seed 42
-    --clip_value 0.5
+    --clip_value 1
     --focal_loss_gamma 2
     --early_stopping_patience 20
 )
@@ -155,11 +144,11 @@ PARAMS=(
 while [[ $# -gt 0 ]]; do
     case $1 in
         --debug)
-            PARAMS+=(--debug true)
+            PARAMS+=(--debug "true")
             shift
             ;;
         --tags)
-            PARAMS[5]="--tags $2"
+            PARAMS+=(--tags "$2")
             shift 2
             ;;
         *)
