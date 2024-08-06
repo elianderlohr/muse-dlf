@@ -191,7 +191,9 @@ class MuSEDLF(nn.Module):
         }
 
         # Debugging:
-        self.logger.debug(f"✅ MuSEDLF successfully initialized")
+        self.logger.debug(
+            f"✅ MuSEDLF successfully initialized", main_process_only=False
+        )
 
     def set_log_level(self, log_level):
         LoggerManager.set_log_level(log_level)
@@ -202,7 +204,8 @@ class MuSEDLF(nn.Module):
 
         for name, param in self.named_parameters():
             self.logger.info(
-                f"Rank {torch.distributed.get_rank()}, Parameter {name}: shape {param.shape}"
+                f"Rank {torch.distributed.get_rank()}, Parameter {name}: shape {param.shape}",
+                main_process_only=False,
             )
 
     def print_gradient_shapes(self):
@@ -212,11 +215,13 @@ class MuSEDLF(nn.Module):
         for name, param in self.named_parameters():
             if param.grad is not None:
                 self.logger.info(
-                    f"Rank {torch.distributed.get_rank()}, Gradient {name}: shape {param.grad.shape}"
+                    f"Rank {torch.distributed.get_rank()}, Gradient {name}: shape {param.grad.shape}",
+                    main_process_only=False,
                 )
             else:
                 self.logger.info(
-                    f"Rank {torch.distributed.get_rank()}, Gradient {name}: None"
+                    f"Rank {torch.distributed.get_rank()}, Gradient {name}: None",
+                    main_process_only=False,
                 )
 
     def print_tensor_shape(self, tensor_name, tensor):
@@ -224,7 +229,8 @@ class MuSEDLF(nn.Module):
             return
 
         self.logger.info(
-            f"Rank {torch.distributed.get_rank()}, Tensor {tensor_name}: shape {tensor.shape}"
+            f"Rank {torch.distributed.get_rank()}, Tensor {tensor_name}: shape {tensor.shape}",
+            main_process_only=False,
         )
 
     def negative_sampling(self, embeddings, num_negatives=-1):
