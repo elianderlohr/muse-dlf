@@ -447,7 +447,10 @@ class Trainer:
 
                         # Backward pass
                         self.accelerator.backward(combined_loss)
-
+                        if self.accelerator.is_main_process:
+                            logger.info(
+                                f"Rank {self.accelerator.process_index}, Backward pass completed"
+                            )
                         # Log gradient norms
                         if self.accelerator.is_main_process:
                             for name, param in self.model.named_parameters():
