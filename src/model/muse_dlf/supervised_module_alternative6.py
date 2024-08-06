@@ -50,7 +50,6 @@ class MuSESupervisedAlternative6(nn.Module):
         self.logger.debug("✅ MuSESupervisedAlternative6 successfully initialized")
 
     def forward(self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data):
-
         batch_size, num_sentences, num_args, embedding_dim = d_p.shape
 
         d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
@@ -64,17 +63,18 @@ class MuSESupervisedAlternative6(nn.Module):
         mask_fx = (d_fx.abs().sum(dim=-1) != 0).float()
 
         # Calculate the mean ignoring padded elements
-        d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-            mask_p.sum(dim=1, keepdim=True), min=1
+        epsilon = 1e-8  # Small value to avoid division by zero
+        d_p_mean = (d_p_flatten * mask_p.unsqueeze(-1)).sum(dim=1) / (
+            mask_p.sum(dim=1, keepdim=True) + epsilon
         )
-        d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-            mask_a0.sum(dim=1, keepdim=True), min=1
+        d_a0_mean = (d_a0_flatten * mask_a0.unsqueeze(-1)).sum(dim=1) / (
+            mask_a0.sum(dim=1, keepdim=True) + epsilon
         )
-        d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-            mask_a1.sum(dim=1, keepdim=True), min=1
+        d_a1_mean = (d_a1_flatten * mask_a1.unsqueeze(-1)).sum(dim=1) / (
+            mask_a1.sum(dim=1, keepdim=True) + epsilon
         )
-        d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / torch.clamp(
-            mask_fx.sum(dim=1, keepdim=True), min=1
+        d_fx_mean = (d_fx * mask_fx.unsqueeze(-1)).sum(dim=1) / (
+            mask_fx.sum(dim=1, keepdim=True) + epsilon
         )
 
         # Combine and normalize the final descriptor
@@ -88,6 +88,18 @@ class MuSESupervisedAlternative6(nn.Module):
 
         combined = y_hat_span + y_hat_sent
 
+        if self._debug:
+            self._debug_checks(
+                d_p_mean,
+                d_a0_mean,
+                d_a1_mean,
+                d_fx_mean,
+                y_hat_span,
+                flattened,
+                y_hat_sent,
+                combined,
+            )
+
         other = {
             "predicate": d_p_mean,
             "arg0": d_a0_mean,
@@ -95,15 +107,14 @@ class MuSESupervisedAlternative6(nn.Module):
             "frameaxis": d_fx_mean,
         }
 
-        if self._debug:
-            self.logger.debug(
-                f"Forward pass debug info: batch_size={batch_size}, num_sentences={num_sentences}, embedding_dim={embedding_dim}"
-            )
-            self.logger.debug(
-                f"Shapes - d_p_mean: {d_p_mean.shape}, d_a0_mean: {d_a0_mean.shape}, d_a1_mean: {d_a1_mean.shape}, d_fx_mean: {d_fx_mean.shape}"
-            )
-            self.logger.debug(
-                f"Shapes - y_hat_span: {y_hat_span.shape}, flattened: {flattened.shape}, y_hat_sent: {y_hat_sent.shape}, combined: {combined.shape}"
-            )
-
         return y_hat_span, y_hat_sent, combined, other
+
+    def _debug_checks(self, *tensors):
+        for i, tensor in enumerate(tensors):
+            if torch.isnan(tensor).any():
+                self.logger.warning(f"NaN values detected in tensor {i}")
+            if torch.isinf(tensor).any():
+                self.logger.warning(f"Inf values detected in tensor {i}")
+            self.logger.debug(
+                f"Tensor {i} shape: {tensor.shape}, mean: {tensor.mean().item()}, std: {tensor.std().item()}"
+            )
