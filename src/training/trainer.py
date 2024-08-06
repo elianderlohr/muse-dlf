@@ -9,7 +9,6 @@ from tqdm import tqdm
 import math
 
 from sklearn.metrics import accuracy_score, f1_score
-
 import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
@@ -324,12 +323,25 @@ class Trainer:
                     all_preds = np.array(all_preds)
                     all_labels = np.array(all_labels)
 
+                    # Check if we're dealing with multi-label data
+                    is_multilabel = (all_labels.ndim > 1 and all_labels.shape[1] > 1) or (all_labels.dtype == bool)
+
+                    if is_multilabel:
+                        # For multi-label, we need to binarize the predictions
+                        threshold = 0.5  # You might want to adjust this
+                        all_preds_binary = (all_preds > threshold).astype(int)
+                        all_labels_binary = all_labels
+                    else:
+                        # For single-label, we take the argmax of predictions
+                        all_preds_binary = np.argmax(all_preds, axis=1)
+                        all_labels_binary = all_labels
+
                     if metric == "accuracy":
-                        result = accuracy_score(all_labels, all_preds)
+                        result = accuracy_score(all_labels_binary, all_preds_binary)
                     elif metric == "f1_micro":
-                        result = f1_score(all_labels, all_preds, average="micro")
+                        result = f1_score(all_labels_binary, all_preds_binary, average="micro")
                     elif metric == "f1_macro":
-                        result = f1_score(all_labels, all_preds, average="macro")
+                        result = f1_score(all_labels_binary, all_preds_binary, average="macro")
 
                     if key == "supervised":
                         results[f"{prefix}_{metric}"] = result
