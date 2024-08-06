@@ -794,62 +794,55 @@ def main():
         # Split class_column_names into a list
         class_column_names = args.class_column_names.split(";")
 
-        if accelerator.is_main_process:
-            logger.info("Load data on main process")
+        logger.info("Load data on main process")
 
-            # Preprocess the input
-            preprocessor = PreProcessor(
-                tokenizer,
-                batch_size=args.batch_size,
-                max_sentences_per_article=args.num_sentences,
-                max_sentence_length=args.max_sentence_length,
-                max_args_per_sentence=args.max_args_per_sentence,
-                max_arg_length=args.max_arg_length,
-                test_size=args.test_size,
-                frameaxis_dim=args.frameaxis_dim,
-                bert_model_name=args.name_tokenizer,
-                name_tokenizer=args.name_tokenizer,
-                path_name_bert_model=args.path_name_bert_model,
-                path_antonym_pairs=args.path_antonym_pairs,
-                dim_names=dim_names,
-                class_column_names=class_column_names,
-                num_workers=1,
-            )
+        # Preprocess the input
+        preprocessor = PreProcessor(
+            tokenizer,
+            batch_size=args.batch_size,
+            max_sentences_per_article=args.num_sentences,
+            max_sentence_length=args.max_sentence_length,
+            max_args_per_sentence=args.max_args_per_sentence,
+            max_arg_length=args.max_arg_length,
+            test_size=args.test_size,
+            frameaxis_dim=args.frameaxis_dim,
+            bert_model_name=args.name_tokenizer,
+            name_tokenizer=args.name_tokenizer,
+            path_name_bert_model=args.path_name_bert_model,
+            path_antonym_pairs=args.path_antonym_pairs,
+            dim_names=dim_names,
+            class_column_names=class_column_names,
+            num_workers=1,
+        )
 
-            logger.info("Preprocessor loaded successfully")
+        logger.info("Preprocessor loaded successfully")
 
-            # Set stratification
-            if args.model_type == "slmuse-dlf":
-                stratification = "single"
-            elif args.model_type == "muse-dlf":
-                stratification = "multi"
-            else:
-                stratification = None
-
-            # Load the data
-            _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
-                args.path_data,
-                "json",
-                dataframe_path={
-                    "srl": args.path_srls,
-                    "frameaxis": args.path_frameaxis,
-                },
-                force_recalculate={
-                    "srl": args.force_recalculate_srls,
-                    "frameaxis": args.force_recalculate_frameaxis,
-                },
-                sample_size=args.sample_size,
-                stratification=stratification,
-                random_state=args.seed if args.seed else None,
-            )
-
-            logger.info("Data loaded successfully")
+        # Set stratification
+        if args.model_type == "slmuse-dlf":
+            stratification = "single"
+        elif args.model_type == "muse-dlf":
+            stratification = "multi"
         else:
-            train_dataloader = None
-            test_dataloader = None
+            stratification = None
 
-        train_dataloader = broadcast(train_dataloader)
-        test_dataloader = broadcast(test_dataloader)
+        # Load the data
+        _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
+            args.path_data,
+            "json",
+            dataframe_path={
+                "srl": args.path_srls,
+                "frameaxis": args.path_frameaxis,
+            },
+            force_recalculate={
+                "srl": args.force_recalculate_srls,
+                "frameaxis": args.force_recalculate_frameaxis,
+            },
+            sample_size=args.sample_size,
+            stratification=stratification,
+            random_state=args.seed if args.seed else None,
+        )
+
+        logger.info("Data loaded successfully")
 
         # prepare components for accelerate
         model, train_dataloader, test_dataloader = accelerator.prepare(

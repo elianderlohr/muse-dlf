@@ -280,6 +280,7 @@ class PreProcessor:
                     test_size=self.test_size,
                     random_state=random_state,
                     stratify=y_stratify,
+                    shuffle=True,
                 )
             elif stratification == "multi":
                 # Extract the multi-label data
