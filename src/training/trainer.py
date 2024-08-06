@@ -321,10 +321,12 @@ class Trainer:
                     elif metric == "f1_macro":
                         result = evaluator.compute(average="macro")["f1"]
 
+                    prefix_name = f"{prefix}_{metric}" if len(prefix) > 0 else metric
+
                     if key == "supervised":
-                        results[f"{prefix}_{metric}"] = result
+                        results[prefix_name] = result
                     else:
-                        results[f"{prefix}_{metric}_{key}"] = result
+                        results[f"{prefix_name}_{key}"] = result
 
         elif self.model_type == "muse-dlf":
             for metric, value in metrics.items():
@@ -364,10 +366,12 @@ class Trainer:
                             all_labels_binary, all_preds_binary, average="macro"
                         )
 
+                    prefix_name = f"{prefix}_{metric}" if len(prefix) > 0 else metric
+
                     if key == "supervised":
-                        results[f"{prefix}_{metric}"] = result
+                        results[prefix_name] = result
                     else:
-                        results[f"{prefix}_{metric}_{key}"] = result
+                        results[f"{prefix_name}_{key}"] = result
 
         return results
 
@@ -1067,5 +1071,8 @@ class Trainer:
                         text="The model never surpassed 0.3 accuracy.",
                     )
                     break
+
+            # wait
+            self.accelerator.wait_for_everyone()
 
         return early_stopping
