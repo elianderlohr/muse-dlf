@@ -7,6 +7,8 @@ import json
 from tqdm import tqdm
 import math
 
+from sklearn.metrics import accuracy_score, f1_score
+
 import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
@@ -234,18 +236,22 @@ class Trainer:
 
     def _create_metrics_dict(self, vars_to_log, experiment_id):
         metrics_dict = {}
-
         metrics_dict["accuracy"] = {}
         metrics_dict["f1_micro"] = {}
         metrics_dict["f1_macro"] = {}
 
-        for metric in ["accuracy", "f1_micro", "f1_macro"]:
-            name = metric if "_" not in metric else metric.split("_")[0]
-            config = None if "_" not in metric else metric.split("_")[1]
-            for var in vars_to_log:
-                metrics_dict[metric][var] = evaluate.load(
-                    name, config_name=config, experiment_id=experiment_id
-                )
+        if self.model_type == "slmuse-dlf":
+            for metric in ["accuracy", "f1_micro", "f1_macro"]:
+                name = metric if "_" not in metric else metric.split("_")[0]
+                config = None if "_" not in metric else metric.split("_")[1]
+                for var in vars_to_log:
+                    metrics_dict[metric][var] = evaluate.load(
+                        name, config_name=config, experiment_id=experiment_id
+                    )
+        elif self.model_type == "muse-dlf":
+            for metric in ["accuracy", "f1_micro", "f1_macro"]:
+                for var in vars_to_log:
+                    metrics_dict[metric][var] = []
 
         return metrics_dict
 
@@ -276,34 +282,64 @@ class Trainer:
         return logits
 
     def _metrics_add_batch(self, metrics, logits):
-        for metric in metrics.keys():
-            for key, value in logits.items():
-                metrics_name = key.split("_")[0]
-
-                preds, labels = value
-
-                metrics[metric][metrics_name].add_batch(
-                    predictions=preds, references=labels
-                )
+        if self.model_type == "slmuse-dlf":
+            for metric in metrics.keys():
+                for key, value in logits.items():
+                    metrics_name = key.split("_")[0]
+                    preds, labels = value
+                    metrics[metric][metrics_name].add_batch(
+                        predictions=preds, references=labels
+                    )
+        elif self.model_type == "muse-dlf":
+            for metric in metrics.keys():
+                for key, value in logits.items():
+                    metrics_name = key.split("_")[0]
+                    preds, labels = value
+                    metrics[metric][metrics_name].append((preds, labels))
 
         return metrics
 
     def _metrics_calculate(self, metrics, prefix="train"):
         results = {}
 
-        for metric, value in metrics.items():
-            for key, evaluator in value.items():
-                if metric == "accuracy":
-                    result = evaluator.compute()["accuracy"]
-                elif metric == "f1_micro":
-                    result = evaluator.compute(average="micro")["f1"]
-                elif metric == "f1_macro":
-                    result = evaluator.compute(average="macro")["f1"]
+        if self.model_type == "slmuse-dlf":
+            for metric, value in metrics.items():
+                for key, evaluator in value.items():
+                    if metric == "accuracy":
+                        result = evaluator.compute()["accuracy"]
+                    elif metric == "f1_micro":
+                        result = evaluator.compute(average="micro")["f1"]
+                    elif metric == "f1_macro":
+                        result = evaluator.compute(average="macro")["f1"]
 
-                if key == "supervised":
-                    results[f"{prefix}_{metric}"] = result
-                else:
-                    results[f"{prefix}_{metric}_{key}"] = result
+                    if key == "supervised":
+                        results[f"{prefix}_{metric}"] = result
+                    else:
+                        results[f"{prefix}_{metric}_{key}"] = result
+
+        elif self.model_type == "muse-dlf":
+            for metric, value in metrics.items():
+                for key, data_list in value.items():
+                    all_preds = []
+                    all_labels = []
+                    for preds, labels in data_list:
+                        all_preds.extend(preds.numpy())
+                        all_labels.extend(labels.numpy())
+
+                    all_preds = torch.tensor(all_preds)
+                    all_labels = torch.tensor(all_labels)
+
+                    if metric == "accuracy":
+                        result = accuracy_score(all_labels, all_preds)
+                    elif metric == "f1_micro":
+                        result = f1_score(all_labels, all_preds, average="micro")
+                    elif metric == "f1_macro":
+                        result = f1_score(all_labels, all_preds, average="macro")
+
+                    if key == "supervised":
+                        results[f"{prefix}_{metric}"] = result
+                    else:
+                        results[f"{prefix}_{metric}_{key}"] = result
 
         return results
 
