@@ -816,11 +816,11 @@ def main():
 
         # Set stratification
         if args.model_type == "slmuse-dlf":
-            statification = "single"
+            stratification = "single"
         elif args.model_type == "muse-dlf":
-            statification = "multi"
+            stratification = "multi"
         else:
-            statification = None
+            stratification = None
 
         # Load the data
         _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
@@ -835,7 +835,7 @@ def main():
                 "frameaxis": args.force_recalculate_frameaxis,
             },
             sample_size=args.sample_size,
-            statification=statification,
+            stratification=stratification,
         )
 
         logger.info("Data loaded successfully")

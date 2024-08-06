@@ -244,7 +244,7 @@ class PreProcessor:
         },
         train_mode=True,
         random_state=None,
-        statification=None,  # None, "single", "multi"
+        stratification=None,  # None, "single", "multi"
         device=-1,
     ):
         """
@@ -272,7 +272,7 @@ class PreProcessor:
             )
 
         if train_mode:
-            if statification == "single":
+            if stratification == "single":
                 y_stratify = merged_df["encoded_values"].apply(lambda x: x[0].index(1))
 
                 train_df, test_df = train_test_split(
@@ -281,7 +281,7 @@ class PreProcessor:
                     random_state=random_state,
                     stratify=y_stratify,
                 )
-            elif statification == "multi":
+            elif stratification == "multi":
                 # Extract the multi-label data
                 y_multi = (
                     merged_df.groupby("article_id")["encoded_values"].first().tolist()
@@ -328,7 +328,7 @@ class PreProcessor:
                     test_df = merged_df.iloc[test_index]
                     break
             else:
-                # Original split if statification is set to None
+                # Original split if stratification is set to None
                 train_df, test_df = train_test_split(
                     merged_df, test_size=self.test_size, random_state=random_state
                 )
@@ -454,7 +454,7 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=True,
-        statification=None,  # None, "single", "multi"
+        stratification=None,  # None, "single", "multi"
         random_state=None,
     ):
         if train_mode:
@@ -465,7 +465,7 @@ class PreProcessor:
                 force_recalculate,
                 train_mode=train_mode,
                 random_state=random_state,
-                statification=statification,
+                stratification=stratification,
             )
             return train_df, test_df
         else:
@@ -493,7 +493,7 @@ class PreProcessor:
         },
         sample_size=None,
         random_state=None,
-        statification=None,  # None, "single", "multi"
+        stratification=None,  # None, "single", "multi"
     ):
         train_dataset, test_dataset, _, _ = self.get_dataset(
             path,
@@ -502,7 +502,7 @@ class PreProcessor:
             force_recalculate,
             train_mode=True,
             random_state=random_state,
-            statification=statification,
+            stratification=stratification,
         )
 
         if sample_size > 0:

@@ -100,7 +100,7 @@ python src/create_dataset.py \
     --max_arg_length 18 \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
-    --statification single \
+    --stratification single \
     --path_frameaxis_microframe data/frameaxis/mfc/frameaxis_mft_microframes.pkl \
     --train_mode True \
     --artifact_name mfc-dataset

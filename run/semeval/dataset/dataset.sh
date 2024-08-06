@@ -103,7 +103,7 @@ python src/create_dataset.py \
     --artifact_name semeval-dataset \
     --train_mode True \
     --path_frameaxis_microframe data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl \
-    --statification multi
+    --stratification multi
 
 echo "______________________________________________________"
 

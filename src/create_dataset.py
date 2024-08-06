@@ -167,12 +167,12 @@ def main():
         default="mfc-roberta-finetune_dataset",
         help="Artifact name",
     )
-    # statification multi, single or none
+    # stratification multi, single or none
     required_args.add_argument(
-        "--statification",
+        "--stratification",
         type=str,
         default="multi",
-        help="statification the dataset",
+        help="stratification the dataset",
     )
 
     # train_mode
@@ -244,7 +244,7 @@ def main():
             },
             train_mode=args.train_mode,
             random_state=args.seed if args.seed else None,
-            statification=args.statification,
+            stratification=args.stratification,
             device=0,
         )
 
