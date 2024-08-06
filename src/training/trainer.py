@@ -249,10 +249,12 @@ class Trainer:
 
         return metrics_dict
 
-    def _prepare_logits(self, outputs: Dict, labels, keys=[]):
+    def _prepare_logits(self, outputs: Dict, labels: torch.Tensor, keys=[]):
         logits = {}
         for key in keys:
             preds = self.get_activation_function(outputs[key])
+
+            logger.info(f"Shape: ", preds.shape, labels.shape)
 
             if self.model_type == "muse-dlf":
                 preds = preds.float()
@@ -479,6 +481,12 @@ class Trainer:
                     if self.accelerator.is_main_process:
                         logger.info(
                             f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
+                        )
+
+                        logger.info(
+                            f"Log shape of labels and outputs[span]: ",
+                            labels.shape,
+                            outputs["span_logits"].shape,
                         )
 
                         prepared_logits = self._prepare_logits(
