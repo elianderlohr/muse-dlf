@@ -51,7 +51,6 @@ fi
 PARAMS=(
     "--model_type slmuse-dlf"
     "--project_name slmuse-dlf"
-    "--tags "
     "--wandb_api_key $WANDB_API_KEY"
     "--path_data data/mfc/immigration_labeled_preprocessed.json"
     "--epochs 10"
@@ -109,6 +108,12 @@ PARAMS=(
     "--early_stopping_patience 20"
 )
 
+# Debug flag (default: false)
+DEBUG=false
+
+# Tags (default: empty)
+TAGS=""
+
 # Function to update or add a parameter
 update_param() {
     local param="$1"
@@ -129,6 +134,14 @@ update_param() {
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --debug)
+            DEBUG=true
+            shift
+            ;;
+        --tags)
+            TAGS="$2"
+            shift 2
+            ;;
         --*=*)
             param="${1%%=*}"
             value="${1#*=}"
@@ -150,6 +163,16 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Add debug flag if set
+if [[ $DEBUG == true ]]; then
+    PARAMS+=("--debug true")
+fi
+
+# Add tags if set
+if [[ -n $TAGS ]]; then
+    update_param "--tags" "$TAGS"
+fi
 
 # GPU Setup and Verification
 echo "GPU status:"
