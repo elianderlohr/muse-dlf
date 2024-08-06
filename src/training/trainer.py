@@ -760,8 +760,9 @@ class Trainer:
 
             with torch.no_grad():
                 if self.training_management == "accelerate":
-                    with self.accelerator.autocast():
-                        outputs = self.model(**model_inputs)
+                    with self.accelerator.accumulate(self.model):
+                        with self.accelerator.autocast():
+                            outputs = self.model(**model_inputs)
                 else:
                     with autocast(
                         enabled=self.mixed_precision in ["fp16", "bf16", "fp32"],
@@ -773,30 +774,33 @@ class Trainer:
                 logger.debug("Waiting for all processes to synchronize.")
                 self.accelerator.wait_for_everyone()
 
-                prepared_logits = self._prepare_logits(
-                    outputs,
-                    labels,
-                    keys=[
-                        "span_logits",
-                        "sent_logits",
-                        "supervised_logits",
-                        "predicate_logits",
-                        "arg0_logits",
-                        "arg1_logits",
-                        "frameaxis_logits",
-                    ],
-                )
-
-                # Gather predictions and labels from all processes
                 if self.training_management == "accelerate":
-                    prepared_logits = self.accelerator.gather(prepared_logits)
-                    labels = self.accelerator.gather(labels)
+                    gathered_outputs = self.accelerator.gather(outputs)
+                    gathered_labels = self.accelerator.gather(labels)
+                else:
+                    gathered_outputs = outputs
+                    gathered_labels = labels
 
-                # Process metrics only on the main process
-                if (
-                    self.training_management != "accelerate"
-                    or self.accelerator.is_main_process
-                ):
+                if self.accelerator.is_main_process:
+                    logger.info(
+                        f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
+                    )
+
+                    # Prepare logits
+                    prepared_logits = self._prepare_logits(
+                        gathered_outputs,
+                        gathered_labels,
+                        keys=[
+                            "span_logits",
+                            "sent_logits",
+                            "supervised_logits",
+                            "predicate_logits",
+                            "arg0_logits",
+                            "arg1_logits",
+                            "frameaxis_logits",
+                        ],
+                    )
+
                     all_supervised_preds.append(
                         prepared_logits["supervised_logits"][0]
                     )  # predictions
