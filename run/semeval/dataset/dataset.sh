@@ -94,10 +94,10 @@ python src/create_dataset.py \
     --path_antonym_pairs data/axis/mft.json \
     --class_column_names "$CLASS_COLUMN_NAMES" \
     --dim_names virtue,vice \
-    --num_sentences 64 \
+    --num_sentences 32 \
     --max_sentence_length 64 \
-    --max_args_per_sentence 20 \
-    --max_arg_length 16 \
+    --max_args_per_sentence 10 \
+    --max_arg_length 10 \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
     --artifact_name semeval-dataset \
