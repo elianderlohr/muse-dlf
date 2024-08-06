@@ -1030,6 +1030,7 @@ def main():
             clip_value=args.clip_value,
             save_model=args.save_model,
             early_stopping_patience=args.early_stopping_patience,
+            _debug=args.debug,
         )
 
         trainer = accelerator.prepare(trainer)

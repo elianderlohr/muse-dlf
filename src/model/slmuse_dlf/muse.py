@@ -302,12 +302,18 @@ class SLMuSEDLF(nn.Module):
         LoggerManager.set_log_level(log_level)
 
     def print_parameter_shapes(self):
+        if not self._debug:
+            return
+
         for name, param in self.named_parameters():
             self.logger.info(
                 f"Rank {torch.distributed.get_rank()}, Parameter {name}: shape {param.shape}"
             )
 
     def print_gradient_shapes(self):
+        if not self._debug:
+            return
+
         for name, param in self.named_parameters():
             if param.grad is not None:
                 self.logger.info(
@@ -319,6 +325,9 @@ class SLMuSEDLF(nn.Module):
                 )
 
     def print_tensor_shape(self, tensor_name, tensor):
+        if not self._debug:
+            return
+
         self.logger.info(
             f"Rank {torch.distributed.get_rank()}, Tensor {tensor_name}: shape {tensor.shape}"
         )

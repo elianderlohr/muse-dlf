@@ -49,6 +49,7 @@ class Trainer:
         save_metric="accuracy",
         model_config={},
         save_model=True,
+        _debug=False,
         **kwargs,
     ):
         self.model = model.to(device)
@@ -73,6 +74,8 @@ class Trainer:
         self.model_config = model_config
 
         self.save_model = save_model
+
+        self._debug = _debug
 
         # Initialize the mixed precision
         logger.info(
@@ -324,7 +327,9 @@ class Trainer:
                     all_labels = np.array(all_labels)
 
                     # Check if we're dealing with multi-label data
-                    is_multilabel = (all_labels.ndim > 1 and all_labels.shape[1] > 1) or (all_labels.dtype == bool)
+                    is_multilabel = (
+                        all_labels.ndim > 1 and all_labels.shape[1] > 1
+                    ) or (all_labels.dtype == bool)
 
                     if is_multilabel:
                         # For multi-label, we need to binarize the predictions
@@ -339,9 +344,13 @@ class Trainer:
                     if metric == "accuracy":
                         result = accuracy_score(all_labels_binary, all_preds_binary)
                     elif metric == "f1_micro":
-                        result = f1_score(all_labels_binary, all_preds_binary, average="micro")
+                        result = f1_score(
+                            all_labels_binary, all_preds_binary, average="micro"
+                        )
                     elif metric == "f1_macro":
-                        result = f1_score(all_labels_binary, all_preds_binary, average="macro")
+                        result = f1_score(
+                            all_labels_binary, all_preds_binary, average="macro"
+                        )
 
                     if key == "supervised":
                         results[f"{prefix}_{metric}"] = result
@@ -430,49 +439,41 @@ class Trainer:
                     # Forward pass
                     outputs = self.model(**model_inputs)
 
-                    # Log shapes of outputs
-                    for key, value in outputs.items():
-                        if isinstance(value, torch.Tensor):
-                            logger.info(
-                                f"Before Loss Calc Rank {self.accelerator.process_index}, Output {key} shape: {value.shape}"
-                            )
+                    if self._debug:
+                        # Log shapes of outputs
+                        for key, value in outputs.items():
+                            if isinstance(value, torch.Tensor):
+                                logger.debug(
+                                    f"Before Loss Calc Rank {self.accelerator.process_index}, Output {key} shape: {value.shape}"
+                                )
 
                     combined_loss, loss_dict = self.calculate_loss(
                         outputs, prepared_labels, alpha
                     )
 
-                    # return if loss is nan
-                    if self.check_for_nans(combined_loss, "combined_loss"):
-                        logger.info(
-                            f"Rank {self.accelerator.process_index}, Loss is NaN."
+                    if self._debug:
+                        # return if loss is nan
+                        if self.check_for_nans(combined_loss, "combined_loss"):
+                            logger.debug(
+                                f"Rank {self.accelerator.process_index}, Loss is NaN."
+                            )
+
+                        # log shape of loss
+                        logger.debug(
+                            f"Rank {self.accelerator.process_index}, Combined loss shape: {combined_loss.shape}"
                         )
 
-                    # log shape of loss
-                    logger.info(
-                        f"Rank {self.accelerator.process_index}, Combined loss shape: {combined_loss.shape}"
-                    )
-
-                    # Log loss values
-                    logger.info(
-                        f"Rank {self.accelerator.process_index}, Combined loss: {combined_loss.item()}"
-                    )
-                    for key, value in loss_dict.items():
-                        logger.info(
-                            f"Rank {self.accelerator.process_index}, {key}: {value.item()}"
+                        # Log loss values
+                        logger.debug(
+                            f"Rank {self.accelerator.process_index}, Combined loss: {combined_loss.item()}"
                         )
+                        for key, value in loss_dict.items():
+                            logger.debug(
+                                f"Rank {self.accelerator.process_index}, {key}: {value.item()}"
+                            )
 
                     # Backward pass
                     self.accelerator.backward(combined_loss)
-
-                    logger.info(
-                        f"Rank {self.accelerator.process_index}, Backward pass completed"
-                    )
-                    # Log gradient norms
-                    for name, param in self.model.named_parameters():
-                        if param.grad is not None:
-                            logger.info(
-                                f"Rank {self.accelerator.process_index}, Gradient norm for {name}: {param.grad.norm().item()}"
-                            )
 
                     if self.accelerator.sync_gradients:
                         self.accelerator.clip_grad_norm_(
