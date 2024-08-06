@@ -326,9 +326,6 @@ class Trainer:
                         all_preds.extend(preds.numpy())
                         all_labels.extend(labels.numpy())
 
-                    all_preds = torch.tensor(all_preds)
-                    all_labels = torch.tensor(all_labels)
-
                     if metric == "accuracy":
                         result = accuracy_score(all_labels, all_preds)
                     elif metric == "f1_micro":
