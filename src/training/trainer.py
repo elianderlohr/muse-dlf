@@ -813,8 +813,10 @@ class Trainer:
                         metrics_dict, prepared_logits
                     )
 
-                del labels, prepared_logits, outputs
-                torch.cuda.empty_cache()
+                    del prepared_logits
+                    torch.cuda.empty_cache()
+
+                del labels, outputs, gathered_outputs, gathered_labels
 
         # After the loop, process the accumulated data on the main process
         if self.training_management != "accelerate" or self.accelerator.is_main_process:
