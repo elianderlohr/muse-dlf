@@ -301,6 +301,28 @@ class SLMuSEDLF(nn.Module):
     def set_log_level(self, log_level):
         LoggerManager.set_log_level(log_level)
 
+    def print_parameter_shapes(self):
+        for name, param in self.named_parameters():
+            self.logger.info(
+                f"Rank {torch.distributed.get_rank()}, Parameter {name}: shape {param.shape}"
+            )
+
+    def print_gradient_shapes(self):
+        for name, param in self.named_parameters():
+            if param.grad is not None:
+                self.logger.info(
+                    f"Rank {torch.distributed.get_rank()}, Gradient {name}: shape {param.grad.shape}"
+                )
+            else:
+                self.logger.info(
+                    f"Rank {torch.distributed.get_rank()}, Gradient {name}: None"
+                )
+
+    def print_tensor_shape(self, tensor_name, tensor):
+        self.logger.info(
+            f"Rank {torch.distributed.get_rank()}, Tensor {tensor_name}: shape {tensor.shape}"
+        )
+
     def negative_sampling(self, embeddings, num_negatives=-1):
         if num_negatives == -1:
             num_negatives = embeddings.size(0)
@@ -389,6 +411,9 @@ class SLMuSEDLF(nn.Module):
         frameaxis_data,
         tau,
     ):
+        self.logger.info("Starting forward pass")
+        self.print_parameter_shapes()
+
         batch_size = sentence_ids.size(0)
 
         # Convert input IDs to embeddings
@@ -404,6 +429,11 @@ class SLMuSEDLF(nn.Module):
             arg0_ids,
             arg1_ids,
         )
+
+        self.print_tensor_shape("sentence_embeddings", sentence_embeddings)
+        self.print_tensor_shape("predicate_embeddings", predicate_embeddings)
+        self.print_tensor_shape("arg0_embeddings", arg0_embeddings)
+        self.print_tensor_shape("arg1_embeddings", arg1_embeddings)
 
         # Delete input tensors after conversion to embeddings
         del (
@@ -638,6 +668,16 @@ class SLMuSEDLF(nn.Module):
             d_a0_sentence = torch.stack(d_a0_sentence_list, dim=1)
             d_a1_sentence = torch.stack(d_a1_sentence_list, dim=1)
 
+            self.print_tensor_shape(
+                f"d_p_sentence (sentence {sentence_idx})", d_p_sentence
+            )
+            self.print_tensor_shape(
+                f"d_a0_sentence (sentence {sentence_idx})", d_a0_sentence
+            )
+            self.print_tensor_shape(
+                f"d_a1_sentence (sentence {sentence_idx})", d_a1_sentence
+            )
+
             d_p_list.append(d_p_sentence)
             d_a0_list.append(d_a0_sentence)
             d_a1_list.append(d_a1_sentence)
@@ -696,6 +736,11 @@ class SLMuSEDLF(nn.Module):
             else torch.tensor([], device=sentence_embeddings.device)
         )
 
+        self.print_tensor_shape("d_p_aggregated", d_p_aggregated)
+        self.print_tensor_shape("d_a0_aggregated", d_a0_aggregated)
+        self.print_tensor_shape("d_a1_aggregated", d_a1_aggregated)
+        self.print_tensor_shape("d_fx_aggregated", d_fx_aggregated)
+
         span_logits, sent_logits, supervised_logits, other = self.supervised(
             d_p_aggregated,
             d_a0_aggregated,
@@ -704,6 +749,10 @@ class SLMuSEDLF(nn.Module):
             sentence_embeddings,
             frameaxis_data,
         )
+
+        self.print_tensor_shape("span_logits", span_logits)
+        self.print_tensor_shape("sent_logits", sent_logits)
+        self.print_tensor_shape("supervised_logits", supervised_logits)
 
         # Calculate mean losses per batch for each argument type
         batch_loss_p = losses_p / valid_counts_p.clamp(min=1)
@@ -734,6 +783,8 @@ class SLMuSEDLF(nn.Module):
             d_fx_aggregated,
         )
         torch.cuda.empty_cache()
+
+        self.logger.info("Completed forward pass")
 
         return {
             "unsupervised_loss": unsupervised_loss,
