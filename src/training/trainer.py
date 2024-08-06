@@ -46,7 +46,7 @@ class Trainer:
         accumulation_steps=1,
         test_every_n_batches=50,
         save_threshold=0.5,
-        save_metric="accuracy",
+        save_metric: Literal["accuracy", "f1_micro", "f1_macro"] = "accuracy",
         model_config={},
         save_model=True,
         _debug=False,

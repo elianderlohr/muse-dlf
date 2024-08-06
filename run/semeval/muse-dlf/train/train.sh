@@ -138,6 +138,7 @@ PARAMS=(
     --clip_value 1
     --focal_loss_gamma 2
     --early_stopping_patience 20
+    --save_metric "f1_micro"
 )
 
 # Parse command-line arguments
