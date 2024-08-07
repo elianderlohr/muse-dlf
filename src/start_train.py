@@ -929,11 +929,7 @@ def main():
 
             alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 
-            loss_function = MultiLabelFocalLoss(
-                alpha=alpha,
-                gamma=args.focal_loss_gamma,
-                reduction="sum",
-            )
+            loss_function = nn.BCEWithLogitsLoss(pos_weight=alpha)
             logger.info("Loss function set to Focal Loss")
 
         lr = args.lr
