@@ -1050,11 +1050,14 @@ class Trainer:
                 early_stopping["stopping_code"] = 104
                 break
 
+            # wait
+            self.accelerator.wait_for_everyone()
+
             if (
                 self.training_management != "accelerate"
                 or self.accelerator.is_main_process
             ):
-                if epoch >= 1 and metrics["accuracy"] < 0.2:
+                if epoch >= 1 and metrics[self.save_metric] < 0.2:
                     logger.info("Accuracy is below 0.2. Stopping training.")
                     early_stopping["early_stopped"] = True
                     early_stopping["stopping_code"] = 102
@@ -1064,7 +1067,7 @@ class Trainer:
                     )
                     break
 
-                if epoch >= 2 and metrics["accuracy"] < 0.3:
+                if epoch >= 2 and metrics[self.save_metric] < 0.3:
                     logger.info("Accuracy is below 0.3. Stopping training.")
                     early_stopping["early_stopped"] = True
                     early_stopping["stopping_code"] = 102
