@@ -3,7 +3,6 @@ import os
 import time
 from typing import Literal
 import numpy as np
-from sklearn.calibration import label_binarize
 import torch
 import json
 from tqdm import tqdm
@@ -49,7 +48,6 @@ class Trainer:
         save_threshold=0.5,
         save_metric: Literal["accuracy", "f1_micro", "f1_macro"] = "accuracy",
         model_config={},
-        class_column_names=[],
         save_model=True,
         _debug=False,
         **kwargs,
@@ -72,8 +70,6 @@ class Trainer:
         self.test_every_n_batches = test_every_n_batches
         self.save_threshold = save_threshold
         self.save_metric = save_metric
-
-        self.class_column_names = class_column_names
 
         self.model_config = model_config
 
@@ -219,27 +215,13 @@ class Trainer:
             # Convert continuous predictions to binary for muse-dlf
             threshold = 0.5  # You may need to adjust this threshold
             binary_predictions = (combined_pred_np > threshold).astype(int)
-
-            y_true = combined_pred_np
-            y_pred = binary_predictions
         else:
             # For other model types, assume the predictions are already in the correct format
             binary_predictions = combined_pred_np
 
-            # Convert to one-hot encoding
-            y_true = label_binarize(combined_labels_np, classes=all_classes)
-            y_pred = label_binarize(combined_pred_np, classes=all_classes)
-
-        all_classes = list(range(len(self.class_column_names)))
-
         # Generate classification report
         class_report = classification_report(
-            y_true,
-            y_pred,
-            output_dict=True,
-            zero_division=0,
-            target_names=self.class_column_names,
-            labels=all_classes,
+            combined_labels_np, binary_predictions, output_dict=True, zero_division=0
         )
 
         if (
@@ -250,12 +232,7 @@ class Trainer:
             logger.info("\nPer-class metrics for training data:")
             logger.info(
                 classification_report(
-                    y_true,
-                    y_pred,
-                    output_dict=True,
-                    zero_division=0,
-                    target_names=self.class_column_names,
-                    labels=all_classes,
+                    combined_labels_np, binary_predictions, zero_division=0
                 )
             )
 
