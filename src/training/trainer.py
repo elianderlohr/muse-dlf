@@ -744,6 +744,10 @@ class Trainer:
                 disable=not self.accelerator.is_main_process,
             )
         ):
+            if batch is None:
+                logger.warning("Encountered a None batch during evaluation. Skipping...")
+                continue
+
             # Prepare inputs
             inputs = {k: v for k, v in batch.items() if k != "labels"}
             labels = batch["labels"]
