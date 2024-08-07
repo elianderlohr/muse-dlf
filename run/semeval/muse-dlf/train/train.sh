@@ -139,6 +139,7 @@ PARAMS=(
     --focal_loss_gamma 2
     --early_stopping_patience 20
     --save_metric "f1_micro"
+    --save_threshold 0.5
 )
 
 # Parse command-line arguments

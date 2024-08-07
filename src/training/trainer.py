@@ -654,7 +654,7 @@ class Trainer:
                                 metrics[f"train_{self.save_metric}"]
                                 > self.save_threshold
                             ):
-                                self._save_model()
+                                self._save_model(metrics)
                         else:
                             early_stopping["early_stop"] += 1
 
@@ -708,8 +708,6 @@ class Trainer:
                 }
             )
 
-            self._save_model()
-
         return tau, early_stopping
 
     def _evaluate(self, epoch, test_dataloader, tau, experiment_id):
@@ -745,7 +743,9 @@ class Trainer:
             )
         ):
             if batch is None:
-                logger.warning("Encountered a None batch during evaluation. Skipping...")
+                logger.warning(
+                    "Encountered a None batch during evaluation. Skipping..."
+                )
                 continue
 
             # Prepare inputs
@@ -845,7 +845,7 @@ class Trainer:
 
         return metrics
 
-    def _save_model(self):
+    def _save_model(self, model_mode: Literal["train", "eval"] = "train", metrics=None):
         logger.info("Starting to save the model.")
 
         if self.save_model == False:
@@ -926,11 +926,19 @@ class Trainer:
                         f"Warning: Failed to save config at {config_save_path}. Exception: {e}"
                     )
 
+            model_metadata = self.model_config.copy()
+            # add metrics to model_config if not None
+            if metrics is not None:
+                # add as flattend dict
+                metrics = {f"metrics_{k}": v for k, v in metrics.items()}
+
+                model_metadata.update(metrics)
+
             # save model artifact
             model_artifact = wandb.Artifact(
-                name=f"{self.run_name.replace('-', '_')}_model",
+                name=f"{model_mode}_{self.run_name.replace('-', '_')}_model",
                 type="model",
-                metadata=self.model_config,
+                metadata=model_metadata,
             )
 
             model_artifact.add_dir(save_dir)
@@ -1077,6 +1085,9 @@ class Trainer:
                         text="The model never surpassed 0.3 accuracy.",
                     )
                     break
+
+                if metrics[self.save_metric] >= self.save_threshold:
+                    self._save_model(metrics)
 
             # wait
             self.accelerator.wait_for_everyone()

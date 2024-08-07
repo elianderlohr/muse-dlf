@@ -138,6 +138,7 @@ PARAMS=(
     --focal_loss_gamma 2
     --early_stopping_patience 20
     --dim_names "virtue,vice"
+    --save_threshold 0.5
 )
 
 # Parse command-line arguments
