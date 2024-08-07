@@ -222,6 +222,9 @@ class Trainer:
             # For other model types, assume the predictions are already in the correct format
             binary_predictions = combined_pred_np
 
+        logger.info(f"binary_predictions: {binary_predictions}")
+        logger.info(f"self.class_column_names: {self.class_column_names}")
+
         # Generate classification report
         class_report = classification_report(
             combined_labels_np,
