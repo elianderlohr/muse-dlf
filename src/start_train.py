@@ -29,6 +29,7 @@ from utils.logging_manager import LoggerManager
 
 from utils.focal_loss import FocalLoss
 from utils.multi_label_focal_loss import MultiLabelFocalLoss, multi_label_focal_loss
+from utils.asymmetric_loss import AsymmetricLoss, WeightedAsymmetricLoss
 
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
@@ -936,14 +937,28 @@ def main():
                 "Security_and_defense": 0.1158,
             }
 
-            loss_function = multi_label_focal_loss(
-                class_freq_dict=class_freq_dict,
-                min_freq=0.02,
-                gamma=args.focal_loss_gamma,
-                reduction="mean",
-                scale=100,
-                device=accelerator.device,
+            freqs = np.array(list(class_freq_dict.values()))
+            weights = 1 / (
+                freqs + 1e-5
+            )  # Adding small epsilon to avoid division by zero
+            weights = (
+                weights / weights.sum() * len(freqs)
+            )  # Normalize so the average weight is 1
+            alpha = torch.tensor(weights, dtype=torch.float32).to(accelerator.device)
+
+            # loss_function = multi_label_focal_loss(
+            #   class_freq_dict=class_freq_dict,
+            #    min_freq=0.02,
+            #    gamma=args.focal_loss_gamma,
+            #    reduction="mean",
+            #    scale=100,
+            #    device=accelerator.device,
+            # )
+
+            loss_function = WeightedAsymmetricLoss(
+                gamma_neg=4, gamma_pos=1, clip=0.05, class_weights=alpha
             )
+
             logger.info("Loss function set to Focal Loss")
 
         lr = args.lr
