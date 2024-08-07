@@ -3,6 +3,7 @@ import os
 import time
 from typing import Literal
 import numpy as np
+from sklearn.calibration import label_binarize
 import torch
 import json
 from tqdm import tqdm
@@ -218,21 +219,27 @@ class Trainer:
             # Convert continuous predictions to binary for muse-dlf
             threshold = 0.5  # You may need to adjust this threshold
             binary_predictions = (combined_pred_np > threshold).astype(int)
+
+            y_true = combined_pred_np
+            y_pred = binary_predictions
         else:
             # For other model types, assume the predictions are already in the correct format
             binary_predictions = combined_pred_np
 
-        logger.info(f"binary_predictions: {binary_predictions}")
-        logger.info(f"combined_labels_np: {combined_labels_np}")
-        logger.info(f"self.class_column_names: {self.class_column_names}")
+            # Convert to one-hot encoding
+            y_true = label_binarize(combined_labels_np, classes=all_classes)
+            y_pred = label_binarize(combined_pred_np, classes=all_classes)
+
+        all_classes = list(range(len(self.class_column_names)))
 
         # Generate classification report
         class_report = classification_report(
-            combined_labels_np,
-            binary_predictions,
-            target_names=self.class_column_names,
+            y_true,
+            y_pred,
             output_dict=True,
             zero_division=0,
+            target_names=self.class_column_names,
+            labels=all_classes,
         )
 
         if (
@@ -243,10 +250,12 @@ class Trainer:
             logger.info("\nPer-class metrics for training data:")
             logger.info(
                 classification_report(
-                    combined_labels_np,
-                    binary_predictions,
-                    target_names=self.class_column_names,
+                    y_true,
+                    y_pred,
+                    output_dict=True,
                     zero_division=0,
+                    target_names=self.class_column_names,
+                    labels=all_classes,
                 )
             )
 
