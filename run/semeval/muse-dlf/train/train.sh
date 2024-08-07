@@ -100,7 +100,7 @@ PARAMS=(
     --hidden_dim 768
     --num_classes 14
     --dropout_prob 0.3
-    --alpha 0.5
+    --alpha 0.9
     --lambda_orthogonality 1e-3
     --lr 0.0001
     --M 8
@@ -131,7 +131,7 @@ PARAMS=(
     --hidden_state "second_to_last"
     --tau_decay 5e-4
     --tau_min 0.5
-    --mixed_precision "fp16"
+    --mixed_precision "no"
     --accumulation_steps 1
     --alternative_supervised "alt6"
     --seed 42
