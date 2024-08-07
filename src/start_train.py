@@ -940,7 +940,8 @@ def main():
                 class_freq_dict=class_freq_dict,
                 min_freq=0.02,
                 gamma=args.focal_loss_gamma,
-                scaling_factor=10,
+                reduction="mean",
+                scale=100,
                 device=accelerator.device,
             )
             logger.info("Loss function set to Focal Loss")
