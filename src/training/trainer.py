@@ -207,7 +207,7 @@ class Trainer:
             "frameaxis_loss": frameaxis_loss.detach(),
         }
 
-    def _log_classification_report(self, logits, labels):
+    def _log_classification_report(self, logits, labels, prefix="train"):
         combined_pred_np = logits.cpu().numpy()
         combined_labels_np = labels.cpu().numpy()
 
@@ -236,6 +236,8 @@ class Trainer:
                 )
             )
 
+        prefix = f"{prefix}_" if len(prefix) > 0 else ""
+
         # Log per-class metrics
         for class_name, metrics in class_report.items():
             if isinstance(
@@ -243,9 +245,9 @@ class Trainer:
             ):  # Skip 'accuracy', 'macro avg', 'weighted avg'
                 self._log_metrics(
                     {
-                        f"train_precision_class_{class_name}": metrics["precision"],
-                        f"train_recall_class_{class_name}": metrics["recall"],
-                        f"train_f1_class_{class_name}": metrics["f1-score"],
+                        f"{prefix}precision_class_{class_name}": metrics["precision"],
+                        f"{prefix}recall_class_{class_name}": metrics["recall"],
+                        f"{prefix}f1_class_{class_name}": metrics["f1-score"],
                     }
                 )
 
@@ -787,7 +789,7 @@ class Trainer:
 
                 if self.accelerator.is_main_process:
                     logger.info(
-                        f"[TRAIN] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
+                        f"[EVALUATE] Starting to evaluate the model at epoch {epoch}, batch {global_steps}"
                     )
 
                     # Prepare logits
