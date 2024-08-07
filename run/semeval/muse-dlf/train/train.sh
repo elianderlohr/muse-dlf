@@ -81,6 +81,7 @@ RUN_NAME=$(generate_run_name)
 # Default parameters
 PARAMS=(
     --path_data "data/semeval/muse-dlf/semeval_train.json"
+    --path_semeval_validation_data "data/semeval/muse-dlf/semeval_unlabeled_train.json"
     --wandb_api_key "$WANDB_API_KEY"
     --project_name "muse-dlf"
     --run_name "$RUN_NAME"
@@ -88,7 +89,9 @@ PARAMS=(
     --name_tokenizer "roberta-base"
     --path_name_bert_model "models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922"
     --path_srls "data/srls/semeval/semeval_train.pkl"
+    --path_semeval_validation_srls "data/srls/semeval/semeval_unlabeled_train.pkl"
     --path_frameaxis "data/frameaxis/semeval/frameaxis_semeval_mft.pkl"
+    --path_semeval_validation_frameaxis "data/frameaxis/semeval/frameaxis_semeval_unlabeled_mft.pkl"
     --path_antonym_pairs "data/axis/mft.json"
     --save_base_path "models/muse-dlf/"
     --class_column_names "Capacity_and_resources;Crime_and_punishment;Cultural_identity;Economic;External_regulation_and_reputation;Fairness_and_equality;Health_and_safety;Legality_Constitutionality_and_jurisprudence;Morality;Policy_prescription_and_evaluation;Political;Public_opinion;Quality_of_life;Security_and_defense"

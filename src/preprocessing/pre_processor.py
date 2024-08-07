@@ -243,6 +243,65 @@ class PreProcessor:
             "frameaxis": False,
         },
         train_mode=True,
+        device=-1,
+    ):
+        df = self._load_data(path=path, format=format)
+
+        output = self._preprocess(
+            df, dataframe_path, force_recalculate, train_mode=train_mode, device=device
+        )
+
+        if train_mode:
+            X, X_srl, X_frameaxis, y = output
+
+            dataset = ArticleDataset(
+                X,
+                X_srl,
+                X_frameaxis,
+                self.tokenizer,
+                y,
+                max_sentences_per_article=self.max_sentences_per_article,
+                max_sentence_length=self.max_sentence_length,
+                max_args_per_sentence=self.max_args_per_sentence,
+                max_arg_length=self.max_arg_length,
+                frameaxis_dim=self.frameaxis_dim,
+                train_mode=train_mode,
+            )
+
+            return dataset
+        else:
+            X, X_srl, X_frameaxis = output
+
+            dataset = ArticleDataset(
+                X,
+                X_srl,
+                X_frameaxis,
+                self.tokenizer,
+                None,
+                max_sentences_per_article=self.max_sentences_per_article,
+                max_sentence_length=self.max_sentence_length,
+                max_args_per_sentence=self.max_args_per_sentence,
+                max_arg_length=self.max_arg_length,
+                frameaxis_dim=self.frameaxis_dim,
+                train_mode=train_mode,
+            )
+
+            return dataset
+
+    def get_datasets(
+        self,
+        path,
+        format,
+        dataframe_path={
+            "srl": "data/srls/mfc/srls.pkl",
+            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+            "frameaxis_microframe": "data/frameaxis/mfc/frameaxis_microframes.pkl",
+        },
+        force_recalculate={
+            "srl": False,
+            "frameaxis": False,
+        },
+        train_mode=True,
         random_state=None,
         stratification=None,  # None, "single", "multi"
         device=-1,
@@ -459,7 +518,7 @@ class PreProcessor:
         random_state=None,
     ):
         if train_mode:
-            _, _, train_df, test_df = self.get_dataset(
+            _, _, train_df, test_df = self.get_datasets(
                 path,
                 format,
                 dataframe_path,
@@ -470,7 +529,7 @@ class PreProcessor:
             )
             return train_df, test_df
         else:
-            _, df = self.get_dataset(
+            _, df = self.get_datasets(
                 path,
                 format,
                 dataframe_path,
@@ -493,10 +552,51 @@ class PreProcessor:
             "frameaxis": False,
         },
         sample_size=None,
+        device=-1,
+    ):
+        dataset = self.get_dataset(
+            path,
+            format,
+            dataframe_path,
+            force_recalculate,
+            train_mode=True,
+            device=device,
+        )
+
+        if sample_size > 0:
+            logger.info(f"Sampling {sample_size} examples from the dataset.")
+            dataset = torch.utils.data.Subset(dataset, range(sample_size))
+            logger.info(f"Dataset size: {len(dataset)}")
+
+        dataloader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            collate_fn=custom_collate_fn,
+            drop_last=True,
+            pin_memory=True,
+            num_workers=self.num_workers,
+        )
+
+        return dataset, dataloader
+
+    def get_dataloaders(
+        self,
+        path,
+        format,
+        dataframe_path={
+            "srl": "data/srls/mfc/srls.pkl",
+            "frameaxis": "data/frameaxis/mfc/frameaxis_frames.pkl",
+        },
+        force_recalculate={
+            "srl": False,
+            "frameaxis": False,
+        },
+        sample_size=None,
         random_state=None,
         stratification=None,  # None, "single", "multi"
     ):
-        train_dataset, test_dataset, _, _ = self.get_dataset(
+        train_dataset, test_dataset, _, _ = self.get_datasets(
             path,
             format,
             dataframe_path,

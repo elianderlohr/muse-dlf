@@ -3,7 +3,7 @@
 # SLURM Directives
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --job-name=mfc-slmuse-dlf-dataset-1
+#SBATCH --job-name=semeval-muse-dlf-dataset-1
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 

@@ -232,7 +232,7 @@ def main():
 
         logger.info("Prepare data for training with train test split")
         # Load the data
-        train_dataset, test_dataset, _, _ = preprocessor.get_dataset(
+        train_dataset, test_dataset, _, _ = preprocessor.get_datasets(
             args.path_data,
             "json",
             dataframe_path={
@@ -284,7 +284,7 @@ def main():
 
         logger.info("Prepare data for inference")
 
-        dataset = preprocessor.get_dataset(
+        dataset = preprocessor.get_datasets(
             args.path_data,
             "json",
             dataframe_path={

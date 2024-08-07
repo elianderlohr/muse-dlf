@@ -271,7 +271,7 @@ def main():
     )
 
     # Load the data
-    _, _, train_dataloader, test_dataloader = preprocessor.get_dataloader(
+    _, _, train_dataloader, test_dataloader = preprocessor.get_dataloaders(
         path_data,
         "json",
         dataframe_path={
