@@ -207,7 +207,7 @@ class Trainer:
             "frameaxis_loss": frameaxis_loss.detach(),
         }
 
-    def _log_classification_report(self, logits, labels, prefix="train"):
+    def _log_classification_report(self, logits, labels, prefix=None):
         combined_pred_np = logits.cpu().numpy()
         combined_labels_np = labels.cpu().numpy()
 
@@ -236,7 +236,7 @@ class Trainer:
                 )
             )
 
-        prefix = f"{prefix}_" if len(prefix) > 0 else ""
+        prefix = f"{prefix}_" if prefix else ""
 
         # Log per-class metrics
         for class_name, metrics in class_report.items():
@@ -310,7 +310,7 @@ class Trainer:
 
         return metrics
 
-    def _metrics_calculate(self, metrics, prefix="train"):
+    def _metrics_calculate(self, metrics, prefix=None):
         results = {}
 
         if self.model_type == "slmuse-dlf":
@@ -323,7 +323,7 @@ class Trainer:
                     elif metric == "f1_macro":
                         result = evaluator.compute(average="macro")["f1"]
 
-                    prefix_name = f"{prefix}_{metric}" if len(prefix) > 0 else metric
+                    prefix_name = f"{prefix}_{metric}" if prefix else metric
 
                     if key == "supervised":
                         results[prefix_name] = result
@@ -638,7 +638,7 @@ class Trainer:
                             "supervised_logits"
                         ]
                         self._log_classification_report(
-                            supervised_pred, supervised_labels
+                            supervised_pred, supervised_labels, prefix="train"
                         )
 
                         logger.info(
@@ -830,11 +830,13 @@ class Trainer:
             all_supervised_labels = torch.cat(all_supervised_labels, dim=0)
 
             # Calculate final metrics
-            metrics = self._metrics_calculate(metrics_dict, prefix="")
+            metrics = self._metrics_calculate(metrics_dict, prefix=None)
             self._log_metrics(metrics)
 
             # Add per-class evaluation
-            self._log_classification_report(all_supervised_preds, all_supervised_labels)
+            self._log_classification_report(
+                all_supervised_preds, all_supervised_labels, prefix=None
+            )
 
             logger.info(
                 f"[EVALUATE] Epoch {epoch}: Micro F1: {metrics['f1_micro']}, Macro F1: {metrics['f1_macro']}, Accuracy: {metrics['accuracy']}"
