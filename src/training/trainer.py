@@ -654,7 +654,13 @@ class Trainer:
                                 metrics[f"train_{self.save_metric}"]
                                 > self.save_threshold
                             ):
-                                self._save_model(metrics)
+                                small_metrics_dict = {
+                                    "train_accuracy": metrics["train_accuracy"],
+                                    "train_f1_micro": metrics["train_f1_micro"],
+                                    "train_f1_macro": metrics["train_f1_macro"],
+                                }
+
+                                self._save_model(small_metrics_dict)
                         else:
                             early_stopping["early_stop"] += 1
 
@@ -1087,7 +1093,14 @@ class Trainer:
                     break
 
                 if metrics[self.save_metric] >= self.save_threshold:
-                    self._save_model(metrics)
+
+                    small_metrics_dict = {
+                        "accuracy": metrics["accuracy"],
+                        "f1_micro": metrics["f1_micro"],
+                        "f1_macro": metrics["f1_macro"],
+                    }
+
+                    self._save_model(small_metrics_dict)
 
             # wait
             self.accelerator.wait_for_everyone()
