@@ -660,7 +660,9 @@ class Trainer:
                                     "train_f1_macro": metrics["train_f1_macro"],
                                 }
 
-                                self._save_model(small_metrics_dict)
+                                self._save_model(
+                                    model_mode="train", metrics=small_metrics_dict
+                                )
                         else:
                             early_stopping["early_stop"] += 1
 
@@ -1100,7 +1102,7 @@ class Trainer:
                         "f1_macro": metrics["f1_macro"],
                     }
 
-                    self._save_model(small_metrics_dict)
+                    self._save_model(model_mode="eval", metrics=small_metrics_dict)
 
             # wait
             self.accelerator.wait_for_everyone()
