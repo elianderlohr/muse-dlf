@@ -97,7 +97,7 @@ python src/create_dataset.py \
     --num_sentences 32 \
     --max_sentence_length 64 \
     --max_args_per_sentence 10 \
-    --max_arg_length 10 \
+    --max_arg_length 18 \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
     --artifact_name semeval-dataset \

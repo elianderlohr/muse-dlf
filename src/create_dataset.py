@@ -229,6 +229,8 @@ def main():
     logger.info("Preprocessor loaded successfully")
 
     if args.train_mode:
+
+        logger.info("Prepare data for training with train test split")
         # Load the data
         train_dataset, test_dataset, _, _ = preprocessor.get_dataset(
             args.path_data,
@@ -279,6 +281,9 @@ def main():
             target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
         )
     else:
+
+        logger.info("Prepare data for inference")
+
         dataset = preprocessor.get_dataset(
             args.path_data,
             "json",
