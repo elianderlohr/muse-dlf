@@ -920,7 +920,7 @@ def main():
 
             logger.info("Loss function set to FocalLoss")
         else:
-            min_freq = 0.05
+            min_freq = 0.02  # Use a minimum frequency of 0.02 = 2%
             class_freq_dict = {
                 "Capacity_and_resources": 0.0180,
                 "Crime_and_punishment": 0.1406,
@@ -938,19 +938,25 @@ def main():
                 "Security_and_defense": 0.1158,
             }
 
+            # Adjust frequencies and normalize
             adjusted_freqs = {k: max(v, min_freq) for k, v in class_freq_dict.items()}
             total = sum(adjusted_freqs.values())
             adjusted_freqs = {k: v / total for k, v in adjusted_freqs.items()}
 
+            # Calculate inverse frequencies
             inverse_freqs = {k: 1 / v for k, v in adjusted_freqs.items()}
+
+            # Normalize inverse frequencies to get alpha weights in range [0, 1]
             total_inverse = sum(inverse_freqs.values())
-            alpha_dict = {
-                k: (v / total_inverse) * 100 for k, v in inverse_freqs.items()
-            }
+            alpha_dict = {k: v / total_inverse for k, v in inverse_freqs.items()}
 
             alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 
-            loss_function = nn.BCEWithLogitsLoss(pos_weight=alpha)
+            loss_function = MultiLabelFocalLoss(
+                alpha=alpha,
+                gamma=args.focal_loss_gamma,
+                reduction="mean",
+            )
             logger.info("Loss function set to Focal Loss")
 
         lr = args.lr

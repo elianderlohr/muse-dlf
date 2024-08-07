@@ -1,20 +1,22 @@
-from typing import Optional, Sequence
-
 import torch
 from torch import Tensor
 from torch import nn
 import torch.nn.functional as F
+from typing import Optional
 
 
 class MultiLabelFocalLoss(nn.Module):
-    """Multi-Label Focal Loss for multi-label classification tasks.
+    """
+    Multi-label version of Focal Loss.
 
-    This implementation is adapted from the original Focal Loss to work with
-    multi-label scenarios where each sample can belong to multiple classes.
+    Focal Loss, as described in https://arxiv.org/abs/1708.02002, adapted for multi-label tasks.
+    It is useful for classification tasks when there is a large class imbalance.
+    x is expected to contain raw, unnormalized scores for each class.
+    y is expected to contain multi-hot encoded target labels.
 
     Shape:
         - x: (batch_size, C) where C is the number of classes.
-        - y: (batch_size, C) where C is the number of classes.
+        - y: (batch_size, C), same shape as the input.
     """
 
     def __init__(
@@ -23,47 +25,33 @@ class MultiLabelFocalLoss(nn.Module):
         gamma: float = 2.0,
         reduction: str = "mean",
     ):
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             alpha (Tensor, optional): Weights for each class. Defaults to None.
             gamma (float, optional): Focusing parameter. Defaults to 2.0.
-            reduction (str, optional): 'mean', 'sum' or 'none'.
-                Defaults to 'mean'.
+            reduction (str, optional): 'mean', 'sum' or 'none'. Defaults to 'mean'.
         """
-        if reduction not in ("mean", "sum", "none"):
-            raise ValueError('Reduction must be one of: "mean", "sum", "none".')
-
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
 
+        # Initialize the BCEWithLogitsLoss
+        self.bce_with_logits = nn.BCEWithLogitsLoss(weight=alpha, reduction="none")
+
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
-        """
-        Args:
-            x (Tensor): Predicted probabilities of shape (batch_size, num_classes)
-            y (Tensor): Target labels of shape (batch_size, num_classes)
-        """
-        eps = 1e-12
+        # Compute binary cross-entropy loss
+        bce_loss = self.bce_with_logits(x, y)
 
-        # Ensure input is a probability distribution
-        x = torch.sigmoid(x)
+        # Compute the focal term
+        pt = torch.exp(-bce_loss)
+        focal_term = (1 - pt) ** self.gamma
 
-        # Clip probabilities to prevent log(0)
-        x = torch.clamp(x, eps, 1 - eps)
+        # Compute the final focal loss
+        loss = focal_term * bce_loss
 
-        # Calculate focal loss for both positive and negative cases
-        loss = -(
-            y * torch.pow(1 - x, self.gamma) * torch.log(x)
-            + (1 - y) * torch.pow(x, self.gamma) * torch.log(1 - x)
-        )
-
-        # Apply alpha weighting if provided
-        if self.alpha is not None:
-            loss = loss * self.alpha
-
-        # Apply reduction
         if self.reduction == "mean":
             return loss.mean()
         elif self.reduction == "sum":
@@ -73,23 +61,21 @@ class MultiLabelFocalLoss(nn.Module):
 
 
 def multi_label_focal_loss(
-    alpha: Optional[Sequence] = None,
+    alpha: Optional[Tensor] = None,
     gamma: float = 2.0,
     reduction: str = "mean",
     device="cpu",
     dtype=torch.float32,
 ) -> MultiLabelFocalLoss:
-    """Factory function for MultiLabelFocalLoss.
+    """
+    Factory function for MultiLabelFocalLoss.
 
     Args:
-        alpha (Sequence, optional): Weights for each class. Will be converted
-            to a Tensor if not None. Defaults to None.
+        alpha (Tensor, optional): Weights for each class. Defaults to None.
         gamma (float, optional): Focusing parameter. Defaults to 2.0.
-        reduction (str, optional): 'mean', 'sum' or 'none'.
-            Defaults to 'mean'.
+        reduction (str, optional): 'mean', 'sum' or 'none'. Defaults to 'mean'.
         device (str, optional): Device to move alpha to. Defaults to 'cpu'.
-        dtype (torch.dtype, optional): dtype to cast alpha to.
-            Defaults to torch.float32.
+        dtype (torch.dtype, optional): dtype to cast alpha to. Defaults to torch.float32.
 
     Returns:
         A MultiLabelFocalLoss object
@@ -100,3 +86,14 @@ def multi_label_focal_loss(
         alpha = alpha.to(device=device, dtype=dtype)
 
     return MultiLabelFocalLoss(alpha=alpha, gamma=gamma, reduction=reduction)
+
+
+# Example usage:
+# num_classes = 14  # Number of classes in your problem
+# alpha = torch.tensor([1.0] * num_classes)  # Equal weight for all classes
+# criterion = multi_label_focal_loss(alpha=alpha, gamma=2.0, reduction='mean', device='cuda')
+
+# In your training loop:
+# outputs = model(inputs)  # shape: (batch_size, num_classes)
+# targets = target_labels  # shape: (batch_size, num_classes), multi-hot encoded
+# loss = criterion(outputs, targets)
