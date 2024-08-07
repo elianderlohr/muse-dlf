@@ -48,6 +48,7 @@ class Trainer:
         save_threshold=0.5,
         save_metric: Literal["accuracy", "f1_micro", "f1_macro"] = "accuracy",
         model_config={},
+        class_column_names=class_column_names,
         save_model=True,
         _debug=False,
         **kwargs,
@@ -70,6 +71,8 @@ class Trainer:
         self.test_every_n_batches = test_every_n_batches
         self.save_threshold = save_threshold
         self.save_metric = save_metric
+
+        self.class_column_names = class_column_names
 
         self.model_config = model_config
 
@@ -221,7 +224,7 @@ class Trainer:
 
         # Generate classification report
         class_report = classification_report(
-            combined_labels_np, binary_predictions, output_dict=True, zero_division=0
+            combined_labels_np, binary_predictions, target_names=self.class_column_names, output_dict=True, zero_division=0
         )
 
         if (
@@ -232,7 +235,7 @@ class Trainer:
             logger.info("\nPer-class metrics for training data:")
             logger.info(
                 classification_report(
-                    combined_labels_np, binary_predictions, zero_division=0
+                    combined_labels_np, binary_predictions, target_names=self.class_column_names, zero_division=0
                 )
             )
 
