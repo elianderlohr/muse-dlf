@@ -223,6 +223,7 @@ class Trainer:
             binary_predictions = combined_pred_np
 
         logger.info(f"binary_predictions: {binary_predictions}")
+        logger.info(f"combined_labels_np: {combined_labels_np}")
         logger.info(f"self.class_column_names: {self.class_column_names}")
 
         # Generate classification report
