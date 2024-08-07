@@ -486,13 +486,6 @@ def main():
     training_params.add_argument(
         "--clip_value", type=float, default=1, help="Clip value for the gradient"
     )
-    # focal_loss_alpha
-    training_params.add_argument(
-        "--focal_loss_alpha",
-        type=float,
-        default=1.0,
-        help="Alpha parameter for the focal loss",
-    )
     # focal_loss_gamma
     training_params.add_argument(
         "--focal_loss_gamma",
@@ -669,23 +662,16 @@ def main():
         logger.info("Running the model with the following arguments: %s", args)
 
         config = {
+            # Model Configuration
+            "model_type": args.model_type,
             "embedding_dim": args.embedding_dim,
             "hidden_dim": args.hidden_dim,
             "num_classes": args.num_classes,
+            "frameaxis_dim": args.frameaxis_dim,
             "lambda_orthogonality": args.lambda_orthogonality,
             "dropout_prob": args.dropout_prob,
             "M": args.M,
             "t": args.t,
-            "num_sentences": args.num_sentences,
-            "frameaxis_dim": args.frameaxis_dim,
-            "max_sentence_length": args.max_sentence_length,
-            "max_args_per_sentence": args.max_args_per_sentence,
-            "max_arg_length": args.max_arg_length,
-            "batch_size": args.batch_size,
-            "epochs": args.epochs,
-            "test_size": args.test_size,
-            "tau_min": args.tau_min,
-            "tau_decay": args.tau_decay,
             "muse_unsupervised_num_layers": args.muse_unsupervised_num_layers,
             "muse_unsupervised_activation": args.muse_unsupervised_activation,
             "muse_unsupervised_use_batch_norm": args.muse_unsupervised_use_batch_norm,
@@ -696,27 +682,62 @@ def main():
             "muse_frameaxis_unsupervised_use_batch_norm": args.muse_frameaxis_unsupervised_use_batch_norm,
             "muse_frameaxis_unsupervised_matmul_input": args.muse_frameaxis_unsupervised_matmul_input,
             "muse_frameaxis_unsupervised_gumbel_softmax_log": args.muse_frameaxis_unsupervised_gumbel_softmax_log,
+            "num_negatives": args.num_negatives,
             "supervised_concat_frameaxis": args.supervised_concat_frameaxis,
             "supervised_num_layers": args.supervised_num_layers,
             "supervised_activation": args.supervised_activation,
-            "alternative_supervised": args.alternative_supervised,
             "sentence_pooling": args.sentence_pooling,
             "hidden_state": args.hidden_state,
+            "alternative_supervised": args.alternative_supervised,
+            # Training Parameters
+            "alpha": args.alpha,
             "lr": args.lr,
             "adam_weight_decay": args.adam_weight_decay,
             "adamw_weight_decay": args.adamw_weight_decay,
+            "ams_grad_options": args.ams_grad_options,
             "optimizer": args.optimizer,
-            "alpha": args.alpha,
-            "debug": args.debug,
-            "mixed_precision": args.mixed_precision,
-            "num_negatives": args.num_negatives,
+            "batch_size": args.batch_size,
+            "epochs": args.epochs,
+            "planned_epochs": args.planned_epochs,
+            "test_size": args.test_size,
+            "tau_min": args.tau_min,
+            "tau_decay": args.tau_decay,
             "accumulation_steps": args.accumulation_steps,
+            "clip_value": args.clip_value,
+            "focal_loss_gamma": args.focal_loss_gamma,
+            "mixed_precision": args.mixed_precision,
+            # Data Processing
+            "num_sentences": args.num_sentences,
+            "max_sentence_length": args.max_sentence_length,
+            "max_args_per_sentence": args.max_args_per_sentence,
+            "max_arg_length": args.max_arg_length,
+            # Input/Output Paths
+            "name_tokenizer": args.name_tokenizer,
+            "path_name_pretrained_muse_model": args.path_name_pretrained_muse_model,
+            "path_name_bert_model": args.path_name_bert_model,
+            "path_srls": args.path_srls,
+            "path_frameaxis": args.path_frameaxis,
+            "path_antonym_pairs": args.path_antonym_pairs,
+            "dim_names": args.dim_names,
+            "save_base_path": args.save_base_path,
+            "class_column_names": args.class_column_names,
+            # Advanced Settings
+            "force_recalculate_srls": args.force_recalculate_srls,
+            "force_recalculate_frameaxis": args.force_recalculate_frameaxis,
             "sample_size": args.sample_size,
             "seed": args.seed,
+            "debug": args.debug,
             "detect_anomaly": args.detect_anomaly,
-            "bert_model_name": args.name_tokenizer,
-            "path_name_bert_model": args.path_name_bert_model,
-            "path_name_pretrained_muse_model": args.path_name_pretrained_muse_model,
+            # Evaluation and Saving
+            "test_every_n_batches": args.test_every_n_batches,
+            "save_threshold": args.save_threshold,
+            "save_metric": args.save_metric,
+            "early_stopping_patience": args.early_stopping_patience,
+            "save_model": args.save_model,
+            # Wandb Configuration
+            "project_name": args.project_name,
+            "run_name": args.run_name,
+            "tags": args.tags,
         }
 
         # generate run name
