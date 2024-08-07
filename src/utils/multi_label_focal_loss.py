@@ -1,99 +1,83 @@
 import torch
 from torch import Tensor
 from torch import nn
-import torch.nn.functional as F
-from typing import Optional
+from typing import Optional, Dict
 
 
 class MultiLabelFocalLoss(nn.Module):
-    """
-    Multi-label version of Focal Loss.
-
-    Focal Loss, as described in https://arxiv.org/abs/1708.02002, adapted for multi-label tasks.
-    It is useful for classification tasks when there is a large class imbalance.
-    x is expected to contain raw, unnormalized scores for each class.
-    y is expected to contain multi-hot encoded target labels.
-
-    Shape:
-        - x: (batch_size, C) where C is the number of classes.
-        - y: (batch_size, C), same shape as the input.
-    """
-
     def __init__(
         self,
         alpha: Optional[Tensor] = None,
         gamma: float = 2.0,
         reduction: str = "mean",
     ):
-        """
-        Constructor.
-
-        Args:
-            alpha (Tensor, optional): Weights for each class. Defaults to None.
-            gamma (float, optional): Focusing parameter. Defaults to 2.0.
-            reduction (str, optional): 'mean', 'sum' or 'none'. Defaults to 'mean'.
-        """
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
 
-        # Initialize the BCEWithLogitsLoss
-        self.bce_with_logits = nn.BCEWithLogitsLoss(weight=alpha, reduction="none")
+        # Initialize the BCEWithLogitsLoss without weight
+        self.bce_with_logits = nn.BCEWithLogitsLoss(reduction="none")
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
         # Compute binary cross-entropy loss
         bce_loss = self.bce_with_logits(x, y)
 
+        # Compute probabilities
+        pt = torch.sigmoid(x)
+        pt = torch.where(y == 1, pt, 1 - pt)
+
         # Compute the focal term
-        pt = torch.exp(-bce_loss)
         focal_term = (1 - pt) ** self.gamma
 
-        # Compute the final focal loss
-        loss = focal_term * bce_loss
+        # Apply alpha weighting
+        if self.alpha is not None:
+            alpha_weight = torch.where(y == 1, self.alpha, 1 - self.alpha)
+            focal_loss = alpha_weight * focal_term * bce_loss
+        else:
+            focal_loss = focal_term * bce_loss
 
         if self.reduction == "mean":
-            return loss.mean()
+            return focal_loss.mean()
         elif self.reduction == "sum":
-            return loss.sum()
+            return focal_loss.sum()
         else:  # 'none'
-            return loss
+            return focal_loss
+
+
+def prepare_alpha(
+    class_freq_dict: Dict[str, float],
+    min_freq: float = 0.01,
+    scaling_factor: float = 10.0,
+    device: str = "cpu",
+) -> Tensor:
+    # Adjust frequencies and normalize
+    adjusted_freqs = {k: max(v, min_freq) for k, v in class_freq_dict.items()}
+    total = sum(adjusted_freqs.values())
+    adjusted_freqs = {k: v / total for k, v in adjusted_freqs.items()}
+
+    # Calculate inverse frequencies
+    inverse_freqs = {k: 1 / v for k, v in adjusted_freqs.items()}
+
+    # Scale the inverse frequencies
+    max_inverse = max(inverse_freqs.values())
+    alpha_dict = {
+        k: (v / max_inverse) * scaling_factor for k, v in inverse_freqs.items()
+    }
+
+    # Convert to tensor
+    alpha = torch.tensor(list(alpha_dict.values()), device=device)
+
+    return alpha
 
 
 def multi_label_focal_loss(
-    alpha: Optional[Tensor] = None,
+    class_freq_dict: Dict[str, float],
+    min_freq: float = 0.01,
+    scaling_factor: float = 10.0,
     gamma: float = 2.0,
     reduction: str = "mean",
-    device="cpu",
-    dtype=torch.float32,
+    device: str = "cpu",
 ) -> MultiLabelFocalLoss:
-    """
-    Factory function for MultiLabelFocalLoss.
-
-    Args:
-        alpha (Tensor, optional): Weights for each class. Defaults to None.
-        gamma (float, optional): Focusing parameter. Defaults to 2.0.
-        reduction (str, optional): 'mean', 'sum' or 'none'. Defaults to 'mean'.
-        device (str, optional): Device to move alpha to. Defaults to 'cpu'.
-        dtype (torch.dtype, optional): dtype to cast alpha to. Defaults to torch.float32.
-
-    Returns:
-        A MultiLabelFocalLoss object
-    """
-    if alpha is not None:
-        if not isinstance(alpha, Tensor):
-            alpha = torch.tensor(alpha)
-        alpha = alpha.to(device=device, dtype=dtype)
-
+    alpha = prepare_alpha(class_freq_dict, min_freq, scaling_factor, device)
     return MultiLabelFocalLoss(alpha=alpha, gamma=gamma, reduction=reduction)
-
-
-# Example usage:
-# num_classes = 14  # Number of classes in your problem
-# alpha = torch.tensor([1.0] * num_classes)  # Equal weight for all classes
-# criterion = multi_label_focal_loss(alpha=alpha, gamma=2.0, reduction='mean', device='cuda')
-
-# In your training loop:
-# outputs = model(inputs)  # shape: (batch_size, num_classes)
-# targets = target_labels  # shape: (batch_size, num_classes), multi-hot encoded
-# loss = criterion(outputs, targets)
