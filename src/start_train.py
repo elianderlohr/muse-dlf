@@ -577,33 +577,12 @@ def main():
     io_paths.add_argument(
         "--path_srls", type=str, default="", help="Path to the SRLs file", required=True
     )
-    # path_semval_validation_data
-    io_paths.add_argument(
-        "--path_semeval_validation_data",
-        type=str,
-        default="",
-        help="Path to the SemEval validation data file",
-        required=True,
-    )
-    # path_semeval_validation_srls
-    io_paths.add_argument(
-        "--path_semeval_validation_srls",
-        type=str,
-        default="",
-        help="Path to the SemEval validation SRLs file",
-    )
     io_paths.add_argument(
         "--path_frameaxis",
         type=str,
         default="",
         help="Path to the FrameAxis file",
-    )
-    # path_semeval_validation_frameaxis
-    io_paths.add_argument(
-        "--path_semeval_validation_frameaxis",
-        type=str,
-        default="",
-        help="Path to the SemEval validation FrameAxis file",
+        required=True,
     )
     io_paths.add_argument(
         "--path_antonym_pairs",
@@ -642,25 +621,11 @@ def main():
         default=False,
         help="Force recalculate SRLs",
     )
-    # force_recalculate_semeval_validation_srls
-    advanced_settings.add_argument(
-        "--force_recalculate_semeval_validation_srls",
-        type=str2bool,
-        default=False,
-        help="Force recalculate SemEval validation SRLs",
-    )
     advanced_settings.add_argument(
         "--force_recalculate_frameaxis",
         type=str2bool,
         default=False,
         help="Force recalculate FrameAxis",
-    )
-    # force_recalculate_semeval_validation_frameaxis
-    advanced_settings.add_argument(
-        "--force_recalculate_semeval_validation_frameaxis",
-        type=str2bool,
-        default=False,
-        help="Force recalculate SemEval validation FrameAxis",
     )
     advanced_settings.add_argument(
         "--sample_size", type=int, default=-1, help="Sample size"
@@ -876,51 +841,27 @@ def main():
         # Set stratification
         if args.model_type == "slmuse-dlf":
             stratification = "single"
-
-            # Load the data
-            _, _, train_dataloader, test_dataloader = preprocessor.get_dataloaders(
-                args.path_data,
-                "json",
-                dataframe_path={
-                    "srl": args.path_srls,
-                    "frameaxis": args.path_frameaxis,
-                },
-                force_recalculate={
-                    "srl": args.force_recalculate_srls,
-                    "frameaxis": args.force_recalculate_frameaxis,
-                },
-                sample_size=args.sample_size,
-                stratification=stratification,
-                random_state=args.seed if args.seed else None,
-            )
         elif args.model_type == "muse-dlf":
-            train_dataloader = preprocessor.get_dataloader(
-                args.path_data,
-                "json",
-                dataframe_path={
-                    "srl": args.path_srls,
-                    "frameaxis": args.path_frameaxis,
-                },
-                force_recalculate={
-                    "srl": args.force_recalculate_srls,
-                    "frameaxis": args.force_recalculate_frameaxis,
-                },
-                sample_size=args.sample_size,
-            )
+            stratification = "multi"
+        else:
+            stratification = None
 
-            test_dataloader = preprocessor.get_dataloader(
-                args.path_semeval_validation_data,
-                "json",
-                dataframe_path={
-                    "srl": args.path_semeval_validation_srls,
-                    "frameaxis": args.path_semeval_validation_frameaxis,
-                },
-                force_recalculate={
-                    "srl": args.force_recalculate_semeval_validation_srls,
-                    "frameaxis": args.force_recalculate_semeval_validation_frameaxis,
-                },
-                sample_size=args.sample_size,
-            )
+        # Load the data
+        _, _, train_dataloader, test_dataloader = preprocessor.get_dataloaders(
+            args.path_data,
+            "json",
+            dataframe_path={
+                "srl": args.path_srls,
+                "frameaxis": args.path_frameaxis,
+            },
+            force_recalculate={
+                "srl": args.force_recalculate_srls,
+                "frameaxis": args.force_recalculate_frameaxis,
+            },
+            sample_size=args.sample_size,
+            stratification=stratification,
+            random_state=args.seed if args.seed else None,
+        )
 
         logger.info("Data loaded successfully")
 
