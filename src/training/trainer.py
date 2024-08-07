@@ -477,11 +477,6 @@ class Trainer:
                             outputs, prepared_labels, alpha
                         )
 
-                        # print shape with process index
-                        logger.info(
-                            f"Process Index: {self.accelerator.process_index} - {combined_loss.item()}"
-                        )
-
                         self.accelerator.wait_for_everyone()
                         logger.debug(
                             f"Process Index: {self.accelerator.process_index} - Loss calculated, started backwards pass"
