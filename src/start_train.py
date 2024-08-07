@@ -1034,6 +1034,7 @@ def main():
             clip_value=args.clip_value,
             save_model=args.save_model,
             early_stopping_patience=args.early_stopping_patience,
+            class_column_names=class_column_names,
             _debug=args.debug,
         )
 
