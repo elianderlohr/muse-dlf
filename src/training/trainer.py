@@ -368,7 +368,7 @@ class Trainer:
                             all_labels_binary, all_preds_binary, average="macro"
                         )
 
-                    prefix_name = f"{prefix}_{metric}" if len(prefix) > 0 else metric
+                    prefix_name = f"{prefix}_{metric}" if prefix else metric
 
                     if key == "supervised":
                         results[prefix_name] = result
