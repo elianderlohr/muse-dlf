@@ -29,7 +29,7 @@ from utils.logging_manager import LoggerManager
 
 from utils.focal_loss import FocalLoss
 from utils.multi_label_focal_loss import MultiLabelFocalLoss, multi_label_focal_loss
-from utils.asymmetric_loss import AsymmetricLoss, WeightedAsymmetricLoss
+from utils.asymmetric_loss import WeightedAsymmetricLoss
 
 # Suppress specific warnings from numpy
 warnings.filterwarnings(
