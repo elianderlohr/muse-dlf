@@ -12,12 +12,20 @@ class WeightedAsymmetricLoss(nn.Module):
         self.eps = eps
 
     def forward(self, logits, targets):
+        # Apply sigmoid to logits
         logits_sigmoid = torch.sigmoid(logits)
-        logits_clipped = logits_sigmoid.clamp(min=self.eps, max=1.0 - self.eps)
+
+        # Apply clipping to logits sigmoid output
+        if self.clip > 0:
+            logits_clipped = torch.clamp(
+                logits_sigmoid, min=self.clip, max=1.0 - self.clip
+            )
+        else:
+            logits_clipped = logits_sigmoid
 
         # Calculate positive and negative losses
-        loss_pos = targets * torch.log(logits_clipped)
-        loss_neg = (1 - targets) * torch.log(1 - logits_clipped)
+        loss_pos = targets * torch.log(logits_clipped + self.eps)
+        loss_neg = (1 - targets) * torch.log(1 - logits_clipped + self.eps)
 
         # Apply the asymmetric focusing
         loss_pos = (1 - logits_clipped) ** self.gamma_pos * loss_pos

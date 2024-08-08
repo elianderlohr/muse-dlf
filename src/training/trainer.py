@@ -13,7 +13,7 @@ import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast, GradScaler
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
@@ -212,17 +212,18 @@ class Trainer:
         combined_labels_np = labels.cpu().numpy()
 
         if self.model_type == "muse-dlf":
-            # Convert continuous predictions to binary for muse-dlf
-            threshold = 0.5  # You may need to adjust this threshold
+            threshold = 0.5
             binary_predictions = (combined_pred_np > threshold).astype(int)
         else:
-            # For other model types, assume the predictions are already in the correct format
             binary_predictions = combined_pred_np
 
         # Generate classification report
         class_report = classification_report(
             combined_labels_np, binary_predictions, output_dict=True, zero_division=0
         )
+
+        # Generate confusion matrix
+        cm = confusion_matrix(combined_labels_np, binary_predictions)
 
         if (
             self.training_management == "accelerate"
@@ -236,13 +237,15 @@ class Trainer:
                 )
             )
 
+            # Log confusion matrix
+            logger.info("\nConfusion Matrix:")
+            logger.info(np.array2string(cm, separator=", "))
+
         prefix = f"{prefix}_" if prefix else ""
 
         # Log per-class metrics
         for class_name, metrics in class_report.items():
-            if isinstance(
-                metrics, dict
-            ):  # Skip 'accuracy', 'macro avg', 'weighted avg'
+            if isinstance(metrics, dict):
                 self._log_metrics(
                     {
                         f"{prefix}precision_class_{class_name}": metrics["precision"],
@@ -250,6 +253,24 @@ class Trainer:
                         f"{prefix}f1_class_{class_name}": metrics["f1-score"],
                     }
                 )
+
+        # Log confusion matrix
+        num_classes = cm.shape[0]
+        for i in range(num_classes):
+            for j in range(num_classes):
+                self._log_metrics({f"{prefix}confusion_matrix_{i}_{j}": int(cm[i, j])})
+
+        # Log total correct and incorrect predictions
+        total_correct = np.sum(np.diag(cm))
+        total_predictions = np.sum(cm)
+        self._log_metrics(
+            {
+                f"{prefix}total_correct_predictions": int(total_correct),
+                f"{prefix}total_incorrect_predictions": int(
+                    total_predictions - total_correct
+                ),
+            }
+        )
 
     def _create_metrics_dict(self, vars_to_log, experiment_id):
         metrics_dict = {}
