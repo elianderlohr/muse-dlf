@@ -100,10 +100,11 @@ python src/create_dataset.py \
     --max_arg_length 18 \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
-    --artifact_name semeval-train \
+    --artifact_name dataset \
     --train_mode True \
     --path_frameaxis_microframe data/frameaxis/semeval/semeval_microframes.pkl \
-    --split_train_test False
+    --split_train_test False \
+    --registry_name semeval-train
 
 echo "______________________________________________________"
 
