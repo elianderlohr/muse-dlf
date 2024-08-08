@@ -876,6 +876,10 @@ def main():
 
         # Set stratification
         if args.model_type == "slmuse-dlf":
+            logger.info(
+                "Loading data for SLMuSE-DLF model using single dataset which is splitted into train and test"
+            )
+
             # Load the data
             _, _, train_dataloader, test_dataloader = preprocessor.get_dataloaders(
                 args.path_data,
@@ -893,6 +897,8 @@ def main():
                 random_state=args.seed if args.seed else None,
             )
         elif args.model_type == "muse-dlf":
+            logger.info("Loading data for MuSE-DLF model using train and test datasets")
+
             _, train_dataloader = preprocessor.get_dataloader(
                 args.path_data,
                 "json",
@@ -920,7 +926,6 @@ def main():
                     "frameaxis": args.semval_dev_force_recalculate_frameaxis,
                 },
                 sample_size=args.sample_size,
-                random_state=args.seed if args.seed else None,
             )
 
         logger.info("Data loaded successfully")
