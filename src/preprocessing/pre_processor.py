@@ -254,6 +254,10 @@ class PreProcessor:
         if train_mode:
             X, X_srl, X_frameaxis, y = output
 
+            X = X["text"]
+            X_srl = X_srl["srl_values"]
+            X_frameaxis = X_frameaxis["frameaxis_values"]
+
             dataset = ArticleDataset(
                 X,
                 X_srl,
@@ -271,6 +275,10 @@ class PreProcessor:
             return dataset
         else:
             X, X_srl, X_frameaxis = output
+
+            X = X["text"]
+            X_srl = X_srl["srl_values"]
+            X_frameaxis = X_frameaxis["frameaxis_values"]
 
             dataset = ArticleDataset(
                 X,
@@ -551,7 +559,7 @@ class PreProcessor:
             "srl": False,
             "frameaxis": False,
         },
-        sample_size=None,
+        sample_size=-1,
         device=-1,
     ):
         dataset = self.get_dataset(
@@ -592,7 +600,7 @@ class PreProcessor:
             "srl": False,
             "frameaxis": False,
         },
-        sample_size=None,
+        sample_size=-1,
         random_state=None,
         stratification=None,  # None, "single", "multi"
     ):
