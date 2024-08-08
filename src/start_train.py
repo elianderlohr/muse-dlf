@@ -1003,8 +1003,12 @@ def main():
 
             # Calculate class weights inversely proportional to class frequencies
             freqs = np.array(list(class_freq_dict.values()))
-            weights = 1 / (freqs + 1e-5)  # Adding a small epsilon to avoid division by zero
-            weights = weights / weights.sum() * len(freqs)  # Normalize so the average weight is 1
+            weights = 1 / (
+                freqs + 1e-5
+            )  # Adding a small epsilon to avoid division by zero
+            weights = (
+                weights * 10 / weights.sum() * len(freqs)
+            )  # Normalize so the average weight is 1
             alpha = torch.tensor(weights, dtype=torch.float32).to(accelerator.device)
 
             # Initialize the Weighted Asymmetric Loss with the calculated class weights (alpha)
