@@ -493,6 +493,24 @@ def main():
         default=2.0,
         help="Gamma parameter for the focal loss",
     )
+    # asymmetric_loss_gamma_neg
+    training_params.add_argument(
+        "--asymmetric_loss_gamma_neg",
+        type=float,
+        default=4.0,
+        help="Asymmetric Loss Gamma Negative",
+    )
+    # asymmetric_loss_gamma_pos
+    training_params.add_argument(
+        "--asymmetric_loss_gamma_pos",
+        type=float,
+        default=1.0,
+        help="Asymmetric Loss Gamma Positive",
+    )
+    # asymmetric_loss_clip
+    training_params.add_argument(
+        "--asymmetric_loss_clip", type=float, default=0.05, help="Asymmetric Loss Clip"
+    )
 
     # test_every_n_batches
     training_params.add_argument(
@@ -1013,7 +1031,10 @@ def main():
 
             # Initialize the Weighted Asymmetric Loss with the calculated class weights (alpha)
             loss_function = WeightedAsymmetricLoss(
-                alpha=alpha, gamma_neg=4, gamma_pos=1, clip=0.05
+                alpha=alpha,
+                gamma_neg=args.asymmetric_loss_gamma_neg,
+                gamma_pos=args.asymmetric_loss_gamma_pos,
+                clip=args.asymmetric_loss_clip,
             )
 
             logger.info("Loss function set to Weighted Asymmetric Loss")
