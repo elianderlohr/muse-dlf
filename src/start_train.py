@@ -1007,7 +1007,7 @@ def main():
                 freqs + 1e-5
             )  # Adding a small epsilon to avoid division by zero
             weights = (
-                weights * 10 / weights.sum() * len(freqs)
+                weights * 100 / weights.sum() * len(freqs)
             )  # Normalize so the average weight is 1
             alpha = torch.tensor(weights, dtype=torch.float32).to(accelerator.device)
 
