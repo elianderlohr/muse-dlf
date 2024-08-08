@@ -173,8 +173,6 @@ class ArticleDataset(Dataset):
                 srl_items = [srl_items]
 
             for item in srl_items:
-                print(item)
-
                 predicate_input_ids, predicate_attention_mask = self.get_token_id(
                     sentence_output, item["predicate"], self.max_arg_length
                 )
