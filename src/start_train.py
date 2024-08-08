@@ -911,7 +911,6 @@ def main():
                     "frameaxis": args.force_recalculate_frameaxis,
                 },
                 sample_size=args.sample_size,
-                random_state=args.seed if args.seed else None,
             )
 
             _, test_dataloader = preprocessor.get_dataloader(
