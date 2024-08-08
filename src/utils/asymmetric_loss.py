@@ -2,71 +2,33 @@ import torch
 import torch.nn as nn
 
 
-class AsymmetricLoss(nn.Module):
-    def __init__(
-        self,
-        gamma_neg=4,
-        gamma_pos=1,
-        clip=0.05,
-        eps=1e-8,
-        disable_torch_grad_focal_loss=False,
-    ):
-        super(AsymmetricLoss, self).__init__()
-
+class WeightedAsymmetricLoss(nn.Module):
+    def __init__(self, alpha=None, gamma_neg=4, gamma_pos=1, clip=0.05, eps=1e-8):
+        super(WeightedAsymmetricLoss, self).__init__()
+        self.alpha = alpha
         self.gamma_neg = gamma_neg
         self.gamma_pos = gamma_pos
         self.clip = clip
-        self.disable_torch_grad_focal_loss = disable_torch_grad_focal_loss
         self.eps = eps
 
-    def forward(self, x, y):
-        """ "
-        Parameters
-        ----------
-        x: input logits
-        y: targets (multi-label binarized vector)
-        """
+    def forward(self, logits, targets):
+        logits_sigmoid = torch.sigmoid(logits)
+        logits_clipped = logits_sigmoid.clamp(min=self.eps, max=1.0 - self.eps)
 
-        # Calculating Probabilities
-        x_sigmoid = torch.sigmoid(x)
-        xs_pos = x_sigmoid
-        xs_neg = 1 - x_sigmoid
+        # Calculate positive and negative losses
+        loss_pos = targets * torch.log(logits_clipped)
+        loss_neg = (1 - targets) * torch.log(1 - logits_clipped)
 
-        # Asymmetric Clipping
-        if self.clip is not None and self.clip > 0:
-            xs_neg = (xs_neg + self.clip).clamp(max=1)
+        # Apply the asymmetric focusing
+        loss_pos = (1 - logits_clipped) ** self.gamma_pos * loss_pos
+        loss_neg = logits_clipped**self.gamma_neg * loss_neg
 
-        # Basic CE calculation
-        los_pos = y * torch.log(xs_pos.clamp(min=self.eps))
-        los_neg = (1 - y) * torch.log(xs_neg.clamp(min=self.eps))
-        loss = los_pos + los_neg
+        # Combine positive and negative losses
+        loss = loss_pos + loss_neg
 
-        # Asymmetric Focusing
-        if self.gamma_neg > 0 or self.gamma_pos > 0:
-            if self.disable_torch_grad_focal_loss:
-                torch.set_grad_enabled(False)
-            pt0 = xs_pos * y
-            pt1 = xs_neg * (1 - y)  # pt = p if t > 0 else 1-p
-            pt = pt0 + pt1
-            one_sided_gamma = self.gamma_pos * y + self.gamma_neg * (1 - y)
-            one_sided_w = torch.pow(1 - pt, one_sided_gamma)
-            if self.disable_torch_grad_focal_loss:
-                torch.set_grad_enabled(True)
-            loss *= one_sided_w
+        # Apply class weights (alpha) if provided
+        if self.alpha is not None:
+            alpha_weight = targets * self.alpha + (1 - targets)
+            loss *= alpha_weight
 
-        return -loss.sum()
-
-
-class WeightedAsymmetricLoss(nn.Module):
-    def __init__(
-        self, gamma_neg=4, gamma_pos=1, clip=0.05, eps=1e-8, class_weights=None
-    ):
-        super(WeightedAsymmetricLoss, self).__init__()
-        self.asymmetric_loss = AsymmetricLoss(gamma_neg, gamma_pos, clip, eps)
-        self.class_weights = class_weights
-
-    def forward(self, x, y):
-        loss = self.asymmetric_loss(x, y)
-        if self.class_weights is not None:
-            loss = loss * self.class_weights
-        return loss.mean()
+        return -loss.mean()
