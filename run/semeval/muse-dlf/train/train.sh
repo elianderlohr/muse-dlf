@@ -108,7 +108,7 @@ PARAMS=(
     --batch_size 8
     --num_sentences 32
     --max_sentence_length 64
-    --max_args_per_sentence 10
+    --max_args_per_sentence 13
     --max_arg_length 18
     --muse_unsupervised_num_layers 2
     --muse_unsupervised_activation "relu"
