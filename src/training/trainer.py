@@ -13,7 +13,7 @@ import evaluate
 from wandb import AlertLevel
 from utils.logging_manager import LoggerManager
 from torch.cuda.amp import autocast, GradScaler
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, multilabel_confusion_matrix
 
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
@@ -222,8 +222,8 @@ class Trainer:
             combined_labels_np, binary_predictions, output_dict=True, zero_division=0
         )
 
-        # Generate confusion matrix
-        cm = confusion_matrix(combined_labels_np, binary_predictions)
+        # Generate multi-label confusion matrix
+        mcm = multilabel_confusion_matrix(combined_labels_np, binary_predictions)
 
         if (
             self.training_management == "accelerate"
@@ -237,9 +237,11 @@ class Trainer:
                 )
             )
 
-            # Log confusion matrix
-            logger.info("\nConfusion Matrix:")
-            logger.info(np.array2string(cm, separator=", "))
+            # Log multi-label confusion matrices
+            logger.info("\nMulti-label Confusion Matrices:")
+            for i, cm in enumerate(mcm):
+                logger.info(f"Class {i}:")
+                logger.info(np.array2string(cm, separator=", "))
 
         prefix = f"{prefix}_" if prefix else ""
 
@@ -254,15 +256,22 @@ class Trainer:
                     }
                 )
 
-        # Log confusion matrix
-        num_classes = cm.shape[0]
+        # Log multi-label confusion matrices
+        num_classes = mcm.shape[0]
         for i in range(num_classes):
-            for j in range(num_classes):
-                self._log_metrics({f"{prefix}confusion_matrix_{i}_{j}": int(cm[i, j])})
+            tn, fp, fn, tp = mcm[i].ravel()
+            self._log_metrics(
+                {
+                    f"{prefix}class_{i}_true_negatives": int(tn),
+                    f"{prefix}class_{i}_false_positives": int(fp),
+                    f"{prefix}class_{i}_false_negatives": int(fn),
+                    f"{prefix}class_{i}_true_positives": int(tp),
+                }
+            )
 
         # Log total correct and incorrect predictions
-        total_correct = np.sum(np.diag(cm))
-        total_predictions = np.sum(cm)
+        total_correct = np.sum([cm[1, 1] for cm in mcm])  # sum of all true positives
+        total_predictions = np.sum([np.sum(cm) for cm in mcm])
         self._log_metrics(
             {
                 f"{prefix}total_correct_predictions": int(total_correct),
