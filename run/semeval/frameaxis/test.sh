@@ -44,7 +44,7 @@ echo "=================== Training Start ==================="
 
 echo "Running frameaxis.py..."
 python src/start_frameaxis.py \
-    --save_file_name $save_file_name \
+    --save_file_name $SAVE_FILE_NAME \
     --data_path $DATA_PATH \
     --path_keywords $PATH_KEYWORDS \
     --dim_names $DIM_NAMES \
