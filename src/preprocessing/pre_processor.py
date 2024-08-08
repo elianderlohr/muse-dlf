@@ -257,6 +257,7 @@ class PreProcessor:
             X = X["text"]
             X_srl = X_srl["srl_values"]
             X_frameaxis = X_frameaxis["frameaxis_values"]
+            y = y["encoded_values"]
 
             dataset = ArticleDataset(
                 X,
