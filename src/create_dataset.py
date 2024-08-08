@@ -182,6 +182,14 @@ def main():
         default=True,
         help="Train mode",
     )
+    # split_train_test
+    required_args.add_argument(
+        "--split_train_test",
+        type=str2bool,
+        default=True,
+        help="Split train test",
+    )
+
     required_args.add_argument("--seed", type=int, default=42, help="Random seed")
 
     args = parser.parse_args()
@@ -230,56 +238,101 @@ def main():
 
     if args.train_mode:
 
-        logger.info("Prepare data for training with train test split")
-        # Load the data
-        train_dataset, test_dataset, _, _ = preprocessor.get_datasets(
-            args.path_data,
-            "json",
-            dataframe_path={
-                "srl": args.path_srls,
-                "frameaxis": args.path_frameaxis,
-                "frameaxis_microframe": args.path_frameaxis_microframe,
-            },
-            force_recalculate={
-                "srl": args.force_recalculate_srls,
-                "frameaxis": args.force_recalculate_frameaxis,
-            },
-            train_mode=args.train_mode,
-            random_state=args.seed if args.seed else None,
-            stratification=args.stratification,
-            device=0,
-        )
+        if args.split_train_test:
+            logger.info("Prepare data for training with train test split")
+            # Load the data
+            train_dataset, test_dataset, _, _ = preprocessor.get_datasets(
+                args.path_data,
+                "json",
+                dataframe_path={
+                    "srl": args.path_srls,
+                    "frameaxis": args.path_frameaxis,
+                    "frameaxis_microframe": args.path_frameaxis_microframe,
+                },
+                force_recalculate={
+                    "srl": args.force_recalculate_srls,
+                    "frameaxis": args.force_recalculate_frameaxis,
+                },
+                train_mode=args.train_mode,
+                random_state=args.seed if args.seed else None,
+                stratification=args.stratification,
+                device=0,
+            )
 
-        # Serialize datasets
-        train_artifact_filepath = Path("./train_dataset_artifact.pkl")
-        test_artifact_filepath = Path("./test_dataset_artifact.pkl")
+            # Serialize datasets
+            train_artifact_filepath = Path("./train_dataset_artifact.pkl")
+            test_artifact_filepath = Path("./test_dataset_artifact.pkl")
 
-        with train_artifact_filepath.open("wb") as f:
-            pickle.dump(train_dataset, f)
+            with train_artifact_filepath.open("wb") as f:
+                pickle.dump(train_dataset, f)
 
-        with test_artifact_filepath.open("wb") as f:
-            pickle.dump(test_dataset, f)
+            with test_artifact_filepath.open("wb") as f:
+                pickle.dump(test_dataset, f)
 
-        logger.info("Data loaded successfully")
+            logger.info("Data loaded successfully")
 
-        # Initialize W&B run
-        run = wandb.init(
-            project=args.project_name,
-            settings=wandb.Settings(_service_wait=300),
-            job_type="create-dataset",
-        )
+            # Initialize W&B run
+            run = wandb.init(
+                project=args.project_name,
+                settings=wandb.Settings(_service_wait=300),
+                job_type="create-dataset",
+            )
 
-        # Log the train dataset artifact
-        artifact = wandb.Artifact(args.artifact_name, type="dataset")
-        artifact.add_file(train_artifact_filepath)
-        artifact.add_file(test_artifact_filepath)
-        run.log_artifact(artifact)
+            # Log the train dataset artifact
+            artifact = wandb.Artifact(args.artifact_name, type="dataset")
+            artifact.add_file(train_artifact_filepath)
+            artifact.add_file(test_artifact_filepath)
+            run.log_artifact(artifact)
 
-        # Link the artifacts
-        run.link_artifact(
-            artifact,
-            target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
-        )
+            # Link the artifacts
+            run.link_artifact(
+                artifact,
+                target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
+            )
+        else:
+            logger.info("Prepare data for training without train test split")
+            # Load the data
+            dataset = preprocessor.get_dataset(
+                args.path_data,
+                "json",
+                dataframe_path={
+                    "srl": args.path_srls,
+                    "frameaxis": args.path_frameaxis,
+                    "frameaxis_microframe": args.path_frameaxis_microframe,
+                },
+                force_recalculate={
+                    "srl": args.force_recalculate_srls,
+                    "frameaxis": args.force_recalculate_frameaxis,
+                },
+                train_mode=True,
+                device=0,
+            )
+
+            # Serialize datasets
+            artifact_filepath = Path("./dataset_artifact.pkl")
+
+            with artifact_filepath.open("wb") as f:
+                pickle.dump(dataset, f)
+
+            logger.info("Data loaded successfully")
+
+            # Initialize W&B run
+            run = wandb.init(
+                project=args.project_name,
+                settings=wandb.Settings(_service_wait=300),
+                job_type="create-dataset",
+            )
+
+            # Log the dataset artifact
+            artifact = wandb.Artifact(args.artifact_name, type="dataset")
+            artifact.add_file(artifact_filepath)
+            run.log_artifact(artifact)
+
+            # Link the artifacts
+            run.link_artifact(
+                artifact,
+                target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
+            )
     else:
 
         logger.info("Prepare data for inference")
