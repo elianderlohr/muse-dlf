@@ -26,8 +26,8 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-DATA_PATH="data/semeval/muse-dlf/semeval_unlabeled_train.json"
-OUTPUT_PATH="data/srls/semeval/semeval_unlabeled_train.pkl"
+DATA_PATH="data/semeval/muse-dlf/semeval_test.json"
+OUTPUT_PATH="data/srls/semeval/semeval_test.pkl"
 
 echo "Data path: $DATA_PATH"
 echo "Output path: $OUTPUT_PATH"
