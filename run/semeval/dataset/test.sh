@@ -101,7 +101,7 @@ python src/create_dataset.py \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
     --artifact_name dataset \
-    --train_mode True \
+    --train_mode False \
     --path_frameaxis_microframe data/frameaxis/semeval/semeval_microframes.pkl \
     --split_train_test False \
     --registry_name semeval-test
