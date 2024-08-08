@@ -102,7 +102,7 @@ python src/create_dataset.py \
     --force_recalculate_frameaxis False \
     --artifact_name semeval-unlabeled-dataset \
     --train_mode False \
-    --path_frameaxis_microframe data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl \
+    --path_frameaxis_microframe data/frameaxis/semeval/semeval_microframes.pkl \
     --stratification multi
 
 echo "______________________________________________________"

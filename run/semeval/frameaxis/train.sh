@@ -26,12 +26,12 @@ python -m pip list
 
 # Data and Output Configuration
 echo "Configuring paths..."
-SAVE_FILE_NAME="data/frameaxis/semeval/frameaxis_semeval_mft.pkl"
+SAVE_FILE_NAME="data/frameaxis/semeval/semeval_train.pkl"
 DATA_PATH="data/semeval/muse-dlf/semeval_train.json"
 PATH_KEYWORDS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
 ROBERTA_MODEL_PATH="models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922"
-PATH_MICROFRAMES="data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl"
+PATH_MICROFRAMES="data/frameaxis/semeval/semeval_microframes.pkl"
 
 
 # GPU Setup and Verification

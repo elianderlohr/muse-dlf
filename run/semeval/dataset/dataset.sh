@@ -90,7 +90,7 @@ python src/create_dataset.py \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922 \
     --path_srls data/srls/semeval/semeval_train.pkl \
-    --path_frameaxis data/frameaxis/semeval/frameaxis_semeval_mft.pkl \
+    --path_frameaxis data/frameaxis/semeval/semeval_train.pkl \
     --path_antonym_pairs data/axis/mft.json \
     --class_column_names "$CLASS_COLUMN_NAMES" \
     --dim_names virtue,vice \
@@ -102,7 +102,7 @@ python src/create_dataset.py \
     --force_recalculate_frameaxis False \
     --artifact_name semeval-dataset \
     --train_mode True \
-    --path_frameaxis_microframe data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl \
+    --path_frameaxis_microframe data/frameaxis/semeval/semeval_microframes.pkl \
     --stratification multi
 
 echo "______________________________________________________"

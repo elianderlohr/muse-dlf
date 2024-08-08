@@ -31,8 +31,16 @@ DATA_PATH="data/semeval/muse-dlf/semeval_dev.json"
 PATH_KEYWORDS="data/axis/mft.json"
 DIM_NAMES="virtue,vice"
 ROBERTA_MODEL_PATH="models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922"
-PATH_MICROFRAMES="data/frameaxis/semeval/frameaxis_semeval_mft_microframes.pkl"
+PATH_MICROFRAMES="data/frameaxis/semeval/semeval_microframes.pkl"
 
+
+# log all the paths
+echo "Save file path: $SAVE_FILE_NAME"
+echo "Data path: $DATA_PATH"
+echo "Path keywords: $PATH_KEYWORDS"
+echo "Dimension names: $DIM_NAMES"
+echo "RoBERTa model path: $ROBERTA_MODEL_PATH"
+echo "Path microframes: $PATH_MICROFRAMES"
 
 # GPU Setup and Verification
 echo "GPU status:"

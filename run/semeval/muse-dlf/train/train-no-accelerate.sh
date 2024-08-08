@@ -142,7 +142,7 @@ python src/start_train.py \
     --name_tokenizer roberta-base \
     --path_name_bert_model models/semeval-roberta-finetune/semeval-roberta-finetune-2024-06-11_08-49-35-57484/checkpoint-3922 \
     --path_srls data/srls/semeval/semeval_train.pkl \
-    --path_frameaxis data/frameaxis/semeval/frameaxis_semeval_mft.pkl \
+    --path_frameaxis data/frameaxis/semeval/semeval_train.pkl \
     --path_antonym_pairs data/axis/mft.json \
     --class_column_names "$CLASS_COLUMN_NAMES" \
     --dim_names virtue,vice \
