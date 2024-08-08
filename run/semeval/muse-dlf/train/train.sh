@@ -100,7 +100,7 @@ PARAMS=(
     --hidden_dim 768
     --num_classes 14
     --dropout_prob 0.3
-    --alpha 0.9
+    --alpha 0.5
     --lambda_orthogonality 1e-3
     --lr 0.0001
     --M 8
