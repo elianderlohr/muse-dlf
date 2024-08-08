@@ -190,6 +190,14 @@ def main():
         help="Split train test",
     )
 
+    # registry_name
+    required_args.add_argument(
+        "--registry_name",
+        type=str,
+        default="wandb-registry-dataset",
+        help="Registry name",
+    )
+
     required_args.add_argument("--seed", type=int, default=42, help="Random seed")
 
     args = parser.parse_args()
@@ -287,7 +295,7 @@ def main():
             # Link the artifacts
             run.link_artifact(
                 artifact,
-                target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
+                target_path=f"elianderlohr-org/wandb-registry-dataset/{args.registry_name}",
             )
         else:
             logger.info("Prepare data for training without train test split")
@@ -331,7 +339,7 @@ def main():
             # Link the artifacts
             run.link_artifact(
                 artifact,
-                target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
+                target_path=f"elianderlohr-org/wandb-registry-dataset/{args.registry_name}",
             )
     else:
 
@@ -376,7 +384,7 @@ def main():
         # Link the artifacts
         run.link_artifact(
             artifact,
-            target_path=f"elianderlohr-org/wandb-registry-dataset/{args.project_name}",
+            target_path=f"elianderlohr-org/wandb-registry-dataset/{args.registry_name}",
         )
 
     # Finish the run
