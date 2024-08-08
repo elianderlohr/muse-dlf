@@ -613,6 +613,30 @@ def main():
         required=True,
     )
 
+    # special semeval_dev commands
+
+    # semeval_dev_path_data
+    io_paths.add_argument(
+        "--semeval_dev_path_data",
+        type=str,
+        default="",
+        help="Path to the semeval dev data file",
+    )
+    # semeval_dev_path_srls
+    io_paths.add_argument(
+        "--semeval_dev_path_srls",
+        type=str,
+        default="",
+        help="Path to the semeval dev SRLs file",
+    )
+    # semeval_dev_path_frameaxis
+    io_paths.add_argument(
+        "--semeval_dev_path_frameaxis",
+        type=str,
+        default="",
+        help="Path to the semeval dev FrameAxis file",
+    )
+
     # Advanced Settings
     advanced_settings = parser.add_argument_group("Advanced Settings")
     advanced_settings.add_argument(
@@ -622,10 +646,22 @@ def main():
         help="Force recalculate SRLs",
     )
     advanced_settings.add_argument(
+        "--semval_dev_force_recalculate_srls",
+        type=str2bool,
+        default=False,
+        help="Force recalculate SRLs for semeval dev",
+    )
+    advanced_settings.add_argument(
         "--force_recalculate_frameaxis",
         type=str2bool,
         default=False,
         help="Force recalculate FrameAxis",
+    )
+    advanced_settings.add_argument(
+        "--semval_dev_force_recalculate_frameaxis",
+        type=str2bool,
+        default=False,
+        help="Force recalculate FrameAxis for semeval dev",
     )
     advanced_settings.add_argument(
         "--sample_size", type=int, default=-1, help="Sample size"
@@ -840,28 +876,52 @@ def main():
 
         # Set stratification
         if args.model_type == "slmuse-dlf":
-            stratification = "single"
+            # Load the data
+            _, _, train_dataloader, test_dataloader = preprocessor.get_dataloaders(
+                args.path_data,
+                "json",
+                dataframe_path={
+                    "srl": args.path_srls,
+                    "frameaxis": args.path_frameaxis,
+                },
+                force_recalculate={
+                    "srl": args.force_recalculate_srls,
+                    "frameaxis": args.force_recalculate_frameaxis,
+                },
+                sample_size=args.sample_size,
+                stratification="single",
+                random_state=args.seed if args.seed else None,
+            )
         elif args.model_type == "muse-dlf":
-            stratification = "multi"
-        else:
-            stratification = None
+            _, train_dataloader = preprocessor.get_dataloader(
+                args.path_data,
+                "json",
+                dataframe_path={
+                    "srl": args.path_srls,
+                    "frameaxis": args.path_frameaxis,
+                },
+                force_recalculate={
+                    "srl": args.force_recalculate_srls,
+                    "frameaxis": args.force_recalculate_frameaxis,
+                },
+                sample_size=args.sample_size,
+                random_state=args.seed if args.seed else None,
+            )
 
-        # Load the data
-        _, _, train_dataloader, test_dataloader = preprocessor.get_dataloaders(
-            args.path_data,
-            "json",
-            dataframe_path={
-                "srl": args.path_srls,
-                "frameaxis": args.path_frameaxis,
-            },
-            force_recalculate={
-                "srl": args.force_recalculate_srls,
-                "frameaxis": args.force_recalculate_frameaxis,
-            },
-            sample_size=args.sample_size,
-            stratification=stratification,
-            random_state=args.seed if args.seed else None,
-        )
+            _, test_dataloader = preprocessor.get_dataloader(
+                args.semeval_dev_path_data,
+                "json",
+                dataframe_path={
+                    "srl": args.semeval_dev_path_srls,
+                    "frameaxis": args.semeval_dev_path_frameaxis,
+                },
+                force_recalculate={
+                    "srl": args.semval_dev_force_recalculate_srls,
+                    "frameaxis": args.semval_dev_force_recalculate_frameaxis,
+                },
+                sample_size=args.sample_size,
+                random_state=args.seed if args.seed else None,
+            )
 
         logger.info("Data loaded successfully")
 
