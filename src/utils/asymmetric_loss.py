@@ -21,19 +21,19 @@ The `AsymmetricLossOptimized` was further advanced by incoporating a class speci
 class WeightedAsymmetricLoss(nn.Module):
     def __init__(
         self,
-        alpha=None,
         gamma_neg=4,
         gamma_pos=1,
         clip=0.05,
+        scaler=1,
         eps=1e-8,
         disable_torch_grad_focal_loss=False,
     ):
         super(WeightedAsymmetricLoss, self).__init__()
-        self.alpha = alpha
 
         self.gamma_neg = gamma_neg
         self.gamma_pos = gamma_pos
         self.clip = clip
+        self.scaler = scaler
         self.disable_torch_grad_focal_loss = disable_torch_grad_focal_loss
         self.eps = eps
 
@@ -72,8 +72,6 @@ class WeightedAsymmetricLoss(nn.Module):
                 torch.set_grad_enabled(True)
             self.loss *= self.asymmetric_w
 
-        # Apply class weights (alpha) if provided
-        if self.alpha is not None:
-            self.loss = self.alpha * self.loss
+        total_loss = -self.loss.mean()
 
-        return -self.loss.mean()
+        return total_loss * self.scaler

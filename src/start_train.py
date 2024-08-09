@@ -513,6 +513,13 @@ def main():
     training_params.add_argument(
         "--asymmetric_loss_clip", type=float, default=0.05, help="Asymmetric Loss Clip"
     )
+    # asymmetric_loss_scaler
+    training_params.add_argument(
+        "--asymmetric_loss_scaler",
+        type=float,
+        default=10,
+        help="Asymmetric Loss Scaler",
+    )
 
     # test_every_n_batches
     training_params.add_argument(
@@ -1032,10 +1039,10 @@ def main():
             alpha = alpha.to(accelerator.device)
 
             loss_function = WeightedAsymmetricLoss(
-                alpha=alpha,
                 gamma_neg=args.asymmetric_loss_gamma_neg,
                 gamma_pos=args.asymmetric_loss_gamma_pos,
                 clip=args.asymmetric_loss_clip,
+                scaler=args.asymmetric_loss_scaler,
             )
 
             logger.info("Loss function set to Weighted Asymmetric Loss")
