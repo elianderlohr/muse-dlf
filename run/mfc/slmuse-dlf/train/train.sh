@@ -132,7 +132,7 @@ PARAMS=(
     --tau_min 0.5
     --mixed_precision "no"
     --accumulation_steps 1
-    --alternative_supervised "alt6"
+    --alternative_supervised "alt1"
     --seed 42
     --clip_value 1
     --focal_loss_gamma 2
