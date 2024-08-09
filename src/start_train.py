@@ -1026,7 +1026,7 @@ def main():
             class_weights = torch.FloatTensor(class_weights)
 
             # Normalize weights
-            alpha = class_weights / class_weights.sum() * args.num_classes
+            alpha = (torch.sqrt(class_weights) / class_weights.sum() * 14) * 100
 
             # move to device
             alpha = alpha.to(accelerator.device)
