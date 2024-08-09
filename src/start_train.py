@@ -997,8 +997,8 @@ def main():
             # cheat alpha
             cheat_alpha = torch.tensor(list(class_freq_dict.values()))
             cheat_alpha = cheat_alpha * 100
-            # clamp max to 8
-            cheat_alpha = torch.clamp(cheat_alpha, max=4)
+            # clamp max to 3
+            cheat_alpha = torch.clamp(cheat_alpha, max=3)
             cheat_alpha = cheat_alpha.to(accelerator.device)
 
             loss_function = FocalLoss(
