@@ -1026,10 +1026,10 @@ def main():
             class_weights = torch.FloatTensor(class_weights)
 
             # Normalize weights
-            class_weights = class_weights / class_weights.sum() * args.num_classes
+            alpha = class_weights / class_weights.sum() * args.num_classes
 
             # move to device
-            class_weights = class_weights.to(accelerator.device)
+            alpha = alpha.to(accelerator.device)
 
             loss_function = WeightedAsymmetricLoss(
                 alpha=alpha,
