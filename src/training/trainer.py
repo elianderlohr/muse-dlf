@@ -223,6 +223,8 @@ class Trainer:
             combined_labels_np, binary_predictions, output_dict=True, zero_division=0
         )
 
+        # [[ true negatives, false positives]
+        # [ false negatives, true positives]]
         # Generate multi-label confusion matrix
         mcm = multilabel_confusion_matrix(combined_labels_np, binary_predictions)
 

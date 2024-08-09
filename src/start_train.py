@@ -994,15 +994,13 @@ def main():
 
             alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 
-            # class_freqs = list(class_freq_dict.values())
-
-            # Normalize alpha values so they sum to 1
-            # alpha_inverse = torch.tensor(
-            #    [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
-            # ).to(accelerator.device)
+            # cheat alpha
+            cheat_alpha = torch.tensor(list(class_freq_dict.values()))
+            cheat_alpha = cheat_alpha * 100
+            cheat_alpha = cheat_alpha.to(accelerator.device)
 
             loss_function = FocalLoss(
-                alpha=alpha,
+                alpha=cheat_alpha,
                 gamma=args.focal_loss_gamma,
                 reduction="mean",
             )
