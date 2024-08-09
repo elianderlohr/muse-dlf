@@ -178,8 +178,20 @@ class Trainer:
     def calculate_loss(self, outputs, labels, alpha):
         # Calculate losses
         unsupervised_loss = outputs["unsupervised_loss"]
-        span_loss = self.loss_function(outputs["span_logits"], labels)
-        sentence_loss = self.loss_function(outputs["sent_logits"], labels)
+
+        # write a function that adds get_l2_regularization() to the loss if function exists in self.model.supervised
+        if hasattr(self.model.supervised, "get_l2_regularization"):
+            span_loss = (
+                self.loss_function(outputs["span_logits"], labels)
+                + self.model.supervised.get_l2_regularization()
+            )
+            sentence_loss = (
+                self.loss_function(outputs["sent_logits"], labels)
+                + self.model.supervised.get_l2_regularization()
+            )
+        else:
+            span_loss = self.loss_function(outputs["span_logits"], labels)
+            sentence_loss = self.loss_function(outputs["sent_logits"], labels)
 
         # Additional losses for logging only
         with torch.no_grad():

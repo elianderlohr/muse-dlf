@@ -2,17 +2,12 @@ import torch
 import torch.nn as nn
 
 from model.slmuse_dlf.embeddings import SLMuSEEmbeddings
-from model.slmuse_dlf.supervised_module import SLMuSESupervised
-from model.slmuse_dlf.supervised_module_alternative import SLMuSESupervisedAlternative
-from model.slmuse_dlf.supervised_module_alternative1 import SLMuSESupervisedAlternative1
-from model.slmuse_dlf.supervised_module_alternative2 import SLMuSESupervisedAlternative2
-from model.slmuse_dlf.supervised_module_alternative3 import SLMuSESupervisedAlternative3
-from model.slmuse_dlf.supervised_module_alternative4 import SLMuSESupervisedAlternative4
-from model.slmuse_dlf.supervised_module_alternative5 import SLMuSESupervisedAlternative5
-from model.slmuse_dlf.supervised_module_alternative6 import SLMuSESupervisedAlternative6
-from model.slmuse_dlf.supervised_module_alternative7 import SLMuSESupervisedAlternative7
-from model.slmuse_dlf.supervised_module_alternative8 import SLMuSESupervisedAlternative8
-from model.slmuse_dlf.supervised_module_alternative9 import SLMuSESupervisedAlternative9
+from model.slmuse_dlf.supervised_module_alternative_1 import (
+    SLMuSESupervisedAlternative1,
+)
+from model.slmuse_dlf.supervised_module_alternative_2 import (
+    SLMuSESupervisedAlternative2,
+)
 from model.slmuse_dlf.unsupervised_module import SLMuSEUnsupervised
 from model.slmuse_dlf.unsupervised_frameaxis_module import SLMuSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -122,117 +117,22 @@ class SLMuSEDLF(nn.Module):
         )
 
         self.alternative_supervised = alternative_supervised
-        if alternative_supervised == "alt":
-            self.logger.info("🔄 Using alternative supervised module")
-            # Supervised training module
-            self.supervised = SLMuSESupervisedAlternative(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                dropout_prob=dropout_prob,
-                concat_frameaxis=supervised_concat_frameaxis,
-                num_layers=supervised_num_layers,
-                activation_function=supervised_activation,
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt1":
+
+        if alternative_supervised == "alt1":
             self.logger.info("🔄 Using alternative supervised module 1")
             self.supervised = SLMuSESupervisedAlternative1(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
                 num_sentences=num_sentences,
+                hidden_dim=hidden_dim,
                 dropout_prob=dropout_prob,
                 concat_frameaxis=supervised_concat_frameaxis,
-                num_layers=supervised_num_layers,
-                activation_function=supervised_activation,
                 _debug=_debug,
             )
         elif alternative_supervised == "alt2":
             self.logger.info("🔄 Using alternative supervised module 2")
             self.supervised = SLMuSESupervisedAlternative2(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                dropout_prob=dropout_prob,
-                concat_frameaxis=supervised_concat_frameaxis,
-                num_layers=supervised_num_layers,
-                # activation_functions=[supervised_activation, "relu"],
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt3":
-            self.logger.info("🔄 Using alternative supervised module 3")
-            self.supervised = SLMuSESupervisedAlternative3(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                dropout_prob=dropout_prob,
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt4":
-            self.logger.info("🔄 Using alternative supervised module 4")
-            self.supervised = SLMuSESupervisedAlternative4(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                dropout_prob=dropout_prob,
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt5":
-            self.logger.info("🔄 Using alternative supervised module 5")
-            self.supervised = SLMuSESupervisedAlternative5(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                hidden_dim=hidden_dim,
-                dropout_prob=dropout_prob,
-                concat_frameaxis=supervised_concat_frameaxis,
-                activation_functions=["gelu", "relu"],
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt6":
-            self.logger.info("🔄 Using alternative supervised module 6")
-            self.supervised = SLMuSESupervisedAlternative6(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                hidden_dim=hidden_dim,
-                dropout_prob=dropout_prob,
-                concat_frameaxis=supervised_concat_frameaxis,
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt7":
-            self.logger.info("🔄 Using alternative supervised module 7")
-            self.supervised = SLMuSESupervisedAlternative7(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                hidden_dim=hidden_dim,
-                dropout_prob=dropout_prob,
-                concat_frameaxis=supervised_concat_frameaxis,
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt8":
-            self.logger.info("🔄 Using alternative supervised module 8")
-            self.supervised = SLMuSESupervisedAlternative8(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                hidden_dim=hidden_dim,
-                dropout_prob=dropout_prob,
-                concat_frameaxis=supervised_concat_frameaxis,
-                _debug=_debug,
-            )
-        elif alternative_supervised == "alt9":
-            self.logger.info("🔄 Using alternative supervised module 9")
-            self.supervised = SLMuSESupervisedAlternative9(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
@@ -243,20 +143,7 @@ class SLMuSEDLF(nn.Module):
                 _debug=_debug,
             )
         else:
-            self.logger.info("🔄 Using default supervised module")
-
-            # Supervised training module
-            self.supervised = SLMuSESupervised(
-                embedding_dim,
-                num_classes=num_classes,
-                frameaxis_dim=frameaxis_dim,
-                num_sentences=num_sentences,
-                dropout_prob=dropout_prob,
-                concat_frameaxis=supervised_concat_frameaxis,
-                num_layers=supervised_num_layers,
-                activation_function=supervised_activation,
-                _debug=_debug,
-            )
+            pass
 
         self.num_negatives = num_negatives
         self.num_classes = num_classes

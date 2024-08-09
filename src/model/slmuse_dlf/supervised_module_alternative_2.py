@@ -3,7 +3,7 @@ import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
 
-class SLMuSESupervisedAlternative6(nn.Module):
+class SLMuSESupervisedAlternative2(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -11,11 +11,12 @@ class SLMuSESupervisedAlternative6(nn.Module):
         frameaxis_dim,
         num_sentences,
         hidden_dim,
-        dropout_prob=0.3,
+        dropout_prob=0.6,
         concat_frameaxis=False,
+        l2_reg=0.01,
         _debug=False,
     ):
-        super(SLMuSESupervisedAlternative6, self).__init__()
+        super(SLMuSESupervisedAlternative2, self).__init__()
 
         self.logger = LoggerManager.get_logger(__name__)
         self.embedding_dim = embedding_dim
@@ -23,40 +24,28 @@ class SLMuSESupervisedAlternative6(nn.Module):
         self.num_classes = num_classes
         self.concat_frameaxis = concat_frameaxis
         self._debug = _debug
+        self.l2_reg = l2_reg
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
         self.flatten = nn.Flatten(start_dim=1)
 
-        # Define feed-forward network for sentence embeddings
+        # Reduced number of layers and changed activation to ReLU
         self.feed_forward_sentence = nn.Sequential(
-            nn.Linear(D_h * num_sentences, embedding_dim * num_sentences),
-            nn.BatchNorm1d(
-                embedding_dim * num_sentences
-            ),  # TODO: revert back to BatchNorm1d if it doesn't work
-            nn.GELU(),
+            nn.Linear(D_h * num_sentences, hidden_dim),
+            nn.LayerNorm(hidden_dim),  # Changed from BatchNorm to LayerNorm
+            nn.ReLU(),  # Changed from GELU to ReLU
             nn.Dropout(dropout_prob),
-            nn.Linear(
-                embedding_dim * num_sentences, embedding_dim * (num_sentences // 2)
-            ),
-            nn.BatchNorm1d(
-                embedding_dim * (num_sentences // 2)
-            ),  # TODO: revert back to BatchNorm1d if it doesn't work
-            nn.GELU(),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.LayerNorm(hidden_dim // 2),
+            nn.ReLU(),
             nn.Dropout(dropout_prob),
-            nn.Linear(embedding_dim * (num_sentences // 2), hidden_dim),
-            nn.BatchNorm1d(
-                hidden_dim
-            ),  # TODO: revert back to BatchNorm1d if it doesn't work
-            nn.GELU(),
-            nn.Dropout(dropout_prob),
-            nn.Linear(hidden_dim, num_classes),
+            nn.Linear(hidden_dim // 2, num_classes),
         )
 
-        self.logger.debug("✅ SLMuSESupervisedAlternative6 successfully initialized")
+        self.logger.debug("✅ SLMuSESupervisedAlternative2 successfully initialized")
 
     def forward(self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data):
-
         batch_size, num_sentences, num_args, embedding_dim = d_p.shape
 
         d_p_flatten = d_p.view(batch_size, num_sentences * num_args, embedding_dim)
@@ -113,3 +102,9 @@ class SLMuSESupervisedAlternative6(nn.Module):
             )
 
         return y_hat_span, y_hat_sent, combined, other
+
+    def get_l2_regularization(self):
+        l2_loss = 0
+        for param in self.parameters():
+            l2_loss += torch.norm(param, 2)
+        return self.l2_reg * l2_loss
