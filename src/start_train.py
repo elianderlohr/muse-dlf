@@ -20,6 +20,9 @@ from accelerate import DistributedDataParallelKwargs
 import warnings
 import wandb
 
+# import bce loss with logits
+from torch.nn import BCEWithLogitsLoss
+
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 from accelerate.utils import set_seed
@@ -1018,23 +1021,14 @@ def main():
                 "Security_and_defense": 0.1158,
             }
 
-            # Calculate class weights inversely proportional to class frequencies
-            freqs = np.array(list(class_freq_dict.values()))
-            weights = 1 / (
-                freqs + 1e-5
-            )  # Adding a small epsilon to avoid division by zero
-            weights = (
-                weights * 100 / weights.sum() * len(freqs)
-            )  # Normalize so the average weight is 1
-            alpha = torch.tensor(weights, dtype=torch.float32).to(accelerator.device)
+            # Convert class frequencies to weights
+            class_weights = [1 / freq for freq in class_freq_dict.values()]
+            class_weights = torch.FloatTensor(class_weights)
 
-            # Initialize the Weighted Asymmetric Loss with the calculated class weights (alpha)
-            loss_function = WeightedAsymmetricLoss(
-                alpha=alpha,
-                gamma_neg=args.asymmetric_loss_gamma_neg,
-                gamma_pos=args.asymmetric_loss_gamma_pos,
-                clip=args.asymmetric_loss_clip,
-            )
+            # Normalize weights
+            class_weights = class_weights / class_weights.sum() * args.num_classes
+
+            loss_function = BCEWithLogitsLoss(pos_weight=class_weights)
 
             logger.info("Loss function set to Weighted Asymmetric Loss")
 
