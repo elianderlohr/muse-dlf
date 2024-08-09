@@ -985,12 +985,12 @@ def main():
 
             alpha = torch.tensor(list(alpha_dict.values())).to(accelerator.device)
 
-            class_freqs = list(class_freq_dict.values())
+            # class_freqs = list(class_freq_dict.values())
 
             # Normalize alpha values so they sum to 1
-            alpha_inverse = torch.tensor(
-                [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
-            ).to(accelerator.device)
+            # alpha_inverse = torch.tensor(
+            #    [torch.sqrt(torch.tensor(1.0 / freq)) for freq in class_freqs]
+            # ).to(accelerator.device)
 
             loss_function = FocalLoss(
                 alpha=alpha,
