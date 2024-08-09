@@ -13,7 +13,6 @@ class SLMuSESupervisedAlternative2(nn.Module):
         hidden_dim,
         dropout_prob=0.6,
         concat_frameaxis=False,
-        l2_reg=0.01,
         _debug=False,
     ):
         super(SLMuSESupervisedAlternative2, self).__init__()
@@ -24,7 +23,6 @@ class SLMuSESupervisedAlternative2(nn.Module):
         self.num_classes = num_classes
         self.concat_frameaxis = concat_frameaxis
         self._debug = _debug
-        self.l2_reg = l2_reg
 
         D_h = embedding_dim + (frameaxis_dim if concat_frameaxis else 0)
 
@@ -102,9 +100,3 @@ class SLMuSESupervisedAlternative2(nn.Module):
             )
 
         return y_hat_span, y_hat_sent, combined, other
-
-    def get_l2_regularization(self):
-        l2_loss = 0
-        for param in self.parameters():
-            l2_loss += torch.norm(param, 2)
-        return self.l2_reg * l2_loss
