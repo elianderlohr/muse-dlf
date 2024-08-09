@@ -180,7 +180,7 @@ class Trainer:
         unsupervised_loss = outputs["unsupervised_loss"]
 
         # write a function that adds get_l2_regularization() to the loss if function exists in self.model.supervised
-        if hasattr(self.model.supervised, "get_l2_regularization"):
+        if self.model_config["alternative_supervised"] == "alt2":
             span_loss = (
                 self.loss_function(outputs["span_logits"], labels)
                 + self.model.supervised.get_l2_regularization()
