@@ -3,7 +3,7 @@ import torch.nn as nn
 from utils.logging_manager import LoggerManager
 
 
-class MuSESupervisedAlternative6(nn.Module):
+class MuSESupervisedAlternative1(nn.Module):
     def __init__(
         self,
         embedding_dim,
@@ -15,7 +15,7 @@ class MuSESupervisedAlternative6(nn.Module):
         concat_frameaxis=False,
         _debug=False,
     ):
-        super(MuSESupervisedAlternative6, self).__init__()
+        super(MuSESupervisedAlternative1, self).__init__()
 
         self.logger = LoggerManager.get_logger(__name__)
         self.embedding_dim = embedding_dim
@@ -47,7 +47,7 @@ class MuSESupervisedAlternative6(nn.Module):
             nn.Linear(hidden_dim, num_classes),
         )
 
-        self.logger.debug("✅ MuSESupervisedAlternative6 successfully initialized")
+        self.logger.debug("✅ MuSESupervisedAlternative1 successfully initialized")
 
     def forward(self, d_p, d_a0, d_a1, d_fx, vs, frameaxis_data):
         batch_size, num_sentences, num_args, embedding_dim = d_p.shape
