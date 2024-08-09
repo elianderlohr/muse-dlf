@@ -1028,6 +1028,9 @@ def main():
             # Normalize weights
             class_weights = class_weights / class_weights.sum() * args.num_classes
 
+            # move to device
+            class_weights = class_weights.to(accelerator.device)
+
             loss_function = BCEWithLogitsLoss(pos_weight=class_weights)
 
             logger.info("Loss function set to Weighted Asymmetric Loss")
