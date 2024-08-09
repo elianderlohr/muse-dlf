@@ -963,7 +963,7 @@ def main():
 
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
-            min_freq = 0.05  # Use a minimum frequency of 0.05 = 5%
+            min_freq = 0.10  # Use a minimum frequency of 0.05 = 5%
             class_freq_dict = {
                 "Capacity and Resources": 0.035401,
                 "Crime and Punishment": 0.135367,
@@ -1002,7 +1002,7 @@ def main():
             cheat_alpha = cheat_alpha.to(accelerator.device)
 
             loss_function = FocalLoss(
-                alpha=cheat_alpha,
+                alpha=alpha,
                 gamma=args.focal_loss_gamma,
                 reduction="mean",
             )
