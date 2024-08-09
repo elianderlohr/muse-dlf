@@ -1,6 +1,22 @@
 import torch
 import torch.nn as nn
 
+"""
+This implementation is based on the following paper:
+
+@misc{benbaruch2020asymmetric, 
+    title={Asymmetric Loss For Multi-Label Classification}, 
+    author={Emanuel Ben-Baruch and Tal Ridnik and Nadav Zamir and Asaf Noy and Itamar Friedman and Matan Protter and Lihi Zelnik-Manor}, 
+    year={2020}, 
+    eprint={2009.14119},
+    archivePrefix={arXiv}, 
+    primaryClass={cs.CV} }
+
+and the following code implementation from the authors of the paper: https://github.com/Alibaba-MIIL/ASL/blob/main/src/loss_functions/losses.py
+
+The `AsymmetricLossOptimized` was further advanced by incoporating a class specific alpha value. The `WeightedAsymmetricLoss` is the final implementation that is used in the project.
+"""
+
 
 class WeightedAsymmetricLoss(nn.Module):
     def __init__(

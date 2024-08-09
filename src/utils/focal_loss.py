@@ -6,6 +6,16 @@ from torch import nn
 from torch.nn import functional as F
 
 
+"""
+This implementation is based on the following paper:
+
+Chen, Zhifeng, Zhiwei Luo, Ente Guo, and Jingjing Yang. “Focal Triplet Loss for Multi-Object Tracking.” In 2021 6th International Symposium on Computer and Information Processing Technology (ISCIPT), 446–49, 2021. https://doi.org/10.1109/ISCIPT53667.2021.00096.
+
+The PyTorch implementation is base don this code: https://github.com/AdeelH/pytorch-multi-class-focal-loss
+
+"""
+
+
 class FocalLoss(nn.Module):
     """Focal Loss, as described in https://arxiv.org/abs/1708.02002.
 
