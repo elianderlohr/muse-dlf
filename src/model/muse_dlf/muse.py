@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 
 from model.muse_dlf.embeddings import MuSEEmbeddings
-from model.muse_dlf.supervised_module import MuSESupervised
-from src.model.muse_dlf.supervised_module_alternative_1 import (
+from model.muse_dlf.supervised_module_alternative_1 import (
     MuSESupervisedAlternative1,
 )
 from model.muse_dlf.unsupervised_module import MuSEUnsupervised
