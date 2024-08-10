@@ -967,7 +967,7 @@ def main():
 
         # Loss function and optimizer
         if args.model_type == "slmuse-dlf":
-            min_freq = 0.10  # Use a minimum frequency of 0.05 = 5%
+            min_freq = 0.05  # Use a minimum frequency of 0.05 = 5%
             class_freq_dict = {
                 "Capacity and Resources": 0.035401,
                 "Crime and Punishment": 0.135367,
