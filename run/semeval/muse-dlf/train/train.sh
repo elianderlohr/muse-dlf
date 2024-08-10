@@ -144,9 +144,9 @@ PARAMS=(
     --save_metric "f1_micro"
     --save_threshold 0.5
     --asymmetric_loss_clip 0.05
-    --asymmetric_loss_gamma_neg 1
-    --asymmetric_loss_gamma_pos 10
-    --asymmetric_loss_scaler 10
+    --asymmetric_loss_gamma_neg 4
+    --asymmetric_loss_gamma_pos 1
+    --asymmetric_loss_scaler 100
 )
 
 # Parse command-line arguments
