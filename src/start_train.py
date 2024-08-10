@@ -769,6 +769,10 @@ def main():
             "clip_value": args.clip_value,
             "focal_loss_gamma": args.focal_loss_gamma,
             "mixed_precision": args.mixed_precision,
+            "asymmetric_loss_gamma_neg": args.asymmetric_loss_gamma_neg,
+            "asymmetric_loss_gamma_pos": args.asymmetric_loss_gamma_pos,
+            "asymmetric_loss_clip": args.asymmetric_loss_clip,
+            "asymmetric_loss_scaler": args.asymmetric_loss_scaler,
             # Data Processing
             "num_sentences": args.num_sentences,
             "max_sentence_length": args.max_sentence_length,
