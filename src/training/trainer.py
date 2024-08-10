@@ -1135,9 +1135,7 @@ class Trainer:
                         "f1_macro": metrics["f1_macro"],
                     }
 
-                    # turn of saving model
-
-                    # self._save_model(model_mode="eval", metrics=small_metrics_dict)
+                    self._save_model(model_mode="eval", metrics=small_metrics_dict)
 
             # wait
             self.accelerator.wait_for_everyone()
