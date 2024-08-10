@@ -319,6 +319,8 @@ def main():
             # Serialize datasets
             artifact_filepath = Path("./dataset_artifact.pkl")
 
+            logger.info("File path: %s", artifact_filepath)
+
             with artifact_filepath.open("wb") as f:
                 pickle.dump(dataset, f)
 
@@ -340,6 +342,10 @@ def main():
             run.link_artifact(
                 artifact,
                 target_path=f"elianderlohr-org/wandb-registry-dataset/{args.registry_name}",
+            )
+
+            logger.info(
+                f"Link the artifacts to elianderlohr-org/wandb-registry-dataset/{args.registry_name}"
             )
     else:
 
@@ -385,6 +391,10 @@ def main():
         run.link_artifact(
             artifact,
             target_path=f"elianderlohr-org/wandb-registry-dataset/{args.registry_name}",
+        )
+
+        logger.info(
+            f"Link the artifacts to elianderlohr-org/wandb-registry-dataset/{args.registry_name}"
         )
 
     # Finish the run
