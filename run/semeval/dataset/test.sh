@@ -96,7 +96,7 @@ python src/create_dataset.py \
     --dim_names virtue,vice \
     --num_sentences 32 \
     --max_sentence_length 64 \
-    --max_args_per_sentence 14 \
+    --max_args_per_sentence 13 \
     --max_arg_length 18 \
     --force_recalculate_srls False \
     --force_recalculate_frameaxis False \
