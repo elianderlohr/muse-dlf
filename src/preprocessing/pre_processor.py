@@ -343,6 +343,8 @@ class PreProcessor:
 
         if train_mode:
             if stratification == "single":
+                logger.info("Performing single-label stratification.")
+                # Extract the single-label data
                 y_stratify = merged_df["encoded_values"].apply(lambda x: x[0].index(1))
 
                 # Initialize StratifiedKFold
@@ -353,7 +355,10 @@ class PreProcessor:
                 # Generate splits
                 splits = list(skf.split(merged_df, y_stratify))
 
+                logger.info(f"Number of splits: {len(splits)}")
+
                 if fold_index != -1:
+                    logger.info(f"Using fold {fold_index}")
                     # Use the specified fold
                     if 0 <= fold_index < n_splits:
                         train_index, test_index = splits[fold_index]
@@ -362,6 +367,9 @@ class PreProcessor:
                             f"fold_index should be between 0 and {n_splits-1}"
                         )
                 else:
+                    logger.info(
+                        "No fold index specified, using the first fold: fold[0]."
+                    )
                     # If no fold_index is specified, use the first fold
                     train_index, test_index = splits[0]
 
