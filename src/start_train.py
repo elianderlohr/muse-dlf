@@ -578,6 +578,16 @@ def main():
     data_processing.add_argument(
         "--max_arg_length", type=int, default=16, help="Maximum length of an argument"
     )
+    # k fold params
+
+    # n_splits
+    data_processing.add_argument(
+        "--n_splits", type=int, default=5, help="Number of k-fold splits."
+    )
+    # fold_index
+    data_processing.add_argument(
+        "--fold_index", type=int, default=-1, help="Index of the fold."
+    )
 
     # Input/Output Paths
     io_paths = parser.add_argument_group("Input/Output Paths")
@@ -926,6 +936,8 @@ def main():
                 sample_size=args.sample_size,
                 stratification="single",
                 random_state=args.seed if args.seed else None,
+                n_splits=args.n_splits,
+                fold_index=args.fold_index,
             )
         elif args.model_type == "muse-dlf":
             logger.info("Loading data for MuSE-DLF model using train and test datasets")

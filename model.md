@@ -2,6 +2,12 @@
 
 ## SLMuSE-DLF
 
+| Model                                                       | accuracy | macro-F1 |
+| ----------------------------------------------------------- | -------- | -------- |
+| elianderlohr/slmuse-dlf/eval_whipping_scooter_6311_model:v5 | 0.64257  | 0.52002  |
+
+## MuSE-DLF
+
 | Model                                                      | micro-F1 | macro-F1 |
 | ---------------------------------------------------------- | -------- | -------- |
 | elianderlohr/muse-dlf/eval_flaring_watch_2603_model:v0     | 0.48499  | 0.43881  |

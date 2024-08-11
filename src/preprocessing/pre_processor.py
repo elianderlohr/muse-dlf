@@ -6,7 +6,7 @@ from preprocessing.srl_processor import SRLProcessor
 import torch
 from torch.utils.data import DataLoader
 import pickle
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from nltk.tokenize import sent_tokenize
 import re
 import numpy as np
@@ -313,6 +313,8 @@ class PreProcessor:
         train_mode=True,
         random_state=None,
         stratification=None,  # None, "single", "multi"
+        n_splits=5,
+        fold_index=-1,
         device=-1,
     ):
         """
@@ -343,13 +345,28 @@ class PreProcessor:
             if stratification == "single":
                 y_stratify = merged_df["encoded_values"].apply(lambda x: x[0].index(1))
 
-                train_df, test_df = train_test_split(
-                    merged_df,
-                    test_size=self.test_size,
-                    random_state=random_state,
-                    stratify=y_stratify,
-                    shuffle=True,
+                # Initialize StratifiedKFold
+                skf = StratifiedKFold(
+                    n_splits=n_splits, shuffle=True, random_state=random_state
                 )
+
+                # Generate splits
+                splits = list(skf.split(merged_df, y_stratify))
+
+                if fold_index != -1:
+                    # Use the specified fold
+                    if 0 <= fold_index < n_splits:
+                        train_index, test_index = splits[fold_index]
+                    else:
+                        raise ValueError(
+                            f"fold_index should be between 0 and {n_splits-1}"
+                        )
+                else:
+                    # If no fold_index is specified, use the first fold
+                    train_index, test_index = splits[0]
+
+                train_df = merged_df.iloc[train_index]
+                test_df = merged_df.iloc[test_index]
             elif stratification == "multi":
                 # Extract the multi-label data
                 y_multi = (
@@ -604,6 +621,8 @@ class PreProcessor:
         sample_size=-1,
         random_state=None,
         stratification=None,  # None, "single", "multi"
+        n_splits=5,
+        fold_index=-1,
     ):
         train_dataset, test_dataset, _, _ = self.get_datasets(
             path,
@@ -613,6 +632,8 @@ class PreProcessor:
             train_mode=True,
             random_state=random_state,
             stratification=stratification,
+            n_splits=n_splits,
+            fold_index=fold_index,
         )
 
         if sample_size > 0:
