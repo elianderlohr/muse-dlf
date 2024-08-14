@@ -118,7 +118,7 @@ def load_model(
         else:
             logger.info("Loading MuSE-DLF model")
             try:
-                model = SLMuSEDLF(  # MuSEDLF(
+                model = MuSEDLF(
                     embedding_dim=embedding_dim,
                     frameaxis_dim=frameaxis_dim,
                     hidden_dim=hidden_dim,
