@@ -5,6 +5,9 @@ from model.muse_dlf.embeddings import MuSEEmbeddings
 from model.muse_dlf.supervised_module_alternative_1 import (
     MuSESupervisedAlternative1,
 )
+from model.muse_dlf.supervised_module_alternative_2 import (
+    MuSESupervisedAlternative2,
+)
 from model.muse_dlf.unsupervised_module import MuSEUnsupervised
 from model.muse_dlf.unsupervised_frameaxis_module import MuSEFrameAxisUnsupervised
 from utils.logging_manager import LoggerManager
@@ -117,6 +120,19 @@ class MuSEDLF(nn.Module):
             self.logger.debug("🚦 Using alternative supervised module: alt6")
             # Supervised training module
             self.supervised = MuSESupervisedAlternative1(
+                embedding_dim,
+                num_classes=num_classes,
+                frameaxis_dim=frameaxis_dim,
+                num_sentences=num_sentences,
+                hidden_dim=hidden_dim,
+                dropout_prob=dropout_prob,
+                concat_frameaxis=supervised_concat_frameaxis,
+                _debug=_debug,
+            )
+        elif alternative_supervised == "alt2":
+            self.logger.debug("🚦 Using alternative supervised module: alt2")
+            # Supervised training module
+            self.supervised = MuSESupervisedAlternative2(
                 embedding_dim,
                 num_classes=num_classes,
                 frameaxis_dim=frameaxis_dim,
