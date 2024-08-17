@@ -3,6 +3,7 @@ models
 data/mfc
 data/semeval
 data/glove
+data/explainability
 data/frameaxis/mfc/
 data/frameaxis/semeval/
 data/srls/
