@@ -2,6 +2,8 @@
 
 Master thesis on explainable frame classification in news articles using multi-view semantic enhanced dictionary learning.
 
+---
+
 This repository contains the trained deep learning model from my master's thesis:
 
 **Thesis Title:** MuSE-DLF: <strong>Mu</strong>lti-View-<strong>S</strong>emantic <strong>E</strong>nhanced <strong>D</strong>ictionary <strong>L</strong>earning for <strong>F</strong>rame Classification
