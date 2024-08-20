@@ -1,18 +1,21 @@
-# Master Thesis on Advanced Frame Detection in Media Narratives
+# MuSE-DLF: <strong>Mu</strong>lti-View-<strong>S</strong>emantic <strong>E</strong>nhanced <strong>D</strong>ictionary <strong>L</strong>earning for <strong>F</strong>rame Classification
 
-Master thesis on advanced frame detection in media narratives, using a novel approach combining unsupervised and supervised learning.
+Master thesis on explainable frame classification in news articles using multi-view semantic enhanced dictionary learning.
 
-## Tests
+This repository contains the trained deep learning model from my master's thesis:
 
-To run the tests, use the following command:
+**Thesis Title:** MuSE-DLF: <strong>Mu</strong>lti-View-<strong>S</strong>emantic <strong>E</strong>nhanced <strong>D</strong>ictionary <strong>L</strong>earning for <strong>F</strong>rame Classification
 
-```bash
-python -m unittest tests/slmuse/
-```
+**Author:** Elias Christian Anderlohr  
+**Document:** [MuSE-DLF - Elias Anderlohr.pdf](paper/MuSE-DLF%20-%20Elias%20Anderlohr.pdf)
 
-## Motivation
+For more details about the thesis, please refer to the PDF available in the `paper` directory.
 
-The concept of framing, deeply entrenched in psychology and sociology, significantly influences public opinion and decision-making. Framing involves presenting information in a specific manner, often through the use of narratives, symbols, or stereotypes, to subtly guide perceptions. This method is particularly evident in media, where different outlets may portray the same issue in distinct ways, leading audiences to varying conclusions. The impact of framing on public discourse and international relations is notable in events like the differing narratives presented by President Biden and President Putin regarding the Russo-Ukrainian war. Understanding and quantifying the effects of framing is crucial for a more informed and critical public discourse.
+## Abstract
+
+This research advances the field of frame classification in news media through the creation of explainable deep learning models that incorporate semantic role labeling and semantic axis data. We present two novel models: SLMuSE-DLF for single-label frame classification and MuSE-DLF for multi-label frame classification. The SLMuSE-DLF model attained an accuracy of 0.643 and a macro-F1 score of 0.520 on the Media Frames Corpus. Meanwhile, the MuSE-DLF model secured a top-four position in the SemEval-2023 competition with a micro-F1 score of 0.553 and a macro-F1 score of 0.497. Notably, MuSE-DLF is the first model that provides multi-label frame classification along with explainability. It offers both strong classification performance and explainability, as demonstrated through visual techniques for semantic roles and biases. The MuSE-DLF's capability to identify multiple, concurrent frames within a single text more accurately mirrors real-world news framing. This work makes significant contributions to the field of Explainable AI in Natural Language Processing, enhancing our understanding of frame classification in news media while maintaining model explainability.
+
+> Link to the full thesis as PDF: [Thesis](...).
 
 ## Data Utilized
 
@@ -22,40 +25,230 @@ This research leverages two key datasets:
 
 The MFC, a collection of news articles labeled with frame labels from "The Policy Frames Codebook," focuses on contentious policy issues like immigration, smoking, and gun control. This corpus includes both labeled and unlabeled articles from major U.S. newspapers spanning from 1980 to 2012, providing a rich source of data for frame analysis.
 
-### SemEval-2023 Dataset
+> Note: The MFC dataset is not publicly available. However, the data can be requested from the authors of the original paper. For more information, refer to the [Media Frames Corpus](https://aclanthology.org/P15-2072/) website. No guarantees are made regarding the availability of the dataset.
+
+### SemEval-2023 Dataset Task 3
 
 Comprising news articles in nine languages, the SemEval-2023 dataset covers international events from 2020 to mid-2022. It encompasses a wide range of topics, from the COVID-19 pandemic to the Russo-Ukrainian war. This dataset is annotated with frames from "The Policy Frames Codebook" and offers data in multiple languages, including English, French, German, and Russian.
 
+> Note: The SemEval-2023 dataset is not publicly available. However, the data can be requested from the organizers of the SemEval-2023 Task 3 competition. For more information, refer to the [SemEval-2023](https://propaganda.math.unipd.it/semeval2023task3/) website. No guarantees are made regarding the availability of the dataset.
+
 ## Approach
 
-![Model](assets/imgs/model-architecture.png)
+![Model](assets/imgs/muse-dlf-model.png)
 
-> **Note:** The approach described is not yet implemented in the codebase as it is still in development.
+The MuSE-DLF and SLMuSE-DLF model architecture incorporates both unsupervised and supervised components for comprehensive text processing.
 
-1. **Article Preprocessing**: Each article, composed of $N$ sentences, is divided into individual sentences to prepare for processing.
+1. Initially:
+   a. Sentence embeddings are generated using a transformer model.
+   b. Word embeddings are generated using a transformer model.
 
-2. **Sentence Embedding**: The divided sentences are processed through a transformer-based model like Sentence-BERT (sBERT) to obtain sentence embeddings, capturing their contextual meaning.
+2. Processing embeddings:
+   a. The word embeddings for the predicate, ARG0 (agent), and ARG1 (theme) are extracted and concatenated with the sentence embedding.
+   b. In parallel, the FrameAxis bias and intensity values for a set of semantic axis are calculated and concatenated with the sentence embedding, resulting in additional dimensions.
 
-3. **Word Embedding**: Each word in the sentences is processed through a transformer model like BERT to generate word embeddings, offering a detailed understanding of word usage.
+3. Latent representation:
+   a. These combined embeddings are processed through shared and individual linear layers to reduce dimensions and create latent representations.
+   b. Same process for the parallel embeddings.
 
-4. **Unsupervised FRISS Module**: Operates on dictionary learning principles, deconstructing input data into a sparse representation. It identifies semantic role labels (SRLs) in sentences, extracting their embeddings. These embeddings are fed into an autoencoder, producing latent view-specific representations.
+4. Reconstruction:
+   a. Embeddings are reconstructed back to their original dimensions.
+   b. Same process for the parallel embeddings.
 
-5. **Unsupervised FrameAxis Module**: Assesses each word in the sentences against predefined microframes, calculating bias measurements for each sentence. This helps understand the textual bias along specific semantic axes.
+5. Comparison:
+   a. Reconstructed embeddings are compared to the original embeddings.
+   b. Same process for the parallel embeddings.
 
-6. **Supervised Learning Module**: Combines latent SRL representations, sentence embeddings, and FrameAxis bias measurements. This module is optimized to minimize both the unsupervised loss (difference between input and reconstructed SRL embeddings) and the supervised loss (associated with predicting multiple frame labels).
+6. The comparisons contribute to the total unsupervised loss J<sub>total</sub>.
 
-7. **Frame Prediction**: The model ultimately produces predictions of the frames present in each article, resolving the multi-label problem of associating each article with multiple frames.
+7. For the supervised component, latent representations are averaged over all sentences.
 
-## Next Steps
+8. These averaged representations are used to predict document-level frames.
+
+9. Predicted frames are compared to the true classes.
+
+10. Training aims to balance unsupervised and supervised losses, ensuring effective embedding reconstruction and accurate frame prediction.
+
+## Experiments
+
+We conducted two key experiments to evaluate the performance of the SLMuSE-DFL and MuSE-DLF model:
 
 ### Experiment 1: Media Frames Corpus (MFC) Application
 
-- **Objective**: Test FRISS-FrameAxis model's capability in identifying and interpreting media frames on MFC.
-- **Methodology**: Train the integrated FRISS-FrameAxis model on MFC, focusing on frame detection efficiency.
+- **Objective**: Enhance the FRISS model with the FrameAxis semantic role and bias data.
+- **Methodology**: Train the new model called SLMuSE-DLF on the MFC dataset.
 - **Evaluation Metrics**: Compare accuracy and macro-F1 score against the original FRISS model to gauge improvements.
+
+#### Results
+
+| Model                         | Acc.      | Macro-F1  |
+| ----------------------------- | --------- | --------- |
+| FRISS Khanehzar et al. (2021) | 0.697     | 0.605     |
+| Khanehzar et al. (2019)       | 0.658     | -         |
+| **SLMuSE-DLF (Best)**         | **0.643** | **0.520** |
+| **SLMuSE-DLF (Mean)**         | **0.606** | **0.497** |
+| Ji et al. (2017)              | 0.584     | -         |
+| Field et al. (2018)           | 0.573     | -         |
+| Card et al. (2018)            | 0.568     | -         |
+
+Table: Performance analysis of various frame prediction models, trained using the Media Frames Corpus
 
 ### Experiment 2: SemEval 2023 Dataset Extension for Multi-label Prediction
 
-- **Objective**: Evaluate model adaptability in multi-label frame prediction using the SemEval 2023 dataset.
-- **Methodology**: Retrain FRISS-FrameAxis model on SemEval 2023, adjusting for multiple frames in single texts.
+- **Objective**: Enhance the SLMuSE-DLF model to predict multiple frames in a single text.
+- **Methodology**: Train the new model called MuSE-DLF on the SemEval 2023 dataset.
 - **Evaluation Metrics**: Use multi-label classification metrics like F1-score; compare results with SemEval 2023 challenge benchmarks.
+
+#### Results
+
+| Model                         | Acc.      | Macro-F1  |
+| ----------------------------- | --------- | --------- |
+| FRISS Khanehzar et al. (2021) | 0.697     | 0.605     |
+| Khanehzar et al. (2019)       | 0.658     | -         |
+| **SLMuSE-DLF (Best)**         | **0.643** | **0.520** |
+| **SLMuSE-DLF (Mean)**         | **0.606** | **0.497** |
+| Ji et al. (2017)              | 0.584     | -         |
+| Field et al. (2018)           | 0.573     | -         |
+| Card et al. (2018)            | 0.568     | -         |
+
+Table: Overview of the top 10 models featured in the SemEval-2023 competition, including our introduced MuSE-DLF model. The task organizers provided the baseline for reference. For detailed details on the various models, refer to Piskorski et al. (2023).
+
+## Usage
+
+To run the MuSE-DLF model, follow these steps:
+
+### Preparation
+
+#### Dataset Preparation
+
+1. Download the Media Frames Corpus and SemEval-2023 dataset.
+
+2. Paste the data into the `data/` directory.
+
+   - For the Media Frames Corpus, place the data in `data/mfc/`.
+
+   - For the SemEval-2023 dataset, place the data in `data/semeval/`.
+
+3. Open the [data preparation notebook](notebooks/prepare/prepare-dataset.ipynb) and run the cells to preprocess the data.
+
+4. The notebook should generate the following files:
+
+   - For the Media Frames Corpus: `data/mfc/immigration_labeled_preprocessed.json`
+
+   - For the SemEval-2023 dataset: `data/semeval/mfc/semeval_train.json`, `data/semeval/mfc/semeval_dev.json`, and `data/semeval/mfc/semeval_test.json`
+
+#### FrameAxis Data Preparation
+
+1. Run the [MFC FrameAxis data preparation slurm script](run/mfc/frameaxis/preprocess_labeled.sh) to preprocess the FrameAxis data.
+
+   - The script will generate the following files:
+     - `data/mfc/frameaxis/frameaxis_mft.pkl` which contains the FrameAxis data.
+     - `data/mfc/frameaxis/frameaxis_mft_contributions.json` which contains the word contributions (word-level bias) for each sentence and each important word.
+     - `data/mfc/frameaxis/frameaxis_mft_microframes.json` which contains the contextualized microframes measurements for all 5 microframes.
+
+2. Run the [SemEval FrameAxis data preparation slurm scripts](run/semeval/frameaxis/) to preprocess the FrameAxis data for the `dev`, `test`, and `train` datasets.
+
+   - The `train` script will generate the: `data/semeval/frameaxis/semeval_microframe.pkl` which contains the contextualized microframes measurements for all 5 microframes.
+
+   - The script will generate the following file each for the `dev`, `test`, and `train` datasets:
+     - `data/semeval/frameaxis/semeval_dev.pkl`, `data/semeval/frameaxis/semeval_test.pkl`, and `data/semeval/frameaxis/semeval_train.pkl` which contains the FrameAxis data.
+   - The script will generate the following file each for the `dev`, `test`, and `train` datasets:
+     - `data/semeval/frameaxis/semeval_dev_contributions.json`, `data/semeval/frameaxis/semeval_test_contributions.json`, and `data/semeval/frameaxis/semeval_train_contributions.json` which contains the word contributions (word-level bias) for each sentence and each important word.
+
+#### Semantic Role Labeling Data Preparation
+
+1. Run the [MFC SRL data preparation slurm script](run/mfc/srl/preprocess_labeled.sh) to preprocess the SRL data.
+
+   - The script will generate the following files:
+     - `data/srls/mfc/mfc_labeled.pkl` which contains the SRL data.
+
+2. Run the [SemEval SRL data preparation slurm scripts](run/semeval/srl/) to preprocess the SRL data for the `dev`, `test`, and `train` datasets.
+
+   - The `train` script will generate the: `data/srls/semeval/semeval_train.pkl` which contains the SRL data.
+
+   - The script will generate the following file each for the `dev`, `test`, and `train` datasets:
+     - `data/srls/semeval/semeval_dev.pkl`, `data/srls/semeval/semeval_test.pkl`, and `data/srls/semeval/semeval_train.pkl` which contains the SRL data.
+
+### Fine-Tuning RoBERTa
+
+We fine tuned the RoBERTa model on the Media Frames Corpus and the SemEval-2023 dataset. The fine-tuned models are used as the base model for the MuSE-DLF and SLMuSE-DLF models.
+
+#### Media Frames Corpus
+
+Run the [MFC RoBERTa fine-tuning slurm script](run/mfc/mlm/train.sh) to fine-tune the RoBERTa model on the Media Frames Corpus.
+
+> Note: this script requires the MFC data in form train and `test_data.txt` and `train_data.txt` files which should be located under `data/mfc/mfc`. They are generated by the data preparation notebook.
+
+You can download out fine-tuned RoBERTa model from [here](https://drive.google.com/drive/folders/1UAD6_A5z0hPWbHgXwL42NQTuSgYzX7aT?usp=sharing).
+
+#### SemEval-2023 Dataset
+
+Run the [SemEval RoBERTa fine-tuning slurm script](run/semeval/mlm/train.sh) to fine-tune the RoBERTa model on the SemEval-2023 dataset.
+
+> Note: this script requires the SemEval-2023 data in form train and `test_data.txt` and `train_data.txt` files which should be located under `data/semeval/muse-dlf`. They are generated by the data preparation notebook.
+
+You can download out fine-tuned RoBERTa model from [here](https://drive.google.com/drive/folders/1UBkGQUKOQEsTat5G0k31MymQZZUN9fMu?usp=sharing).
+
+### Training
+
+Train the two models using the following commands:
+
+> Note: We use the `slurm` scripts to run the training on a cluster. We use the cluster from the Baden Wuerttemberg Grid (BwUniCluster2.0) and the Baden Wuerttemberg Grid (Helix) for training. You can run the training locally by running the training scripts directly, which are located in the `src/start_train.py` file.
+
+> Note: We use `wandb` (Weights & Biases) for logging the training process. So create a `.env` file with the following content:
+
+```bash
+WANDB_API_KEY=your_wandb_api_key
+```
+
+#### SLMuSE-DLF
+
+Run the [SLMuSE-DLF training slurm script](run/mfc/slmuse-dlf/train/train.sh) to train the model on the Media Frames Corpus.
+
+Example slurm execution:
+
+```bash
+sbatch --partition=gpu_4 -t 01:00:00 run/mfc/slmuse-dlf/train/train.sh
+```
+
+This script will train the model on the `gpu_4` partition for 1 hour. The slurm script is setup to require 4 GPUs.
+
+You can download the trained models from [here](https://drive.google.com/drive/folders/1Tv0TaKZJ2VwhKSoS_oBQcxkkCgFGa_Lr?usp=sharing).
+
+##### WandB
+
+We use `wandb` for logging the training process. The script will automatically create a project on `wandb` called `slmuse-dlf` and log the training process.
+
+The training script will automatically saves the best model based on the `accuracy` metric to wandb. The model will be saved in the `wandb` project under the `artifacts` section.
+
+#### MuSE-DLF
+
+Run the [MuSE-DLF training slurm script](run/semeval/muse-dlf/train/train.sh) to train the model on the SemEval-2023 dataset.
+
+Example slurm execution:
+
+```bash
+sbatch --partition=gpu_4 -t 01:00:00 run/semeval/muse-dlf/train/train.sh
+```
+
+This script will train the model on the `gpu_4` partition for 1 hour. The slurm script is setup to require 4 GPUs.
+
+You can download the trained models from [here](https://drive.google.com/drive/folders/1Tvy91rDFpfa_1asNxlcZsVo3XzJ7LxEt?usp=sharing).
+
+##### WandB
+
+We use `wandb` for logging the training process. The script will automatically create a project on `wandb` called `muse-dlf` and log the training process.
+
+The training script will automatically saves the best model based on the `micro-f1` metric to wandb. The model will be saved in the `wandb` project under the `artifacts` section.
+
+### Inference
+
+To run inference on the trained models get the correct model settings from the `config-json.json` file in the google drive folder.
+
+#### Inference with WandB
+
+If you got access to our WandB Project you do not need to download the model. You can download the models from WandB directly. Example code can be seen in the explainability notebooks under: `notebooks/explainability/`.
+
+## Achknowledgements
+
+I would like to express my sincere gratitude to Marlene Lutz, M.Sc. and Ivan Smirnov, Ph.D. for providing important feedback and guidance throughout the development of this thesis. I also thank BwUniCluster 2.0 and the Helix cluster for providing access to high-performance computing resources essential for this work. I acknowledge support by the state of Baden-Württemberg through bwHPC. Furthermore, I acknowledge support by the state of Baden-Württemberg through bwHPC and the German Research Foundation (DFG) through grant INST 35/1597-1 FUGG.
