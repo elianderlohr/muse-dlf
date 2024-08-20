@@ -9,7 +9,7 @@ This repository contains the trained deep learning model from my master's thesis
 **Thesis Title:** MuSE-DLF: <strong>Mu</strong>lti-View-<strong>S</strong>emantic <strong>E</strong>nhanced <strong>D</strong>ictionary <strong>L</strong>earning for <strong>F</strong>rame Classification
 
 **Author:** Elias Christian Anderlohr  
-**Document:** [MuSE-DLF - Elias Anderlohr.pdf](paper/MuSE-DLF%20-%20Elias%20Anderlohr.pdf)
+**Document:** [MuSE-DLF - Elias Anderlohr.pdf](https://github.com/elianderlohr/muse-dlf/blob/15127e19d2225ee9798e0f83ee3ba53286b01f21/assets/paper/MuSE-DLF%20-%20Elias%20Anderlohr.pdf)
 
 For more details about the thesis, please refer to the PDF available in the `paper` directory.
 
