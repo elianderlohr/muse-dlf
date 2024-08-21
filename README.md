@@ -249,6 +249,68 @@ To run inference on the trained models get the correct model settings from the `
 
 If you got access to our WandB Project you do not need to download the model. You can download the models from WandB directly. Example code can be seen in the explainability notebooks under: `notebooks/explainability/`.
 
+## Code Structure
+
+### Training, Preprocessing and Model Code
+
+All code to preprocess the data and train the models is located in the `src/` directory.
+
+**Models**
+
+- `src/model/`: Contains the MuSE-DLF and SLMuSE-DLF models in the `muse-dlf` and `slmuse-dlf` directories.
+
+**Training**
+
+- `src/start_train.py`: Is the main training script to train the MuSE-DLF and SLMuSE-DLF models.
+
+**Other**
+
+The other files in the `src/` directory are used for data preprocessing (`src/preprocessing`), pushing datasets to wandb (`src/create_dataset.py`), and other utility functions.
+
+### Notebooks
+
+The notebooks directory contains various Jupyter notebooks used for data preparation, model training, and explainability analysis.
+
+#### Data Preparation
+
+Prepare the two datasets for training the MuSE-DLF and SLMuSE-DLF models.
+
+- [prepare-dataset.ipynb](notebooks/prepare/prepare-dataset.ipynb): Data preparation notebook for the Media Frames Corpus and SemEval-2023 dataset.
+
+#### Data Evaluation
+
+Evaluation notebooks to better understand the MFC and SemEval-2023 datasets.
+
+- [mfc-dataset.ipynb](notebooks/evaluation/mfc-dataset.ipynb): Evaluation of the Media Frames Corpus.
+- [semeval-dataset.ipynb](notebooks/evaluation/semeval-dataset.ipynb): Evaluation of the SemEval-2023 dataset.
+
+#### FrameAxis
+
+Evaluation of the MFC and SemEval-2023 datasets using FrameAxis data.
+
+- [mfc-frameaxis-analysis.ipynb](notebooks/analysis/mfc-frameaxis-analysis.ipynb): FrameAxis analysis of the Media Frames Corpus.
+- [semeval-frameaxis-analysis.ipynb](notebooks/analysis/semeval-frameaxis-analysis.ipynb): FrameAxis analysis of the SemEval-2023 dataset.
+
+#### Explainability
+
+Evaluation of the explainability of the SLMuSE-DLF and MuSE-DLF models.
+
+- [slmuse-dlf-explainability.ipynb](notebooks/explainability/slmuse-dlf-explainability.ipynb): Explainability analysis of the SLMuSE-DLF model.
+- [muse-dlf-explainability.ipynb](notebooks/explainability/muse-dlf-explainability.ipynb): Explainability analysis of the MuSE-DLF model.
+
+#### Other
+
+Notebooks for token-to-word analysis. The notebook contains the experiments for the token-to-word analysis to see how many words are represented by how many tokens.
+
+- [tokenizer-token-to-word-ratio.ipynb](notebooks/other/tokenizer-token-to-word-ratio.ipynb): Token-to-word analysis of the RoBERTa tokenizer.
+
+### Additional Plots
+
+Additional plots generated for the thesis.
+
+- [mfc-plots.ipynb](notebooks/plots/mfc-plots.ipynb): Plots generated for the SLMuSE-DLF model.
+- [semeval-plots.ipynb](notebooks/plots/semeval-plots.ipynb): Plots generated for the MuSE-DLF model.
+
 ## Achknowledgements
 
 I would like to express my sincere gratitude to Marlene Lutz, M.Sc. and Ivan Smirnov, Ph.D. for providing important feedback and guidance throughout the development of this thesis. I also thank BwUniCluster 2.0 and the Helix cluster for providing access to high-performance computing resources essential for this work. I acknowledge support by the state of Baden-Württemberg through bwHPC. Furthermore, I acknowledge support by the state of Baden-Württemberg through bwHPC and the German Research Foundation (DFG) through grant INST 35/1597-1 FUGG.
