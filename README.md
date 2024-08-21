@@ -117,9 +117,9 @@ Table: Overview of the top 10 models featured in the SemEval-2023 competition, i
 
 To run the MuSE-DLF model, follow these steps:
 
-### Preparation
+### 1. Preparation
 
-#### Dataset Preparation
+#### 1.1 Dataset Preparation
 
 1. Download the Media Frames Corpus and SemEval-2023 dataset.
 
@@ -137,7 +137,7 @@ To run the MuSE-DLF model, follow these steps:
 
    - For the SemEval-2023 dataset: `data/semeval/mfc/semeval_train.json`, `data/semeval/mfc/semeval_dev.json`, and `data/semeval/mfc/semeval_test.json`
 
-#### FrameAxis Data Preparation
+#### 1.2 FrameAxis Data Preparation
 
 1. Run the [MFC FrameAxis data preparation slurm script](run/mfc/frameaxis/preprocess_labeled.sh) to preprocess the FrameAxis data.
 
@@ -155,7 +155,7 @@ To run the MuSE-DLF model, follow these steps:
    - The script will generate the following file each for the `dev`, `test`, and `train` datasets:
      - `data/semeval/frameaxis/semeval_dev_contributions.json`, `data/semeval/frameaxis/semeval_test_contributions.json`, and `data/semeval/frameaxis/semeval_train_contributions.json` which contains the word contributions (word-level bias) for each sentence and each important word.
 
-#### Semantic Role Labeling Data Preparation
+#### 1.3 Semantic Role Labeling Data Preparation
 
 1. Run the [MFC SRL data preparation slurm script](run/mfc/srl/preprocess_labeled.sh) to preprocess the SRL data.
 
@@ -169,11 +169,11 @@ To run the MuSE-DLF model, follow these steps:
    - The script will generate the following file each for the `dev`, `test`, and `train` datasets:
      - `data/srls/semeval/semeval_dev.pkl`, `data/srls/semeval/semeval_test.pkl`, and `data/srls/semeval/semeval_train.pkl` which contains the SRL data.
 
-### Fine-Tuning RoBERTa
+### 2. Fine-Tuning RoBERTa
 
 We fine tuned the RoBERTa model on the Media Frames Corpus and the SemEval-2023 dataset. The fine-tuned models are used as the base model for the MuSE-DLF and SLMuSE-DLF models.
 
-#### Media Frames Corpus
+#### 2.1 Media Frames Corpus
 
 Run the [MFC RoBERTa fine-tuning slurm script](run/mfc/mlm/train.sh) to fine-tune the RoBERTa model on the Media Frames Corpus.
 
@@ -181,7 +181,7 @@ Run the [MFC RoBERTa fine-tuning slurm script](run/mfc/mlm/train.sh) to fine-tun
 
 You can download out fine-tuned RoBERTa model from [here](https://drive.google.com/drive/folders/1UAD6_A5z0hPWbHgXwL42NQTuSgYzX7aT?usp=sharing).
 
-#### SemEval-2023 Dataset
+#### 2.2 SemEval-2023 Dataset
 
 Run the [SemEval RoBERTa fine-tuning slurm script](run/semeval/mlm/train.sh) to fine-tune the RoBERTa model on the SemEval-2023 dataset.
 
@@ -189,7 +189,7 @@ Run the [SemEval RoBERTa fine-tuning slurm script](run/semeval/mlm/train.sh) to 
 
 You can download out fine-tuned RoBERTa model from [here](https://drive.google.com/drive/folders/1UBkGQUKOQEsTat5G0k31MymQZZUN9fMu?usp=sharing).
 
-### Training
+### 3. Training
 
 Train the two models using the following commands:
 
@@ -201,7 +201,7 @@ Train the two models using the following commands:
 WANDB_API_KEY=your_wandb_api_key
 ```
 
-#### SLMuSE-DLF
+#### 3.1 SLMuSE-DLF
 
 Run the [SLMuSE-DLF training slurm script](run/mfc/slmuse-dlf/train/train.sh) to train the model on the Media Frames Corpus.
 
@@ -221,7 +221,7 @@ We use `wandb` for logging the training process. The script will automatically c
 
 The training script will automatically saves the best model based on the `accuracy` metric to wandb. The model will be saved in the `wandb` project under the `artifacts` section.
 
-#### MuSE-DLF
+#### 3.2 MuSE-DLF
 
 Run the [MuSE-DLF training slurm script](run/semeval/muse-dlf/train/train.sh) to train the model on the SemEval-2023 dataset.
 
@@ -241,7 +241,7 @@ We use `wandb` for logging the training process. The script will automatically c
 
 The training script will automatically saves the best model based on the `micro-f1` metric to wandb. The model will be saved in the `wandb` project under the `artifacts` section.
 
-### Inference
+### 4. Inference
 
 To run inference on the trained models get the correct model settings from the `config-json.json` file in the google drive folder.
 
